@@ -1,0 +1,35 @@
+; =====================================================================
+; vos.asm - V-OS build root
+;
+; Output: VOS.BIN on build/vos.dsk, loaded by AMSDOS at LOADER_ADDR
+; with RUN"VOS". The file is the loader stub followed by the kernel
+; image, which is assembled for KERNEL_BASE and copied there at boot.
+; =====================================================================
+
+        include "include/hw.inc"
+        include "include/memmap.inc"
+
+VOS_VERSION     equ #0001           ; 0.01
+VOS_API_VERSION equ #0000
+
+; ---- loader, runs at LOADER_ADDR ------------------------------------
+        org LOADER_ADDR
+        run loader_start
+        include "boot/loader.asm"
+
+; ---- kernel image: stored after the loader, runs at KERNEL_BASE ------
+kernel_image:
+        org KERNEL_BASE, kernel_image
+kernel_start:
+        include "kernel/vectors.asm"
+        include "kernel/kernel.asm"
+        include "kernel/interrupts.asm"
+        include "drivers/ga.asm"
+        include "drivers/crtc.asm"
+kernel_end:
+
+KERNEL_SIZE     equ kernel_end - kernel_start
+
+        assert KERNEL_SIZE <= KERNEL_LIMIT - KERNEL_BASE
+
+        save "VOS.BIN", loader_start, kernel_image - loader_start + KERNEL_SIZE, DSK, "build/vos.dsk"
