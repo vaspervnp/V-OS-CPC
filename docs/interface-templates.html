@@ -1,0 +1,688 @@
+<title>V-OS Πρότυπα Interface</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Commissioner:wght@500;700&family=Noto+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&family=Press+Start+2P&display=swap">
+<style>
+/* Layout: catalogue of four emulated CPC screens, each beside its spec sheet; comparison table closes the page. */
+:root {
+  --bg: #eceef2;
+  --surface: #ffffff;
+  --fg: #16181d;
+  --muted: #5b6170;
+  --line: #d3d7df;
+  --accent: #1f47c8;
+  --chip: #e2e7f5;
+  --bezel: #2b2c30;
+  --bezel-edge: #3b3d42;
+  --cpc-red: #d23a2f;
+  --cpc-green: #2f9e4a;
+  --cpc-blue: #2f63d2;
+  --f-display: "Commissioner", "Noto Sans", system-ui, sans-serif;
+  --f-body: "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111318; --surface: #191c23; --fg: #e5e8ee; --muted: #9aa1b0; --line: #2c313c;
+    --accent: #7d9dff; --chip: #232a3d; --bezel: #24252a; --bezel-edge: #34363c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111318; --surface: #191c23; --fg: #e5e8ee; --muted: #9aa1b0; --line: #2c313c;
+  --accent: #7d9dff; --chip: #232a3d; --bezel: #24252a; --bezel-edge: #34363c; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 40px; }
+header { display: grid; gap: 12px; max-width: 72ch; }
+.stripe { display: flex; gap: 4px; }
+.stripe i { width: 28px; height: 6px; border-radius: 1px; }
+.stripe i:nth-child(1) { background: var(--cpc-red); }
+.stripe i:nth-child(2) { background: var(--cpc-green); }
+.stripe i:nth-child(3) { background: var(--cpc-blue); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h2 { font-family: var(--f-display); font-weight: 700; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--f-display); font-weight: 600; font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+p { margin: 0; }
+.lede { color: var(--muted); font-size: 16px; }
+.controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; font-size: 14px; color: var(--muted); }
+.controls label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.controls input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+.tpl { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 28px; align-items: start;
+  padding-top: 32px; border-top: 1px solid var(--line); }
+@media (max-width: 880px) { .tpl { grid-template-columns: minmax(0, 1fr); } }
+
+.monitor { background: var(--bezel); border: 1px solid var(--bezel-edge); border-radius: 14px; padding: 16px 16px 10px; display: grid; gap: 8px; }
+.screen { position: relative; border-radius: 6px; overflow: hidden; background: #000; line-height: 0; }
+.screen canvas { width: 100%; max-width: 100%; aspect-ratio: 384 / 272; image-rendering: pixelated; cursor: none; display: block; }
+.screen canvas:focus-visible { outline: 3px solid #ffd84a; outline-offset: -3px; }
+body.scan .screen::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.28) 2px, rgba(0,0,0,.28) 3px); }
+.bezel-foot { display: flex; justify-content: space-between; align-items: center; color: #8b8f98; font: 600 11px/1 var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; }
+.led { display: inline-flex; align-items: center; gap: 6px; }
+.led::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #3ad16b; box-shadow: 0 0 6px #3ad16b; }
+.keys { font: 12px/1.6 var(--f-mono); color: var(--muted); }
+.keys kbd { font: 600 11px var(--f-mono); padding: 1px 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--surface); color: var(--fg); }
+
+.info { display: grid; gap: 16px; min-width: 0; }
+.tag { font: 600 12px var(--f-mono); color: var(--accent); letter-spacing: 0.06em; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 600 12px var(--f-mono); padding: 3px 8px; border-radius: 4px; background: var(--chip); color: var(--fg); }
+dl.spec { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 16px; margin: 0; font-size: 14px; }
+dl.spec dt { color: var(--muted); }
+dl.spec dd { margin: 0; font-family: var(--f-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.pc { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 520px) { .pc { grid-template-columns: 1fr; } }
+.pc ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+
+.divider { display: grid; gap: 8px; padding-top: 48px; max-width: 72ch; }
+.compare { display: grid; gap: 16px; padding-top: 32px; border-top: 1px solid var(--line); }
+.tablebox { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--f-display); font-weight: 600; font-size: 13px; color: var(--muted); }
+tbody tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.note { max-width: 72ch; color: var(--muted); font-size: 14px; }
+.note code { font-family: var(--f-mono); font-size: 13px; color: var(--fg); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="stripe" aria-hidden="true"><i></i><i></i><i></i></div>
+    <h1>V-OS · Πρότυπα interface για Amstrad CPC 6128</h1>
+    <p class="lede">Επιλογή: το Desktop (A) ως αρχική οθόνη, με τον Launcher (B) και τον Commander (C) ως εναλλακτικές όψεις του ίδιου shell. Όλα σχεδιάζονται με τους πραγματικούς περιορισμούς του CPC: overscan 384×272, παλέτα 27 χρωμάτων hardware, 4 inks σε mode 1 και 16 σε mode 0, γραμματοσειρά 8×8. Κάθε οθόνη λειτουργεί: κάνε κλικ πάνω της και δοκίμασε ποντίκι και πλήκτρα.</p>
+    <div class="controls">
+      <label for="scan"><input type="checkbox" id="scan" checked> Γραμμές σάρωσης CRT</label>
+      <span>Τα σχέδια ζωγραφίζονται pixel-pixel σε framebuffer 384×272 με τα χρώματα του Gate Array.</span>
+    </div>
+  </header>
+
+  <div id="templates"></div>
+
+  <section class="compare">
+    <h2>Σύγκριση</h2>
+    <div class="tablebox">
+      <table>
+        <thead><tr><th>Πρότυπο</th><th>Mode</th><th>Χαρακτήρες</th><th>Χρώματα στην οθόνη</th><th>Δυσκολία υλοποίησης</th><th>Ταχύτητα ανανέωσης</th><th>Ταιριάζει σε</th></tr></thead>
+        <tbody>
+          <tr><td>A · Desktop</td><td class="num">1</td><td class="num">48×34</td><td class="num">4</td><td>Μεσαία–υψηλή (παράθυρα, clipping)</td><td>Μεσαία</td><td>Γενική χρήση, διαχείριση αρχείων</td></tr>
+          <tr><td>B · Launcher</td><td class="num">0</td><td class="num">24×34</td><td class="num">16</td><td>Χαμηλή</td><td>Γρήγορη</td><td>Παιδιά, παιχνίδια, εκπαίδευση</td></tr>
+          <tr><td>C · Commander</td><td class="num">1</td><td class="num">48×34</td><td class="num">4</td><td>Χαμηλή (μόνο text cells)</td><td>Πολύ γρήγορη</td><td>Developers, πολλά αρχεία, δισκέτες</td></tr>
+          <tr><td>D · Studio</td><td class="num">1 + 0 + 1</td><td class="num">48 / 24</td><td class="num">4 + 16</td><td>Υψηλή (raster split, timing)</td><td>Γρήγορη</td><td>Το Scratch-like περιβάλλον του V-OS</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Επιλέχθηκε ο συνδυασμός A + B + C: ένα shell με κοινή μηχανή μενού, εστίασης και αρχείων, και τρεις όψεις που αλλάζουν mode και παλέτα στο VSYNC. Τα προγράμματα χρήστη ζητούν το mode που θέλουν μέσω του API. Το D μένει ως πιθανή μελλοντική όψη για τον editor blocks. Το κείμενο απαιτήσεων βρίσκεται στο <code>docs/REQUIREMENTS.md</code> του repo.</p>
+  </section>
+</div>
+
+<script>
+(() => {
+'use strict';
+// ---- Gate Array hardware palette (27 colours) ----
+const HW = ['#000000','#000080','#0000FF','#800000','#800080','#8000FF','#FF0000','#FF0080','#FF00FF',
+  '#008000','#008080','#0080FF','#808000','#808080','#8080FF','#FF8000','#FF8080','#FF80FF',
+  '#00FF00','#00FF80','#00FFFF','#80FF00','#80FF80','#80FFFF','#FFFF00','#FFFF80','#FFFFFF'];
+const RGB = HW.map(h => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]);
+const W = 384, H = 272;
+
+// ---- 8x8 font, rasterised from Press Start 2P and thresholded ----
+const GLYPH = {};
+function buildFont() {
+  const c = document.createElement('canvas'); c.width = 8; c.height = 8;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  for (let code = 32; code < 127; code++) {
+    const ch = String.fromCharCode(code);
+    g.clearRect(0, 0, 8, 8); g.fillStyle = '#000'; g.font = '8px "Press Start 2P", monospace'; g.textBaseline = 'top';
+    g.fillText(ch, 0, 0);
+    const d = g.getImageData(0, 0, 8, 8).data, bits = new Uint8Array(64);
+    for (let i = 0; i < 64; i++) bits[i] = d[i * 4 + 3] > 110 ? 1 : 0;
+    GLYPH[ch] = bits;
+  }
+}
+
+class Scr {
+  constructor() { this.fb = new Uint8Array(W * H); this.mode = 1; this.inks = [0, 26, 11, 24]; }
+  set(m) { this.mode = m.mode; this.inks = m.inks; }
+  get w() { return this.mode === 0 ? 192 : 384; }
+  lx(x) { return this.mode === 0 ? x * 2 : x; }
+  px(x, y, i) {
+    x |= 0; y |= 0; if (y < 0 || y >= H || x < 0 || x >= this.w) return;
+    const c = this.inks[i];
+    if (this.mode === 0) { const o = y * W + x * 2; this.fb[o] = c; this.fb[o + 1] = c; } else this.fb[y * W + x] = c;
+  }
+  rect(x, y, w, h, i) { for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) this.px(xx, yy, i); }
+  hline(x, y, w, i) { this.rect(x, y, w, 1, i); }
+  vline(x, y, h, i) { this.rect(x, y, 1, h, i); }
+  box(x, y, w, h, i) { this.hline(x, y, w, i); this.hline(x, y + h - 1, w, i); this.vline(x, y, h, i); this.vline(x + w - 1, y, h, i); }
+  text(x, y, s, i, bg) {
+    for (let k = 0; k < s.length; k++) {
+      const gx = x + k * 8;
+      if (bg != null) this.rect(gx, y, 8, 8, bg);
+      const b = GLYPH[s[k]] || GLYPH['?'];
+      if (!b) continue;
+      for (let p = 0; p < 64; p++) if (b[p]) this.px(gx + (p & 7), y + (p >> 3), i);
+    }
+  }
+  sprite(x, y, rows, map, sx = 1, sy = 1) {
+    rows.forEach((r, yy) => { for (let xx = 0; xx < r.length; xx++) { const i = map[r[xx]]; if (i != null) this.rect(x + xx * sx, y + yy * sy, sx, sy, i); } });
+  }
+}
+
+const CURSOR = ['k.........','kk........','kwk.......','kwwk......','kwwwk.....','kwwwwk....','kwwwwwk...','kwwwwwwk..','kwwwkkkk..','kwkwk.....','kk.kwk....','k...kwk...','.....kk...'];
+
+// ---- shared menu widgets ----
+function menuBar(S, st, menus, x, y, sty) {
+  st.menuRects = [];
+  menus.forEach((m, i) => {
+    const w = (m.t.length + 2) * 8, open = st.open === i;
+    S.rect(x, y, w, sty.h, open ? sty.hiBg : sty.bg);
+    const c = open ? sty.hiFg : sty.fg;
+    S.text(x + 8, y + sty.ty, m.t.toUpperCase(), c);
+    S.hline(x + 8, y + sty.ty + 8, 8, c);
+    st.menuRects.push({ x: S.lx(x), y, w: S.lx(x + w) - S.lx(x), h: sty.h, dx: x });
+    x += w;
+  });
+}
+function dropdown(S, st, menu, x, y, sty) {
+  const parts = menu.items.map(s => s.split('|'));
+  const L = Math.max(...parts.map(p => p[0].length)), R = Math.max(...parts.map(p => (p[1] || '').length));
+  const w = (L + R + (R ? 3 : 2)) * 8, ih = 10, h = menu.items.length * ih + 4;
+  x = Math.min(x, S.w - w - 3);
+  if (sty.shadow != null) S.rect(x + (S.mode === 0 ? 2 : 4), y + 4, w, h, sty.shadow);
+  S.rect(x, y, w, h, sty.bg); S.box(x, y, w, h, sty.border);
+  st.itemRects = [];
+  parts.forEach(([l, r], i) => {
+    const iy = y + 2 + i * ih;
+    if (l === '-') { S.hline(x + 3, iy + 4, w - 6, sty.fg); st.itemRects.push(null); return; }
+    const sel = i === st.sel, c = sel ? sty.selFg : sty.fg;
+    if (sel) S.rect(x + 2, iy, w - 4, ih, sty.selBg);
+    S.text(x + 8, iy + 1, l.toUpperCase(), c);
+    if (r) S.text(x + w - 8 - r.length * 8, iy + 1, r.toUpperCase(), c);
+    st.itemRects.push({ x: S.lx(x), y: iy, w: S.lx(x + w) - S.lx(x), h: ih });
+  });
+}
+const pad = (s, n) => (s + ' '.repeat(n)).slice(0, n);
+const rpad = (s, n) => (' '.repeat(n) + s).slice(-n);
+
+// =====================================================================
+// A · Desktop (mode 1)
+// =====================================================================
+const A = (() => {
+  const M = { mode: 1, inks: [1, 26, 0, 11], cur: [2, 1] }; // 0 dark blue, 1 white, 2 black, 3 sky
+  const files = [['PAINT','p'],['SNAKE','b'],['CLOCK','p'],['MUSIC','p'],['NOTES','d'],['CALC','p'],['BLOCKS','p'],['FONTS','d']];
+  function icon(S, x, y, kind, on) {
+    const f = on ? 3 : 1;
+    if (kind === 'p') { S.rect(x, y, 24, 18, f); S.box(x, y, 24, 18, 2); S.rect(x, y, 24, 4, 2); S.hline(x + 4, y + 8, 12, 2); S.hline(x + 4, y + 11, 16, 2); S.hline(x + 4, y + 14, 8, 2); }
+    else if (kind === 'd') { S.rect(x + 3, y, 18, 20, f); S.box(x + 3, y, 18, 20, 2); S.rect(x + 15, y, 6, 6, 2); for (let k = 0; k < 4; k++) S.hline(x + 6, y + 8 + k * 3, 11, 2); }
+    else { S.rect(x + 2, y + 2, 20, 16, f); S.box(x + 2, y + 2, 20, 16, 2); S.rect(x + 5, y + 5, 10, 4, 2); S.rect(x + 8, y + 9, 10, 4, 3); S.box(x + 8, y + 9, 10, 4, 2); S.rect(x + 5, y + 13, 6, 3, 2); }
+  }
+  function win(S, x, y, w, h, title, active) {
+    S.rect(x + 3, y + 3, w, h, 2);
+    S.rect(x, y, w, h, 1); S.box(x, y, w, h, 2);
+    if (active) for (let r = y + 2; r < y + 10; r += 2) S.hline(x + 2, r, w - 4, 2);
+    S.hline(x, y + 11, w, 2);
+    const tw = (title.length + 2) * 8, tx = x + ((w - tw) >> 1);
+    S.rect(tx, y + 1, tw, 10, 1); S.text(tx + 8, y + 2, title, 2);
+    S.rect(x + 5, y + 2, 9, 8, 1); S.box(x + 5, y + 2, 9, 8, 2);
+  }
+  function drive(S, x, y, label) {
+    S.rect(x, y, 26, 22, 1); S.box(x, y, 26, 22, 2); S.rect(x + 6, y, 13, 7, 2); S.rect(x + 14, y + 1, 3, 5, 1);
+    S.rect(x + 4, y + 11, 18, 9, 3); S.box(x + 4, y + 11, 18, 9, 2);
+    S.text(x + 13 - label.length * 4, y + 25, label, 1, 0);
+  }
+  return {
+    key: 'A', name: 'Desktop', tag: 'MODE 1 · ΠΑΡΑΘΥΡΙΚΟ',
+    desc: 'Κλασική επιφάνεια εργασίας με γραμμή μενού, επικαλυπτόμενα παράθυρα και εικονίδια. Το παράδειγμα δείχνει τα περιεχόμενα της δισκέτας A και ένα παράθυρο πληροφοριών συστήματος.',
+    chips: ['Mode 1', '384×272', '4 χρώματα', 'Overscan'],
+    spec: [['Χαρακτήρες', '48 × 34'], ['Inks', 'μπλε · λευκό · μαύρο · γαλάζιο'], ['Μνήμη οθόνης', '26.112 bytes (96 × 272)'], ['Δείκτης', 'λογισμικό, 10×13 px, XOR/mask']],
+    pros: ['Οικείο σε όποιον έχει δει GEM ή Mac', 'Χωρά πολλή πληροφορία (48 στήλες)', 'Τα παράθυρα δίνουν φυσικό χώρο σε κάθε εφαρμογή'],
+    cons: ['Επανασχεδίαση και clipping παραθύρων κοστίζουν σε μνήμη και χρόνο', 'Μόνο 4 χρώματα για όλη την οθόνη'],
+    menus: [
+      { t: 'File', items: ['Open|^O', 'New folder', 'Info|^I', '-', 'Copy|^C', 'Delete|DEL', '-', 'Quit'] },
+      { t: 'Edit', items: ['Select all|^A', 'Rename', 'Duplicate'] },
+      { t: 'View', items: ['Icons', 'List', 'Sort by name', 'Mode 0 / 1'] },
+      { t: 'Disk', items: ['Format A:', 'Copy disk', 'Check disk', 'Catalog'] },
+      { t: 'Help', items: ['Keys', 'About V-OS'] },
+    ],
+    init: () => ({ focus: 0 }),
+    modeAt: () => M,
+    nav(st, d) { const n = 8; st.focus = (st.focus + ({ left: -1, right: 1, up: -4, down: 4, tab: 1 }[d] || 0) + n) % n; },
+    enter(st) { st.msg = 'OPENING ' + files[st.focus][0] + '...'; },
+    draw(S, st) {
+      S.set(M);
+      for (let y = 12; y < H; y++) for (let x = 0; x < W; x++) S.px(x, y, (x & 3) === 0 && (y & 3) === 0 ? 3 : 0);
+      S.rect(0, 0, W, 11, 1); S.hline(0, 11, W, 2);
+      menuBar(S, st, this.menus, 4, 0, { h: 11, ty: 1, bg: 1, fg: 2, hiBg: 2, hiFg: 1 });
+      S.text(W - 8 * 10, 1, 'A:   12:41', 2);
+      drive(S, 342, 24, 'A:'); drive(S, 342, 70, 'B:');
+      // trash
+      S.rect(346, 226, 18, 3, 1); S.rect(348, 230, 14, 16, 1); S.box(348, 230, 14, 16, 2); for (let k = 0; k < 3; k++) S.vline(352 + k * 3, 233, 10, 2);
+      S.text(339, 250, 'BIN', 1, 0);
+      // info window (behind)
+      win(S, 70, 170, 248, 88, 'SYSTEM', false);
+      ['V-OS 0.1  MODE 1 OVERSCAN', 'RAM 128K  APP BANK 61K', 'MOUSE MSX  ON JOY PORT', 'DISK  A: 142K FREE'].forEach((l, i) => S.text(80, 186 + i * 16, l, 2));
+      // main window
+      const wx = 12, wy = 22, ww = 300, wh = 140;
+      win(S, wx, wy, ww, wh, 'A:\\PROGRAMS', true);
+      S.rect(wx + ww - 12, wy + 12, 11, wh - 25, 1); S.vline(wx + ww - 12, wy + 12, wh - 24, 2);
+      for (let y = wy + 13; y < wy + wh - 13; y++) for (let x = wx + ww - 11; x < wx + ww - 1; x++) if ((x + y) & 1) S.px(x, y, 2);
+      S.rect(wx + ww - 11, wy + 14, 10, 22, 1); S.box(wx + ww - 11, wy + 14, 10, 22, 2);
+      st.focusRects = [];
+      files.forEach(([n, k], i) => {
+        const cx = wx + 10 + (i % 4) * 70, cy = wy + 20 + (i >> 2) * 48, on = st.focus === i;
+        icon(S, cx + 23, cy, k, on);
+        const lx = cx + 35 - n.length * 4;
+        if (on) S.rect(lx - 2, cy + 23, n.length * 8 + 4, 11, 2);
+        S.text(lx, cy + 25, n, on ? 1 : 2);
+        st.focusRects.push({ x: cx, y: cy, w: 70, h: 36, on: () => { st.focus = i; } });
+      });
+      S.hline(wx, wy + wh - 13, ww - 12, 2);
+      S.text(wx + 8, wy + wh - 10, st.msg || '8 FILES   142K FREE', 2);
+      if (st.open >= 0) dropdown(S, st, this.menus[st.open], st.menuRects[st.open].dx, 12, { bg: 1, fg: 2, selBg: 2, selFg: 1, border: 2, shadow: 2 });
+    },
+  };
+})();
+
+// =====================================================================
+// B · Launcher (mode 0)
+// =====================================================================
+const B = (() => {
+  const M = { mode: 0, inks: [0, 1, 2, 11, 20, 26, 13, 6, 15, 24, 18, 9, 8, 5, 16, 3], cur: [0, 5] };
+  const IC = {
+    PAINT: ['......kk','.....kyk','....kyk.','...kyk..','..kkk...','.krrk...','krrk....','kkk.....'],
+    MUSIC: ['...kkkkk','...k...k','...k...k','...k...k','.kkk.kkk','kwwkkwwk','kwwkkwwk','.kk..kk.'],
+    BLOCKS: ['.kk.....','kyykkkk.','kyyyyyk.','kkkkkkk.','.kwwk...','kwwwwwk.','kwwwwwk.','kkkkkkk.'],
+    FILES: ['.kkk....','kyyykkkk','kyyyyyyk','kkkkkkkk','kyyyyyyk','kyyyyyyk','kyyyyyyk','kkkkkkkk'],
+    GAMES: ['...kk...','..krrk..','..krrk..','...kk...','...kk...','.kkkkkk.','kwwwwwrk','kkkkkkkk'],
+    DISK: ['kkkkkkkk','kwwwwkkk','kwwwwkwk','kkkkkkkk','kwwwwwwk','kwkkkkwk','kwwwwwwk','kkkkkkkk'],
+    CLOCK: ['..kkkk..','.kwwwwk.','kwwkwwwk','kwwkwwwk','kwwkkkwk','kwwwwwwk','.kwwwwk.','..kkkk..'],
+    NOTES: ['kkkkkk..','kwwwwkk.','kwkkwwkk','kwwwwwwk','kwkkkkwk','kwwwwwwk','kwkkkwwk','kkkkkkkk'],
+    SETUP: ['...kk...','.k.kk.k.','..kwwk..','kkwkkwkk','kkwkkwkk','..kwwk..','.k.kk.k.','...kk...'],
+  };
+  const MAP = { k: 0, w: 5, y: 9, r: 7 };
+  const tiles = [['PAINT', 7, 5], ['MUSIC', 12, 5], ['BLOCKS', 8, 0], ['FILES', 3, 0], ['GAMES', 10, 0], ['DISK', 6, 0], ['CLOCK', 13, 5], ['NOTES', 9, 0], ['SETUP', 2, 5]];
+  const BAY = [0, 2, 3, 1];
+  return {
+    key: 'B', name: 'Launcher', tag: 'MODE 0 · ΠΛΑΚΙΔΙΑ',
+    desc: 'Πλέγμα μεγάλων χρωματιστών πλακιδίων, ένα για κάθε εφαρμογή. Γρήγορο στην πλοήγηση με joystick, cursor keys ή ποντίκι, φτιαγμένο για παιδιά και για εκπαιδευτική χρήση.',
+    chips: ['Mode 0', '192×272', '16 χρώματα', 'Overscan'],
+    spec: [['Χαρακτήρες', '24 × 34'], ['Inks', '16 από τα 27'], ['Μνήμη οθόνης', '26.112 bytes (96 × 272)'], ['Pixel', '2:1, φαρδύ']],
+    pros: ['Πολύ χρώμα και μεγάλοι στόχοι για το ποντίκι', 'Απλή υλοποίηση: πλακίδια σε σταθερό πλέγμα', 'Ίδιο mode με τα περισσότερα παιχνίδια του CPC'],
+    cons: ['Μόνο 24 χαρακτήρες ανά γραμμή, ονόματα έως 6 γράμματα', 'Δύσκολη η διαχείριση πολλών αρχείων'],
+    menus: [
+      { t: 'Sys', items: ['About', 'Setup', 'Restart', 'Off'] },
+      { t: 'File', items: ['Open', 'Copy', 'Delete', 'Info'] },
+      { t: 'Disk', items: ['Drive A:', 'Drive B:', 'Format', 'Check'] },
+    ],
+    init: () => ({ focus: 2 }),
+    modeAt: () => M,
+    nav(st, d) { const n = 9; st.focus = (st.focus + ({ left: -1, right: 1, up: -3, down: 3, tab: 1 }[d] || 0) + n) % n; },
+    enter(st) { st.msg = 'RUN ' + tiles[st.focus][0]; },
+    draw(S, st) {
+      S.set(M);
+      for (let y = 12; y < 236; y++) { const t = (y - 12) / 224; for (let x = 0; x < 192; x++) S.px(x, y, BAY[(y & 1) * 2 + (x & 1)] < t * 4 ? 0 : 1); }
+      S.rect(0, 0, 192, 12, 0);
+      S.text(1, 2, 'V', 9);
+      menuBar(S, st, this.menus, 12, 0, { h: 12, ty: 2, bg: 0, fg: 5, hiBg: 5, hiFg: 0 });
+      S.text(176, 2, 'A:', 4);
+      st.focusRects = [];
+      tiles.forEach(([n, c, f], i) => {
+        const x = 6 + (i % 3) * 62, y = 18 + ((i / 3) | 0) * 72, on = st.focus === i;
+        S.rect(x + 2, y + 3, 56, 64, 0);
+        S.rect(x, y, 56, 64, c);
+        if (on) { S.box(x - 2, y - 2, 60, 68, 5); S.box(x - 1, y - 1, 58, 66, 5); S.box(x - 2, y - 3, 60, 70, 5); }
+        S.sprite(x + 20, y + 10, IC[n], MAP, 2, 3);
+        S.text(x + 28 - n.length * 4, y + 48, n, f);
+        st.focusRects.push({ x: x * 2, y, w: 112, h: 64, on: () => { st.focus = i; } });
+      });
+      S.rect(0, 236, 192, 36, 1); S.hline(0, 236, 192, 3);
+      S.text(4, 242, st.msg ? pad(st.msg, 22) : 'TAB NEXT  ENTER RUN', st.msg ? 9 : 5);
+      S.text(4, 258, '12:41', 4);
+      S.rect(52, 258, 80, 8, 0); S.rect(53, 259, 50, 6, 10);
+      S.text(140, 258, '142K', 5);
+      if (st.open >= 0) dropdown(S, st, this.menus[st.open], st.menuRects[st.open].dx, 12, { bg: 5, fg: 0, selBg: 2, selFg: 5, border: 0, shadow: 0 });
+    },
+  };
+})();
+
+// =====================================================================
+// C · Commander (mode 1, text cells)
+// =====================================================================
+const C = (() => {
+  const M = { mode: 1, inks: [1, 20, 24, 26], cur: [0, 3] }; // 0 blue, 1 cyan, 2 yellow, 3 white
+  const L = [['..','','UP'],['PAINT','BIN','12K'],['SNAKE','VBP','3K'],['SNAKE','BIN','2K'],['CLOCK','BIN','4K'],['MUSIC','BIN','9K'],['NOTES','TXT','1K'],['CALC','BIN','5K'],['BLOCKS','BIN','18K'],['FONTS','DAT','4K'],['GREEK','FNT','2K'],['MOUSE','DRV','1K'],['VOS','SYS','24K'],['SETUP','CFG','1K']];
+  const R = [['..','','UP'],['DEMO1','VBP','2K'],['DEMO1','BIN','1K'],['SPRITES','DAT','8K'],['TUNE','SND','3K'],['LOGO','SCR','17K'],['README','TXT','2K']];
+  const lists = [L, R], drv = ['A:\\', 'B:\\'], free = ['142K FREE', '61K FREE'];
+  const fk = ['1Help', '2Run', '3View', '4Edit', '5Copy', '6Ren', '8Del', '0Quit'];
+  function panel(S, st, p, x, y, w, h) {
+    S.box(x + 1, y + 1, w - 2, h - 2, 1); S.box(x + 3, y + 3, w - 6, h - 6, 1);
+    const t = ' ' + drv[p] + ' ', act = st.panel === p;
+    S.text(x + ((w - t.length * 8) >> 1), y, t, act ? 0 : 2, act ? 1 : 0);
+    S.text(x + 8, y + 9, 'NAME     EXT   SIZE', 2);
+    lists[p].forEach(([n, e, s], i) => {
+      const ry = y + 20 + i * 9, sel = st.row[p] === i;
+      const line = pad(n, 8) + ' ' + pad(e, 3) + ' ' + rpad(s, 6);
+      if (sel && act) S.rect(x + 5, ry - 1, w - 10, 10, 1);
+      const c = sel && act ? 0 : n === '..' ? 2 : e === 'BIN' ? 3 : 1;
+      S.text(x + 8, ry, line, c);
+      if (sel && !act) S.text(x + 8 + 19 * 8, ry, '<', 2);
+      st.focusRects.push({ x: x + 5, y: ry - 1, w: w - 10, h: 9, on: () => { st.panel = p; st.row[p] = i; } });
+    });
+    S.hline(x + 4, y + h - 26, w - 8, 1);
+    const [n, e, s] = lists[p][st.row[p]];
+    S.text(x + 8, y + h - 22, pad(n + (e ? '.' + e : ''), 12) + rpad(s, 6), 3);
+    S.text(x + 8, y + h - 12, free[p], 1);
+  }
+  return {
+    key: 'C', name: 'Commander', tag: 'MODE 1 · ΔΙΠΛΟ ΠΑΝΕΛ',
+    desc: 'Διαχειριστής αρχείων δύο παραθύρων, ένα για κάθε μονάδα δισκέτας, με γραμμή πλήκτρων λειτουργιών στο κάτω μέρος. Όλα είναι κελιά 8×8, άρα σχεδιάζεται και με απλές ρουτίνες κειμένου.',
+    chips: ['Mode 1', '384×272', '4 χρώματα', 'Text UI'],
+    spec: [['Χαρακτήρες', '48 × 34'], ['Inks', 'μπλε · κυανό · κίτρινο · λευκό'], ['Μνήμη οθόνης', '26.112 bytes (96 × 272)'], ['Ανανέωση', 'μόνο τα κελιά που άλλαξαν']],
+    pros: ['Ο γρηγορότερος σχεδιασμός, χωρίς bitmap γραφικά', 'Ιδανικός για αντιγραφή μεταξύ A: και B:', 'Όλα προσβάσιμα και χωρίς ποντίκι'],
+    cons: ['Λιγότερο φιλικός για αρχάριους', 'Ελάχιστος χώρος για γραφικά εφαρμογών'],
+    menus: [
+      { t: 'Left', items: ['Brief', 'Full', '-', 'Re-read|^R', 'Drive A:|A', 'Drive B:|B'] },
+      { t: 'File', items: ['Run|F2', 'View|F3', 'Edit|F4', 'Copy|F5', 'Rename|F6', 'Delete|F8'] },
+      { t: 'Disk', items: ['Format', 'Copy disk', 'Label', 'Check'] },
+      { t: 'Options', items: ['Mode 0 / 1', 'Colours', 'Mouse speed', 'Save setup'] },
+    ],
+    init: () => ({ panel: 0, row: [1, 1] }),
+    modeAt: () => M,
+    nav(st, d) {
+      if (d === 'tab' || d === 'left' || d === 'right') st.panel ^= 1;
+      else { const n = lists[st.panel].length; st.row[st.panel] = Math.max(0, Math.min(n - 1, st.row[st.panel] + (d === 'up' ? -1 : 1))); }
+    },
+    enter(st) { const [n, e] = lists[st.panel][st.row[st.panel]]; st.msg = 'RUN ' + n + (e ? '.' + e : ''); },
+    draw(S, st) {
+      S.set(M);
+      S.rect(0, 0, W, H, 0);
+      S.rect(0, 0, W, 10, 1);
+      menuBar(S, st, this.menus, 0, 0, { h: 10, ty: 1, bg: 1, fg: 0, hiBg: 0, hiFg: 2 });
+      S.text(W - 48, 1, '12:41', 0);
+      st.focusRects = [];
+      panel(S, st, 0, 0, 11, 192, 236); panel(S, st, 1, 192, 11, 192, 236);
+      const cmd = st.msg || 'DIR';
+      S.text(0, 250, drv[st.panel][0] + '>', 3); S.text(16, 250, cmd, 1); S.rect(16 + cmd.length * 8, 250, 8, 8, 3);
+      fk.forEach((f, i) => { const x = i * 48; S.text(x, 263, f[0], 3, 0); S.text(x + 8, 263, pad(f.slice(1), 5), 0, 1); });
+      if (st.open >= 0) dropdown(S, st, this.menus[st.open], st.menuRects[st.open].dx, 10, { bg: 1, fg: 0, selBg: 0, selFg: 2, border: 3, shadow: null });
+    },
+  };
+})();
+
+// =====================================================================
+// D · Studio (mode 1 / mode 0 / mode 1 raster split)
+// =====================================================================
+const D = (() => {
+  const M1 = { mode: 1, inks: [26, 0, 13, 2], cur: [1, 0] }; // 0 white, 1 black, 2 grey, 3 blue
+  const M0 = { mode: 0, inks: [0, 26, 13, 1, 2, 5, 8, 24, 15, 20, 18, 6, 9, 11, 25, 10], cur: [0, 1] };
+  const cats = [['MV', 4, 1], ['LK', 5, 1], ['SN', 6, 1], ['EV', 7, 0], ['CT', 8, 0], ['SE', 9, 0], ['OP', 10, 0], ['VA', 11, 1]];
+  const pal = [['MOVE 4', 'TURN 15', 'GOTO XY', 'BOUNCE'], ['SHOW', 'HIDE', 'COSTUME', 'SAY HI'], ['BEEP 2', 'NOTE C4', 'VOL 15', 'SILENT'],
+    ['WHEN GO', 'WHEN KEY', 'ON CLICK', 'SEND 1'], ['REPEAT', 'FOREVER', 'IF THEN', 'WAIT 1'], ['TOUCH?', 'KEY A?', 'MOUSE X', 'TIMER'],
+    ['A + B', 'A > B', 'RANDOM', 'AND'], ['SET X', 'CHANGE X', 'SCORE', 'LIST']];
+  function block(S, x, y, w, label, c, f, hat) {
+    if (hat) { S.rect(x + 2, y - 3, 16, 3, c); S.rect(x + 1, y - 2, 18, 2, c); }
+    S.rect(x, y, w, 11, c);
+    S.rect(x + 4, y, 4, 1, 3); // notch
+    S.rect(x + 4, y + 11, 4, 1, c); // tab
+    S.text(x + 2, y + 2, label, f);
+  }
+  return {
+    key: 'D', name: 'Studio', tag: 'MODE 1 + 0 · RASTER SPLIT',
+    desc: 'Μικτή οθόνη: μενού και γραμμή κατάστασης σε mode 1 για καθαρό κείμενο, ενώ η μεσαία ζώνη αλλάζει σε mode 0 με 16 χρώματα για τα πολύχρωμα blocks του Scratch-like περιβάλλοντος. Η αλλαγή γίνεται με interrupt σε συγκεκριμένη γραμμή σάρωσης.',
+    chips: ['Mode 1 / 0 / 1', '384 + 192 πλάτος', '4 + 16 χρώματα', 'Raster split'],
+    spec: [['Ζώνες', 'γρ. 0–11 mode 1 · 12–259 mode 0 · 260–271 mode 1'], ['Inks', 'ξεχωριστή παλέτα ανά ζώνη'], ['Μνήμη οθόνης', '26.112 bytes (96 × 272)'], ['Κόστος CPU', '2 αλλαγές mode + παλέτας ανά frame']],
+    pros: ['Ευανάγνωστα μενού και 16 χρώματα για περιεχόμενο', 'Δείχνει άμεσα το αποτέλεσμα: script, stage, μέγεθος ASM', 'Αξιοποιεί κάτι που ο CPC κάνει καλά'],
+    cons: ['Απαιτεί ακριβή συγχρονισμό με τα interrupts των 300 Hz', 'Τα μενού που πέφτουν στη ζώνη mode 0 σχεδιάζονται με φαρδιά γράμματα'],
+    menus: [
+      { t: 'File', items: ['New|^N', 'Open|^O', 'Save|^S', '-', 'Export BIN', 'Export ASM'] },
+      { t: 'Edit', items: ['Undo|^Z', 'Copy', 'Paste', 'Delete'] },
+      { t: 'Run', items: ['Run|F5', 'Step|F6', 'Stop|ESC', 'Build ASM'] },
+      { t: 'Disk', items: ['Catalog', 'Drive A:', 'Drive B:'] },
+      { t: 'Help', items: ['Blocks', 'API', 'About'] },
+    ],
+    init: () => ({ focus: 0 }),
+    modeAt: y => (y < 12 || y >= 260 ? M1 : M0),
+    nav(st, d) { const n = 8; st.focus = (st.focus + ({ left: -1, right: 1, tab: 1, up: -1, down: 1 }[d] || 0) + n) % n; },
+    enter(st) { st.msg = 'RUNNING SNAKE.VBP'; },
+    draw(S, st) {
+      // --- mode 1 top band ---
+      S.set(M1);
+      S.rect(0, 0, W, 12, 0); S.hline(0, 11, W, 1);
+      menuBar(S, st, this.menus, 0, 0, { h: 11, ty: 1, bg: 0, fg: 1, hiBg: 1, hiFg: 0 });
+      S.text(W - 8 * 10, 1, 'SNAKE.VBP', 3);
+      // --- mode 0 middle band ---
+      S.set(M0);
+      S.rect(0, 12, 192, 248, 3);
+      st.focusRects = [];
+      cats.forEach(([n, c, f], i) => {
+        const x = i * 24, on = st.focus === i;
+        S.rect(x, 13, 23, 12, on ? c : 3);
+        S.rect(x, 22, 23, 3, c);
+        S.text(x + 3, 14, n, on ? f : 1);
+        st.focusRects.push({ x: x * 2, y: 13, w: 48, h: 12, on: () => { st.focus = i; } });
+      });
+      const [, cc, cf] = cats[st.focus];
+      S.rect(0, 26, 64, 234, 2);
+      pal[st.focus].forEach((b, i) => block(S, 2, 32 + i * 18, 60, b, cc, cf, st.focus === 3 && i < 3));
+      S.text(4, 112, 'DRAG', 0); S.text(4, 122, 'OR', 0); S.text(4, 132, 'ENTER', 0);
+      // script area
+      for (let y = 30; y < 258; y += 8) for (let x = 66; x < 144; x += 4) S.px(x, y, 13);
+      let y = 38;
+      block(S, 66, y, 64, 'WHEN GO', 7, 0, true); y += 12;
+      S.rect(66, y, 70, 11, 8); S.rect(70, y, 4, 1, 3); S.text(68, y + 2, 'REPEAT 9', 0); y += 11;
+      S.rect(66, y, 4, 38, 8);
+      block(S, 70, y, 60, 'MOVE 4', 4, 1); y += 12;
+      block(S, 70, y, 60, 'TURN 15', 4, 1); y += 12;
+      block(S, 70, y, 60, 'BEEP 2', 6, 1); y += 14;
+      S.rect(66, y, 70, 6, 8); y += 7;
+      block(S, 66, y, 64, 'SAY HI', 5, 1); y += 24;
+      block(S, 66, y, 64, 'ON CLICK', 7, 0, true); y += 12;
+      block(S, 66, y, 64, 'SCORE+1', 11, 1);
+      // stage
+      S.rect(144, 26, 48, 234, 3); S.vline(144, 26, 234, 2);
+      S.rect(146, 30, 44, 60, 0); S.box(146, 30, 44, 60, 1);
+      S.rect(154, 60, 16, 3, 10); S.rect(168, 56, 3, 7, 10); S.rect(170, 56, 4, 3, 10); S.px(172, 57, 0);
+      S.rect(178, 44, 3, 3, 11);
+      S.text(146, 96, 'X  40', 1); S.text(146, 106, 'Y  22', 1); S.text(146, 116, 'DIR90', 1);
+      S.rect(146, 134, 44, 14, 10); S.box(146, 134, 44, 14, 0);
+      for (let k = 0; k < 7; k++) S.vline(150 + k, 137 + (k >> 1), 8 - (k & ~1), 0);
+      S.text(158, 137, 'RUN', 0);
+      st.focusRects.push({ x: 292, y: 134, w: 88, h: 14, on: () => { st.msg = 'RUNNING SNAKE.VBP'; } });
+      S.rect(146, 152, 44, 14, 2); S.box(146, 152, 44, 14, 0); S.rect(151, 156, 6, 6, 11); S.text(160, 155, 'STP', 0);
+      S.text(146, 180, 'SPR 1', 1); S.text(146, 190, 'VAR 2', 1);
+      // --- mode 1 bottom band ---
+      S.set(M1);
+      S.rect(0, 260, W, 12, 1);
+      S.text(4, 262, st.msg ? pad(st.msg, 30) : 'ASM 1,284 BYTES  F5 RUN  F6 STEP', 0);
+      S.text(W - 8 * 10, 262, 'A: 142K', 2);
+      if (st.open >= 0) {
+        S.set(M0);
+        dropdown(S, st, this.menus[st.open], st.menuRects[st.open].dx >> 1, 12, { bg: 1, fg: 0, selBg: 4, selFg: 1, border: 0, shadow: 0 });
+      }
+    },
+  };
+})();
+
+// =====================================================================
+// V-OS Shell · A (desktop) as home, B and C as switchable views
+// =====================================================================
+const SHELL = (() => {
+  const VIEWS = [A, B, C];
+  // view-switch entries appended to one menu of each view
+  const SWITCH = [
+    { menu: 2, items: ['-', 'Launcher|2', 'Commander|3'] },
+    { menu: 0, items: ['-', 'Desktop', 'Commander'] },
+    { menu: 3, items: ['-', 'Desktop|1', 'Launcher|2'] },
+  ];
+  const AUG = VIEWS.map((v, i) => v.menus.map((m, j) => j === SWITCH[i].menu ? { t: m.t, items: m.items.concat(SWITCH[i].items) } : m));
+  const PROXY = VIEWS.map((v, i) => Object.create(v, { menus: { value: AUG[i] } }));
+  const sub = st => st.sub[st.view];
+  const go = (st, v) => { st.view = v; st.open = -1; st.msg = ''; };
+  return {
+    key: 'S', name: 'V-OS Shell', tag: 'A + B + C · ΕΠΙΛΕΓΜΕΝΗ ΣΥΝΘΕΣΗ',
+    desc: 'Το Desktop είναι η αρχική οθόνη. Ο Launcher και ο Commander είναι εναλλακτικές όψεις του ίδιου shell, με κοινό σύστημα μενού, εστίασης και αρχείων. Δοκίμασε τα πλήκτρα 1, 2, 3 ή τα μενού View (Desktop), Sys (Launcher) και Options (Commander).',
+    chips: ['Mode 1 → 0 → 1', 'Overscan', 'Ένα shell, τρεις όψεις'],
+    spec: [['Αρχική όψη', 'A · Desktop, mode 1'], ['Γρήγορη εκκίνηση', 'B · Launcher, mode 0'], ['Αρχεία & δισκέτες', 'C · Commander, mode 1'], ['Εναλλαγή', 'αλλαγή mode + παλέτας στο VSYNC, πλήρης επανασχεδίαση']],
+    lists: [
+      ['Τι μοιράζονται', ['Μηχανή μενού και πλοήγησης', 'Κατάλογο εφαρμογών (όνομα, εικονίδιο)', 'Driver δισκέτας και ποντικιού', 'Ρυθμίσεις: ποια όψη ανοίγει στην εκκίνηση']],
+      ['Πότε χρησιμοποιείται', ['A: καθημερινή χρήση, παράθυρα εφαρμογών', 'B: παιδιά, παιχνίδια, εκκίνηση με joystick', 'C: αντιγραφή A↔B, format, πολλά αρχεία']],
+    ],
+    get menus() { return AUG[0]; },
+    init: () => ({ view: 0, sub: [A.init(), B.init(), C.init()] }),
+    modeAt(y, st) { return VIEWS[st ? st.view : 0].modeAt(y); },
+    nav(st, d) { VIEWS[st.view].nav(sub(st), d); },
+    enter(st) { const s = sub(st); VIEWS[st.view].enter(s); st.msg = s.msg; },
+    menusOf(st) { return AUG[st.view]; },
+    hotkey(st, k) { const v = '123'.indexOf(k); if (v < 0) return false; go(st, v); return true; },
+    choose(st, label) {
+      const v = ['Desktop', 'Launcher', 'Commander'].indexOf(label);
+      if (v < 0) return false; go(st, v); return true;
+    },
+    draw(S, st) {
+      const s = sub(st);
+      Object.assign(s, { open: st.open, sel: st.sel, msg: st.msg });
+      PROXY[st.view].draw(S, s);
+      st.menuRects = s.menuRects; st.itemRects = s.itemRects || []; st.focusRects = s.focusRects;
+    },
+  };
+})();
+
+// ---- card wiring ----
+const TEMPLATES = [SHELL, A, B, C, D];
+const host = document.getElementById('templates');
+const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+function card(t) {
+  const sec = document.createElement('section');
+  sec.className = 'tpl';
+  sec.id = 'tpl-' + t.key.toLowerCase();
+  sec.innerHTML = `
+    <div class="monitor">
+      <div class="screen"><canvas width="${W}" height="${H}" id="cv-${t.key}" tabindex="0" aria-label="Πρότυπο ${t.key}: ${esc(t.name)}, διαδραστική οθόνη"></canvas></div>
+      <div class="bezel-foot"><span>CTM644 · ${t.key}</span><span class="led">Power</span></div>
+    </div>
+    <div class="info">
+      <div class="tag">${t.key} · ${esc(t.tag)}</div>
+      <h2>${esc(t.name)}</h2>
+      <div class="chips">${t.chips.map(c => `<span class="chip">${esc(c)}</span>`).join('')}</div>
+      <p>${esc(t.desc)}</p>
+      <dl class="spec">${t.spec.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+      <div class="pc">${(t.lists || [['Υπέρ', t.pros], ['Κατά', t.cons]]).map(([h, l]) => `
+        <div><h3>${esc(h)}</h3><ul>${l.map(p => `<li>${esc(p)}</li>`).join('')}</ul></div>`).join('')}
+      </div>
+      <p class="keys">Κλικ στην οθόνη, μετά <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> μετακίνηση, <kbd>TAB</kbd> επόμενο, <kbd>ENTER</kbd> εκτέλεση, <kbd>ESC</kbd> μενού. ${t.hotkey ? 'Τα <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> αλλάζουν όψη (Desktop, Launcher, Commander). Τα υπογραμμισμένα γράμματα ανοίγουν το αντίστοιχο μενού.' : `Τα υπογραμμισμένα γράμματα ανοίγουν το αντίστοιχο μενού (${t.menus.map(m => m.t[0]).join(', ')}).`}</p>
+    </div>`;
+  host.appendChild(sec);
+
+  const cv = sec.querySelector('canvas'), ctx = cv.getContext('2d');
+  const img = ctx.createImageData(W, H), S = new Scr();
+  const st = Object.assign({ open: -1, sel: 0, mx: null, my: null, msg: '', menuRects: [], itemRects: [], focusRects: [] }, t.init());
+  let queued = false;
+
+  function render() {
+    queued = false;
+    t.draw(S, st);
+    if (st.mx != null) {
+      const m = t.modeAt(st.my, st); S.set(m);
+      const cx = m.mode === 0 ? st.mx >> 1 : st.mx;
+      S.sprite(cx, st.my, CURSOR, { k: m.cur[0], w: m.cur[1] });
+    }
+    const d = img.data;
+    for (let i = 0; i < W * H; i++) { const c = RGB[S.fb[i]]; d[i * 4] = c[0]; d[i * 4 + 1] = c[1]; d[i * 4 + 2] = c[2]; d[i * 4 + 3] = 255; }
+    ctx.putImageData(img, 0, 0);
+  }
+  const redraw = () => { if (!queued) { queued = true; requestAnimationFrame(render); } };
+  const hit = (list, x, y) => list.findIndex(r => r && x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
+  const pos = e => { const r = cv.getBoundingClientRect(); return [Math.floor((e.clientX - r.left) / r.width * W), Math.floor((e.clientY - r.top) / r.height * H)]; };
+  const menus = () => (t.menusOf ? t.menusOf(st) : t.menus);
+  const openMenu = i => { st.open = i; st.sel = menus()[i].items[0] === '-' ? 1 : 0; };
+  const choose = () => {
+    const it = menus()[st.open].items[st.sel];
+    st.open = -1;
+    if (!it || it === '-') return;
+    const label = it.split('|')[0];
+    if (!(t.choose && t.choose(st, label))) st.msg = label.toUpperCase() + ' OK';
+  };
+  const step = dir => { const its = menus()[st.open].items; do { st.sel = (st.sel + dir + its.length) % its.length; } while (its[st.sel] === '-'); };
+
+  cv.addEventListener('mousemove', e => {
+    [st.mx, st.my] = pos(e);
+    if (st.open >= 0) {
+      const m = hit(st.menuRects, st.mx, st.my); if (m >= 0 && m !== st.open) openMenu(m);
+      const i = hit(st.itemRects, st.mx, st.my); if (i >= 0) st.sel = i;
+    }
+    redraw();
+  });
+  cv.addEventListener('mouseleave', () => { st.mx = null; redraw(); });
+  cv.addEventListener('mousedown', e => {
+    e.preventDefault(); cv.focus();
+    const [x, y] = pos(e); st.mx = x; st.my = y;
+    if (st.open >= 0) {
+      const i = hit(st.itemRects, x, y);
+      if (i >= 0) { st.sel = i; choose(); }
+      else { const m = hit(st.menuRects, x, y); st.open = m >= 0 && m !== st.open ? m : -1; }
+    } else {
+      const m = hit(st.menuRects, x, y);
+      if (m >= 0) openMenu(m);
+      else { const f = hit(st.focusRects, x, y); if (f >= 0) { st.msg = ''; st.focusRects[f].on(); } }
+    }
+    redraw();
+  });
+  cv.addEventListener('dblclick', e => { const [x, y] = pos(e); if (st.open < 0 && hit(st.focusRects, x, y) >= 0) { t.enter(st); redraw(); } });
+  cv.addEventListener('keydown', e => {
+    const k = e.key;
+    if (k === 'Tab' && e.shiftKey) return; // leave the screen with Shift+Tab
+    const dirs = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Tab: 'tab' };
+    if (st.open >= 0) {
+      const n = menus().length;
+      if (k === 'ArrowLeft') openMenu((st.open + n - 1) % n);
+      else if (k === 'ArrowRight') openMenu((st.open + 1) % n);
+      else if (k === 'ArrowDown' || k === 'Tab') step(1);
+      else if (k === 'ArrowUp') step(-1);
+      else if (k === 'Enter') choose();
+      else if (k === 'Escape') st.open = -1;
+      else return;
+    } else {
+      const m = menus().findIndex(mm => mm.t[0].toLowerCase() === k.toLowerCase());
+      if (k === 'Escape') openMenu(0);
+      else if (t.hotkey && t.hotkey(st, k)) { /* view switched */ }
+      else if (m >= 0 && !e.ctrlKey && !e.metaKey && !e.altKey) openMenu(m);
+      else if (dirs[k]) { st.msg = ''; t.nav(st, dirs[k]); }
+      else if (k === 'Enter') t.enter(st);
+      else return;
+    }
+    e.preventDefault(); redraw();
+  });
+  return render;
+}
+
+const scan = document.getElementById('scan');
+scan.addEventListener('change', () => document.body.classList.toggle('scan', scan.checked));
+document.body.classList.toggle('scan', scan.checked);
+
+const ready = document.fonts && document.fonts.load ? Promise.race([document.fonts.load('8px "Press Start 2P"'), new Promise(r => setTimeout(r, 2500))]) : Promise.resolve();
+ready.catch(() => {}).then(() => {
+  buildFont();
+  const renders = TEMPLATES.map((t, i) => {
+    if (i === 1) {
+      const h = document.createElement('div');
+      h.className = 'divider';
+      h.innerHTML = '<h2>Τα επιμέρους πρότυπα</h2><p class="lede">Τα A, B και C είναι οι τρεις όψεις του shell παραπάνω. Το D μένει ως αναφορά για το μελλοντικό Studio.</p>';
+      host.appendChild(h);
+    }
+    return card(t);
+  });
+  renders.forEach(r => r());
+});
+})();
+</script>
