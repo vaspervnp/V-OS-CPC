@@ -8,6 +8,12 @@ MENU_HELP   ΒΟΗΘΕΙΑ
 ITEM_INFO   ΣΤΟΙΧΕΙΑ ΑΡΧΕΙΟΥ
 ITEM_COPY   ΑΝΤΙΓΡΑΦΗ ΑΠΕΝΑΝΤΙ
 ITEM_DELETE ΔΙΑΓΡΑΦΗ
+ITEM_RENAME ΜΕΤΟΝΟΜΑΣΙΑ
+ITEM_COPY_DRIVE ΑΝΤΙΓΡΑΦΗ ΣΤΗΝ ΑΛΛΗ ΜΟΝΑΔΑ
+ITEM_RUN    ΕΚΚΙΝΗΣΗ
+ITEM_DESKTOP ΕΠΙΦΑΝΕΙΑ    F1
+ITEM_LAUNCHER ΠΡΟΓΡΑΜΜΑΤΑ  F2
+ITEM_COMMANDER COMMANDER    F3
 ITEM_REFRESH ΞΑΝΑΔΙΑΒΑΣΜΑ ΔΙΣΚΩΝ
 ITEM_QUIT   ΕΞΟΔΟΣ ΣΤΗ BASIC
 ITEM_LANG   ΑΛΛΑΓΗ ΓΛΩΣΣΑΣ
@@ -16,7 +22,7 @@ ITEM_ABOUT  ΣΧΕΤΙΚΑ ΜΕ ΤΟ V-OS
 BTN_OK      ΕΝΤΑΞΕΙ
 BTN_YES     ΝΑΙ
 BTN_NO      ΟΧΙ
-KEYS_BAR    TAB ΠΑΝΕΛ  ENTER ΣΤΟΙΧΕΙΑ  ^C ΑΝΤΙΓΡ.  ^D ΔΙΑΓΡ.
+KEYS_BAR    TAB ΠΑΝΕΛ ^C ΑΝΤΙΓΡΑΦΗ ^D ΔΙΑΓΡΑΦΗ ^N ΜΕΤΟΝ.
 FILES       ΑΡΧΕΙΑ
 FREE        ΕΛΕΥΘΕΡΑ
 NO_FILES    ΚΑΝΕΝΑ ΑΡΧΕΙΟ
@@ -32,9 +38,9 @@ COPIED      ΑΝΤΙΓΡΑΦΗΚΕ ΣΤΟ
 DELETE_Q    ΔΙΑΓΡΑΦΗ
 QMARK       ;
 DLG_ABOUT_T ΣΧΕΤΙΚΑ
-DLG_ABOUT   V-OS 0.07|AMSTRAD CPC 6128|COMMANDER
+DLG_ABOUT   V-OS 0.08|AMSTRAD CPC 6128|ΕΠΙΦΑΝΕΙΑ, ΠΡΟΓΡΑΜΜΑΤΑ|ΚΑΙ COMMANDER
 DLG_KEYS_T  ΠΛΗΚΤΡΑ
-DLG_KEYS    ΠΑΝΩ ΚΑΤΩ ΕΠΙΛΟΓΗ|SHIFT    ΣΕΛΙΔΑ|TAB      ΑΛΛΟ ΠΑΝΕΛ|ENTER    ΣΤΟΙΧΕΙΑ|^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.|^R ΞΑΝΑΔΙΑΒΑΣΜΑ|CTRL+SHIFT  EN/EL
+DLG_KEYS    F1 F2 F3 ΟΨΕΙΣ|ESC ΜΕΝΟΥ|ΒΕΛΗ ΕΠΙΛΟΓΗ|TAB ΜΟΝΑΔΑ|ENTER ΣΤΟΙΧΕΙΑ|^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.|^N ΜΕΤΟΝΟΜΑΣΙΑ|CTRL+SHIFT EN/EL
 DLG_QUIT_T  ΕΞΟΔΟΣ
 DLG_QUIT    ΕΠΑΝΕΚΚΙΝΗΣΗ CPC|ΕΞΟΔΟΣ ΣΤΗ BASIC;
 DLG_FILE_T  ΑΡΧΕΙΟ
@@ -48,4 +54,12 @@ ERR_6       ΑΓΝΩΣΤΗ ΜΟΡΦΗ
 ERR_7       ΔΕΝ ΒΡΕΘΗΚΕ
 ERR_8       ΓΕΜΑΤΗ ΔΙΣΚΕΤΑ
 ERR_9       ΓΕΜΑΤΟΣ ΚΑΤΑΛΟΓΟΣ
-ERR_10      ΑΡΧΕΙΟ ΠΑΝΩ ΑΠΟ 16K
+ERR_10      ΤΟ ΟΝΟΜΑ ΥΠΑΡΧΕΙ
+ERR_11      ΜΗ ΕΓΚΥΡΟ ΟΝΟΜΑ
+RENAME_T    ΜΕΤΟΝΟΜΑΣΙΑ
+INPUT_HINT  RETURN ΕΝΤΑΞΕΙ  ESC ΑΚΥΡΟ
+DT_KEYS     TAB ΜΟΝΑΔΑ ^C ΑΝΤΙΓΡΑΦΗ ^D ΔΙΑΓΡΑΦΗ ^N ΜΕΤΟΝ.
+LN_KEYS     ΒΕΛΗ ΚΙΝΗΣΗ ENTER ΕΚΚΙΝ.
+NO_PROGRAMS ΚΑΝΕΝΑ ΠΡΟΓΡΑΜΜΑ ΣΤΟ A:
+PAGE        ΣΕΛΙΔΑ
+DLG_RUN     Η ΕΚΚΙΝΗΣΗ ΕΡΧΕΤΑΙ|ΣΤΟ M6

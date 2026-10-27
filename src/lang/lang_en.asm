@@ -8,6 +8,12 @@ msg_en_table:
         dw msg_en_item_info
         dw msg_en_item_copy
         dw msg_en_item_delete
+        dw msg_en_item_rename
+        dw msg_en_item_copy_drive
+        dw msg_en_item_run
+        dw msg_en_item_desktop
+        dw msg_en_item_launcher
+        dw msg_en_item_commander
         dw msg_en_item_refresh
         dw msg_en_item_quit
         dw msg_en_item_lang
@@ -49,6 +55,14 @@ msg_en_table:
         dw msg_en_err_8
         dw msg_en_err_9
         dw msg_en_err_10
+        dw msg_en_err_11
+        dw msg_en_rename_t
+        dw msg_en_input_hint
+        dw msg_en_dt_keys
+        dw msg_en_ln_keys
+        dw msg_en_no_programs
+        dw msg_en_page
+        dw msg_en_dlg_run
 msg_en_menu_file:              ; FILE
         db #46,#49,#4C,#45,#00
 msg_en_menu_view:              ; VIEW
@@ -62,6 +76,19 @@ msg_en_item_copy:              ; COPY TO OTHER PANEL
         db #4E,#45,#4C,#00
 msg_en_item_delete:              ; DELETE
         db #44,#45,#4C,#45,#54,#45,#00
+msg_en_item_rename:              ; RENAME
+        db #52,#45,#4E,#41,#4D,#45,#00
+msg_en_item_copy_drive:              ; COPY TO OTHER DRIVE
+        db #43,#4F,#50,#59,#20,#54,#4F,#20,#4F,#54,#48,#45,#52,#20,#44,#52
+        db #49,#56,#45,#00
+msg_en_item_run:              ; RUN
+        db #52,#55,#4E,#00
+msg_en_item_desktop:              ; DESKTOP      F1
+        db #44,#45,#53,#4B,#54,#4F,#50,#20,#20,#20,#20,#20,#20,#46,#31,#00
+msg_en_item_launcher:              ; LAUNCHER     F2
+        db #4C,#41,#55,#4E,#43,#48,#45,#52,#20,#20,#20,#20,#20,#46,#32,#00
+msg_en_item_commander:              ; COMMANDER    F3
+        db #43,#4F,#4D,#4D,#41,#4E,#44,#45,#52,#20,#20,#20,#20,#46,#33,#00
 msg_en_item_refresh:              ; READ DISCS AGAIN
         db #52,#45,#41,#44,#20,#44,#49,#53,#43,#53,#20,#41,#47,#41,#49,#4E
         db #00
@@ -79,10 +106,10 @@ msg_en_btn_yes:              ; YES
         db #59,#45,#53,#00
 msg_en_btn_no:              ; NO
         db #4E,#4F,#00
-msg_en_keys_bar:              ; TAB PANEL  ENTER INFO  ^C COPY  ^D DELETE
+msg_en_keys_bar:              ; TAB PANEL  ENTER INFO  ^C COPY  ^D DEL  ^N REN
         db #54,#41,#42,#20,#50,#41,#4E,#45,#4C,#20,#20,#45,#4E,#54,#45,#52
         db #20,#49,#4E,#46,#4F,#20,#20,#5E,#43,#20,#43,#4F,#50,#59,#20,#20
-        db #5E,#44,#20,#44,#45,#4C,#45,#54,#45,#00
+        db #5E,#44,#20,#44,#45,#4C,#20,#20,#5E,#4E,#20,#52,#45,#4E,#00
 msg_en_files:              ; FILES
         db #46,#49,#4C,#45,#53,#00
 msg_en_free:              ; FREE
@@ -113,21 +140,22 @@ msg_en_qmark:              ; ?
         db #3F,#00
 msg_en_dlg_about_t:              ; ABOUT
         db #41,#42,#4F,#55,#54,#00
-msg_en_dlg_about:              ; V-OS 0.07|AMSTRAD CPC 6128|COMMANDER
-        db #56,#2D,#4F,#53,#20,#30,#2E,#30,#37,#7C,#41,#4D,#53,#54,#52,#41
-        db #44,#20,#43,#50,#43,#20,#36,#31,#32,#38,#7C,#43,#4F,#4D,#4D,#41
-        db #4E,#44,#45,#52,#00
+msg_en_dlg_about:              ; V-OS 0.08|AMSTRAD CPC 6128|DESKTOP, LAUNCHER|AND COMMANDER
+        db #56,#2D,#4F,#53,#20,#30,#2E,#30,#38,#7C,#41,#4D,#53,#54,#52,#41
+        db #44,#20,#43,#50,#43,#20,#36,#31,#32,#38,#7C,#44,#45,#53,#4B,#54
+        db #4F,#50,#2C,#20,#4C,#41,#55,#4E,#43,#48,#45,#52,#7C,#41,#4E,#44
+        db #20,#43,#4F,#4D,#4D,#41,#4E,#44,#45,#52,#00
 msg_en_dlg_keys_t:              ; KEYS
         db #4B,#45,#59,#53,#00
-msg_en_dlg_keys:              ; UP DOWN  SELECT|SHIFT    PAGE|TAB      OTHER PANEL|ENTER    FILE INFO|^C COPY  ^D DELETE|^R READ DISCS|CTRL+SHIFT  EN/EL
-        db #55,#50,#20,#44,#4F,#57,#4E,#20,#20,#53,#45,#4C,#45,#43,#54,#7C
-        db #53,#48,#49,#46,#54,#20,#20,#20,#20,#50,#41,#47,#45,#7C,#54,#41
-        db #42,#20,#20,#20,#20,#20,#20,#4F,#54,#48,#45,#52,#20,#50,#41,#4E
-        db #45,#4C,#7C,#45,#4E,#54,#45,#52,#20,#20,#20,#20,#46,#49,#4C,#45
-        db #20,#49,#4E,#46,#4F,#7C,#5E,#43,#20,#43,#4F,#50,#59,#20,#20,#5E
-        db #44,#20,#44,#45,#4C,#45,#54,#45,#7C,#5E,#52,#20,#52,#45,#41,#44
-        db #20,#44,#49,#53,#43,#53,#7C,#43,#54,#52,#4C,#2B,#53,#48,#49,#46
-        db #54,#20,#20,#45,#4E,#2F,#45,#4C,#00
+msg_en_dlg_keys:              ; F1 F2 F3  VIEWS|ESC       MENU|ARROWS    SELECT|TAB       DRIVE|ENTER     INFO|^C COPY  ^D DELETE|^N RENAME|CTRL+SHIFT  EN/EL
+        db #46,#31,#20,#46,#32,#20,#46,#33,#20,#20,#56,#49,#45,#57,#53,#7C
+        db #45,#53,#43,#20,#20,#20,#20,#20,#20,#20,#4D,#45,#4E,#55,#7C,#41
+        db #52,#52,#4F,#57,#53,#20,#20,#20,#20,#53,#45,#4C,#45,#43,#54,#7C
+        db #54,#41,#42,#20,#20,#20,#20,#20,#20,#20,#44,#52,#49,#56,#45,#7C
+        db #45,#4E,#54,#45,#52,#20,#20,#20,#20,#20,#49,#4E,#46,#4F,#7C,#5E
+        db #43,#20,#43,#4F,#50,#59,#20,#20,#5E,#44,#20,#44,#45,#4C,#45,#54
+        db #45,#7C,#5E,#4E,#20,#52,#45,#4E,#41,#4D,#45,#7C,#43,#54,#52,#4C
+        db #2B,#53,#48,#49,#46,#54,#20,#20,#45,#4E,#2F,#45,#4C,#00
 msg_en_dlg_quit_t:              ; EXIT
         db #45,#58,#49,#54,#00
 msg_en_dlg_quit:              ; RESTART THE CPC|AND GO TO BASIC?
@@ -157,8 +185,31 @@ msg_en_err_8:              ; DISC FULL
         db #44,#49,#53,#43,#20,#46,#55,#4C,#4C,#00
 msg_en_err_9:              ; DIRECTORY FULL
         db #44,#49,#52,#45,#43,#54,#4F,#52,#59,#20,#46,#55,#4C,#4C,#00
-msg_en_err_10:              ; FILE OVER 16K
-        db #46,#49,#4C,#45,#20,#4F,#56,#45,#52,#20,#31,#36,#4B,#00
+msg_en_err_10:              ; NAME ALREADY USED
+        db #4E,#41,#4D,#45,#20,#41,#4C,#52,#45,#41,#44,#59,#20,#55,#53,#45
+        db #44,#00
+msg_en_err_11:              ; INVALID NAME
+        db #49,#4E,#56,#41,#4C,#49,#44,#20,#4E,#41,#4D,#45,#00
+msg_en_rename_t:              ; RENAME
+        db #52,#45,#4E,#41,#4D,#45,#00
+msg_en_input_hint:              ; RETURN OK  ESC CANCEL
+        db #52,#45,#54,#55,#52,#4E,#20,#4F,#4B,#20,#20,#45,#53,#43,#20,#43
+        db #41,#4E,#43,#45,#4C,#00
+msg_en_dt_keys:              ; TAB DRIVE  ENTER INFO  ^C COPY  ^D DEL  ^N REN
+        db #54,#41,#42,#20,#44,#52,#49,#56,#45,#20,#20,#45,#4E,#54,#45,#52
+        db #20,#49,#4E,#46,#4F,#20,#20,#5E,#43,#20,#43,#4F,#50,#59,#20,#20
+        db #5E,#44,#20,#44,#45,#4C,#20,#20,#5E,#4E,#20,#52,#45,#4E,#00
+msg_en_ln_keys:              ; ARROWS MOVE  ENTER RUN
+        db #41,#52,#52,#4F,#57,#53,#20,#4D,#4F,#56,#45,#20,#20,#45,#4E,#54
+        db #45,#52,#20,#52,#55,#4E,#00
+msg_en_no_programs:              ; NO PROGRAMS ON A:
+        db #4E,#4F,#20,#50,#52,#4F,#47,#52,#41,#4D,#53,#20,#4F,#4E,#20,#41
+        db #3A,#00
+msg_en_page:              ; PAGE
+        db #50,#41,#47,#45,#00
+msg_en_dlg_run:              ; PROGRAMS START|FROM M6 ON
+        db #50,#52,#4F,#47,#52,#41,#4D,#53,#20,#53,#54,#41,#52,#54,#7C,#46
+        db #52,#4F,#4D,#20,#4D,#36,#20,#4F,#4E,#00
 
 ; English keyboard map: key number -> character (0 = none)
 kbd_map:

@@ -131,43 +131,8 @@ dialog_run:
         add a,10
         djnz .height
         ld (dlg_h),a
-        ld hl,(gfx_width)           ; x = (width - w) / 2, multiple of 8
-        ld de,(dlg_w)
-        or a
-        sbc hl,de
-        srl h
-        rr l
-        ld a,l
-        and %11111000
-        ld l,a
-        ld (dlg_x),hl
-        ld a,(dlg_h)                ; y = (GFX_H - h) / 2
-        ld e,a
-        ld d,0
-        ld hl,GFX_H
-        or a
-        sbc hl,de
-        srl h
-        rr l
-        ld (dlg_y),hl
-
-        ld hl,(dlg_x)               ; save what the dialog covers
-        ld de,(dlg_y)
-        ld a,(ui_shadow_x)
-        ld c,a
-        ld b,0
-        push hl
-        ld hl,(dlg_w)
-        add hl,bc
-        ld b,h
-        ld c,l
-        pop hl
-        ld a,(ui_shadow_y)
-        push hl
-        ld hl,dlg_h
-        add a,(hl)
-        pop hl
-        call ui_save
+        call ui_centre              ; save what the dialog covers
+        call ui_save_window
         call dlg_draw
 
         ld hl,dlg_wlist             ; buttons take the focus
@@ -201,57 +166,9 @@ dialog_run:
 
 ; frame, title bar, text lines; also places the buttons
 dlg_draw:
-        ld a,UIP_SHADOW
-        ld (ui_fill_pen),a
-        ld hl,(dlg_x)
-        ld a,(ui_shadow_x)
-        ld e,a
-        ld d,0
-        add hl,de
-        ld de,(dlg_y)
-        ld a,(ui_shadow_y)
-        add a,e
-        ld e,a
-        ld a,0
-        adc a,d
-        ld d,a
-        ld bc,(dlg_w)
-        ld a,(dlg_h)
-        call ui_rect
-        ld a,UIP_BAR
-        ld (ui_fill_pen),a
-        ld hl,(dlg_x)
-        ld de,(dlg_y)
-        ld bc,(dlg_w)
-        ld a,(dlg_h)
-        call ui_rect
-        ld a,UIP_FRAME
-        ld (ui_fill_pen),a
-        ld hl,(dlg_x)
-        ld de,(dlg_y)
-        ld bc,(dlg_w)
-        ld a,(dlg_h)
-        call ui_frame
-        ld a,UIP_SEL                ; title bar
-        ld (ui_fill_pen),a
-        ld hl,(dlg_x)
-        ld de,(dlg_y)
-        ld bc,(dlg_w)
-        ld a,12
-        call ui_rect
-        ld a,UIP_SELTEXT
-        ld c,UIP_SEL
-        call ui_colours
         ld hl,(dlg_def)
         ld a,(hl)
-        call ui_msg                 ; centred
-        push hl
-        call dlg_centre
-        ld de,(dlg_y)
-        inc de
-        inc de
-        pop bc
-        call ui_text_line
+        call ui_window
         ld a,UIP_TEXT               ; text lines
         ld c,UIP_BAR
         call ui_colours
@@ -277,7 +194,7 @@ dlg_draw:
         jr .text
 .buttons:
         ld a,(dlg_bchars)           ; first button x
-        call dlg_centre
+        call ui_centre_text
         ld (dlg_bx),hl
         ld hl,(dlg_y)               ; y = bottom - 6 - button height
         ld a,(dlg_h)
@@ -309,26 +226,6 @@ dlg_draw:
         ld de,8
         add ix,de
         djnz .place
-        ret
-
-; A = characters -> HL = x that centres them in the dialog (multiple of 8)
-dlg_centre:
-        ld l,a
-        ld h,0
-        add hl,hl
-        add hl,hl
-        add hl,hl
-        ex de,hl
-        ld hl,(dlg_w)
-        or a
-        sbc hl,de
-        srl h
-        rr l
-        ld a,l
-        and %11111000
-        ld l,a
-        ld de,(dlg_x)
-        add hl,de
         ret
 
 ; ev_cur -> A = button + 1 when one is chosen, else 0
@@ -403,10 +300,10 @@ dlg_bmsgs:          dw 0
 dlg_chars:          db 0
 dlg_bchars:         db 0
 dlg_lines:          db 0
-dlg_x:              dw 0
-dlg_y:              dw 0
-dlg_w:              dw 0
-dlg_h:              db 0
+dlg_x               equ uw_x
+dlg_y               equ uw_y
+dlg_w               equ uw_w
+dlg_h               equ uw_h
 dlg_bx:             dw 0
 dlg_by:             dw 0
 dlg_line_y:         dw 0

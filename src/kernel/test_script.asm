@@ -10,24 +10,22 @@
 ; types "\(" before taking a screenshot). Otherwise their events would
 ; keep the pointer hidden at the moment of the shot.
 ;
-; M5 Commander, Greek UI. Drive A: VOS.BIN, GREEK.LNG; drive B:
-; HELLO.TXT (make: build/vos_b.dsk). Expected result:
-;   frame  200  DOWN         -> A: GREEK.LNG selected
-;   frame  260  RETURN       -> info: size, binary, load #8000, "VLNG..."
-;   frame  450  RETURN       -> closed
-;   frame  500  CONTROL+C    -> GREEK.LNG copied to B:, B: panel shows it
-;   frame  700  RETURN       -> closed
-;   frame  750  TAB          -> B: active, HELLO.TXT selected
-;   frame  800  CONTROL+C    -> HELLO.TXT (no header) copied to A:
-;   frame 1000  RETURN       -> closed
-;   frame 1050  CONTROL+D    -> "DELETE HELLO.TXT?"
-;   frame 1150  RETURN       -> YES: B: keeps GREEK.LNG only
-;   frame 1300  TAB          -> A: active
-;   frame 1350  DOWN         -> A: HELLO.TXT
-;   frame 1400  RETURN       -> info: text, "HELLO FROM DRIVE B"
-;   frame 1600  RETURN       -> closed
-;   frame 1650  CONTROL+L    -> English UI
-;   frame 1750  CONTROL+Q, 1850 RETURN -> restart into BASIC, where the
+; M5 shell, Greek UI. Drive A: VOS.BIN, GREEK.LNG and the three view
+; overlays; drive B: HELLO.TXT and BIG.BIN, 20000 bytes (make:
+; build/vos_b.dsk). Expected result:
+;   frame  300  RIGHT        -> Desktop, A: GREEK.LNG selected
+;   frame  350  RETURN       -> its info; 500 RETURN closes it
+;   frame  550  TAB          -> the window shows B:
+;   frame  700  RIGHT        -> BIG.BIN
+;   frame  750  CONTROL+C    -> copied to A:, 20K in two passes
+;   frame 2600  RETURN       -> closed
+;   frame 2700  F3           -> Commander: A: has BIG.BIN
+;   frame 2900  TAB          -> B: panel, HELLO.TXT
+;   frame 2950  CONTROL+N    -> rename: "HELLO.TXT"
+;   frame 3050  DEL x3, then D O C, 3250 RETURN -> HELLO.DOC
+;   frame 3450  F2           -> Launcher, mode 0: BIG.BIN's tile
+;   frame 3650  F1           -> Desktop again (A:)
+;   frame 3850  CONTROL+Q, 3950 RETURN -> restart into BASIC, where the
 ;               harness checks both drives with AMSDOS
 ; =====================================================================
 
@@ -83,26 +81,28 @@ test_inject:
 
 ; dw first frame, frame after the last; db matrix line, bits
 test_keys:
-        dw  200,  204 : db 0, %00000100   ; DOWN
-        dw  260,  264 : db 2, %00000100   ; RETURN
-        dw  450,  454 : db 2, %00000100   ; RETURN
-        dw  500,  512 : db 2, %10000000   ; CONTROL held ...
-        dw  503,  507 : db 7, %01000000   ; ... C
-        dw  700,  704 : db 2, %00000100   ; RETURN
-        dw  750,  754 : db 8, %00010000   ; TAB
-        dw  800,  812 : db 2, %10000000   ; CONTROL held ...
-        dw  803,  807 : db 7, %01000000   ; ... C
-        dw 1000, 1004 : db 2, %00000100   ; RETURN
-        dw 1050, 1062 : db 2, %10000000   ; CONTROL held ...
-        dw 1053, 1057 : db 7, %00100000   ; ... D
-        dw 1150, 1154 : db 2, %00000100   ; RETURN
-        dw 1300, 1304 : db 8, %00010000   ; TAB
-        dw 1350, 1354 : db 0, %00000100   ; DOWN
-        dw 1400, 1404 : db 2, %00000100   ; RETURN
-        dw 1600, 1604 : db 2, %00000100   ; RETURN
-        dw 1650, 1662 : db 2, %10000000   ; CONTROL held ...
-        dw 1653, 1657 : db 4, %00010000   ; ... L
-        dw 1750, 1762 : db 2, %10000000   ; CONTROL held ...
-        dw 1753, 1757 : db 8, %00001000   ; ... Q
-        dw 1850, 1854 : db 2, %00000100   ; RETURN
+        dw  300,  304 : db 0, %00000010   ; RIGHT
+        dw  350,  354 : db 2, %00000100   ; RETURN
+        dw  500,  504 : db 2, %00000100   ; RETURN
+        dw  550,  554 : db 8, %00010000   ; TAB
+        dw  700,  704 : db 0, %00000010   ; RIGHT
+        dw  750,  762 : db 2, %10000000   ; CONTROL held ...
+        dw  753,  757 : db 7, %01000000   ; ... C
+        dw 2600, 2604 : db 2, %00000100   ; RETURN
+        dw 2700, 2704 : db 0, %00100000   ; F3
+        dw 2900, 2904 : db 8, %00010000   ; TAB
+        dw 2950, 2962 : db 2, %10000000   ; CONTROL held ...
+        dw 2953, 2957 : db 5, %01000000   ; ... N
+        dw 3050, 3054 : db 9, %10000000   ; DEL
+        dw 3070, 3074 : db 9, %10000000   ; DEL
+        dw 3090, 3094 : db 9, %10000000   ; DEL
+        dw 3110, 3114 : db 7, %00100000   ; D
+        dw 3130, 3134 : db 4, %00000100   ; O
+        dw 3150, 3154 : db 7, %01000000   ; C
+        dw 3250, 3254 : db 2, %00000100   ; RETURN
+        dw 3450, 3454 : db 1, %01000000   ; F2
+        dw 3650, 3654 : db 1, %00100000   ; F1
+        dw 3850, 3862 : db 2, %10000000   ; CONTROL held ...
+        dw 3853, 3857 : db 8, %00001000   ; ... Q
+        dw 3950, 3954 : db 2, %00000100   ; RETURN
         dw #FFFF

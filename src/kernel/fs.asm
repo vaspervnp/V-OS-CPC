@@ -24,6 +24,10 @@
 ; fs_save       HL = name, DE = source, A = its RAM configuration,
 ;               BC = length, fs_hdr_type/load/exec set by the caller
 ;               (type #FF: no header, as fs_load reports text files)
+; fs_copy       HL = name, B = source drive, C = target drive: the
+;               whole file, sector by sector, header and all, 16K at
+;               a time through bank 4; any size
+; fs_rename     HL = name, DE = new name, on the drive selected
 ; fs_delete     HL = name
 ; fs_free_k     -> A = free kilobytes (after a mount)
 ; All return carry set and A = FDC_ERR_* or FS_ERR_* on failure.
@@ -36,7 +40,8 @@ FS_ERR_FORMAT   equ 6
 FS_ERR_NOT_FOUND equ 7
 FS_ERR_FULL     equ 8
 FS_ERR_DIR_FULL equ 9
-FS_ERR_TOO_BIG  equ 10              ; for callers: over FS_LOAD_MAX
+FS_ERR_EXISTS   equ 10              ; rename: the new name is taken
+FS_ERR_BAD_NAME equ 11              ; for callers: not an AMSDOS name
 
 FS_ENTRIES      equ 64
 FS_FREE_ENTRY   equ #E5
@@ -625,8 +630,7 @@ fl_out:
         ld de,(fl_ptr)
         ldir
         ld (fl_ptr),de
-        ld a,RAM_BASE_CFG
-        jp ram_select
+        jp ram_home
 
 ; HL = destination in fs_buf, BC = bytes: zero them, then copy up to
 ; fl_left bytes from fl_ptr in RAM configuration fl_cfg
@@ -665,8 +669,7 @@ fl_in:
         ld hl,(fl_ptr)
         ldir
         ld (fl_ptr),hl
-        ld a,RAM_BASE_CFG
-        jp ram_select
+        jp ram_home
 
 ; Z if fs_buf starts with a valid AMSDOS header
 fs_header_ok:
@@ -710,6 +713,190 @@ fs_delete:
         call fs_write_dir
         ret c
         jp fs_build_map
+
+; ---------------------------------------------------------------------
+; fs_rename
+; ---------------------------------------------------------------------
+fs_rename:
+        ld (fr_new),de
+        push hl
+        ex de,hl
+        call fs_set_name            ; the new name must be free
+        call fs_mount
+        pop hl
+        ret c
+        push hl
+        xor a
+        call fs_find
+        pop hl
+        ld a,FS_ERR_EXISTS
+        ccf
+        ret c
+        call fs_set_name
+        xor a
+        ld (fs_count),a
+.entry:
+        ld (fs_e),a
+        call fs_entry
+        call fs_match
+        jr nz,.next
+        inc hl                      ; every extent gets the new name
+        ex de,hl
+        ld hl,(fr_new)
+        ld bc,11
+        ldir
+        ld hl,fs_count
+        inc (hl)
+.next:
+        ld a,(fs_e)
+        inc a
+        cp FS_ENTRIES
+        jr c,.entry
+        ld a,(fs_count)
+        or a
+        ld a,FS_ERR_NOT_FOUND
+        scf
+        ret z
+        jp fs_write_dir
+
+; ---------------------------------------------------------------------
+; fs_copy
+; ---------------------------------------------------------------------
+fs_copy:
+        ld (fc_drives),bc           ; C = target, B = source
+        call fs_set_name            ; (destroys BC)
+        ld a,(fc_drives + 1)
+        call fdc_select
+        call fs_mount
+        ret c
+        call fs_collect             ; the source's blocks and records
+        ret c
+        ld hl,(fs_records)
+        ld (fc_records),hl
+        ld a,(fs_nblocks)
+        ld (fc_nblocks),a
+        ld hl,fs_blist
+        ld de,fc_blist
+        ld bc,180
+        ldir
+        ld hl,(fs_first_id)         ; and fs_reserved
+        ld (fc_src_fmt),hl
+        ld a,(fc_drives)            ; target: room for as many blocks
+        call fdc_select
+        call fs_mount
+        ret c
+        call fs_unlink              ; replace a file of the same name
+        call fs_build_map
+        ld a,(fc_nblocks)
+        ld (fs_nblocks),a
+        call fs_alloc
+        ret c
+        ld hl,(fs_first_id)
+        ld (fc_dst_fmt),hl
+        ld hl,(fc_records)          ; sectors with data
+        ld de,3
+        add hl,de
+        srl h
+        rr l
+        srl h
+        rr l
+        ld (fc_left),hl
+        ld hl,0
+        ld (fc_done),hl
+.chunk:
+        ld hl,(fc_left)
+        ld a,h
+        or l
+        jr z,.entries
+        ld de,32                    ; up to 16K at a time
+        or a
+        sbc hl,de
+        ld a,32
+        jr nc,.size
+        add hl,de
+        ld a,l
+.size:
+        ld (fc_chunk),a
+        ld a,(fc_drives + 1)        ; read from the source
+        call fdc_select
+        ld hl,(fc_src_fmt)
+        ld (fs_first_id),hl
+        ld hl,fc_blist
+        ld a,FDC_CMD_READ
+        call .pass
+        ret c
+        ld a,(fc_drives)            ; write to the target
+        call fdc_select
+        ld hl,(fc_dst_fmt)
+        ld (fs_first_id),hl
+        ld hl,fs_blist
+        ld a,FDC_CMD_WRITE
+        call .pass
+        ret c
+        ld a,(fc_chunk)
+        ld e,a
+        ld d,0
+        ld hl,(fc_done)
+        add hl,de
+        ld (fc_done),hl
+        ld hl,(fc_left)
+        or a
+        sbc hl,de
+        ld (fc_left),hl
+        jr .chunk
+.entries:
+        ld hl,(fc_records)          ; fs_nblocks, fs_blist, fs_extents
+        ld (fs_records),hl          ; are the target's, from fs_alloc
+        jp fs_write_entries
+; HL = block list, A = FDC command: fc_chunk sectors from fc_done on,
+; to or from bank 4
+.pass:
+        ld (fc_list),hl
+        ld (fc_cmd),a
+        xor a
+        ld (fc_j),a
+.sector:
+        ld a,(fc_j)
+        ld hl,fc_chunk
+        cp (hl)
+        ret nc
+        ld hl,(fc_done)             ; sector of the file
+        ld e,a
+        ld d,0
+        add hl,de
+        ld a,l
+        and 1
+        ld c,a
+        srl h
+        rr l
+        ld de,(fc_list)             ; its block
+        add hl,de
+        ld l,(hl)
+        ld h,0
+        add hl,hl
+        ld b,0
+        add hl,bc
+        call fs_sector_pos          ; D = track, E = sector ID
+        ld a,(fc_j)
+        add a,a
+        add a,BUF_ADDR >> 8
+        ld h,a
+        ld l,0
+        push hl
+        push de
+        ld a,BUF_CFG
+        call ram_select
+        pop de
+        pop hl
+        ld a,(fc_cmd)
+        call fdc_rw
+        push af
+        call ram_home
+        pop af
+        ret c
+        ld hl,fc_j
+        inc (hl)
+        jr .sector
 
 ; free every entry of fs_name in the cache -> A = entries freed
 fs_unlink:
@@ -777,6 +964,14 @@ fs_save:
         inc a
 .blocks:
         ld (fs_nblocks),a
+        call fs_alloc
+        ret c
+        jr fs_save_data
+
+; fs_nblocks -> room checked, blocks allocated in the map, listed in
+; fs_blist. Carry and A = FS_ERR_* if the disc or directory is full.
+fs_alloc:
+        ld a,(fs_nblocks)
         add a,15                    ; entries = (blocks + 15) / 16
         srl a
         srl a
@@ -832,6 +1027,10 @@ fs_save:
         jr .alloc
 .allocated:
         pop af
+        or a
+        ret
+
+fs_save_data:
         ; data: the header and the first 384 bytes, then 512 at a time
         xor a
         ld (fl_sector),a
@@ -852,11 +1051,14 @@ fs_save:
         ld a,(fs_nblocks)
         add a,a
         cp b
-        jr z,.directory
+        jr z,fs_write_entries
         ld hl,fs_buf
         ld bc,512
         jr .sector
-.directory:
+
+; directory entries for fs_name: fs_records, fs_nblocks, fs_blist,
+; fs_extents; then the directory goes to the disc
+fs_write_entries:
         xor a
         ld (fs_ex),a
         ld (fs_bi),a
@@ -1000,6 +1202,19 @@ fs_first_id:    db #C1
 fs_reserved:    db 0
 fs_blocks:      db 180
 fs_name:        ds 11
+fr_new:         dw 0
+fc_drives:      dw 0                ; target, source
+fc_records:     dw 0
+fc_nblocks:     db 0
+fc_src_fmt:     dw 0                ; fs_first_id, fs_reserved
+fc_dst_fmt:     dw 0
+fc_left:        dw 0                ; sectors still to copy
+fc_done:        dw 0
+fc_chunk:       db 0
+fc_j:           db 0
+fc_cmd:         db 0
+fc_list:        dw 0
+fc_blist        equ GAP6 + 448      ; the source's blocks, 180 bytes
 fs_s:           db 0
 fs_e:           db 0
 fs_p:           dw 0

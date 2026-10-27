@@ -61,20 +61,24 @@ shot: $(DSK)
 TEST_DSK := $(BUILD)/vos_test.dsk
 TEST_DSK_B := $(BUILD)/vos_b.dsk
 
-# Drive B for the tests: one text file without a header.
+# Drive B for the tests: a text file without a header, and a 20000-byte
+# binary (byte i = (i + i / 256) & 255), bigger than one 16K bank.
 $(TEST_DSK_B): tools/dsk_ext.py
 	@mkdir -p $(BUILD)
 	@rm -f $@
 	printf 'HELLO FROM DRIVE B\r\nSECOND LINE\r\n\032' > $(BUILD)/HELLO.TXT
+	$(PYTHON) -I -c "open('$(BUILD)/BIG.BIN','wb').write(bytes((i + (i >> 8)) & 255 for i in range(20000)))"
 	$(IDSK) $@ -n > /dev/null
 	$(IDSK) $@ -i $(BUILD)/HELLO.TXT -t 0 > /dev/null
+	$(IDSK) $@ -i $(BUILD)/BIG.BIN -t 1 -c 4000 -e 4000 > /dev/null
 	$(PYTHON) -I tools/dsk_ext.py $@
 
-# Fresh copies for each run: the emulator writes to the images.
+# Fresh copies for each run: the emulator writes to the images. $(1) is
+# the script and its delay; shots go to build/shots/<delay>.
 define run_test
 	cp $(TEST_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
-	snap run --shell caprice32.launcher -c "VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath $(1))"; \
-	ls -t $(BUILD)/shots/*.png | head -1
+	snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$(2) VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath $(1)) $(2)"; \
+	ls $(BUILD)/shots/$(2)/*.png
 endef
 
 $(TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
@@ -84,24 +88,27 @@ $(TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
 	$(call add_packs,$(TEST_DSK))
 	$(PYTHON) -I tools/dsk_ext.py $(TEST_DSK)
 
-# Shots along the script (src/kernel/test_script.asm): info, copy to B:,
-# copy to A: and delete, info of the text file, English menus.
+# Shots along the script (src/kernel/test_script.asm): Desktop and file
+# info, copy of the 20K file to A:, Commander and rename, Launcher,
+# Desktop again. One run per shot: runs are short, shots are per second.
+TEST_SHOTS := 160 300 600 750 850 900 950 1000
 test-input: $(TEST_DSK) $(TEST_DSK_B)
-	for d in 120 200 280 350 420 480; do \
-	  $(call run_test,tools/cap32_shot.sh $$d); sleep 1; \
+	rm -rf $(BUILD)/shots
+	for d in $(TEST_SHOTS); do \
+	  $(call run_test,tools/cap32_shot.sh,$$d); \
 	done
 
 # Caprice32 keeps disc writes in memory only, so V-OS's writes are
 # checked in the same run: the script ends by restarting into BASIC.
 test-amsdos: $(TEST_DSK) $(TEST_DSK_B)
-	$(call run_test,tools/cap32_amsdos_check.sh)
+	$(call run_test,tools/cap32_amsdos_check.sh,1150)
 
-# The script with drive A: in SYSTEM format.
+# The script with drive A: in SYSTEM format, up to the copy to A:.
 test-system: $(TEST_DSK) $(TEST_DSK_B)
 	$(PYTHON) -I tools/dsk_system.py $(TEST_DSK) $(BUILD)/vos_sys.dsk
 	cp $(BUILD)/vos_sys.dsk $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
-	snap run --shell caprice32.launcher -c "VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) 350"; \
-	ls -t $(BUILD)/shots/*.png | head -1
+	snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/system VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) 820"; \
+	ls $(BUILD)/shots/system/*.png
 
 clean:
 	rm -rf $(BUILD)

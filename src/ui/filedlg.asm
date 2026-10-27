@@ -38,42 +38,15 @@ file_pick:
         ld (fp_h),a
         ld hl,FP_CHARS * 8
         ld (fp_w),hl
-        ld hl,(gfx_width)           ; centred, x a multiple of 8
-        ld de,FP_CHARS * 8
-        or a
-        sbc hl,de
-        srl h
-        rr l
-        ld a,l
-        and %11111000
-        ld l,a
-        ld (fp_x),hl
-        ld a,(fp_h)
-        ld e,a
-        ld d,0
-        ld hl,GFX_H
-        or a
-        sbc hl,de
-        srl h
-        rr l
-        ld (fp_y),hl
+        call ui_centre
+        ld hl,(fp_y)
         ld de,16                    ; first row
         add hl,de
         ld (fp_rows_y),hl
 
-        ld hl,(fp_x)                ; save what the box covers
-        ld de,(fp_y)
-        ld a,(ui_shadow_x)
-        add a,FP_CHARS * 8
-        ld c,a
-        ld b,0
-        ld a,(ui_shadow_y)
-        push hl
-        ld hl,fp_h
-        add a,(hl)
-        pop hl
-        call ui_save
-        call fp_frame
+        call ui_save_window
+        ld a,(fp_title)
+        call ui_window
         call fp_draw_rows
         call fp_draw_free
 
@@ -99,74 +72,6 @@ file_pick:
         ccf                         ; carry if cancelled
         ld a,(fp_sel)
         ret
-
-; shadow, box, frame and title bar
-fp_frame:
-        ld a,UIP_SHADOW
-        ld (ui_fill_pen),a
-        ld hl,(fp_x)
-        ld a,(ui_shadow_x)
-        ld e,a
-        ld d,0
-        add hl,de
-        ld de,(fp_y)
-        ld a,(ui_shadow_y)
-        add a,e
-        ld e,a
-        ld a,0
-        adc a,d
-        ld d,a
-        ld bc,(fp_w)
-        ld a,(fp_h)
-        call ui_rect
-        ld a,UIP_BAR
-        ld (ui_fill_pen),a
-        ld hl,(fp_x)
-        ld de,(fp_y)
-        ld bc,(fp_w)
-        ld a,(fp_h)
-        call ui_rect
-        ld a,UIP_FRAME
-        ld (ui_fill_pen),a
-        ld hl,(fp_x)
-        ld de,(fp_y)
-        ld bc,(fp_w)
-        ld a,(fp_h)
-        call ui_frame
-        ld a,UIP_SEL
-        ld (ui_fill_pen),a
-        ld hl,(fp_x)
-        ld de,(fp_y)
-        ld bc,(fp_w)
-        ld a,12
-        call ui_rect
-        ld a,UIP_SELTEXT
-        ld c,UIP_SEL
-        call ui_colours
-        ld a,(fp_title)
-        call ui_msg
-        push hl
-        ld l,a                      ; x = box x + (width - length*8) / 2
-        ld h,0
-        add hl,hl
-        add hl,hl
-        add hl,hl
-        ex de,hl
-        ld hl,(fp_w)
-        or a
-        sbc hl,de
-        srl h
-        rr l
-        ld a,l
-        and %11111000
-        ld l,a
-        ld de,(fp_x)
-        add hl,de
-        ld de,(fp_y)
-        inc de
-        inc de
-        pop bc
-        jp ui_text_line
 
 ; all visible rows
 fp_draw_rows:
@@ -408,10 +313,10 @@ fp_r:           db 0
 fp_i:           db 0
 fp_result:      db 0
 fp_saved_keys:  db 0
-fp_x:           dw 0
-fp_y:           dw 0
-fp_w:           dw 0
-fp_h:           db 0
+fp_x            equ uw_x
+fp_y            equ uw_y
+fp_w            equ uw_w
+fp_h            equ uw_h
 fp_rows_y:      dw 0
 fp_ry:          dw 0
 fp_colours:     dw 0                ; background, foreground

@@ -33,7 +33,7 @@ import os
 import re
 import sys
 
-MAX_PACK = 16384
+MAX_PACK = 8192                     # LANG_MAX in src/include/memmap.inc
 DEAD_FIRST = 1
 DEAD_LAST = 7
 

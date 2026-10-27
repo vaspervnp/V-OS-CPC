@@ -298,8 +298,124 @@ ui_copy_area:
         pop af
         dec a
         jr nz,.row
-        ld a,RAM_BASE_CFG
-        jp ram_select
+        jp ram_home
+
+; ---------------------------------------------------------------------
+; Windows for dialogs: uw_w (dw) and uw_h (db) set by the caller.
+; ui_centre       uw_x, uw_y centre the window (x a multiple of 8)
+; ui_save_window  save what the window and its shadow cover
+; ui_window       A = title MSG_*: shadow, box, frame, title bar
+; Destroy: all except IX
+; ---------------------------------------------------------------------
+ui_centre:
+        ld hl,(gfx_width)
+        ld de,(uw_w)
+        or a
+        sbc hl,de
+        srl h
+        rr l
+        ld a,l
+        and %11111000
+        ld l,a
+        ld (uw_x),hl
+        ld a,(uw_h)
+        ld e,a
+        ld d,0
+        ld hl,GFX_H
+        or a
+        sbc hl,de
+        srl h
+        rr l
+        ld (uw_y),hl
+        ret
+
+ui_save_window:
+        ld a,(ui_shadow_x)
+        ld c,a
+        ld b,0
+        ld hl,(uw_w)
+        add hl,bc
+        ld b,h
+        ld c,l
+        ld a,(ui_shadow_y)
+        ld hl,uw_h
+        add a,(hl)
+        ld hl,(uw_x)
+        ld de,(uw_y)
+        jp ui_save
+
+ui_window:
+        ld (uw_title),a
+        ld a,UIP_SHADOW
+        ld (ui_fill_pen),a
+        ld hl,(uw_x)
+        ld a,(ui_shadow_x)
+        ld e,a
+        ld d,0
+        add hl,de
+        ld de,(uw_y)
+        ld a,(ui_shadow_y)
+        add a,e
+        ld e,a
+        ld a,0
+        adc a,d
+        ld d,a
+        ld bc,(uw_w)
+        ld a,(uw_h)
+        call ui_rect
+        ld a,UIP_BAR
+        call .rect
+        ld a,UIP_FRAME
+        ld (ui_fill_pen),a
+        call .geometry
+        call ui_frame
+        ld a,UIP_SEL                ; title bar
+        ld (ui_fill_pen),a
+        call .geometry
+        ld a,12
+        call ui_rect
+        ld a,UIP_SELTEXT
+        ld c,UIP_SEL
+        call ui_colours
+        ld a,(uw_title)
+        call ui_msg
+        push hl
+        call ui_centre_text
+        ld de,(uw_y)
+        inc de
+        inc de
+        pop bc
+        jp ui_text_line
+.rect:
+        ld (ui_fill_pen),a
+        call .geometry
+        jp ui_rect
+.geometry:
+        ld hl,(uw_x)
+        ld de,(uw_y)
+        ld bc,(uw_w)
+        ld a,(uw_h)
+        ret
+
+; A = characters -> HL = x that centres them in the window (multiple of 8)
+ui_centre_text:
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ex de,hl
+        ld hl,(uw_w)
+        or a
+        sbc hl,de
+        srl h
+        rr l
+        ld a,l
+        and %11111000
+        ld l,a
+        ld de,(uw_x)
+        add hl,de
+        ret
 
 ; ---------------------------------------------------------------------
 ; ui_set_bar - HL = menu bar. ui_draw_bar draws it.
@@ -1376,6 +1492,11 @@ ui_pens_mode0:  db 2,   1,  0,   0,  1,    0,     0,    1,       8
 
 ; ---- state ----------------------------------------------------------
 ui_pens:        ds UI_PEN_COUNT
+uw_x:           dw 0                ; window of the open dialog
+uw_y:           dw 0
+uw_w:           dw 0
+uw_h:           db 0
+uw_title:       db 0
 ui_shadow_x:    db 4
 ui_shadow_y:    db 4
 ui_fill_pen:    db 0

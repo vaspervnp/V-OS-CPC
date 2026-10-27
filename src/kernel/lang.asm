@@ -89,8 +89,7 @@ lang_init:
         ld (lang_loaded),a
         ld (lang_ui),a              ; the pack's language is the default
 .bad:
-        ld a,RAM_BASE_CFG
-        jp ram_select
+        jp ram_home
 ; HL = offset in the pack, DE = destination, BC = length
 .copy:
         push de
@@ -109,6 +108,28 @@ ram_select:
         ld b,GA_PORT >> 8
         out (c),a
         ret
+
+; Copies to and from a bank, for views: they run from bank 5 at #4000
+; and must not map another bank there themselves.
+; bank_put - A = RAM config, HL = source outside #4000-#7FFF, DE = its
+;            place in the bank window, BC = bytes
+; bank_get - A = RAM config, HL = source in the bank window, DE =
+;            destination outside it (bank_buf, 32 bytes, is there for
+;            that), BC = bytes
+; Destroy: AF, BC, DE, HL
+bank_put:
+bank_get:
+        push bc
+        call ram_select
+        pop bc
+        ldir
+        jr ram_home
+
+; map the running view's bank back (plain RAM before the first view)
+; Destroys: AF, B
+ram_home:
+        ld a,(ram_home_cfg)
+        jr ram_select
 
 ; ---------------------------------------------------------------------
 ; lang_msg - A = MSG_* -> HL = zero-terminated text in the current UI
@@ -157,13 +178,11 @@ lang_msg:
         xor a
         ld (de),a
 .copied:
-        ld a,RAM_BASE_CFG
-        call ram_select
+        call ram_home
         ld hl,lang_msg_buf
         ret
 .missing:
-        ld a,RAM_BASE_CFG
-        call ram_select
+        call ram_home
 .english:
         ld a,(lm_id)
         ld l,a
@@ -251,6 +270,8 @@ lang_combine:
 ; ---- state ----------------------------------------------------------
 lang_magic:     db "VLNG"
 ram_config:     db RAM_BASE_CFG
+ram_home_cfg:   db RAM_BASE_CFG    ; set by view_switch
+bank_buf:       ds 32
 lang_loaded:    db 0
 lang_ui:        db 0
 lang_input:     db 0

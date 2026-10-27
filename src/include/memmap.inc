@@ -27,13 +27,25 @@ SCREEN_ROWS     equ 34
 SCREEN_H        equ 272             ; pixel lines in video RAM
 SCREEN_BPL      equ 96              ; bytes per pixel line
 
-; Language pack: the kernel loads GREEK.LNG from disc into bank 7 (for
-; the messages) and keeps its font, case and keyboard tables in GAP0-2.
+; The 64K of extra RAM, seen one 16K bank at a time at #4000-#7FFF:
+;   bank 4 (#C4)  file buffer: info and copy (kernel/files.asm)
+;   bank 5 (#C5)  the running view, an overlay file (kernel/view.asm)
+;   bank 6 (#C6)  what menus and dialogs cover (ui/ui.asm)
+;   bank 7 (#C7)  the language pack, then the Commander's file lists
+; Kernel code that maps another bank maps the view's bank back
+; (ram_home), never plain RAM, so a view can call it from #4000.
+; The language pack: the kernel loads GREEK.LNG from disc into bank 7
+; (for the messages) and keeps its font, case and keyboard tables in
+; GAP0-2.
 LANG_BANK_CFG   equ #C7             ; RAM config: bank 7 at #4000
 LANG_BANK_ADDR  equ #4000
-LANG_MAX        equ #4000           ; a pack fills at most the bank
-; Bank 6 (#C6) holds what menus and dialogs cover (ui/ui.asm).
-; Bank 4 (#C4) is where the M4 test loads files to show them.
+LANG_MAX        equ #2000           ; tools/mklng.py MAX_PACK
+LISTS_CFG       equ #C7             ; Commander lists after the pack
+LISTS_ADDR      equ #6000
+BUF_CFG         equ #C4
+BUF_ADDR        equ #4000
+VIEW_BANK_CFG   equ #C5
+VIEW_ADDR       equ #4000
 RAM_BASE_CFG    equ #C0             ; RAM config: plain 64K
 
 ; Drawable area. The monitor shows 271 lines; the top 6 and the bottom

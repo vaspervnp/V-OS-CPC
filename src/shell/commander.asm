@@ -7,21 +7,13 @@
 ;   UP/DOWN          select (SHIFT: a page)
 ;   TAB, LEFT/RIGHT  other panel
 ;   RETURN/ENTER     file info: size, type, load address, first bytes
-;   ^C copy to the other panel, ^D delete, ^R read both discs again,
-;   ^L language, ^K keys, ^Q exit; ESC opens the menus
+;   ^C copy to the other panel, ^D delete, ^N rename, ^R read both
+;   discs again, ^L language, ^K keys, ^Q exit; ESC opens the menus
 ;   mouse            click a file to select it, click it again for info
-; Panel lists are kept in bank 5, so switching panels needs no disc
-; access; the cursor keys select files, not move the pointer.
+; An overlay (kernel/view.asm). The panel lists are kept in bank 7
+; after the language pack, so switching panels needs no disc access;
+; the cursor keys select files, not move the pointer.
 ; =====================================================================
-
-CMD_INFO        equ 1
-CMD_COPY        equ 2
-CMD_DELETE      equ 3
-CMD_REFRESH     equ 4
-CMD_QUIT        equ 5
-CMD_LANG        equ 6
-CMD_KEYS        equ 7
-CMD_ABOUT       equ 8
 
 CM_ROWS         equ 20
 CM_W            equ 192             ; panel width, two side by side
@@ -30,11 +22,13 @@ CM_ROWS_Y       equ CM_Y + 14
 CM_H            equ 14 + CM_ROWS * 10 + 14
 CM_FREE_Y       equ CM_Y + CM_H - 12
 CM_KEYS_Y       equ GFX_H - 10
-CM_CAT_CFG      equ #C5             ; panel lists: bank 5, #400 each
-CM_CAT_ADDR     equ #4000
-VIEW_CFG        equ #C4             ; info and copy load files here
-VIEW_ADDR       equ #4000
-VIEW_BYTES      equ 18              ; first bytes shown by info
+CM_CAT_CFG      equ LISTS_CFG       ; #400 bytes per panel
+CM_CAT_ADDR     equ LISTS_ADDR
+
+        jp cm_init
+        jp cm_event
+        jp cm_redraw
+        db "VV", VIEW_COMMANDER
 
 ; ---------------------------------------------------------------------
 ; cm_init - mode 1, menus, read both drives
@@ -211,33 +205,17 @@ cm_event:
 
 ; A = CMD_*
 cm_command:
+        cp CMD_REFRESH
+        jp z,cm_refresh
         cp CMD_INFO
         jp z,cm_info
         cp CMD_COPY
         jp z,cm_copy
         cp CMD_DELETE
         jp z,cm_delete
-        cp CMD_REFRESH
-        jp z,cm_refresh
-        cp CMD_QUIT
-        jp z,cm_quit
-        cp CMD_LANG
-        jr z,.lang
-        ld hl,dlg_keys
-        cp CMD_KEYS
-        jp z,dialog_run
-        ld hl,dlg_about
-        cp CMD_ABOUT
-        jp z,dialog_run
-        ret
-.lang:
-        ld a,(lang_loaded)
-        or a
-        ret z
-        ld a,(lang_ui)
-        xor 1
-        ld (lang_ui),a
-        jp cm_redraw
+        cp CMD_RENAME
+        jp z,cm_rename
+        jp view_command
 
 ; ---------------------------------------------------------------------
 ; panels
@@ -279,7 +257,7 @@ cm_load:
         call fs_catalog
         jr c,.failed
         ld (cm_n),a
-        ld l,a                      ; count * 16 bytes to bank 5
+        ld l,a                      ; count * 16 bytes to bank 7
         ld h,0
         add hl,hl
         add hl,hl
@@ -296,16 +274,9 @@ cm_load:
         add a,CM_CAT_ADDR >> 8
         ld d,a
         ld e,0
-        push bc
-        push de
-        ld a,CM_CAT_CFG
-        call ram_select
-        pop de
-        pop bc
         ld hl,FS_CAT
-        ldir
-        ld a,RAM_BASE_CFG
-        call ram_select
+        ld a,CM_CAT_CFG
+        call bank_put
 .copied:
         call fs_free_k
         ld hl,cm_free
@@ -574,15 +545,15 @@ cm_entry:
         add a,CM_CAT_ADDR >> 8
         add a,h
         ld h,a
-        push hl
+        ld de,bank_buf
+        ld bc,16
         ld a,CM_CAT_CFG
-        call ram_select
-        pop hl
+        call bank_get
+        ld hl,bank_buf
         ld de,cm_ent
         ld bc,16
         ldir
-        ld a,RAM_BASE_CFG
-        jp ram_select
+        ret
 
 ; A = panel to make active
 cm_activate:
@@ -661,8 +632,8 @@ cm_select:
         ld (hl),a
         jp cm_draw_rows
 
-; active panel's selected file -> cm_name, its drive selected;
-; carry if the panel is empty
+; active panel's selected file -> file_name, A = its drive; carry if
+; the panel is empty
 cm_selected:
         ld a,(cm_active)
         call cm_set_p
@@ -677,235 +648,60 @@ cm_selected:
         ld a,(hl)
         call cm_entry
         ld hl,cm_ent
-        ld de,cm_name
+        ld de,file_name
         ld bc,11
         ldir
-        call cm_drive
+        ld a,(cm_p)
         or a
         ret
 
 ; ---------------------------------------------------------------------
-; file commands
+; file commands (kernel/files.asm); afterwards the changed drive is
+; read again
 ; ---------------------------------------------------------------------
-
-; load the selected file into bank 4 and show what it is
 cm_info:
         call cm_selected
         ret c
-        call cm_load_view
-        jp c,cm_error
-        ld de,dlg_custom            ; NAME.EXT
-        call cm_name_text
-        call cm_newline
-        ld a,MSG_SIZE               ; SIZE n
-        call cm_label
-        ld hl,(fs_length)
-        call util_dec
-        call cm_newline
-        ld a,MSG_TYPE               ; TYPE ...
-        call cm_label
-        ld a,(fs_hdr_type)
-        ld c,MSG_TYPE_BASIC
-        or a
-        jr z,.type
-        ld c,MSG_TYPE_TEXT
-        inc a
-        jr z,.type
-        ld c,MSG_TYPE_BINARY
-.type:
-        ld a,c
-        call util_msg
-        ld a,(fs_hdr_type)          ; LOAD #nnnn, files with a header
-        inc a
-        jr z,.bytes
-        call cm_newline
-        ld a,MSG_LOAD
-        call cm_label
-        ld a,"#"
-        call util_char
-        ld hl,(fs_hdr_load)
-        call util_hex4
-.bytes:
-        call cm_newline             ; the first bytes, as text
-        ld hl,(fs_length)
-        ld bc,VIEW_BYTES
-        or a
-        sbc hl,bc
-        jr nc,.count
-        add hl,bc
-        ld b,h
-        ld c,l
-.count:
-        ld a,c
-        or a
-        jr z,.end
-        ld b,a
-        ld a,VIEW_CFG
-        push bc
-        call ram_select
-        pop bc
-        ld hl,VIEW_ADDR
-.byte:
-        ld a,(hl)
-        inc hl
-        cp " "
-        jr c,.dot
-        cp "|"
-        jr z,.dot
-        cp #7F
-        jr c,.store
-        cp #A0
-        jr nc,.store
-.dot:
-        ld a,"."
-.store:
-        ld (de),a
-        inc de
-        djnz .byte
-        ld a,RAM_BASE_CFG
-        call ram_select
-.end:
-        xor a
-        ld (de),a
-        ld hl,dlg_file
-        jp dialog_run
+        jp file_info
 
-; cm_name -> bank 4. Carry and A = error on failure
-cm_load_view:
-        ld hl,cm_name
-        ld de,VIEW_ADDR
-        ld c,VIEW_CFG
-        jp fs_load
-
-; copy the selected file to the other panel's drive (up to 16K)
 cm_copy:
         call cm_selected
         ret c
-        call cm_load_view
-        jp c,cm_error
-        ld hl,(fs_length)
-        ld de,FS_LOAD_MAX + 1
-        or a
-        sbc hl,de
-        ld a,FS_ERR_TOO_BIG
-        jp nc,cm_error
-        ld a,(cm_active)            ; header fields stay as fs_load set them
+        call file_copy
+        ld a,(cm_active)            ; the target changed, even on failure
         xor 1
-        call cm_set_p
-        call cm_drive
-        ld hl,cm_name
-        ld de,VIEW_ADDR
-        ld bc,(fs_length)
-        ld a,VIEW_CFG
-        call fs_save
-        push af
-        ld a,(cm_p)                 ; the target changed, even on failure
-        call cm_load
-        pop af
-        jr c,cm_error
-        ld de,dlg_custom            ; COPIED TO B:|NAME.EXT
-        ld a,MSG_COPIED
-        call cm_label
-        ld a,(cm_p)
-        add a,"A"
-        call util_char
-        ld a,":"
-        call util_char
-        call cm_newline
-        call cm_name_text
-        xor a
-        ld (de),a
-        ld hl,dlg_file
-        jp dialog_run
+        jp cm_load
 
-; ask, then delete the selected file
 cm_delete:
         call cm_selected
         ret c
-        ld de,dlg_custom            ; DELETE|NAME.EXT?
-        ld a,MSG_DELETE_Q
-        call util_msg
-        call cm_newline
-        call cm_name_text
-        ld a,MSG_QMARK
-        call util_msg
-        xor a
-        ld (de),a
-        ld hl,dlg_delete
-        call dialog_run
-        or a                        ; 0 = YES
-        ret nz
-        ld hl,cm_name
-        call fs_delete
-        push af
-        ld a,(cm_p)
-        call cm_load
-        pop af
-        ret nc
-        ; fall through
+        call file_delete
+        ret c
+        ld a,(cm_active)
+        jp cm_load
 
-; A = FDC_ERR_* / FS_ERR_* -> error dialog
-cm_error:
-        add a,MSG_ERR_1 - 1
-        ld de,dlg_custom
-        call util_msg
-        xor a
-        ld (de),a
-        ld hl,dlg_error
-        jp dialog_run
+cm_rename:
+        call cm_selected
+        ret c
+        call file_rename
+        ret c
+        ld a,(cm_active)
+        jp cm_load
 
-cm_quit:
-        ld hl,dlg_quit
-        call dialog_run
-        or a                        ; 0 = YES
-        ret nz
-        di                          ; restart: lower ROM back at #0000
-        ld bc,GA_PORT + GA_RAMCFG
-        out (c),c
-        ld bc,GA_PORT + GA_RMR + GA_RMR_HIROM_OFF + 1
-        out (c),c
-        rst 0
-
-; helpers: all write at DE
-cm_name_text:
-        ld hl,cm_name
-        jp util_fcb_text
-cm_newline:
-        ld a,"|"
-        jp util_char
-cm_label:                           ; A = MSG_*: "TEXT "
-        call util_msg
-        ld a," "
-        jp util_char
-
-; ---- menus and dialogs ----------------------------------------------
+; ---- menus ----------------------------------------------------------
 cm_bar:
         db 3
-        dw cm_menu_file, cm_menu_view, cm_menu_help
+        dw cm_menu_file, menu_view, menu_help
 cm_menu_file:
-        db MSG_MENU_FILE, 7
+        db MSG_MENU_FILE, 8
         db MSG_ITEM_INFO, CMD_INFO, 0, 0
         db MSG_ITEM_COPY, CMD_COPY, "C", 0
         db MSG_ITEM_DELETE, CMD_DELETE, "D", 0
+        db MSG_ITEM_RENAME, CMD_RENAME, "N", 0
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_REFRESH, CMD_REFRESH, "R", 0
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_QUIT, CMD_QUIT, "Q", 0
-cm_menu_view:
-        db MSG_MENU_VIEW, 1
-        db MSG_ITEM_LANG, CMD_LANG, "L", 0
-cm_menu_help:
-        db MSG_MENU_HELP, 3
-        db MSG_ITEM_KEYS, CMD_KEYS, "K", 0
-        db UI_SEPARATOR, 0, 0, 0
-        db MSG_ITEM_ABOUT, CMD_ABOUT, 0, 0
-
-dlg_about:      db MSG_DLG_ABOUT_T, MSG_DLG_ABOUT, 1, MSG_BTN_OK
-dlg_keys:       db MSG_DLG_KEYS_T, MSG_DLG_KEYS, 1, MSG_BTN_OK
-dlg_quit:       db MSG_DLG_QUIT_T, MSG_DLG_QUIT, 2, MSG_BTN_YES, MSG_BTN_NO
-dlg_file:       db MSG_DLG_FILE_T, DLG_OWN_TEXT, 1, MSG_BTN_OK
-dlg_error:      db MSG_DLG_ERR_T, DLG_OWN_TEXT, 1, MSG_BTN_OK
-dlg_delete:     db MSG_DLG_FILE_T, DLG_OWN_TEXT, 2, MSG_BTN_YES, MSG_BTN_NO
 
 ; ---- state ----------------------------------------------------------
 cm_active:      db 0                ; panel with the selection
@@ -921,6 +717,5 @@ cm_n:           db 0
 cm_r:           db 0
 cm_i:           db 0
 cm_ry:          dw 0
-cm_name:        ds 11
 cm_ent:         ds 16
 cm_line:        ds 50

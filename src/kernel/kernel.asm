@@ -1,9 +1,10 @@
 ; =====================================================================
 ; kernel.asm - kernel entry and main loop
 ;
-; Sets up the screen, the disc and the language pack, then hands every
-; event to the shell. The shell so far is the Commander view
-; (src/shell/commander.asm); the Desktop and the Launcher come next.
+; Sets up the screen, the disc and the language pack, then starts the
+; first view and hands it every event. Views are overlays
+; (kernel/view.asm); F1/F2/F3 switch between Desktop, Launcher and
+; Commander.
 ; =====================================================================
 
 kernel_entry:
@@ -16,15 +17,26 @@ kernel_entry:
         ei
         call fdc_init
         call lang_init              ; GREEK.LNG from the disc
-        call cm_init
+        ld a,1                      ; a plain desk until the view is up
+        call ui_set_mode
+        ld hl,palette_mode1
+        call ga_set_palette
+        ld a,UIP_DESK
+        call ui_pen
+        call gfx_cls
         call ptr_show
 
 .main:
         call wait_frame
 .events:
+        call view_poll
         call ev_get
         jr z,.idle
-        call cm_event
+        call view_keys
+        jr c,.events
+        ld a,(view_cur)
+        cp VIEW_NONE
+        call nz,OV_EVENT
         jr .events
 .idle:
         call ptr_update

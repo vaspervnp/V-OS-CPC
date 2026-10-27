@@ -1,16 +1,18 @@
 ; =====================================================================
 ; vos.asm - V-OS build root
 ;
-; Output: VOS.BIN on build/vos.dsk, loaded by AMSDOS at LOADER_ADDR
-; with RUN"VOS". The file is the loader stub followed by the kernel
-; image, which is assembled for KERNEL_BASE and copied there at boot.
+; Output on build/vos.dsk: VOS.BIN, loaded by AMSDOS at LOADER_ADDR
+; with RUN"VOS" (the loader stub followed by the kernel image, which is
+; assembled for KERNEL_BASE and copied there at boot), and one overlay
+; file per view, assembled for VIEW_ADDR in memory spaces of their own
+; (BANK), which the kernel loads itself (kernel/view.asm).
 ; =====================================================================
 
         include "include/hw.inc"
         include "include/memmap.inc"
         include "lang/msg_ids.inc"
 
-VOS_VERSION     equ #0007           ; 0.07
+VOS_VERSION     equ #0008           ; 0.08
 VOS_API_VERSION equ #0000
 
 ; ---- loader, runs at LOADER_ADDR ------------------------------------
@@ -27,6 +29,8 @@ kernel_start:
         include "kernel/interrupts.asm"
         include "kernel/events.asm"
         include "kernel/fs.asm"
+        include "kernel/files.asm"
+        include "kernel/view.asm"
         include "kernel/util.asm"
         include "kernel/lang.asm"
         include "lang/lang_en.asm"
@@ -43,7 +47,7 @@ kernel_start:
         include "ui/ui.asm"
         include "ui/dialog.asm"
         include "ui/filedlg.asm"
-        include "shell/commander.asm"
+        include "ui/input.asm"
         include "gfx/font_ascii.asm"
 kernel_end:
 
@@ -56,4 +60,38 @@ KERNEL_SIZE     equ kernel_end - kernel_start
         save "VOS.BIN", loader_start, kernel_image - loader_start + KERNEL_SIZE, DSK, "build/vos_test.dsk"
         ELSE
         save "VOS.BIN", loader_start, kernel_image - loader_start + KERNEL_SIZE, DSK, "build/vos.dsk"
+        ENDIF
+
+; ---- views: overlays at VIEW_ADDR -------------------------------------
+        BANK
+        org VIEW_ADDR
+        include "shell/desktop.asm"
+desktop_end:
+        assert desktop_end <= VIEW_ADDR + #4000
+        IFDEF TEST_SCRIPT
+        save "DESKTOP.OVL", VIEW_ADDR, desktop_end - VIEW_ADDR, DSK, "build/vos_test.dsk"
+        ELSE
+        save "DESKTOP.OVL", VIEW_ADDR, desktop_end - VIEW_ADDR, DSK, "build/vos.dsk"
+        ENDIF
+
+        BANK
+        org VIEW_ADDR
+        include "shell/launcher.asm"
+launcher_end:
+        assert launcher_end <= VIEW_ADDR + #4000
+        IFDEF TEST_SCRIPT
+        save "LAUNCHER.OVL", VIEW_ADDR, launcher_end - VIEW_ADDR, DSK, "build/vos_test.dsk"
+        ELSE
+        save "LAUNCHER.OVL", VIEW_ADDR, launcher_end - VIEW_ADDR, DSK, "build/vos.dsk"
+        ENDIF
+
+        BANK
+        org VIEW_ADDR
+        include "shell/commander.asm"
+commander_end:
+        assert commander_end <= VIEW_ADDR + #4000
+        IFDEF TEST_SCRIPT
+        save "COMMANDR.OVL", VIEW_ADDR, commander_end - VIEW_ADDR, DSK, "build/vos_test.dsk"
+        ELSE
+        save "COMMANDR.OVL", VIEW_ADDR, commander_end - VIEW_ADDR, DSK, "build/vos.dsk"
         ENDIF
