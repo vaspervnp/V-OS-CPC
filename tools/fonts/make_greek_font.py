@@ -4,8 +4,9 @@
 Glyphs come from font8x8_greek.h and font8x8_ext_latin.h (Daniel Hepper,
 public domain). Letters the source lacks (capitals with tonos, ϊ ϋ ό ύ ώ,
 ΄ ΅ ·, quotes, horizontal bar) are composed from a base glyph plus an
-accent. The output is meant to be edited by hand afterwards; mklng.py
-reads lang/el/font.txt, not this script.
+accent. ά έ ή ί are composed too, so every lower-case letter carries the
+same steep tonos. The output is meant to be edited by hand afterwards;
+mklng.py reads lang/el/font.txt, not this script.
 
 Usage: tools/fonts/make_greek_font.py > lang/el/font.txt
 """
@@ -84,6 +85,10 @@ def compose():
             g[code] = GREEK[cp]
     g[0xFA] = overlay(GREEK[0x03B9], DIAER_LOW)                     # ϊ
     g[0xFB] = overlay(GREEK[0x03C5], DIAER_LOW)                     # ϋ
+    g[0xDC] = overlay(GREEK[0x03B1], TONOS_LOW)                     # ά
+    g[0xDD] = overlay(GREEK[0x03B5], TONOS_LOW)                     # έ
+    g[0xDE] = overlay(GREEK[0x03B7], TONOS_LOW)                     # ή
+    g[0xDF] = overlay(GREEK[0x03B9], TONOS_LOW)                     # ί
     g[0xFC] = overlay(GREEK[0x03BF], TONOS_LOW)                     # ό
     g[0xFD] = overlay(GREEK[0x03C5], TONOS_LOW)                     # ύ
     g[0xFE] = overlay(GREEK[0x03C9], TONOS_LOW)                     # ώ

@@ -32,6 +32,7 @@ LANG_LOAD       equ #8000           ; loaded here, before the screen exists
 LANG_DISC_BUF   equ #9800           ; 2K AMSDOS buffer
 LANG_MAX        equ #1800           ; 6144 bytes (#8000-#97FF)
 LANG_BANK_CFG   equ #C7             ; RAM config: bank 7 at #4000
+; Bank 6 (#C6) holds what menus and dialogs cover (ui/ui.asm).
 LANG_BANK_ADDR  equ #4000
 RAM_BASE_CFG    equ #C0             ; RAM config: plain 64K
 

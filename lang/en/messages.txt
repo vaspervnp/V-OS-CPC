@@ -3,13 +3,36 @@
 # message numbers (MSG_<ID> in src/lang/msg_ids.inc).
 # Language packs translate any subset; missing ones fall back to English.
 #
-# Format: <ID> <text up to the end of the line>
+# Format: <ID> <text up to the end of the line>. In dialog texts "|"
+# starts a new line. Keep lines within 20 characters so dialogs fit in
+# mode 0 (24 columns).
 
-TITLE       V-OS 0.04 M2B
-TITLE_M0    M2B F1 F2 F3
-HELP        F3 MENUS  CTRL+SHIFT TYPING
-EVENTS      EVENTS
-MATRIX      KEYBOARD
-TYPED       TYPED
-CHARSET     CHARACTER SET
-NO_PACK     NO LANGUAGE PACK ON DISK
+MENU_FILE   FILE
+MENU_VIEW   VIEW
+MENU_HELP   HELP
+ITEM_NEW    NEW
+ITEM_OPEN   OPEN
+ITEM_QUIT   EXIT TO BASIC
+ITEM_MODE1  MODE 1  4 COLOURS
+ITEM_MODE0  MODE 0  16 COLOURS
+ITEM_LANG   SWITCH LANGUAGE
+ITEM_KEYS   KEYS
+ITEM_ABOUT  ABOUT V-OS
+BTN_OK      OK
+BTN_YES     YES
+BTN_NO      NO
+BTN_ABOUT   ABOUT
+BTN_MODE    MODE 0/1
+BTN_KEYS    KEYS
+HEADING     V-OS 0.05 M3
+HINT        ESC MENU  TAB NEXT
+STATUS      LAST COMMAND
+NONE        NONE
+DLG_ABOUT_T ABOUT
+DLG_ABOUT   V-OS 0.05|AMSTRAD CPC 6128|MENUS AND DIALOGS
+DLG_KEYS_T  KEYS
+DLG_KEYS    ESC     MENU|TAB     NEXT BUTTON|ENTER   SELECT|COPY    CLICK|CTRL+SHIFT  EN/EL
+DLG_QUIT_T  EXIT
+DLG_QUIT    RESTART THE CPC|AND GO TO BASIC?
+DLG_NYI_T   SORRY
+DLG_NYI     NOT AVAILABLE YET|DISC COMES IN M4

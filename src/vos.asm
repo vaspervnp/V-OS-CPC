@@ -10,7 +10,7 @@
         include "include/memmap.inc"
         include "lang/msg_ids.inc"
 
-VOS_VERSION     equ #0004           ; 0.04
+VOS_VERSION     equ #0005           ; 0.05
 VOS_API_VERSION equ #0000
 
 ; ---- loader, runs at LOADER_ADDR ------------------------------------
@@ -37,6 +37,8 @@ kernel_start:
         include "drivers/mouse.asm"
         include "gfx/gfx.asm"
         include "gfx/pointer.asm"
+        include "ui/ui.asm"
+        include "ui/dialog.asm"
         include "gfx/font_ascii.asm"
 kernel_end:
 

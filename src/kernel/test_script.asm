@@ -10,21 +10,26 @@
 ; types "\(" before taking a screenshot). Otherwise their events would
 ; keep the pointer hidden at the moment of the shot.
 ;
-; Pointer starts at (192,120) in mode 1. Expected result:
-;   frame 100-129  RIGHT held   -> x about 255
-;   frame 135-176  DOWN held    -> y about 231 (inside the click box)
-;   frame 185      COPY click   -> dot
-;   frame 195-204  RIGHT held   -> x about 266
-;   frame 210      COPY click   -> second dot
-;   frame 220-240  h i space    -> "hi " in TYPED
-;   frame 250-262  CONTROL+SHIFT -> typing EL, event "LANG EL"
-;   frame 270-371  k a l h m ; e r a space G e i a space ; A
-;                               -> "hi καλημέρα Γεια Ά" (; = tonos)
-;   frame 600      F3           -> labels in English
-;   frame 700      F2           -> mode 0, x clamped to 191
-;   frame 720-734  LEFT held    -> x about 170
-;   frame 740      COPY click   -> dot in the mode 0 box
-;   frame 800      F3           -> labels in Greek again
+; M3 desktop, mode 1, Greek UI. Expected result:
+;   frame  100  ESC          -> FILE menu open
+;   frame  200  RIGHT        -> VIEW menu
+;   frame  260  DOWN         -> "MODE 0" selected
+;   frame  320  ESC          -> menu closed
+;   frame  360  TAB, 400 TAB -> focus on the third button (KEYS)
+;   frame  440  RETURN       -> keys dialog
+;   frame  560  RETURN       -> dialog closed, status "KEYS"
+;   frame  600  CONTROL+Q    -> exit dialog (YES / NO)
+;   frame  700  ESC          -> NO
+;   frame  760  ESC, 800 RIGHT, 840 DOWN, 880 RETURN -> mode 0
+;   frame  960  ESC          -> FILE menu in mode 0
+;   frame 1040  RIGHT        -> VIEW menu in mode 0
+;   frame 1120  ESC          -> closed
+;   frame 1160  CONTROL+L    -> English UI
+;   frame 1200  UP held, 1250 LEFT held -> pointer on the VIEW title
+;   frame 1310  COPY         -> VIEW opens (mouse)
+;   frame 1340  COPY         -> same title again: closes
+;   frame 1370  COPY         -> opens again
+;   frame 1400  RETURN       -> MODE 1: mode 1, English, status MODE 1
 ; =====================================================================
 
 ; ---------------------------------------------------------------------
@@ -79,38 +84,30 @@ test_inject:
 
 ; dw first frame, frame after the last; db matrix line, bits
 test_keys:
-        dw 100, 130 : db 0, %00000010     ; RIGHT
-        dw 135, 177 : db 0, %00000100     ; DOWN
-        dw 185, 188 : db 1, %00000010     ; COPY
-        dw 195, 205 : db 0, %00000010     ; RIGHT
-        dw 210, 213 : db 1, %00000010     ; COPY
-        dw 220, 223 : db 5, %00010000     ; H
-        dw 228, 231 : db 4, %00001000     ; I
-        dw 236, 239 : db 5, %10000000     ; SPACE
-        dw 250, 263 : db 2, %10000000     ; CONTROL held ...
-        dw 254, 259 : db 2, %00100000     ; ... then SHIFT: typing EL
-        dw 270, 273 : db 4, %00100000     ; K  κ
-        dw 276, 279 : db 8, %00100000     ; A  α
-        dw 282, 285 : db 4, %00010000     ; L  λ
-        dw 288, 291 : db 5, %00010000     ; H  η
-        dw 294, 297 : db 4, %01000000     ; M  μ
-        dw 300, 303 : db 3, %00010000     ; ;  tonos (dead)
-        dw 306, 309 : db 7, %00000100     ; E  έ
-        dw 312, 315 : db 6, %00000100     ; R  ρ
-        dw 318, 321 : db 8, %00100000     ; A  α
-        dw 324, 327 : db 5, %10000000     ; SPACE
-        dw 329, 335 : db 2, %00100000     ; SHIFT ...
-        dw 330, 333 : db 6, %00010000     ; ... G  Γ
-        dw 336, 339 : db 7, %00000100     ; E  ε
-        dw 342, 345 : db 4, %00001000     ; I  ι
-        dw 348, 351 : db 8, %00100000     ; A  α
-        dw 354, 357 : db 5, %10000000     ; SPACE
-        dw 360, 363 : db 3, %00010000     ; ;  tonos (dead)
-        dw 365, 371 : db 2, %00100000     ; SHIFT ...
-        dw 366, 369 : db 8, %00100000     ; ... A  Ά
-        dw 600, 603 : db 0, %00100000     ; F3: English labels
-        dw 700, 703 : db 1, %01000000     ; F2: mode 0
-        dw 720, 735 : db 1, %00000001     ; LEFT
-        dw 740, 743 : db 1, %00000010     ; COPY
-        dw 800, 803 : db 0, %00100000     ; F3: Greek labels
+        dw  100,  104 : db 8, %00000100   ; ESC
+        dw  200,  204 : db 0, %00000010   ; RIGHT
+        dw  260,  264 : db 0, %00000100   ; DOWN
+        dw  320,  324 : db 8, %00000100   ; ESC
+        dw  360,  364 : db 8, %00010000   ; TAB
+        dw  400,  404 : db 8, %00010000   ; TAB
+        dw  440,  444 : db 2, %00000100   ; RETURN
+        dw  560,  564 : db 2, %00000100   ; RETURN
+        dw  600,  612 : db 2, %10000000   ; CONTROL held ...
+        dw  603,  607 : db 8, %00001000   ; ... Q
+        dw  700,  704 : db 8, %00000100   ; ESC
+        dw  760,  764 : db 8, %00000100   ; ESC
+        dw  800,  804 : db 0, %00000010   ; RIGHT
+        dw  840,  844 : db 0, %00000100   ; DOWN
+        dw  880,  884 : db 2, %00000100   ; RETURN
+        dw  960,  964 : db 8, %00000100   ; ESC
+        dw 1040, 1044 : db 0, %00000010   ; RIGHT
+        dw 1120, 1124 : db 8, %00000100   ; ESC
+        dw 1160, 1172 : db 2, %10000000   ; CONTROL held ...
+        dw 1163, 1167 : db 4, %00010000   ; ... L
+        dw 1200, 1246 : db 0, %00000001   ; UP
+        dw 1250, 1273 : db 1, %00000001   ; LEFT (x 96 -> about 61)
+        dw 1310, 1313 : db 1, %00000010   ; COPY
+        dw 1340, 1343 : db 1, %00000010   ; COPY
+        dw 1370, 1373 : db 1, %00000010   ; COPY
+        dw 1400, 1404 : db 2, %00000100   ; RETURN
         dw #FFFF

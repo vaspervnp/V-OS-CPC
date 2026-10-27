@@ -22,7 +22,7 @@ LNG_MSGS        equ 16
 LNG_SIZE        equ 18
 LNG_NAME        equ 20
 LANG_COMBOS_MAX equ 32
-LANG_MSG_MAX    equ 63
+LANG_MSG_MAX    equ 127
 
 ; ---------------------------------------------------------------------
 ; lang_init - take over the pack the loader left at LANG_LOAD.

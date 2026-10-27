@@ -1,8 +1,31 @@
 # Κείμενα περιβάλλοντος, ελληνικά. Τα ID ορίζονται στο lang/en/messages.txt.
-# Format: <ID> <κείμενο μέχρι το τέλος της γραμμής>
+# Format: <ID> <κείμενο μέχρι το τέλος της γραμμής>. Στους διαλόγους το "|"
+# αλλάζει γραμμή· έως 20 χαρακτήρες ανά γραμμή, για το mode 0.
 
-HELP        F3 ΜΕΝΟΥ  CTRL+SHIFT ΓΡΑΦΗ
-EVENTS      ΣΥΜΒΑΝΤΑ
-MATRIX      ΠΛΗΚΤΡΟΛΟΓΙΟ
-TYPED       ΚΕΙΜΕΝΟ
-CHARSET     ΣΥΝΟΛΟ ΧΑΡΑΚΤΗΡΩΝ
+MENU_FILE   ΑΡΧΕΙΟ
+MENU_VIEW   ΠΡΟΒΟΛΗ
+MENU_HELP   ΒΟΗΘΕΙΑ
+ITEM_NEW    ΝΕΟ
+ITEM_OPEN   ΑΝΟΙΓΜΑ
+ITEM_QUIT   ΕΞΟΔΟΣ ΣΤΗ BASIC
+ITEM_MODE1  MODE 1  4 ΧΡΩΜΑΤΑ
+ITEM_MODE0  MODE 0  16 ΧΡΩΜΑΤΑ
+ITEM_LANG   ΑΛΛΑΓΗ ΓΛΩΣΣΑΣ
+ITEM_KEYS   ΠΛΗΚΤΡΑ
+ITEM_ABOUT  ΣΧΕΤΙΚΑ ΜΕ ΤΟ V-OS
+BTN_OK      ΕΝΤΑΞΕΙ
+BTN_YES     ΝΑΙ
+BTN_NO      ΟΧΙ
+BTN_ABOUT   ΣΧΕΤΙΚΑ
+BTN_KEYS    ΠΛΗΚΤΡΑ
+HINT        ESC ΜΕΝΟΥ  TAB ΕΠΟΜΕΝΟ
+STATUS      ΤΕΛΕΥΤΑΙΑ ΕΝΤΟΛΗ
+NONE        ΚΑΜΙΑ
+DLG_ABOUT_T ΣΧΕΤΙΚΑ
+DLG_ABOUT   V-OS 0.05|AMSTRAD CPC 6128|ΜΕΝΟΥ ΚΑΙ ΔΙΑΛΟΓΟΙ
+DLG_KEYS_T  ΠΛΗΚΤΡΑ
+DLG_KEYS    ESC     ΜΕΝΟΥ|TAB     ΕΠΟΜΕΝΟ|ENTER   ΕΠΙΛΟΓΗ|COPY    ΚΛΙΚ|CTRL+SHIFT  EN/EL
+DLG_QUIT_T  ΕΞΟΔΟΣ
+DLG_QUIT    ΕΠΑΝΕΚΚΙΝΗΣΗ CPC|ΕΞΟΔΟΣ ΣΤΗ BASIC;
+DLG_NYI_T   ΣΥΓΓΝΩΜΗ
+DLG_NYI     ΔΕΝ ΥΠΑΡΧΕΙ ΑΚΟΜΑ|ΔΙΣΚΕΤΑ ΣΤΟ M4

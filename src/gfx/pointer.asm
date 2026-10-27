@@ -1,28 +1,38 @@
 ; =====================================================================
 ; pointer.asm - software mouse pointer with save-under
 ;
-; Main context only. Anything that draws under the pointer must call
-; ptr_hide first and ptr_show after. ptr_update, once per frame, moves
-; the pointer when ptr_poll has changed its position. The hot spot is
-; the top-left pixel. The 8x13 arrow is clipped at the right and
-; bottom edges of the drawable area.
+; Main context only. The hot spot is the top-left pixel; the 8x13 arrow
+; is clipped at the right and bottom edges of the drawable area.
+;
+;   ptr_show     enable the pointer and draw it
+;   ptr_disable  remove it until the next ptr_show
+;   ptr_guard    called by the drawing routines with the area they are
+;                about to change: hides the pointer if it overlaps
+;   ptr_update   once per frame: draws the pointer again if it was
+;                hidden, or moves it if ptr_poll changed its position
+;
+; Code that draws through gfx_* / txt_* never has to hide the pointer
+; itself. Only code that writes video RAM directly must call ptr_guard.
 ; =====================================================================
 
 PTR_W           equ 8
 PTR_H           equ 13
 
 ; ---------------------------------------------------------------------
-; ptr_show / ptr_hide / ptr_update
 ; Destroys: all except IX
 ; ---------------------------------------------------------------------
 ptr_show:
+        ld a,1
+        ld (ptr_enabled),a
         ld a,(ptr_visible)
         or a
         ret nz
-        inc a
-        ld (ptr_visible),a
-        jr ptr_place
+        jr ptr_place_visible
 
+ptr_disable:
+        xor a
+        ld (ptr_enabled),a
+        ; fall through
 ptr_hide:
         ld a,(ptr_visible)
         or a
@@ -32,14 +42,20 @@ ptr_hide:
         jp ptr_restore
 
 ptr_update:
-        ld a,(ptr_visible)
+        ld a,(ptr_enabled)
         or a
         ret z
+        ld a,(ptr_visible)
+        or a
+        jr z,ptr_place_visible
         ld a,(ptr_moved)
         or a
         ret z
         call ptr_restore
-        ; fall through
+        jr ptr_place
+ptr_place_visible:
+        ld a,1
+        ld (ptr_visible),a
 ptr_place:
         xor a
         ld (ptr_moved),a
@@ -52,6 +68,57 @@ ptr_place:
         call ptr_geometry
         call ptr_save
         jp ptr_draw
+
+; ---------------------------------------------------------------------
+; ptr_guard - HL = x, DE = y, BC = width, A = height (pixels of the
+; current mode). Hides the pointer if it overlaps that area.
+; Destroys: all except IX
+; ---------------------------------------------------------------------
+ptr_guard:
+        ld (pg_h),a
+        ld a,(ptr_visible)
+        or a
+        ret z
+        ld (pg_x),hl
+        ld (pg_w),bc
+        ex de,hl                    ; HL = y
+        ld de,(pd_y)                ; y < pd_y + PTR_H ?
+        push hl
+        ld bc,PTR_H
+        ex de,hl
+        add hl,bc
+        ex de,hl                    ; DE = pointer bottom
+        or a
+        sbc hl,de
+        pop hl
+        ret nc
+        ld a,(pg_h)                 ; y + h > pd_y ?
+        ld c,a
+        ld b,0
+        add hl,bc
+        ld de,(pd_y)
+        or a
+        sbc hl,de
+        ret c
+        ret z
+        ld hl,(pg_x)                ; x < pd_x + PTR_W ?
+        ld de,(pd_x)
+        ex de,hl
+        ld bc,PTR_W
+        add hl,bc
+        ex de,hl
+        or a
+        sbc hl,de
+        ret nc
+        ld hl,(pg_x)                ; x + w > pd_x ?
+        ld bc,(pg_w)
+        add hl,bc
+        ld de,(pd_x)
+        or a
+        sbc hl,de
+        ret c
+        ret z
+        jp ptr_hide
 
 ; size of the covered area, clipped to the drawable area
 ptr_geometry:
@@ -242,7 +309,11 @@ ptr_shape:
         db #81,#7E, #8F,#70, #A8,#50, #D4,#08, #8A,#04, #06,#00
 
 ; ---- state ----------------------------------------------------------
+ptr_enabled:    db 0
 ptr_visible:    db 0
+pg_x:           dw 0
+pg_w:           dw 0
+pg_h:           db 0
 ptr_pen_out:    db 2
 ptr_pen_fill:   db 1
 pd_x:           dw 0

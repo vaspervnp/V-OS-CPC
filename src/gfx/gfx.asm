@@ -115,6 +115,12 @@ gfx_x_to_byte:
 gfx_plot:
         ld (gfx_tmp_pen),a
         ld (gfx_tmp_x),hl
+        push de
+        ld bc,1
+        ld a,1
+        call ptr_guard
+        pop de
+        ld hl,(gfx_tmp_x)
         ld hl,GFX_H - 1
         or a
         sbc hl,de                   ; carry if y is below the drawable area
@@ -161,6 +167,19 @@ gfx_plot:
 ; Destroys: all except IX
 ; ---------------------------------------------------------------------
 gfx_fill_rect:
+        ld l,(ix+0)                 ; keep the pointer out of the way
+        ld h,(ix+1)
+        ld e,(ix+2)
+        ld d,(ix+3)
+        ld c,(ix+4)
+        ld b,(ix+5)
+        ld a,(ix+7)
+        or a
+        ld a,(ix+6)
+        jr z,.guard
+        ld a,255
+.guard:
+        call ptr_guard
         ld a,(ix+8)
         call gfx_pen_byte
         ld (fr_fill),a
@@ -339,6 +358,15 @@ txt_set_colours:
 ; ---------------------------------------------------------------------
 txt_char:
         push ix
+        push af
+        push de
+        push hl
+        ld bc,8
+        ld a,8
+        call ptr_guard
+        pop hl
+        pop de
+        pop af
         push de                     ; y
         push hl                     ; x
         call txt_glyph
@@ -470,14 +498,26 @@ txt_glyph:
         ret
 
 ; ---------------------------------------------------------------------
-; txt_print - HL = x, DE = y, BC = zero-terminated string.
-; Returns BC -> the terminating zero.
+; txt_print - HL = x, DE = y, BC = zero-terminated string. Characters
+; that would cross the right edge are not drawn.
+; Returns BC -> the terminating zero (or the first undrawn character).
 ; Destroys: all
 ; ---------------------------------------------------------------------
 txt_print:
         ld a,(bc)
         or a
         ret z
+        push hl                     ; stop at the right edge
+        push de
+        ld de,8
+        add hl,de
+        ld de,(gfx_width)
+        ex de,hl
+        or a
+        sbc hl,de
+        pop de
+        pop hl
+        ret c
         push bc
         push de
         push hl

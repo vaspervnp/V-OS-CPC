@@ -2,32 +2,106 @@
 
 ; English UI texts, indexed by MSG_<ID>
 msg_en_table:
-        dw msg_en_title
-        dw msg_en_title_m0
-        dw msg_en_help
-        dw msg_en_events
-        dw msg_en_matrix
-        dw msg_en_typed
-        dw msg_en_charset
-        dw msg_en_no_pack
-msg_en_title:              ; V-OS 0.04 M2B
-        db #56,#2D,#4F,#53,#20,#30,#2E,#30,#34,#20,#4D,#32,#42,#00
-msg_en_title_m0:              ; M2B F1 F2 F3
-        db #4D,#32,#42,#20,#46,#31,#20,#46,#32,#20,#46,#33,#00
-msg_en_help:              ; F3 MENUS  CTRL+SHIFT TYPING
-        db #46,#33,#20,#4D,#45,#4E,#55,#53,#20,#20,#43,#54,#52,#4C,#2B,#53
-        db #48,#49,#46,#54,#20,#54,#59,#50,#49,#4E,#47,#00
-msg_en_events:              ; EVENTS
-        db #45,#56,#45,#4E,#54,#53,#00
-msg_en_matrix:              ; KEYBOARD
-        db #4B,#45,#59,#42,#4F,#41,#52,#44,#00
-msg_en_typed:              ; TYPED
-        db #54,#59,#50,#45,#44,#00
-msg_en_charset:              ; CHARACTER SET
-        db #43,#48,#41,#52,#41,#43,#54,#45,#52,#20,#53,#45,#54,#00
-msg_en_no_pack:              ; NO LANGUAGE PACK ON DISK
-        db #4E,#4F,#20,#4C,#41,#4E,#47,#55,#41,#47,#45,#20,#50,#41,#43,#4B
-        db #20,#4F,#4E,#20,#44,#49,#53,#4B,#00
+        dw msg_en_menu_file
+        dw msg_en_menu_view
+        dw msg_en_menu_help
+        dw msg_en_item_new
+        dw msg_en_item_open
+        dw msg_en_item_quit
+        dw msg_en_item_mode1
+        dw msg_en_item_mode0
+        dw msg_en_item_lang
+        dw msg_en_item_keys
+        dw msg_en_item_about
+        dw msg_en_btn_ok
+        dw msg_en_btn_yes
+        dw msg_en_btn_no
+        dw msg_en_btn_about
+        dw msg_en_btn_mode
+        dw msg_en_btn_keys
+        dw msg_en_heading
+        dw msg_en_hint
+        dw msg_en_status
+        dw msg_en_none
+        dw msg_en_dlg_about_t
+        dw msg_en_dlg_about
+        dw msg_en_dlg_keys_t
+        dw msg_en_dlg_keys
+        dw msg_en_dlg_quit_t
+        dw msg_en_dlg_quit
+        dw msg_en_dlg_nyi_t
+        dw msg_en_dlg_nyi
+msg_en_menu_file:              ; FILE
+        db #46,#49,#4C,#45,#00
+msg_en_menu_view:              ; VIEW
+        db #56,#49,#45,#57,#00
+msg_en_menu_help:              ; HELP
+        db #48,#45,#4C,#50,#00
+msg_en_item_new:              ; NEW
+        db #4E,#45,#57,#00
+msg_en_item_open:              ; OPEN
+        db #4F,#50,#45,#4E,#00
+msg_en_item_quit:              ; EXIT TO BASIC
+        db #45,#58,#49,#54,#20,#54,#4F,#20,#42,#41,#53,#49,#43,#00
+msg_en_item_mode1:              ; MODE 1  4 COLOURS
+        db #4D,#4F,#44,#45,#20,#31,#20,#20,#34,#20,#43,#4F,#4C,#4F,#55,#52
+        db #53,#00
+msg_en_item_mode0:              ; MODE 0  16 COLOURS
+        db #4D,#4F,#44,#45,#20,#30,#20,#20,#31,#36,#20,#43,#4F,#4C,#4F,#55
+        db #52,#53,#00
+msg_en_item_lang:              ; SWITCH LANGUAGE
+        db #53,#57,#49,#54,#43,#48,#20,#4C,#41,#4E,#47,#55,#41,#47,#45,#00
+msg_en_item_keys:              ; KEYS
+        db #4B,#45,#59,#53,#00
+msg_en_item_about:              ; ABOUT V-OS
+        db #41,#42,#4F,#55,#54,#20,#56,#2D,#4F,#53,#00
+msg_en_btn_ok:              ; OK
+        db #4F,#4B,#00
+msg_en_btn_yes:              ; YES
+        db #59,#45,#53,#00
+msg_en_btn_no:              ; NO
+        db #4E,#4F,#00
+msg_en_btn_about:              ; ABOUT
+        db #41,#42,#4F,#55,#54,#00
+msg_en_btn_mode:              ; MODE 0/1
+        db #4D,#4F,#44,#45,#20,#30,#2F,#31,#00
+msg_en_btn_keys:              ; KEYS
+        db #4B,#45,#59,#53,#00
+msg_en_heading:              ; V-OS 0.05 M3
+        db #56,#2D,#4F,#53,#20,#30,#2E,#30,#35,#20,#4D,#33,#00
+msg_en_hint:              ; ESC MENU  TAB NEXT
+        db #45,#53,#43,#20,#4D,#45,#4E,#55,#20,#20,#54,#41,#42,#20,#4E,#45
+        db #58,#54,#00
+msg_en_status:              ; LAST COMMAND
+        db #4C,#41,#53,#54,#20,#43,#4F,#4D,#4D,#41,#4E,#44,#00
+msg_en_none:              ; NONE
+        db #4E,#4F,#4E,#45,#00
+msg_en_dlg_about_t:              ; ABOUT
+        db #41,#42,#4F,#55,#54,#00
+msg_en_dlg_about:              ; V-OS 0.05|AMSTRAD CPC 6128|MENUS AND DIALOGS
+        db #56,#2D,#4F,#53,#20,#30,#2E,#30,#35,#7C,#41,#4D,#53,#54,#52,#41
+        db #44,#20,#43,#50,#43,#20,#36,#31,#32,#38,#7C,#4D,#45,#4E,#55,#53
+        db #20,#41,#4E,#44,#20,#44,#49,#41,#4C,#4F,#47,#53,#00
+msg_en_dlg_keys_t:              ; KEYS
+        db #4B,#45,#59,#53,#00
+msg_en_dlg_keys:              ; ESC     MENU|TAB     NEXT BUTTON|ENTER   SELECT|COPY    CLICK|CTRL+SHIFT  EN/EL
+        db #45,#53,#43,#20,#20,#20,#20,#20,#4D,#45,#4E,#55,#7C,#54,#41,#42
+        db #20,#20,#20,#20,#20,#4E,#45,#58,#54,#20,#42,#55,#54,#54,#4F,#4E
+        db #7C,#45,#4E,#54,#45,#52,#20,#20,#20,#53,#45,#4C,#45,#43,#54,#7C
+        db #43,#4F,#50,#59,#20,#20,#20,#20,#43,#4C,#49,#43,#4B,#7C,#43,#54
+        db #52,#4C,#2B,#53,#48,#49,#46,#54,#20,#20,#45,#4E,#2F,#45,#4C,#00
+msg_en_dlg_quit_t:              ; EXIT
+        db #45,#58,#49,#54,#00
+msg_en_dlg_quit:              ; RESTART THE CPC|AND GO TO BASIC?
+        db #52,#45,#53,#54,#41,#52,#54,#20,#54,#48,#45,#20,#43,#50,#43,#7C
+        db #41,#4E,#44,#20,#47,#4F,#20,#54,#4F,#20,#42,#41,#53,#49,#43,#3F
+        db #00
+msg_en_dlg_nyi_t:              ; SORRY
+        db #53,#4F,#52,#52,#59,#00
+msg_en_dlg_nyi:              ; NOT AVAILABLE YET|DISC COMES IN M4
+        db #4E,#4F,#54,#20,#41,#56,#41,#49,#4C,#41,#42,#4C,#45,#20,#59,#45
+        db #54,#7C,#44,#49,#53,#43,#20,#43,#4F,#4D,#45,#53,#20,#49,#4E,#20
+        db #4D,#34,#00
 
 ; English keyboard map: key number -> character (0 = none)
 kbd_map:
