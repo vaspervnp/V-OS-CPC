@@ -5,37 +5,21 @@ msg_en_table:
         dw msg_en_menu_file
         dw msg_en_menu_view
         dw msg_en_menu_help
-        dw msg_en_item_open
+        dw msg_en_item_info
+        dw msg_en_item_copy
+        dw msg_en_item_delete
+        dw msg_en_item_refresh
         dw msg_en_item_quit
-        dw msg_en_item_mode1
-        dw msg_en_item_mode0
         dw msg_en_item_lang
         dw msg_en_item_keys
         dw msg_en_item_about
         dw msg_en_btn_ok
         dw msg_en_btn_yes
         dw msg_en_btn_no
-        dw msg_en_btn_about
-        dw msg_en_btn_mode
-        dw msg_en_btn_keys
-        dw msg_en_heading
-        dw msg_en_hint
-        dw msg_en_status
-        dw msg_en_none
-        dw msg_en_dlg_about_t
-        dw msg_en_dlg_about
-        dw msg_en_dlg_keys_t
-        dw msg_en_dlg_keys
-        dw msg_en_dlg_quit_t
-        dw msg_en_dlg_quit
-        dw msg_en_item_save
-        dw msg_en_item_delete
-        dw msg_en_item_disc
-        dw msg_en_pick_open
-        dw msg_en_pick_delete
-        dw msg_en_free
+        dw msg_en_keys_bar
         dw msg_en_files
-        dw msg_en_format
+        dw msg_en_free
+        dw msg_en_no_files
         dw msg_en_fmt_data
         dw msg_en_fmt_system
         dw msg_en_size
@@ -44,13 +28,16 @@ msg_en_table:
         dw msg_en_type_basic
         dw msg_en_type_binary
         dw msg_en_type_text
-        dw msg_en_no_files
-        dw msg_en_save_text
-        dw msg_en_saved
+        dw msg_en_copied
         dw msg_en_delete_q
-        dw msg_en_deleted
+        dw msg_en_qmark
+        dw msg_en_dlg_about_t
+        dw msg_en_dlg_about
+        dw msg_en_dlg_keys_t
+        dw msg_en_dlg_keys
+        dw msg_en_dlg_quit_t
+        dw msg_en_dlg_quit
         dw msg_en_dlg_file_t
-        dw msg_en_dlg_disc_t
         dw msg_en_dlg_err_t
         dw msg_en_err_1
         dw msg_en_err_2
@@ -61,23 +48,25 @@ msg_en_table:
         dw msg_en_err_7
         dw msg_en_err_8
         dw msg_en_err_9
-        dw msg_en_qmark
+        dw msg_en_err_10
 msg_en_menu_file:              ; FILE
         db #46,#49,#4C,#45,#00
 msg_en_menu_view:              ; VIEW
         db #56,#49,#45,#57,#00
 msg_en_menu_help:              ; HELP
         db #48,#45,#4C,#50,#00
-msg_en_item_open:              ; OPEN
-        db #4F,#50,#45,#4E,#00
+msg_en_item_info:              ; FILE INFO
+        db #46,#49,#4C,#45,#20,#49,#4E,#46,#4F,#00
+msg_en_item_copy:              ; COPY TO OTHER PANEL
+        db #43,#4F,#50,#59,#20,#54,#4F,#20,#4F,#54,#48,#45,#52,#20,#50,#41
+        db #4E,#45,#4C,#00
+msg_en_item_delete:              ; DELETE
+        db #44,#45,#4C,#45,#54,#45,#00
+msg_en_item_refresh:              ; READ DISCS AGAIN
+        db #52,#45,#41,#44,#20,#44,#49,#53,#43,#53,#20,#41,#47,#41,#49,#4E
+        db #00
 msg_en_item_quit:              ; EXIT TO BASIC
         db #45,#58,#49,#54,#20,#54,#4F,#20,#42,#41,#53,#49,#43,#00
-msg_en_item_mode1:              ; MODE 1  4 COLOURS
-        db #4D,#4F,#44,#45,#20,#31,#20,#20,#34,#20,#43,#4F,#4C,#4F,#55,#52
-        db #53,#00
-msg_en_item_mode0:              ; MODE 0  16 COLOURS
-        db #4D,#4F,#44,#45,#20,#30,#20,#20,#31,#36,#20,#43,#4F,#4C,#4F,#55
-        db #52,#53,#00
 msg_en_item_lang:              ; SWITCH LANGUAGE
         db #53,#57,#49,#54,#43,#48,#20,#4C,#41,#4E,#47,#55,#41,#47,#45,#00
 msg_en_item_keys:              ; KEYS
@@ -90,57 +79,16 @@ msg_en_btn_yes:              ; YES
         db #59,#45,#53,#00
 msg_en_btn_no:              ; NO
         db #4E,#4F,#00
-msg_en_btn_about:              ; ABOUT
-        db #41,#42,#4F,#55,#54,#00
-msg_en_btn_mode:              ; MODE 0/1
-        db #4D,#4F,#44,#45,#20,#30,#2F,#31,#00
-msg_en_btn_keys:              ; KEYS
-        db #4B,#45,#59,#53,#00
-msg_en_heading:              ; V-OS 0.06 M4
-        db #56,#2D,#4F,#53,#20,#30,#2E,#30,#36,#20,#4D,#34,#00
-msg_en_hint:              ; ESC MENU  TAB NEXT
-        db #45,#53,#43,#20,#4D,#45,#4E,#55,#20,#20,#54,#41,#42,#20,#4E,#45
-        db #58,#54,#00
-msg_en_status:              ; LAST COMMAND
-        db #4C,#41,#53,#54,#20,#43,#4F,#4D,#4D,#41,#4E,#44,#00
-msg_en_none:              ; NONE
-        db #4E,#4F,#4E,#45,#00
-msg_en_dlg_about_t:              ; ABOUT
-        db #41,#42,#4F,#55,#54,#00
-msg_en_dlg_about:              ; V-OS 0.06|AMSTRAD CPC 6128|OWN FLOPPY DRIVER
-        db #56,#2D,#4F,#53,#20,#30,#2E,#30,#36,#7C,#41,#4D,#53,#54,#52,#41
-        db #44,#20,#43,#50,#43,#20,#36,#31,#32,#38,#7C,#4F,#57,#4E,#20,#46
-        db #4C,#4F,#50,#50,#59,#20,#44,#52,#49,#56,#45,#52,#00
-msg_en_dlg_keys_t:              ; KEYS
-        db #4B,#45,#59,#53,#00
-msg_en_dlg_keys:              ; ESC     MENU|TAB     NEXT BUTTON|ENTER   SELECT|COPY    CLICK|CTRL+SHIFT  EN/EL
-        db #45,#53,#43,#20,#20,#20,#20,#20,#4D,#45,#4E,#55,#7C,#54,#41,#42
-        db #20,#20,#20,#20,#20,#4E,#45,#58,#54,#20,#42,#55,#54,#54,#4F,#4E
-        db #7C,#45,#4E,#54,#45,#52,#20,#20,#20,#53,#45,#4C,#45,#43,#54,#7C
-        db #43,#4F,#50,#59,#20,#20,#20,#20,#43,#4C,#49,#43,#4B,#7C,#43,#54
-        db #52,#4C,#2B,#53,#48,#49,#46,#54,#20,#20,#45,#4E,#2F,#45,#4C,#00
-msg_en_dlg_quit_t:              ; EXIT
-        db #45,#58,#49,#54,#00
-msg_en_dlg_quit:              ; RESTART THE CPC|AND GO TO BASIC?
-        db #52,#45,#53,#54,#41,#52,#54,#20,#54,#48,#45,#20,#43,#50,#43,#7C
-        db #41,#4E,#44,#20,#47,#4F,#20,#54,#4F,#20,#42,#41,#53,#49,#43,#3F
-        db #00
-msg_en_item_save:              ; SAVE TEST FILE
-        db #53,#41,#56,#45,#20,#54,#45,#53,#54,#20,#46,#49,#4C,#45,#00
-msg_en_item_delete:              ; DELETE
-        db #44,#45,#4C,#45,#54,#45,#00
-msg_en_item_disc:              ; DISC INFO
-        db #44,#49,#53,#43,#20,#49,#4E,#46,#4F,#00
-msg_en_pick_open:              ; OPEN FILE
-        db #4F,#50,#45,#4E,#20,#46,#49,#4C,#45,#00
-msg_en_pick_delete:              ; DELETE FILE
-        db #44,#45,#4C,#45,#54,#45,#20,#46,#49,#4C,#45,#00
-msg_en_free:              ; FREE
-        db #46,#52,#45,#45,#00
+msg_en_keys_bar:              ; TAB PANEL  ENTER INFO  ^C COPY  ^D DELETE
+        db #54,#41,#42,#20,#50,#41,#4E,#45,#4C,#20,#20,#45,#4E,#54,#45,#52
+        db #20,#49,#4E,#46,#4F,#20,#20,#5E,#43,#20,#43,#4F,#50,#59,#20,#20
+        db #5E,#44,#20,#44,#45,#4C,#45,#54,#45,#00
 msg_en_files:              ; FILES
         db #46,#49,#4C,#45,#53,#00
-msg_en_format:              ; FORMAT
-        db #46,#4F,#52,#4D,#41,#54,#00
+msg_en_free:              ; FREE
+        db #46,#52,#45,#45,#00
+msg_en_no_files:              ; NO FILES
+        db #4E,#4F,#20,#46,#49,#4C,#45,#53,#00
 msg_en_fmt_data:              ; DATA
         db #44,#41,#54,#41,#00
 msg_en_fmt_system:              ; SYSTEM
@@ -157,25 +105,37 @@ msg_en_type_binary:              ; BINARY
         db #42,#49,#4E,#41,#52,#59,#00
 msg_en_type_text:              ; TEXT
         db #54,#45,#58,#54,#00
-msg_en_no_files:              ; NO FILES ON THE DISC
-        db #4E,#4F,#20,#46,#49,#4C,#45,#53,#20,#4F,#4E,#20,#54,#48,#45,#20
-        db #44,#49,#53,#43,#00
-msg_en_save_text:              ; HELLO FROM V-OS. THIS FILE WAS WRITTEN BY ITS OWN FLOPPY DRIVER.
-        db #48,#45,#4C,#4C,#4F,#20,#46,#52,#4F,#4D,#20,#56,#2D,#4F,#53,#2E
-        db #20,#54,#48,#49,#53,#20,#46,#49,#4C,#45,#20,#57,#41,#53,#20,#57
-        db #52,#49,#54,#54,#45,#4E,#20,#42,#59,#20,#49,#54,#53,#20,#4F,#57
-        db #4E,#20,#46,#4C,#4F,#50,#50,#59,#20,#44,#52,#49,#56,#45,#52,#2E
-        db #00
-msg_en_saved:              ; SAVED
-        db #53,#41,#56,#45,#44,#00
+msg_en_copied:              ; COPIED TO
+        db #43,#4F,#50,#49,#45,#44,#20,#54,#4F,#00
 msg_en_delete_q:              ; DELETE
         db #44,#45,#4C,#45,#54,#45,#00
-msg_en_deleted:              ; DELETED
-        db #44,#45,#4C,#45,#54,#45,#44,#00
+msg_en_qmark:              ; ?
+        db #3F,#00
+msg_en_dlg_about_t:              ; ABOUT
+        db #41,#42,#4F,#55,#54,#00
+msg_en_dlg_about:              ; V-OS 0.07|AMSTRAD CPC 6128|COMMANDER
+        db #56,#2D,#4F,#53,#20,#30,#2E,#30,#37,#7C,#41,#4D,#53,#54,#52,#41
+        db #44,#20,#43,#50,#43,#20,#36,#31,#32,#38,#7C,#43,#4F,#4D,#4D,#41
+        db #4E,#44,#45,#52,#00
+msg_en_dlg_keys_t:              ; KEYS
+        db #4B,#45,#59,#53,#00
+msg_en_dlg_keys:              ; UP DOWN  SELECT|SHIFT    PAGE|TAB      OTHER PANEL|ENTER    FILE INFO|^C COPY  ^D DELETE|^R READ DISCS|CTRL+SHIFT  EN/EL
+        db #55,#50,#20,#44,#4F,#57,#4E,#20,#20,#53,#45,#4C,#45,#43,#54,#7C
+        db #53,#48,#49,#46,#54,#20,#20,#20,#20,#50,#41,#47,#45,#7C,#54,#41
+        db #42,#20,#20,#20,#20,#20,#20,#4F,#54,#48,#45,#52,#20,#50,#41,#4E
+        db #45,#4C,#7C,#45,#4E,#54,#45,#52,#20,#20,#20,#20,#46,#49,#4C,#45
+        db #20,#49,#4E,#46,#4F,#7C,#5E,#43,#20,#43,#4F,#50,#59,#20,#20,#5E
+        db #44,#20,#44,#45,#4C,#45,#54,#45,#7C,#5E,#52,#20,#52,#45,#41,#44
+        db #20,#44,#49,#53,#43,#53,#7C,#43,#54,#52,#4C,#2B,#53,#48,#49,#46
+        db #54,#20,#20,#45,#4E,#2F,#45,#4C,#00
+msg_en_dlg_quit_t:              ; EXIT
+        db #45,#58,#49,#54,#00
+msg_en_dlg_quit:              ; RESTART THE CPC|AND GO TO BASIC?
+        db #52,#45,#53,#54,#41,#52,#54,#20,#54,#48,#45,#20,#43,#50,#43,#7C
+        db #41,#4E,#44,#20,#47,#4F,#20,#54,#4F,#20,#42,#41,#53,#49,#43,#3F
+        db #00
 msg_en_dlg_file_t:              ; FILE
         db #46,#49,#4C,#45,#00
-msg_en_dlg_disc_t:              ; DISC
-        db #44,#49,#53,#43,#00
 msg_en_dlg_err_t:              ; DISC ERROR
         db #44,#49,#53,#43,#20,#45,#52,#52,#4F,#52,#00
 msg_en_err_1:              ; DRIVE NOT READY
@@ -197,8 +157,8 @@ msg_en_err_8:              ; DISC FULL
         db #44,#49,#53,#43,#20,#46,#55,#4C,#4C,#00
 msg_en_err_9:              ; DIRECTORY FULL
         db #44,#49,#52,#45,#43,#54,#4F,#52,#59,#20,#46,#55,#4C,#4C,#00
-msg_en_qmark:              ; ?
-        db #3F,#00
+msg_en_err_10:              ; FILE OVER 16K
+        db #46,#49,#4C,#45,#20,#4F,#56,#45,#52,#20,#31,#36,#4B,#00
 
 ; English keyboard map: key number -> character (0 = none)
 kbd_map:

@@ -10,7 +10,7 @@
         include "include/memmap.inc"
         include "lang/msg_ids.inc"
 
-VOS_VERSION     equ #0006           ; 0.06
+VOS_VERSION     equ #0007           ; 0.07
 VOS_API_VERSION equ #0000
 
 ; ---- loader, runs at LOADER_ADDR ------------------------------------
@@ -43,6 +43,7 @@ kernel_start:
         include "ui/ui.asm"
         include "ui/dialog.asm"
         include "ui/filedlg.asm"
+        include "shell/commander.asm"
         include "gfx/font_ascii.asm"
 kernel_end:
 

@@ -23,6 +23,7 @@
 ;               FS_LOAD_MAX bytes are copied
 ; fs_save       HL = name, DE = source, A = its RAM configuration,
 ;               BC = length, fs_hdr_type/load/exec set by the caller
+;               (type #FF: no header, as fs_load reports text files)
 ; fs_delete     HL = name
 ; fs_free_k     -> A = free kilobytes (after a mount)
 ; All return carry set and A = FDC_ERR_* or FS_ERR_* on failure.
@@ -35,6 +36,7 @@ FS_ERR_FORMAT   equ 6
 FS_ERR_NOT_FOUND equ 7
 FS_ERR_FULL     equ 8
 FS_ERR_DIR_FULL equ 9
+FS_ERR_TOO_BIG  equ 10              ; for callers: over FS_LOAD_MAX
 
 FS_ENTRIES      equ 64
 FS_FREE_ENTRY   equ #E5
@@ -742,10 +744,14 @@ fs_save:
         ret c
         call fs_unlink              ; replace an older file
         call fs_build_map
-        ; sizes: header + data
+        ; sizes: header + data (fs_hdr_type #FF: no header, as text files)
         ld hl,(fs_length)
+        ld a,(fs_hdr_type)
+        inc a
+        jr z,.no_header
         ld de,128
         add hl,de
+.no_header:
         ld (fs_total),hl
         ld de,127                   ; records = (total + 127) / 128
         add hl,de
@@ -766,6 +772,10 @@ fs_save:
         srl h
         rr l
         ld a,l
+        or a                        ; an empty file still takes a block
+        jr nz,.blocks
+        inc a
+.blocks:
         ld (fs_nblocks),a
         add a,15                    ; entries = (blocks + 15) / 16
         srl a
@@ -825,6 +835,11 @@ fs_save:
         ; data: the header and the first 384 bytes, then 512 at a time
         xor a
         ld (fl_sector),a
+        ld a,(fs_hdr_type)
+        inc a
+        ld hl,fs_buf
+        ld bc,512
+        jr z,.sector
         call fs_make_header
         ld hl,fs_buf + 128
         ld bc,512 - 128

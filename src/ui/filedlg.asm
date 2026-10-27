@@ -233,51 +233,8 @@ fp_draw_row:
         add hl,hl
         ld de,FS_CAT
         add hl,de
-        push hl
         ld de,fp_line
-        ld bc,8
-        ldir
-        ld a,"."
-        ld (de),a
-        inc de
-        ld bc,3
-        ldir
-        ld a," "
-        ld (de),a
-        inc de
-        ld (de),a
-        inc de
-        pop hl
-        ld bc,12
-        add hl,bc
-        ld l,(hl)                   ; size in K, right-aligned
-        ld h,0
-        push de
-        ld de,fp_num
-        call util_dec
-        xor a
-        ld (de),a
-        pop de
-        ld hl,fp_num
-        call .length
-        ld b,a
-        ld a,3
-        sub b
-        jr z,.digits
-        ld b,a
-        ld a," "
-.pad:
-        ld (de),a
-        inc de
-        djnz .pad
-.digits:
-        ld hl,fp_num
-        call util_copy
-        ld a,"K"
-        ld (de),a
-        inc de
-        xor a
-        ld (de),a
+        call util_cat_row
         ld hl,(fp_x)
         ld de,8
         add hl,de
@@ -285,18 +242,6 @@ fp_draw_row:
         inc de
         ld bc,fp_line
         jp txt_print
-.length:
-        ld b,0
-.count:
-        ld a,(hl)
-        or a
-        jr z,.counted
-        inc hl
-        inc b
-        jr .count
-.counted:
-        ld a,b
-        ret
 
 ; "FREE nnnK" on the last line
 fp_draw_free:
@@ -470,5 +415,4 @@ fp_h:           db 0
 fp_rows_y:      dw 0
 fp_ry:          dw 0
 fp_colours:     dw 0                ; background, foreground
-fp_num:         ds 6
 fp_line:        ds 24

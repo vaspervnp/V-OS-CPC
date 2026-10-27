@@ -4,8 +4,9 @@
 ; All write at DE and return DE just past what they wrote (no zero).
 ; =====================================================================
 
-; HL = 0..65535 -> decimal, no leading zeros.  Destroys: AF, BC, HL, IX
+; HL = 0..65535 -> decimal, no leading zeros.  Destroys: AF, BC, HL
 util_dec:
+        push ix
         push de
         pop ix
         ld c,0                      ; digits written so far
@@ -23,6 +24,7 @@ util_dec:
         inc ix
         push ix
         pop de
+        pop ix
         ret
 .digit:
         ld b,'0'
@@ -118,6 +120,49 @@ util_fcb_text:
         inc de
 .ext_pad:
         djnz .ext
+        ret
+
+; HL -> FS_CAT entry (name[11], 0, size in K) -> "NAME    .EXT  nnnK"
+; and a zero.  Destroys: AF, BC, HL
+util_cat_row:
+        push hl
+        ld bc,8
+        ldir
+        ld a,"."
+        ld (de),a
+        inc de
+        ld bc,3
+        ldir
+        pop hl
+        ld bc,12
+        add hl,bc
+        ld l,(hl)                   ; size, right-aligned in 5 columns
+        ld h,0
+        ld c," "
+        ld a,l
+        cp 100
+        jr nc,.pad2
+        cp 10
+        jr nc,.pad3
+        ld a,c
+        ld (de),a
+        inc de
+.pad3:
+        ld a,c
+        ld (de),a
+        inc de
+.pad2:
+        ld a,c
+        ld (de),a
+        inc de
+        ld (de),a
+        inc de
+        call util_dec
+        ld a,"K"
+        ld (de),a
+        inc de
+        xor a
+        ld (de),a
         ret
 
 ; A = character -> DE, "|" -> new dialog line

@@ -13,6 +13,7 @@
 ; fdc_write         same, writes the buffer
 ; fdc_read_id       A = ID of the first sector found on the current track
 ; fdc_recalibrate   head to track 0
+; fdc_select        A = drive for the calls above
 ; All return carry set and A = FDC_ERR_* on failure. Reads and writes
 ; retry FDC_RETRIES times, recalibrating between tries.
 ; fdc_tick (50 Hz, interrupt) switches the motor off after FDC_IDLE_FRAMES
@@ -43,6 +44,17 @@ FDC_ERR_OTHER     equ 5
 FDC_RETRIES     equ 3
 FDC_SPINUP      equ 50              ; frames: one second
 FDC_IDLE_FRAMES equ 150             ; frames before the motor stops
+
+; A = drive (0 = A:, 1 = B:). The head position is per drive, so a
+; change makes the next access recalibrate.
+fdc_select:
+        ld hl,fdc_drive
+        cp (hl)
+        ret z
+        ld (hl),a
+        ld a,#FF
+        ld (fdc_track),a
+        ret
 
 ; ---------------------------------------------------------------------
 fdc_init:

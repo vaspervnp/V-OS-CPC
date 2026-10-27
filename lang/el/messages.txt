@@ -5,35 +5,21 @@
 MENU_FILE   ΑΡΧΕΙΟ
 MENU_VIEW   ΠΡΟΒΟΛΗ
 MENU_HELP   ΒΟΗΘΕΙΑ
-ITEM_OPEN   ΑΝΟΙΓΜΑ
+ITEM_INFO   ΣΤΟΙΧΕΙΑ ΑΡΧΕΙΟΥ
+ITEM_COPY   ΑΝΤΙΓΡΑΦΗ ΑΠΕΝΑΝΤΙ
+ITEM_DELETE ΔΙΑΓΡΑΦΗ
+ITEM_REFRESH ΞΑΝΑΔΙΑΒΑΣΜΑ ΔΙΣΚΩΝ
 ITEM_QUIT   ΕΞΟΔΟΣ ΣΤΗ BASIC
-ITEM_MODE1  MODE 1  4 ΧΡΩΜΑΤΑ
-ITEM_MODE0  MODE 0  16 ΧΡΩΜΑΤΑ
 ITEM_LANG   ΑΛΛΑΓΗ ΓΛΩΣΣΑΣ
 ITEM_KEYS   ΠΛΗΚΤΡΑ
 ITEM_ABOUT  ΣΧΕΤΙΚΑ ΜΕ ΤΟ V-OS
 BTN_OK      ΕΝΤΑΞΕΙ
 BTN_YES     ΝΑΙ
 BTN_NO      ΟΧΙ
-BTN_ABOUT   ΣΧΕΤΙΚΑ
-BTN_KEYS    ΠΛΗΚΤΡΑ
-HINT        ESC ΜΕΝΟΥ  TAB ΕΠΟΜΕΝΟ
-STATUS      ΤΕΛΕΥΤΑΙΑ ΕΝΤΟΛΗ
-NONE        ΚΑΜΙΑ
-DLG_ABOUT_T ΣΧΕΤΙΚΑ
-DLG_ABOUT   V-OS 0.06|AMSTRAD CPC 6128|ΔΙΚΟΣ ΟΔΗΓΟΣ FDC
-DLG_KEYS_T  ΠΛΗΚΤΡΑ
-DLG_KEYS    ESC     ΜΕΝΟΥ|TAB     ΕΠΟΜΕΝΟ|ENTER   ΕΠΙΛΟΓΗ|COPY    ΚΛΙΚ|CTRL+SHIFT  EN/EL
-DLG_QUIT_T  ΕΞΟΔΟΣ
-DLG_QUIT    ΕΠΑΝΕΚΚΙΝΗΣΗ CPC|ΕΞΟΔΟΣ ΣΤΗ BASIC;
-ITEM_SAVE   ΑΠΟΘΗΚΕΥΣΗ ΔΟΚΙΜΗΣ
-ITEM_DELETE ΔΙΑΓΡΑΦΗ
-ITEM_DISC   ΣΤΟΙΧΕΙΑ ΔΙΣΚΕΤΑΣ
-PICK_OPEN   ΑΝΟΙΓΜΑ ΑΡΧΕΙΟΥ
-PICK_DELETE ΔΙΑΓΡΑΦΗ ΑΡΧΕΙΟΥ
-FREE        ΕΛΕΥΘΕΡΑ
+KEYS_BAR    TAB ΠΑΝΕΛ  ENTER ΣΤΟΙΧΕΙΑ  ^C ΑΝΤΙΓΡ.  ^D ΔΙΑΓΡ.
 FILES       ΑΡΧΕΙΑ
-FORMAT      ΜΟΡΦΗ
+FREE        ΕΛΕΥΘΕΡΑ
+NO_FILES    ΚΑΝΕΝΑ ΑΡΧΕΙΟ
 FMT_DATA    DATA
 FMT_SYSTEM  SYSTEM
 SIZE        ΜΕΓΕΘΟΣ
@@ -42,13 +28,16 @@ LOAD        ΦΟΡΤΩΣΗ
 TYPE_BASIC  BASIC
 TYPE_BINARY ΔΥΑΔΙΚΟ
 TYPE_TEXT   ΚΕΙΜΕΝΟ
-NO_FILES    ΚΑΝΕΝΑ ΑΡΧΕΙΟ
-SAVE_TEXT   ΓΕΙΑ ΑΠΟ ΤΟ V-OS. ΤΟ ΑΡΧΕΙΟ ΓΡΑΦΤΗΚΕ ΑΠΟ ΤΟΝ ΔΙΚΟ ΤΟΥ ΟΔΗΓΟ.
-SAVED       ΑΠΟΘΗΚΕΥΤΗΚΕ
+COPIED      ΑΝΤΙΓΡΑΦΗΚΕ ΣΤΟ
 DELETE_Q    ΔΙΑΓΡΑΦΗ
-DELETED     ΔΙΑΓΡΑΦΗΚΕ
+QMARK       ;
+DLG_ABOUT_T ΣΧΕΤΙΚΑ
+DLG_ABOUT   V-OS 0.07|AMSTRAD CPC 6128|COMMANDER
+DLG_KEYS_T  ΠΛΗΚΤΡΑ
+DLG_KEYS    ΠΑΝΩ ΚΑΤΩ ΕΠΙΛΟΓΗ|SHIFT    ΣΕΛΙΔΑ|TAB      ΑΛΛΟ ΠΑΝΕΛ|ENTER    ΣΤΟΙΧΕΙΑ|^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.|^R ΞΑΝΑΔΙΑΒΑΣΜΑ|CTRL+SHIFT  EN/EL
+DLG_QUIT_T  ΕΞΟΔΟΣ
+DLG_QUIT    ΕΠΑΝΕΚΚΙΝΗΣΗ CPC|ΕΞΟΔΟΣ ΣΤΗ BASIC;
 DLG_FILE_T  ΑΡΧΕΙΟ
-DLG_DISC_T  ΔΙΣΚΕΤΑ
 DLG_ERR_T   ΣΦΑΛΜΑ ΔΙΣΚΕΤΑΣ
 ERR_1       ΔΕΝ ΕΙΝΑΙ ΕΤΟΙΜΗ
 ERR_2       ΠΡΟΣΤΑΣΙΑ ΕΓΓΡΑΦΗΣ
@@ -59,4 +48,4 @@ ERR_6       ΑΓΝΩΣΤΗ ΜΟΡΦΗ
 ERR_7       ΔΕΝ ΒΡΕΘΗΚΕ
 ERR_8       ΓΕΜΑΤΗ ΔΙΣΚΕΤΑ
 ERR_9       ΓΕΜΑΤΟΣ ΚΑΤΑΛΟΓΟΣ
-QMARK       ;
+ERR_10      ΑΡΧΕΙΟ ΠΑΝΩ ΑΠΟ 16K

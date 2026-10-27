@@ -2,11 +2,12 @@
 #   make          assemble build/vos.dsk
 #   make run      boot it in Caprice32 (RUN"VOS")
 #   make shot     boot headless and save a screenshot
-#   make test-input  build/vos_test.dsk with scripted key presses
+#   make test-input  build/vos_test.dsk (drive A) and build/vos_b.dsk
+#                 (drive B) with scripted key presses
 #                 (src/kernel/test_script.asm) and six screenshots
-#   make test-amsdos  the same script, then AMSDOS in BASIC loads and
-#                 lists the file V-OS wrote (one screenshot)
-#   make test-system  the script on a SYSTEM format copy of the disc
+#   make test-amsdos  the same script, then AMSDOS in BASIC reads the
+#                 files V-OS wrote (one screenshot)
+#   make test-system  the script with drive A in SYSTEM format
 #   make clean
 
 RASM    ?= rasm
@@ -55,9 +56,26 @@ run: $(DSK)
 
 shot: $(DSK)
 	snap run --shell caprice32.launcher -c "bash $(abspath tools/cap32_shot.sh)"
-	@ls -t $(HOME)/snap/caprice32/current/screenshots/*.png | head -1
+	@ls -t $(BUILD)/shots/*.png | head -1
 
 TEST_DSK := $(BUILD)/vos_test.dsk
+TEST_DSK_B := $(BUILD)/vos_b.dsk
+
+# Drive B for the tests: one text file without a header.
+$(TEST_DSK_B): tools/dsk_ext.py
+	@mkdir -p $(BUILD)
+	@rm -f $@
+	printf 'HELLO FROM DRIVE B\r\nSECOND LINE\r\n\032' > $(BUILD)/HELLO.TXT
+	$(IDSK) $@ -n > /dev/null
+	$(IDSK) $@ -i $(BUILD)/HELLO.TXT -t 0 > /dev/null
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+# Fresh copies for each run: the emulator writes to the images.
+define run_test
+	cp $(TEST_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	snap run --shell caprice32.launcher -c "VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath $(1))"; \
+	ls -t $(BUILD)/shots/*.png | head -1
+endef
 
 $(TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
 	@mkdir -p $(BUILD)
@@ -66,30 +84,24 @@ $(TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
 	$(call add_packs,$(TEST_DSK))
 	$(PYTHON) -I tools/dsk_ext.py $(TEST_DSK)
 
-# Shots of the saved, opened, deleted and disc info dialogs. Each run
-# starts from a fresh copy, since the emulator writes to the image.
-test-input: $(TEST_DSK)
-	for d in 120 330 440 480 600 760; do \
-	  cp $(TEST_DSK) $(BUILD)/vos_run.dsk; \
-	  snap run --shell caprice32.launcher -c "VOS_DSK=$(abspath $(BUILD))/vos_run.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
-	  ls -t $(HOME)/snap/caprice32/current/screenshots/*.png | head -1; sleep 1; \
+# Shots along the script (src/kernel/test_script.asm): info, copy to B:,
+# copy to A: and delete, info of the text file, English menus.
+test-input: $(TEST_DSK) $(TEST_DSK_B)
+	for d in 120 200 280 350 420 480; do \
+	  $(call run_test,tools/cap32_shot.sh $$d); sleep 1; \
 	done
 
 # Caprice32 keeps disc writes in memory only, so V-OS's writes are
 # checked in the same run: the script ends by restarting into BASIC.
-test-amsdos: $(TEST_DSK)
-	cp $(TEST_DSK) $(BUILD)/vos_run.dsk
-	snap run --shell caprice32.launcher -c "VOS_DSK=$(abspath $(BUILD))/vos_run.dsk bash $(abspath tools/cap32_amsdos_check.sh)"
-	ls -t $(HOME)/snap/caprice32/current/screenshots/*.png | head -1
+test-amsdos: $(TEST_DSK) $(TEST_DSK_B)
+	$(call run_test,tools/cap32_amsdos_check.sh)
 
-# Shots of the opened file and of the deleted file on a SYSTEM disc.
-test-system: $(TEST_DSK)
+# The script with drive A: in SYSTEM format.
+test-system: $(TEST_DSK) $(TEST_DSK_B)
 	$(PYTHON) -I tools/dsk_system.py $(TEST_DSK) $(BUILD)/vos_sys.dsk
-	for d in 330 480; do \
-	  cp $(BUILD)/vos_sys.dsk $(BUILD)/vos_run.dsk; \
-	  snap run --shell caprice32.launcher -c "VOS_DSK=$(abspath $(BUILD))/vos_run.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
-	  ls -t $(HOME)/snap/caprice32/current/screenshots/*.png | head -1; sleep 1; \
-	done
+	cp $(BUILD)/vos_sys.dsk $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	snap run --shell caprice32.launcher -c "VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) 350"; \
+	ls -t $(BUILD)/shots/*.png | head -1
 
 clean:
 	rm -rf $(BUILD)

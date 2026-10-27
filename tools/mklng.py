@@ -38,6 +38,9 @@ DEAD_FIRST = 1
 DEAD_LAST = 7
 
 
+MSG_MAX = 127                       # LANG_MSG_MAX in src/kernel/lang.asm
+
+
 def fail(msg):
     sys.exit(f"mklng: {msg}")
 
@@ -136,6 +139,9 @@ def read_messages(path):
             fail(f"{path}:{n}: ID must be upper case")
         if ident in msgs:
             fail(f"{path}:{n}: {ident} defined twice")
+        if len(body) > MSG_MAX:
+            fail(f"{path}:{n}: {ident} is {len(body)} characters, "
+                 f"the kernel copies at most {MSG_MAX} (LANG_MSG_MAX)")
         msgs[ident] = body
     return msgs
 
