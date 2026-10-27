@@ -487,7 +487,11 @@ txt_glyph:
         jr z,.unknown
         ld a,e
         sub 128
-        ld de,lang_font
+        ld de,lang_font_lo
+        cp 64
+        jr c,.address
+        sub 64
+        ld de,lang_font_hi
 .address:
         ld l,a
         ld h,0

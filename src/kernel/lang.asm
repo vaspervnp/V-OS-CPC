@@ -9,9 +9,10 @@
 ; lang_input 0 = English keyboard, 1 = pack keyboard; CONTROL+SHIFT
 ;            toggles it and posts EV_LANG
 ;
-; Font, case, keymap and combos are copied into kernel RAM, because the
-; text routines and the keyboard interrupt use them. The full pack goes
-; to bank 7; lang_msg copies one text from there into lang_msg_buf.
+; Font, case, keymap and combos are copied into the video RAM gaps
+; (always mapped), because the text routines and the keyboard interrupt
+; use them. The full pack stays in bank 7; lang_msg copies one text from
+; there into lang_msg_buf.
 ; =====================================================================
 
 LNG_FONT        equ 8               ; header offsets
@@ -25,8 +26,9 @@ LANG_COMBOS_MAX equ 32
 LANG_MSG_MAX    equ 127
 
 ; ---------------------------------------------------------------------
-; lang_init - take over the pack the loader left at LANG_LOAD.
-; Must run before gfx_init, which reuses that RAM as screen.
+; lang_init - load GREEK.LNG from the disc into bank 7 and copy its
+; font, case, keyboard and combo tables into GAP0-GAP2. Without the
+; file (or with a bad one) the system stays English.
 ; Destroys: all
 ; ---------------------------------------------------------------------
 lang_init:
@@ -34,65 +36,65 @@ lang_init:
         ld (lang_loaded),a
         ld (lang_ui),a
         ld (lang_input),a
-        ld hl,LANG_LOAD             ; magic "VLNG"
+        ld hl,lang_file
+        ld de,LANG_BANK_ADDR
+        ld c,LANG_BANK_CFG
+        call fs_load
+        ret c
+        ld a,LANG_BANK_CFG
+        call ram_select
+        ld hl,LANG_BANK_ADDR        ; magic "VLNG"
         ld de,lang_magic
         ld b,4
 .magic:
         ld a,(de)
         cp (hl)
-        ret nz
+        jr nz,.bad
         inc hl
         inc de
         djnz .magic
-        ld hl,(LANG_LOAD + LNG_SIZE)
-        ld de,LANG_MAX + 1
-        or a
-        sbc hl,de
-        ret nc                      ; too big: ignore it
-
-        ld a,LANG_BANK_CFG          ; whole pack -> bank 7
-        call ram_select
-        ld hl,LANG_LOAD
-        ld de,LANG_BANK_ADDR
-        ld bc,(LANG_LOAD + LNG_SIZE)
-        ldir
-        ld a,RAM_BASE_CFG
-        call ram_select
-
-        ld hl,(LANG_LOAD + LNG_FONT)
-        ld de,lang_font
-        ld bc,128 * 8
+        ld hl,(LANG_BANK_ADDR + LNG_FONT)
+        ld de,lang_font_lo
+        ld bc,64 * 8
         call .copy
-        ld hl,(LANG_LOAD + LNG_CASE)
+        ld hl,(LANG_BANK_ADDR + LNG_FONT)
+        ld de,64 * 8
+        add hl,de
+        ld de,lang_font_hi
+        ld bc,64 * 8
+        call .copy
+        ld hl,(LANG_BANK_ADDR + LNG_CASE)
         ld de,lang_case
         ld bc,128 * 2
         call .copy
-        ld hl,(LANG_LOAD + LNG_KEYMAP)
+        ld hl,(LANG_BANK_ADDR + LNG_KEYMAP)
         ld de,lang_keymap
         ld bc,160
         call .copy
-        ld hl,(LANG_LOAD + LNG_COMBOS)
+        ld hl,(LANG_BANK_ADDR + LNG_COMBOS)
         ld de,lang_combos
         ld bc,LANG_COMBOS_MAX * 3
         call .copy
         xor a
         ld (lang_combos + LANG_COMBOS_MAX * 3),a
-        ld hl,LANG_LOAD + 5         ; language code
+        ld hl,LANG_BANK_ADDR + 5    ; language code
         ld de,lang_code
         ld bc,2
         ldir
-        ld hl,LANG_LOAD + LNG_NAME
+        ld hl,LANG_BANK_ADDR + LNG_NAME
         ld de,lang_name
         ld bc,12
         ldir
         ld a,1
         ld (lang_loaded),a
         ld (lang_ui),a              ; the pack's language is the default
-        ret
+.bad:
+        ld a,RAM_BASE_CFG
+        jp ram_select
 ; HL = offset in the pack, DE = destination, BC = length
 .copy:
         push de
-        ld de,LANG_LOAD
+        ld de,LANG_BANK_ADDR
         add hl,de
         pop de
         ldir
@@ -255,8 +257,11 @@ lang_input:     db 0
 lang_code:      db "EN"
 lang_name:      ds 12
 lm_id:          db 0
-lang_msg_buf:   ds LANG_MSG_MAX + 1
-lang_case:      ds 128 * 2
-lang_keymap:    ds 160
-lang_combos:    ds LANG_COMBOS_MAX * 3 + 1
-lang_font:      ds 128 * 8
+lang_file:      db "GREEK   LNG"
+; tables in the video RAM gaps (memmap.inc)
+lang_font_lo    equ GAP0            ; glyphs 128..191
+lang_msg_buf    equ GAP0 + 512      ; LANG_MSG_MAX + 1
+lang_font_hi    equ GAP1            ; glyphs 192..255
+lang_case       equ GAP2            ; 128 * 2
+lang_keymap     equ GAP2 + 256      ; 160
+lang_combos     equ GAP2 + 416      ; LANG_COMBOS_MAX * 3 + 1

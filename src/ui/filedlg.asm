@@ -1,0 +1,474 @@
+; =====================================================================
+; filedlg.asm - modal file list
+;
+; file_pick - A = title MSG_*, after fs_catalog filled FS_CAT.
+; Returns A = the chosen file (index in FS_CAT), carry if cancelled.
+;
+; Up to FP_MAX_ROWS files are shown; the list scrolls with the selection.
+; UP/DOWN move, RETURN/ENTER/SPACE choose, ESC cancels, a click on a
+; file chooses it. The last line shows the free space on the disc.
+; Rows read "NAME    .EXT  nnnK". Uses the save-under buffer, like
+; menus and dialogs.
+; =====================================================================
+
+FP_MAX_ROWS         equ 10
+FP_CHARS        equ 22              ; box width in characters
+
+file_pick:
+        ld (fp_title),a
+        ld a,(fc_count)
+        ld (fp_count),a
+        ld a,(ptr_keys_on)
+        ld (fp_saved_keys),a
+        xor a
+        ld (ptr_keys_on),a
+        ld (fp_sel),a
+        ld (fp_top),a
+        ld a,(fp_count)             ; rows on screen
+        cp FP_MAX_ROWS
+        jr c,.rows
+        ld a,FP_MAX_ROWS
+.rows:
+        ld (fp_rows),a
+        ld b,a                      ; height = 12 + 4 + rows*10 + 4 + 10 + 4
+        ld a,34
+.height:
+        add a,10
+        djnz .height
+        ld (fp_h),a
+        ld hl,FP_CHARS * 8
+        ld (fp_w),hl
+        ld hl,(gfx_width)           ; centred, x a multiple of 8
+        ld de,FP_CHARS * 8
+        or a
+        sbc hl,de
+        srl h
+        rr l
+        ld a,l
+        and %11111000
+        ld l,a
+        ld (fp_x),hl
+        ld a,(fp_h)
+        ld e,a
+        ld d,0
+        ld hl,GFX_H
+        or a
+        sbc hl,de
+        srl h
+        rr l
+        ld (fp_y),hl
+        ld de,16                    ; first row
+        add hl,de
+        ld (fp_rows_y),hl
+
+        ld hl,(fp_x)                ; save what the box covers
+        ld de,(fp_y)
+        ld a,(ui_shadow_x)
+        add a,FP_CHARS * 8
+        ld c,a
+        ld b,0
+        ld a,(ui_shadow_y)
+        push hl
+        ld hl,fp_h
+        add a,(hl)
+        pop hl
+        call ui_save
+        call fp_frame
+        call fp_draw_rows
+        call fp_draw_free
+
+.loop:
+        call wait_frame
+.events:
+        call ev_get
+        jr z,.idle
+        call fp_event               ; A: 0 none, 1 chosen, 2 cancelled
+        or a
+        jr z,.events
+        jr .done
+.idle:
+        call ptr_update
+        jr .loop
+.done:
+        ld (fp_result),a
+        call ui_restore
+        ld a,(fp_saved_keys)
+        ld (ptr_keys_on),a
+        ld a,(fp_result)
+        cp 2
+        ccf                         ; carry if cancelled
+        ld a,(fp_sel)
+        ret
+
+; shadow, box, frame and title bar
+fp_frame:
+        ld a,UIP_SHADOW
+        ld (ui_fill_pen),a
+        ld hl,(fp_x)
+        ld a,(ui_shadow_x)
+        ld e,a
+        ld d,0
+        add hl,de
+        ld de,(fp_y)
+        ld a,(ui_shadow_y)
+        add a,e
+        ld e,a
+        ld a,0
+        adc a,d
+        ld d,a
+        ld bc,(fp_w)
+        ld a,(fp_h)
+        call ui_rect
+        ld a,UIP_BAR
+        ld (ui_fill_pen),a
+        ld hl,(fp_x)
+        ld de,(fp_y)
+        ld bc,(fp_w)
+        ld a,(fp_h)
+        call ui_rect
+        ld a,UIP_FRAME
+        ld (ui_fill_pen),a
+        ld hl,(fp_x)
+        ld de,(fp_y)
+        ld bc,(fp_w)
+        ld a,(fp_h)
+        call ui_frame
+        ld a,UIP_SEL
+        ld (ui_fill_pen),a
+        ld hl,(fp_x)
+        ld de,(fp_y)
+        ld bc,(fp_w)
+        ld a,12
+        call ui_rect
+        ld a,UIP_SELTEXT
+        ld c,UIP_SEL
+        call ui_colours
+        ld a,(fp_title)
+        call ui_msg
+        push hl
+        ld l,a                      ; x = box x + (width - length*8) / 2
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ex de,hl
+        ld hl,(fp_w)
+        or a
+        sbc hl,de
+        srl h
+        rr l
+        ld a,l
+        and %11111000
+        ld l,a
+        ld de,(fp_x)
+        add hl,de
+        ld de,(fp_y)
+        inc de
+        inc de
+        pop bc
+        jp ui_text_line
+
+; all visible rows
+fp_draw_rows:
+        xor a
+.row:
+        ld hl,fp_rows
+        cp (hl)
+        ret nc
+        push af
+        call fp_draw_row
+        pop af
+        inc a
+        jr .row
+
+; A = row on screen
+fp_draw_row:
+        ld (fp_r),a
+        ld b,a                      ; y = rows_y + row * 10
+        ld hl,(fp_rows_y)
+        ld de,10
+        inc b
+        jr .first
+.add:
+        add hl,de
+.first:
+        djnz .add
+        ld (fp_ry),hl
+        ld a,(fp_top)               ; file = top + row
+        ld hl,fp_r
+        add a,(hl)
+        ld (fp_i),a
+        ld hl,fp_sel
+        cp (hl)
+        ld a,UIP_BAR
+        ld bc,UIP_TEXT * 256 + UIP_BAR
+        jr nz,.colours
+        ld a,UIP_SEL
+        ld bc,UIP_SELTEXT * 256 + UIP_SEL
+.colours:
+        ld (ui_fill_pen),a
+        ld (fp_colours),bc
+        ld hl,(fp_x)
+        ld de,4
+        add hl,de
+        ld de,(fp_ry)
+        ld bc,(fp_w)
+        push hl
+        ld hl,-8
+        add hl,bc
+        ld b,h
+        ld c,l
+        pop hl
+        ld a,10
+        call ui_rect
+        ld a,(fp_colours + 1)
+        ld bc,(fp_colours)
+        call ui_colours
+        ld a,(fp_i)                 ; text: name, extension, size
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,FS_CAT
+        add hl,de
+        push hl
+        ld de,fp_line
+        ld bc,8
+        ldir
+        ld a,"."
+        ld (de),a
+        inc de
+        ld bc,3
+        ldir
+        ld a," "
+        ld (de),a
+        inc de
+        ld (de),a
+        inc de
+        pop hl
+        ld bc,12
+        add hl,bc
+        ld l,(hl)                   ; size in K, right-aligned
+        ld h,0
+        push de
+        ld de,fp_num
+        call util_dec
+        xor a
+        ld (de),a
+        pop de
+        ld hl,fp_num
+        call .length
+        ld b,a
+        ld a,3
+        sub b
+        jr z,.digits
+        ld b,a
+        ld a," "
+.pad:
+        ld (de),a
+        inc de
+        djnz .pad
+.digits:
+        ld hl,fp_num
+        call util_copy
+        ld a,"K"
+        ld (de),a
+        inc de
+        xor a
+        ld (de),a
+        ld hl,(fp_x)
+        ld de,8
+        add hl,de
+        ld de,(fp_ry)
+        inc de
+        ld bc,fp_line
+        jp txt_print
+.length:
+        ld b,0
+.count:
+        ld a,(hl)
+        or a
+        jr z,.counted
+        inc hl
+        inc b
+        jr .count
+.counted:
+        ld a,b
+        ret
+
+; "FREE nnnK" on the last line
+fp_draw_free:
+        ld de,fp_line
+        ld a,MSG_FREE
+        call util_msg
+        ld a," "
+        ld (de),a
+        inc de
+        push de
+        call fs_free_k
+        pop de
+        ld l,a
+        ld h,0
+        call util_dec
+        ld a,"K"
+        ld (de),a
+        inc de
+        xor a
+        ld (de),a
+        ld a,UIP_TEXT
+        ld c,UIP_BAR
+        call ui_colours
+        ld hl,(fp_y)
+        ld a,(fp_h)
+        sub 14
+        ld e,a
+        ld d,0
+        add hl,de
+        ex de,hl
+        ld hl,(fp_x)
+        ld bc,8
+        add hl,bc
+        ld bc,fp_line
+        jp txt_print
+
+; ev_cur -> A = 0 nothing, 1 chosen, 2 cancelled
+fp_event:
+        ld a,(ev_cur)
+        cp EV_LANG
+        jr nz,.not_lang
+        call ui_draw_indicator
+        jr .none
+.not_lang:
+        cp EV_PTR_DOWN
+        jr z,.click
+        cp EV_KEY_DOWN
+        jr z,.key
+        cp EV_KEY_REPEAT
+        jr z,.key
+.none:
+        xor a
+        ret
+.click:
+        ld hl,(ev_cur + 4)          ; inside the box?
+        ld de,(fp_x)
+        or a
+        sbc hl,de
+        jr c,.none
+        ld de,(fp_w)
+        or a
+        sbc hl,de
+        jr nc,.none
+        ld hl,(ev_cur + 6)          ; which row?
+        ld de,(fp_rows_y)
+        or a
+        sbc hl,de
+        jr c,.none
+        ld a,h
+        or a
+        jr nz,.none
+        ld a,l
+        ld c,0
+.row:
+        sub 10
+        jr c,.found
+        inc c
+        jr .row
+.found:
+        ld a,c
+        ld hl,fp_rows
+        cp (hl)
+        jr nc,.none
+        ld hl,fp_top
+        add a,(hl)
+        ld (fp_sel),a
+        ld a,1
+        ret
+.key:
+        ld a,(ev_cur + 1)
+        cp KEY_ESC
+        jr z,.cancel
+        cp KEY_RETURN
+        jr z,.choose
+        cp KEY_ENTER
+        jr z,.choose
+        cp KEY_UP
+        jr z,.up
+        cp KEY_DOWN
+        jr z,.down
+        ld a,(ev_cur + 2)
+        cp " "
+        jr z,.choose
+        jr .none
+.cancel:
+        ld a,2
+        ret
+.choose:
+        ld a,1
+        ret
+.up:
+        ld a,(fp_sel)
+        or a
+        jr z,.none
+        dec a
+        jr .move
+.down:
+        ld a,(fp_sel)
+        inc a
+        ld hl,fp_count
+        cp (hl)
+        jr nc,.none
+.move:
+        ld hl,fp_sel
+        ld b,(hl)
+        ld (hl),a
+        ld a,(fp_top)               ; scroll so the selection shows
+        ld c,a
+        ld a,(fp_sel)
+        cp c
+        jr nc,.not_above
+        ld (fp_top),a
+        jr .redraw
+.not_above:
+        ld hl,fp_rows
+        sub (hl)
+        jr c,.no_scroll
+        inc a                       ; sel - rows + 1 > top ?
+        cp c
+        jr c,.no_scroll
+        jr z,.no_scroll
+        ld (fp_top),a
+.redraw:
+        call fp_draw_rows
+        jp .none
+.no_scroll:
+        ld a,b                      ; old and new row only
+        sub c
+        call fp_draw_row
+        ld a,(fp_top)
+        ld c,a
+        ld a,(fp_sel)
+        sub c
+        call fp_draw_row
+        jp .none
+
+; ---- state ----------------------------------------------------------
+fp_title:       db 0
+fp_count:       db 0
+fp_sel:         db 0
+fp_top:         db 0
+fp_rows:        db 0
+fp_r:           db 0
+fp_i:           db 0
+fp_result:      db 0
+fp_saved_keys:  db 0
+fp_x:           dw 0
+fp_y:           dw 0
+fp_w:           dw 0
+fp_h:           db 0
+fp_rows_y:      dw 0
+fp_ry:          dw 0
+fp_colours:     dw 0                ; background, foreground
+fp_num:         ds 6
+fp_line:        ds 24

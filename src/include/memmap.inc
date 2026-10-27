@@ -8,8 +8,10 @@
 ;   #4000-#7FFF  bank window (applications, data)
 ;   #8000-#FFFF  video RAM, 32K overscan (see drivers/crtc.asm)
 ;
-; Unused video RAM, free for buffers: #8000-#801F and #C4E0-#C7FF in
-; each of the eight 2K blocks (#x000 + line*#800), 6656 bytes in all.
+; Unused video RAM, never displayed: #8000-#801F and #C4E0-#C7FF in
+; each of the eight 2K blocks (+ line * #800). The kernel keeps tables
+; and buffers in the eight 800-byte gaps of the #C000 page (who uses
+; what is listed next to GAP0..GAP7 below).
 
 KERNEL_BASE     equ #0000
 API_TABLE       equ #0100
@@ -25,15 +27,13 @@ SCREEN_ROWS     equ 34
 SCREEN_H        equ 272             ; pixel lines in video RAM
 SCREEN_BPL      equ 96              ; bytes per pixel line
 
-; Language pack. The loader reads it with AMSDOS while the firmware is
-; still alive; the kernel keeps the font, case and keyboard tables in its
-; own RAM and the whole pack (for the messages) in bank 7.
-LANG_LOAD       equ #8000           ; loaded here, before the screen exists
-LANG_DISC_BUF   equ #9800           ; 2K AMSDOS buffer
-LANG_MAX        equ #1800           ; 6144 bytes (#8000-#97FF)
+; Language pack: the kernel loads GREEK.LNG from disc into bank 7 (for
+; the messages) and keeps its font, case and keyboard tables in GAP0-2.
 LANG_BANK_CFG   equ #C7             ; RAM config: bank 7 at #4000
-; Bank 6 (#C6) holds what menus and dialogs cover (ui/ui.asm).
 LANG_BANK_ADDR  equ #4000
+LANG_MAX        equ #4000           ; a pack fills at most the bank
+; Bank 6 (#C6) holds what menus and dialogs cover (ui/ui.asm).
+; Bank 4 (#C4) is where the M4 test loads files to show them.
 RAM_BASE_CFG    equ #C0             ; RAM config: plain 64K
 
 ; Drawable area. The monitor shows 271 lines; the top 6 and the bottom
@@ -41,3 +41,14 @@ RAM_BASE_CFG    equ #C0             ; RAM config: plain 64K
 ; last drawable line is physical line 264.
 GFX_TOP         equ 6
 GFX_H           equ 259
+
+; ---- video RAM gaps (800 bytes each) ---------------------------------
+GAP_SIZE        equ 800
+GAP0            equ #C4E0           ; pack font 128..191, lang_msg_buf
+GAP1            equ #CCE0           ; pack font 192..255, dlg_text
+GAP2            equ #D4E0           ; pack case, keymap, combos; fs block list
+GAP3            equ #DCE0           ; disc sector buffer, free block map
+GAP4            equ #E4E0           ; directory entries 0..24
+GAP5            equ #ECE0           ; directory entries 25..49
+GAP6            equ #F4E0           ; directory entries 50..63, text to save
+GAP7            equ #FCE0           ; file list for the UI (50 x 16 bytes)

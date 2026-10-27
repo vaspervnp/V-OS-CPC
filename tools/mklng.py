@@ -26,15 +26,14 @@
   32  data
 
 Keymap codes 1..7 are dead keys (numbered in order of first use).
-The pack is loaded at #8000 with an AMSDOS buffer at #9800, so it must
-not exceed 6144 bytes.
+The kernel loads the pack into bank 7, so it must not exceed 16K.
 """
 import argparse
 import os
 import re
 import sys
 
-MAX_PACK = 6144
+MAX_PACK = 16384
 DEAD_FIRST = 1
 DEAD_LAST = 7
 

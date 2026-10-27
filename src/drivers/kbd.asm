@@ -253,6 +253,11 @@ kbd_press:
         jr z,.no_char
         cp 8
         jr nc,.char
+        ld c,a                      ; CONTROL+A..G: codes, not dead keys
+        ld a,(kbd_mods)
+        and MOD_CONTROL
+        ld a,c
+        jr nz,.post
         ld (kbd_dead),a             ; dead key: wait for the next character
         jr .no_char
 .char:
@@ -289,7 +294,9 @@ kbd_release:
 
 ; ---------------------------------------------------------------------
 ; kbd_char - B = key -> A = character for the current modifiers and
-; keyboard language (0 = none, 1..7 = dead key). Preserves B.
+; keyboard language (0 = none, 1..7 = dead key). With CONTROL the
+; English map is used, so shortcuts work whatever the keyboard language.
+; Preserves B.
 ; Destroys: C, HL
 ; ---------------------------------------------------------------------
 kbd_char:
@@ -297,7 +304,10 @@ kbd_char:
         ld c,a
         ld a,(lang_input)
         or a
-        jr nz,.pack
+        jr z,.english
+        bit 1,c                     ; CONTROL
+        jr z,.pack
+.english:
         ld hl,kbd_map
         bit 0,c
         jr z,.map

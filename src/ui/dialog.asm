@@ -3,6 +3,8 @@
 ;
 ; dialog_run - HL -> db title MSG_*, text MSG_*, button count (1..3),
 ;              button MSG_*, ...
+; With DLG_OWN_TEXT instead of the text MSG_*, the text is taken from
+; dlg_custom (zero-terminated, up to DLG_TEXT_MAX - 1 characters).
 ; Returns A = the chosen button (0 = first). ESC chooses the last one.
 ;
 ; The dialog is centred, saves what it covers (bank 6, as menus do) and
@@ -14,6 +16,7 @@
 
 DLG_MAX_BUTTONS equ 3
 DLG_TEXT_MAX    equ LANG_MSG_MAX + 1
+DLG_OWN_TEXT      equ #FF
 
 dialog_run:
         ld (dlg_def),hl
@@ -29,7 +32,11 @@ dialog_run:
         ld hl,(dlg_def)             ; text: copy it, count lines
         inc hl
         ld a,(hl)
+        cp DLG_OWN_TEXT
+        ld hl,dlg_custom
+        jr z,.text
         call lang_msg
+.text:
         ld de,dlg_text
         ld bc,DLG_TEXT_MAX
         ldir
@@ -405,4 +412,5 @@ dlg_by:             dw 0
 dlg_line_y:         dw 0
 dlg_wlist:          db 0
                     ds DLG_MAX_BUTTONS * 8
-dlg_text:           ds DLG_TEXT_MAX
+dlg_text            equ GAP1 + 512  ; DLG_TEXT_MAX bytes
+dlg_custom          equ GAP3 + 544  ; text for DLG_OWN_TEXT dialogs

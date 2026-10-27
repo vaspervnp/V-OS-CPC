@@ -10,7 +10,7 @@
         include "include/memmap.inc"
         include "lang/msg_ids.inc"
 
-VOS_VERSION     equ #0005           ; 0.05
+VOS_VERSION     equ #0006           ; 0.06
 VOS_API_VERSION equ #0000
 
 ; ---- loader, runs at LOADER_ADDR ------------------------------------
@@ -26,6 +26,8 @@ kernel_start:
         include "kernel/kernel.asm"
         include "kernel/interrupts.asm"
         include "kernel/events.asm"
+        include "kernel/fs.asm"
+        include "kernel/util.asm"
         include "kernel/lang.asm"
         include "lang/lang_en.asm"
         IFDEF TEST_SCRIPT
@@ -35,17 +37,19 @@ kernel_start:
         include "drivers/crtc.asm"
         include "drivers/kbd.asm"
         include "drivers/mouse.asm"
+        include "drivers/fdc.asm"
         include "gfx/gfx.asm"
         include "gfx/pointer.asm"
         include "ui/ui.asm"
         include "ui/dialog.asm"
+        include "ui/filedlg.asm"
         include "gfx/font_ascii.asm"
 kernel_end:
 
 KERNEL_SIZE     equ kernel_end - kernel_start
 
         assert KERNEL_SIZE <= KERNEL_LIMIT - KERNEL_BASE
-        assert LOADER_ADDR + kernel_image - loader_start + KERNEL_SIZE <= LANG_LOAD
+        assert LOADER_ADDR + kernel_image - loader_start + KERNEL_SIZE <= #A000
 
         IFDEF TEST_SCRIPT
         save "VOS.BIN", loader_start, kernel_image - loader_start + KERNEL_SIZE, DSK, "build/vos_test.dsk"

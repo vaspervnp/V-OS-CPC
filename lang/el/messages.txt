@@ -5,7 +5,6 @@
 MENU_FILE   ΑΡΧΕΙΟ
 MENU_VIEW   ΠΡΟΒΟΛΗ
 MENU_HELP   ΒΟΗΘΕΙΑ
-ITEM_NEW    ΝΕΟ
 ITEM_OPEN   ΑΝΟΙΓΜΑ
 ITEM_QUIT   ΕΞΟΔΟΣ ΣΤΗ BASIC
 ITEM_MODE1  MODE 1  4 ΧΡΩΜΑΤΑ
@@ -22,10 +21,42 @@ HINT        ESC ΜΕΝΟΥ  TAB ΕΠΟΜΕΝΟ
 STATUS      ΤΕΛΕΥΤΑΙΑ ΕΝΤΟΛΗ
 NONE        ΚΑΜΙΑ
 DLG_ABOUT_T ΣΧΕΤΙΚΑ
-DLG_ABOUT   V-OS 0.05|AMSTRAD CPC 6128|ΜΕΝΟΥ ΚΑΙ ΔΙΑΛΟΓΟΙ
+DLG_ABOUT   V-OS 0.06|AMSTRAD CPC 6128|ΔΙΚΟΣ ΟΔΗΓΟΣ FDC
 DLG_KEYS_T  ΠΛΗΚΤΡΑ
 DLG_KEYS    ESC     ΜΕΝΟΥ|TAB     ΕΠΟΜΕΝΟ|ENTER   ΕΠΙΛΟΓΗ|COPY    ΚΛΙΚ|CTRL+SHIFT  EN/EL
 DLG_QUIT_T  ΕΞΟΔΟΣ
 DLG_QUIT    ΕΠΑΝΕΚΚΙΝΗΣΗ CPC|ΕΞΟΔΟΣ ΣΤΗ BASIC;
-DLG_NYI_T   ΣΥΓΓΝΩΜΗ
-DLG_NYI     ΔΕΝ ΥΠΑΡΧΕΙ ΑΚΟΜΑ|ΔΙΣΚΕΤΑ ΣΤΟ M4
+ITEM_SAVE   ΑΠΟΘΗΚΕΥΣΗ ΔΟΚΙΜΗΣ
+ITEM_DELETE ΔΙΑΓΡΑΦΗ
+ITEM_DISC   ΣΤΟΙΧΕΙΑ ΔΙΣΚΕΤΑΣ
+PICK_OPEN   ΑΝΟΙΓΜΑ ΑΡΧΕΙΟΥ
+PICK_DELETE ΔΙΑΓΡΑΦΗ ΑΡΧΕΙΟΥ
+FREE        ΕΛΕΥΘΕΡΑ
+FILES       ΑΡΧΕΙΑ
+FORMAT      ΜΟΡΦΗ
+FMT_DATA    DATA
+FMT_SYSTEM  SYSTEM
+SIZE        ΜΕΓΕΘΟΣ
+TYPE        ΤΥΠΟΣ
+LOAD        ΦΟΡΤΩΣΗ
+TYPE_BASIC  BASIC
+TYPE_BINARY ΔΥΑΔΙΚΟ
+TYPE_TEXT   ΚΕΙΜΕΝΟ
+NO_FILES    ΚΑΝΕΝΑ ΑΡΧΕΙΟ
+SAVE_TEXT   ΓΕΙΑ ΑΠΟ ΤΟ V-OS. ΤΟ ΑΡΧΕΙΟ ΓΡΑΦΤΗΚΕ ΑΠΟ ΤΟΝ ΔΙΚΟ ΤΟΥ ΟΔΗΓΟ.
+SAVED       ΑΠΟΘΗΚΕΥΤΗΚΕ
+DELETE_Q    ΔΙΑΓΡΑΦΗ
+DELETED     ΔΙΑΓΡΑΦΗΚΕ
+DLG_FILE_T  ΑΡΧΕΙΟ
+DLG_DISC_T  ΔΙΣΚΕΤΑ
+DLG_ERR_T   ΣΦΑΛΜΑ ΔΙΣΚΕΤΑΣ
+ERR_1       ΔΕΝ ΕΙΝΑΙ ΕΤΟΙΜΗ
+ERR_2       ΠΡΟΣΤΑΣΙΑ ΕΓΓΡΑΦΗΣ
+ERR_3       ΔΕΝ ΒΡΕΘΗΚΕ ΤΟΜΕΑΣ
+ERR_4       ΣΦΑΛΜΑ ΔΕΔΟΜΕΝΩΝ
+ERR_5       ΣΦΑΛΜΑ ΕΛΕΓΚΤΗ
+ERR_6       ΑΓΝΩΣΤΗ ΜΟΡΦΗ
+ERR_7       ΔΕΝ ΒΡΕΘΗΚΕ
+ERR_8       ΓΕΜΑΤΗ ΔΙΣΚΕΤΑ
+ERR_9       ΓΕΜΑΤΟΣ ΚΑΤΑΛΟΓΟΣ
+QMARK       ;

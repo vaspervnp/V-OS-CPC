@@ -10,26 +10,26 @@
 ; types "\(" before taking a screenshot). Otherwise their events would
 ; keep the pointer hidden at the moment of the shot.
 ;
-; M3 desktop, mode 1, Greek UI. Expected result:
-;   frame  100  ESC          -> FILE menu open
-;   frame  200  RIGHT        -> VIEW menu
-;   frame  260  DOWN         -> "MODE 0" selected
-;   frame  320  ESC          -> menu closed
-;   frame  360  TAB, 400 TAB -> focus on the third button (KEYS)
-;   frame  440  RETURN       -> keys dialog
-;   frame  560  RETURN       -> dialog closed, status "KEYS"
-;   frame  600  CONTROL+Q    -> exit dialog (YES / NO)
-;   frame  700  ESC          -> NO
-;   frame  760  ESC, 800 RIGHT, 840 DOWN, 880 RETURN -> mode 0
-;   frame  960  ESC          -> FILE menu in mode 0
-;   frame 1040  RIGHT        -> VIEW menu in mode 0
-;   frame 1120  ESC          -> closed
-;   frame 1160  CONTROL+L    -> English UI
-;   frame 1200  UP held, 1250 LEFT held -> pointer on the VIEW title
-;   frame 1310  COPY         -> VIEW opens (mouse)
-;   frame 1340  COPY         -> same title again: closes
-;   frame 1370  COPY         -> opens again
-;   frame 1400  RETURN       -> MODE 1: mode 1, English, status MODE 1
+; M4 file commands, mode 1, Greek UI. Expected result:
+;   frame  200  CONTROL+S    -> VOSTEST.TXT written, "SAVED" dialog
+;   frame  500  RETURN       -> closed
+;   frame  600  CONTROL+O    -> file list: VOS.BIN, GREEK.LNG, VOSTEST.TXT
+;   frame  800  DOWN, 860 DOWN -> VOSTEST.TXT selected
+;   frame  950  RETURN       -> loaded: name, size, type, load, text
+;   frame 1250  RETURN       -> closed
+;   frame 1300  CONTROL+D    -> file list for deleting
+;   frame 1450  DOWN, 1510 DOWN, 1570 RETURN -> "DELETE VOSTEST.TXT?"
+;   frame 1650  RETURN       -> YES: deleted, "DELETED" dialog
+;   frame 1850  RETURN       -> closed
+;   frame 1900  CONTROL+I    -> disc info: DATA, 2 files, free space
+;   frame 2050  RETURN       -> closed
+;   frame 2100  ESC, 2150 RIGHT, 2200 DOWN, 2250 RETURN -> mode 0
+;   frame 2350  CONTROL+O    -> file list in mode 0
+;   frame 2450  ESC          -> closed
+;   frame 2500  CONTROL+S    -> VOSTEST.TXT written again
+;   frame 2700  RETURN       -> closed
+;   frame 2750  CONTROL+Q, 2850 RETURN -> restart into BASIC, where the
+;               harness can check the file with AMSDOS (CAT, LOAD)
 ; =====================================================================
 
 ; ---------------------------------------------------------------------
@@ -84,30 +84,36 @@ test_inject:
 
 ; dw first frame, frame after the last; db matrix line, bits
 test_keys:
-        dw  100,  104 : db 8, %00000100   ; ESC
-        dw  200,  204 : db 0, %00000010   ; RIGHT
-        dw  260,  264 : db 0, %00000100   ; DOWN
-        dw  320,  324 : db 8, %00000100   ; ESC
-        dw  360,  364 : db 8, %00010000   ; TAB
-        dw  400,  404 : db 8, %00010000   ; TAB
-        dw  440,  444 : db 2, %00000100   ; RETURN
-        dw  560,  564 : db 2, %00000100   ; RETURN
+        dw  200,  212 : db 2, %10000000   ; CONTROL held ...
+        dw  203,  207 : db 7, %00010000   ; ... S
+        dw  500,  504 : db 2, %00000100   ; RETURN
         dw  600,  612 : db 2, %10000000   ; CONTROL held ...
-        dw  603,  607 : db 8, %00001000   ; ... Q
-        dw  700,  704 : db 8, %00000100   ; ESC
-        dw  760,  764 : db 8, %00000100   ; ESC
-        dw  800,  804 : db 0, %00000010   ; RIGHT
-        dw  840,  844 : db 0, %00000100   ; DOWN
-        dw  880,  884 : db 2, %00000100   ; RETURN
-        dw  960,  964 : db 8, %00000100   ; ESC
-        dw 1040, 1044 : db 0, %00000010   ; RIGHT
-        dw 1120, 1124 : db 8, %00000100   ; ESC
-        dw 1160, 1172 : db 2, %10000000   ; CONTROL held ...
-        dw 1163, 1167 : db 4, %00010000   ; ... L
-        dw 1200, 1246 : db 0, %00000001   ; UP
-        dw 1250, 1273 : db 1, %00000001   ; LEFT (x 96 -> about 61)
-        dw 1310, 1313 : db 1, %00000010   ; COPY
-        dw 1340, 1343 : db 1, %00000010   ; COPY
-        dw 1370, 1373 : db 1, %00000010   ; COPY
-        dw 1400, 1404 : db 2, %00000100   ; RETURN
+        dw  603,  607 : db 4, %00000100   ; ... O
+        dw  800,  804 : db 0, %00000100   ; DOWN
+        dw  860,  864 : db 0, %00000100   ; DOWN
+        dw  950,  954 : db 2, %00000100   ; RETURN
+        dw 1250, 1254 : db 2, %00000100   ; RETURN
+        dw 1300, 1312 : db 2, %10000000   ; CONTROL held ...
+        dw 1303, 1307 : db 7, %00100000   ; ... D
+        dw 1450, 1454 : db 0, %00000100   ; DOWN
+        dw 1510, 1514 : db 0, %00000100   ; DOWN
+        dw 1570, 1574 : db 2, %00000100   ; RETURN
+        dw 1650, 1654 : db 2, %00000100   ; RETURN
+        dw 1850, 1854 : db 2, %00000100   ; RETURN
+        dw 1900, 1912 : db 2, %10000000   ; CONTROL held ...
+        dw 1903, 1907 : db 4, %00001000   ; ... I
+        dw 2050, 2054 : db 2, %00000100   ; RETURN
+        dw 2100, 2104 : db 8, %00000100   ; ESC
+        dw 2150, 2154 : db 0, %00000010   ; RIGHT
+        dw 2200, 2204 : db 0, %00000100   ; DOWN
+        dw 2250, 2254 : db 2, %00000100   ; RETURN
+        dw 2350, 2362 : db 2, %10000000   ; CONTROL held ...
+        dw 2353, 2357 : db 4, %00000100   ; ... O
+        dw 2450, 2454 : db 8, %00000100   ; ESC
+        dw 2500, 2512 : db 2, %10000000   ; CONTROL held ...
+        dw 2503, 2507 : db 7, %00010000   ; ... S
+        dw 2700, 2704 : db 2, %00000100   ; RETURN
+        dw 2750, 2762 : db 2, %10000000   ; CONTROL held ...
+        dw 2753, 2757 : db 8, %00001000   ; ... Q
+        dw 2850, 2854 : db 2, %00000100   ; RETURN
         dw #FFFF

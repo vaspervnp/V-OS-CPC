@@ -45,6 +45,7 @@ int_handler:
         jr nz,.no_input
         call kbd_scan
         call ptr_poll
+        call fdc_tick
 .no_input:
         ld a,(int_slice)
 
