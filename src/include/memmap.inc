@@ -25,6 +25,16 @@ SCREEN_ROWS     equ 34
 SCREEN_H        equ 272             ; pixel lines in video RAM
 SCREEN_BPL      equ 96              ; bytes per pixel line
 
+; Language pack. The loader reads it with AMSDOS while the firmware is
+; still alive; the kernel keeps the font, case and keyboard tables in its
+; own RAM and the whole pack (for the messages) in bank 7.
+LANG_LOAD       equ #8000           ; loaded here, before the screen exists
+LANG_DISC_BUF   equ #9800           ; 2K AMSDOS buffer
+LANG_MAX        equ #1800           ; 6144 bytes (#8000-#97FF)
+LANG_BANK_CFG   equ #C7             ; RAM config: bank 7 at #4000
+LANG_BANK_ADDR  equ #4000
+RAM_BASE_CFG    equ #C0             ; RAM config: plain 64K
+
 ; Drawable area. The monitor shows 271 lines; the top 6 and the bottom
 ; 6 of them are not used, so graphics y = 0 is physical line 6 and the
 ; last drawable line is physical line 264.

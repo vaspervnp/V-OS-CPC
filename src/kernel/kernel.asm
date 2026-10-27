@@ -1,10 +1,14 @@
 ; =====================================================================
-; kernel.asm - kernel entry and M2 input test
+; kernel.asm - kernel entry and M2b language test
 ;
-; The test screen exercises the keyboard, the event queue and the
-; pointer, in mode 1 (F1) or mode 0 (F2):
+; The test screen exercises the keyboard, the event queue, the pointer
+; and the language pack, in mode 1 (F1) or mode 0 (F2). Its labels come
+; from lang_msg: F3 switches them between English and the pack, and
+; CONTROL+SHIFT switches typing between English and the pack (EN/EL at
+; the right of the title bar).
 ;   EVENTS  the last 8 events, newest marked with '>'
 ;   MATRIX  the 10x8 keyboard matrix, live (one row per line, bit 0 left)
+;   CHARSET codes 160..255 of the pack (mode 1 only)
 ;   TYPED   characters from key events; DEL deletes, RETURN clears
 ;   pointer position and buttons; clicks paint a dot in the bottom box
 ; The pointer moves with the cursor keys or an AMX mouse; COPY or the
@@ -24,6 +28,7 @@ kernel_entry:
         di
         ld sp,STACK_TOP
         im 1
+        call lang_init              ; before gfx_init reuses #8000
         call gfx_init
         call log_init
         ei
@@ -102,6 +107,8 @@ set_test_mode:
         ld a,b
         ld (field_len),a
 .len_ok:
+        call draw_lang_indicator
+        call draw_pack_charset
         call field_redraw
         call matrix_draw_all
         call log_redraw
@@ -117,6 +124,8 @@ handle_event:
         jp z,show_ptr_info
         call log_event
         ld a,(ev_cur)
+        cp EV_LANG
+        jp z,draw_lang_indicator
         cp EV_PTR_DOWN
         jr z,.ptr_down
         cp EV_PTR_UP
@@ -128,8 +137,22 @@ handle_event:
         jr z,.f1
         cp KEY_F2
         jr z,.f2
+        cp KEY_F3
+        jr z,.f3
         ld a,(ev_cur + 2)
         jp field_input
+.f3:
+        ld a,(ev_cur)
+        cp EV_KEY_DOWN
+        ret nz
+        ld a,(lang_loaded)
+        or a
+        ret z
+        ld a,(lang_ui)
+        xor 1
+        ld (lang_ui),a
+        ld a,(test_mode)
+        jp set_test_mode
 .f1:
         ld a,1
         jr .switch
@@ -159,7 +182,10 @@ field_input:
         cp 32
         ret c
         cp 127
-        ret nc
+        jr c,.printable
+        cp #A0                      ; 127..159: no glyph
+        ret c
+.printable:
         ld c,a
         ld a,(field_len)
         ld b,a
@@ -507,6 +533,22 @@ log_draw_line:
 ; DE -> LOG_LEN characters: the event in ev_cur
 fmt_event:
         ld a,(ev_cur)
+        cp EV_LANG
+        jr nz,.not_lang
+        ld hl,str_lang              ; "LANG XX"
+        ld bc,5
+        ldir
+        call lang_input_code
+        ldi
+        ldi
+        ld b,LOG_LEN - 7
+        ld a," "
+.pad:
+        ld (de),a
+        inc de
+        djnz .pad
+        ret
+.not_lang:
         cp EV_PTR_DOWN
         jr z,.ptr
         cp EV_PTR_UP
@@ -600,7 +642,15 @@ fmt_char:
         cp 32
         jr c,.hex
         cp 127
-        jr nc,.hex
+        jr c,.quote
+        cp #A0
+        jr c,.hex
+        ld c,a
+        ld a,(lang_loaded)
+        or a
+        ld a,c
+        jr z,.hex
+.quote:
         ld c,a
         ld a,39
         ld (de),a
@@ -657,9 +707,101 @@ fmt_mods:
         ret
 
 ; ---------------------------------------------------------------------
+; language display
+; ---------------------------------------------------------------------
+; HL -> two-letter code of the keyboard language ("EN" or the pack's)
+lang_input_code:
+        ld hl,str_en
+        ld a,(lang_input)
+        or a
+        ret z
+        ld hl,lang_code
+        ret
+
+; typing language at the right end of the title bar
+draw_lang_indicator:
+        call lang_input_code
+        ld de,ind_text
+        ldi
+        ldi
+        ld a,1
+        ld c,2
+        call txt_set_colours
+        ld hl,(gfx_width)
+        ld de,-20
+        add hl,de
+        ld de,2
+        ld bc,ind_text
+        jp txt_print
+
+; mode 1: codes 160..255 of the pack, 33 per line, right of the matrix
+PACK_CS_X       equ 112
+PACK_CS_Y       equ 120
+draw_pack_charset:
+        ld a,(gfx_mode)
+        or a
+        ret z
+        ld a,3
+        ld c,0
+        call txt_set_colours
+        ld a,MSG_CHARSET
+        call lang_msg
+        ld b,h
+        ld c,l
+        ld hl,PACK_CS_X
+        ld de,PACK_CS_Y - 10
+        call txt_print
+        ld a,1
+        ld c,0
+        call txt_set_colours
+        ld a,(lang_loaded)
+        or a
+        jr nz,.chars
+        ld a,MSG_NO_PACK
+        call lang_msg
+        ld b,h
+        ld c,l
+        ld hl,PACK_CS_X
+        ld de,PACK_CS_Y
+        jp txt_print
+.chars:
+        ld hl,PACK_CS_X
+        ld (cs_x),hl
+        ld hl,PACK_CS_Y
+        ld (cs_y),hl
+        ld a,#A0
+.char:
+        ld (cs_char),a
+        ld hl,(cs_x)
+        ld de,(cs_y)
+        call txt_char
+        ld hl,(cs_x)
+        ld de,8
+        add hl,de
+        ld de,PACK_CS_X + 33 * 8
+        or a
+        sbc hl,de
+        jr c,.same_line
+        ld hl,(cs_y)
+        ld de,10
+        add hl,de
+        ld (cs_y),hl
+        ld hl,PACK_CS_X
+        jr .store
+.same_line:
+        add hl,de
+.store:
+        ld (cs_x),hl
+        ld a,(cs_char)
+        inc a
+        jr nz,.char
+        ret
+
+; ---------------------------------------------------------------------
 ; run_list - HL = drawing list:
 ;   1, dw x, y, w, h, db pen              filled rectangle
 ;   2, dw x, y, db fg, bg, "text", 0      text
+;   3, dw x, y, db fg, bg, MSG_*          UI text in the current language
 ;   0                                     end
 ; ---------------------------------------------------------------------
 run_list:
@@ -669,7 +811,39 @@ run_list:
         jr z,.rect
         cp 2
         jr z,.text
+        cp 3
+        jr z,.message
         ret
+.message:
+        ld c,(hl)
+        inc hl
+        ld b,(hl)
+        inc hl
+        ld (rl_x),bc
+        ld c,(hl)
+        inc hl
+        ld b,(hl)
+        inc hl
+        ld (rl_y),bc
+        ld a,(hl)                   ; fg
+        inc hl
+        ld c,(hl)                   ; bg
+        inc hl
+        ld e,(hl)                   ; message
+        inc hl
+        ld (rl_ptr),hl
+        ld hl,rl_id
+        ld (hl),e
+        call txt_set_colours
+        ld a,(rl_id)
+        call lang_msg
+        ld b,h
+        ld c,l
+        ld hl,(rl_x)
+        ld de,(rl_y)
+        call txt_print
+        ld hl,(rl_ptr)
+        jr run_list
 .rect:
         push hl
         pop ix
@@ -708,21 +882,20 @@ run_list:
 ; ---- test screens ---------------------------------------------------
 list_mode1:
         db 1 : dw 0, 0, 384, 12 : db 1
-        db 2 : dw 8, 2 : db 2, 1, "V-OS 0.03  M2 INPUT", 0
-        db 2 : dw 192, 2 : db 2, 1, "F1/F2 MODE  COPY CLICKS", 0
-        db 2 : dw 4, 16 : db 3, 0, "EVENTS", 0
-        db 2 : dw 4, 110 : db 3, 0, "MATRIX", 0
-        db 2 : dw 64, 140 : db 3, 0, "LINE 0 AT TOP, BIT 0 LEFT", 0
-        db 2 : dw 4, 186 : db 3, 0, "TYPED", 0
+        db 3 : dw 8, 2 : db 2, 1, MSG_TITLE
+        db 3 : dw 120, 2 : db 2, 1, MSG_HELP
+        db 3 : dw 4, 16 : db 3, 0, MSG_EVENTS
+        db 3 : dw 4, 110 : db 3, 0, MSG_MATRIX
+        db 3 : dw 4, 186 : db 3, 0, MSG_TYPED
         db 1 : dw 4, CANVAS_Y, 376, CANVAS_H : db 2
         db 0
 
 list_mode0:
         db 1 : dw 0, 0, 192, 12 : db 1
-        db 2 : dw 4, 2 : db 0, 1, "M2 INPUT F1 F2", 0
-        db 2 : dw 4, 16 : db 3, 0, "EVENTS", 0
-        db 2 : dw 4, 110 : db 3, 0, "MATRIX", 0
-        db 2 : dw 4, 186 : db 3, 0, "TYPED", 0
+        db 3 : dw 4, 2 : db 0, 1, MSG_TITLE_M0
+        db 3 : dw 4, 16 : db 3, 0, MSG_EVENTS
+        db 3 : dw 4, 110 : db 3, 0, MSG_MATRIX
+        db 3 : dw 4, 186 : db 3, 0, MSG_TYPED
         db 1 : dw 4, CANVAS_Y, 184, CANVAS_H : db 2
         db 0
 
@@ -740,6 +913,8 @@ str_repeat: db "RP "
 str_bdown:  db "BD X"
 str_bup:    db "BU X"
 str_mods:   db "SCPL"
+str_lang:   db "LANG "
+str_en:     db "EN"
 
 info_text:  db "X 000 Y 000 B 0", 0
 
@@ -750,6 +925,12 @@ mx_rect:    dw 0, 0, 5, 5
 dot_rect:   dw 0, 0, 3, 3
             db 0
 
+rl_x:       dw 0
+rl_y:       dw 0
+rl_ptr:     dw 0
+rl_id:      db 0
+ind_text:   db "EN", 0
+
 test_mode:  db 1
 dot_pen:    db 3
 field_len:  db 0
@@ -757,4 +938,7 @@ field_max:  db 0
 field_buf:  ds 48
 mx_shown:   ds 10
 log_next:   db 0
+cs_x:       dw 0
+cs_y:       dw 0
+cs_char:    db 0
 log_text:   ds LOG_LINES * (LOG_LEN + 1)

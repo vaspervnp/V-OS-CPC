@@ -107,11 +107,14 @@ kbd_scan:
         ld hl,kbd_repeat_timer
         dec (hl)
         ret nz
-        ld b,a
+        ld b,a                      ; B = key
         ld a,(kbd_repeat_rate)
         ld (hl),a
-        ld a,b
         call kbd_char
+        cp 8                        ; a held dead key repeats without text
+        jr nc,.repeat_char
+        xor a
+.repeat_char:
         ld c,a
         ld a,EV_KEY_REPEAT
         jp ev_post
@@ -207,11 +210,32 @@ kbd_edges:
         jr c,.line
         ret
 
-; A = key
+; A = key. CONTROL+SHIFT (either order) toggles the pack keyboard.
+; A dead key gives no character; the next character is combined with it.
 kbd_press:
         ld b,a
+        cp KEY_SHIFT
+        jr nz,.not_shift
+        ld a,(kbd_mods)
+        and MOD_CONTROL
+        jr z,.no_repeat
+        jr .toggle
+.not_shift:
+        cp KEY_CONTROL
+        jr nz,.not_control
+        ld a,(kbd_mods)
+        and MOD_SHIFT
+        jr z,.no_repeat
+.toggle:
+        push bc
+        call lang_toggle_input
+        pop bc
+        jr .no_repeat
+.not_control:
+        cp KEY_COPY                 ; modifiers do not repeat
+        jr z,.no_repeat
         cp KEY_CAPS
-        jr nz,.not_caps
+        jr nz,.repeatable
         ld a,(kbd_caps)
         xor MOD_CAPS
         ld (kbd_caps),a
@@ -219,20 +243,34 @@ kbd_press:
         xor MOD_CAPS
         ld (kbd_mods),a
         jr .no_repeat
-.not_caps:
-        cp KEY_SHIFT                ; modifiers do not repeat
-        jr z,.no_repeat
-        cp KEY_CONTROL
-        jr z,.no_repeat
-        cp KEY_COPY
-        jr z,.no_repeat
+.repeatable:
         ld (kbd_repeat_key),a
         ld a,(kbd_repeat_delay)
         ld (kbd_repeat_timer),a
 .no_repeat:
-        ld a,b
-        call kbd_char
+        call kbd_char               ; B = key
+        or a
+        jr z,.no_char
+        cp 8
+        jr nc,.char
+        ld (kbd_dead),a             ; dead key: wait for the next character
+        jr .no_char
+.char:
         ld c,a
+        ld a,(kbd_dead)
+        or a
+        jr z,.post
+        push bc
+        call lang_combine
+        ld a,c
+        pop bc
+        ld c,a
+        xor a
+        ld (kbd_dead),a
+        jr .post
+.no_char:
+        ld c,0
+.post:
         ld a,EV_KEY_DOWN
         jp ev_post
 
@@ -250,24 +288,40 @@ kbd_release:
         jp ev_post
 
 ; ---------------------------------------------------------------------
-; kbd_char - B = key -> A = character for the current modifiers
-; (0 = no character). Preserves B.
+; kbd_char - B = key -> A = character for the current modifiers and
+; keyboard language (0 = none, 1..7 = dead key). Preserves B.
 ; Destroys: C, HL
 ; ---------------------------------------------------------------------
 kbd_char:
         ld a,(kbd_mods)
         ld c,a
+        ld a,(lang_input)
+        or a
+        jr nz,.pack
         ld hl,kbd_map
         bit 0,c
         jr z,.map
         ld hl,kbd_map_shift
+        jr .map
+.pack:
+        ld hl,lang_keymap
+        bit 0,c
+        jr z,.map
+        ld hl,lang_keymap + 80
 .map:
         ld a,b
         call tbl_a
         or a
         ret z
+        cp 8                        ; dead keys (1..7) pass through
+        ret c
         bit 3,c                     ; CAPS LOCK swaps the case of letters
         jr z,.control
+        cp 128
+        jr c,.ascii_caps
+        call lang_other_case
+        jr .control
+.ascii_caps:
         cp 'a'
         jr c,.upper
         cp 'z' + 1
@@ -283,6 +337,8 @@ kbd_char:
 .control:
         bit 1,c                     ; CONTROL + letter = 1..26
         ret z
+        cp 128
+        ret nc
         ld c,a
         and %11011111
         cp 'A'
@@ -295,36 +351,15 @@ kbd_char:
         ld a,c
         ret
 
-; ---- key maps (key number -> ASCII), English CPC 6128 ----------------
-; f0-f9, cursor, COPY, SHIFT, CONTROL, CAPS and joystick give no char.
-kbd_map:
-        db 0, 0, 0, 0, 0, 0, 13, 0                  ; 0  up right down f9 f6 f3 enter f.
-        db 0, 0, 0, 0, 0, 0, 0, 0                   ; 8  left copy f7 f8 f5 f1 f2 f0
-        db 127, "[", 13, "]", 0, 0, 92, 0           ; 16 clr [ return ] f4 shift \ control
-        db "^-@p;:/."                               ; 24
-        db "09olkm,", 0                             ; 32 (patched below)
-        db "87uyhjn "                               ; 40
-        db "65rtgfbv"                               ; 48
-        db "43ewsdcx"                               ; 56
-        db "12", 27, "q", 9, "a", 0, "z"            ; 64 1 2 esc q tab a caps z
-        db 0, 0, 0, 0, 0, 0, 0, 8                   ; 72 joystick 0, del
-kbd_map_shift:
-        db 0, 0, 0, 0, 0, 0, 13, 0
-        db 0, 0, 0, 0, 0, 0, 0, 0
-        db 127, "{", 13, "}", 0, 0, 96, 0
-        db 0, "=|P+*?>"
-        db "_)OILKM<"
-        db "(", 39, "UYHJN "
-        db "&%RTGFBV"
-        db "$#EWSDCX"
-        db "!", 34, 27, "Q", 9, "A", 0, "Z"
-        db 0, 0, 0, 0, 0, 0, 0, 8
+; The English key maps (kbd_map, kbd_map_shift) are generated from
+; lang/en/keymap.txt into src/lang/lang_en.asm.
 
 ; ---- state ----------------------------------------------------------
 kbd_now:            ds 10           ; 1 = pressed
 kbd_prev:           ds 10
 kbd_mods:           db 0            ; MOD_* bits
 kbd_caps:           db 0            ; MOD_CAPS or 0
+kbd_dead:           db 0            ; pending dead key, 0 = none
 kbd_repeat_key:     db KEY_NONE
 kbd_repeat_timer:   db 0
 kbd_repeat_delay:   db 25           ; frames before the first repeat

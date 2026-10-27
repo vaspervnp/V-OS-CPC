@@ -1,0 +1,4 @@
+# Greek language pack (GREEK.LNG)
+code    EL
+name    ΕΛΛΗΝΙΚΑ
+charset iso8859_7

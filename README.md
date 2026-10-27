@@ -7,7 +7,7 @@
 
 ## Build
 
-Απαιτούνται [RASM](https://github.com/EdouardBERGE/rasm) και GNU make. Για δοκιμή χρειάζεται ο Caprice32 (snap).
+Απαιτούνται [RASM](https://github.com/EdouardBERGE/rasm), [iDSK](https://github.com/cpcsdk/idsk), Python 3 και GNU make (4.3 ή νεότερο). Για δοκιμή χρειάζεται ο Caprice32 (snap).
 
 ```bash
 make          # build/vos.dsk
@@ -27,13 +27,23 @@ src/kernel/          vectors (#0000), είσοδος kernel, interrupts
 src/drivers/         Gate Array, CRTC, πληκτρολόγιο, ποντίκι (και αργότερα FDC)
 src/gfx/             γραφικά overscan, κείμενο, γραμματοσειρά (font_ascii.asm παράγεται)
 src/include/         θύρες υλικού, χάρτης μνήμης
-tools/               scripts: screenshot στον Caprice32, mkfont.py (γραμματοσειρά → ASM)
+src/lang/            παραγόμενα: αριθμοί μηνυμάτων, αγγλικά κείμενα και πληκτρολόγιο
+lang/                πηγές γλωσσών: en (ενσωματωμένη), el (GREEK.LNG)
+tools/               scripts: screenshot στον Caprice32, mkfont.py, mklng.py
 docs/                απαιτήσεις, πρότυπα
 ```
 
 Τα hex στον κώδικα γράφονται με `#` (π.χ. `#C000`), γιατί η RASM διαβάζει το `&` ως AND.
 
 ## Κατάσταση
+
+**M2b (γλώσσες):**
+- **Language packs (`.LNG`):** παράγονται από τα αρχεία κειμένου στο `lang/` με το `tools/mklng.py`. Το `GREEK.LNG` γράφεται στη δισκέτα μαζί με το `VOS.BIN`.
+- **Φόρτωση:** ο loader φορτώνει το pack μέσω AMSDOS. Ο kernel κρατά τη γραμματοσειρά και το πληκτρολόγιο στη μνήμη του και ολόκληρο το pack στη bank 7.
+- **Ελληνικά στην οθόνη:** κείμενα UI μέσω `lang_msg`, γραμματοσειρά ISO 8859-7. Το F3 στην οθόνη δοκιμής αλλάζει τη γλώσσα των ετικετών.
+- **Ελληνική πληκτρολόγηση:** εναλλαγή EN/EL με CONTROL+SHIFT, dead keys για τόνο και διαλυτικά, CAPS LOCK για τα ελληνικά.
+- **Ένα παράδειγμα:** αν θέλεις άλλη γλώσσα, προσθέτεις φάκελο στο `lang/`, χωρίς αλλαγές στον kernel.
+- **Διόρθωση bug του M2:** ο αγγλικός χάρτης παράγεται πλέον από το `lang/en/keymap.txt`. Αυτό διόρθωσε το bug του M2, όπου τα πλήκτρα 35–39 (I L K M ,) έδιναν λάθος χαρακτήρα.
 
 **M2 (είσοδος):**
 - Σάρωση πληκτρολογίου 50 φορές το δευτερόλεπτο, με αγγλικό χάρτη, SHIFT, CONTROL, CAPS LOCK και auto-repeat. Τα ελληνικά έρχονται με το language pack στο M2b.

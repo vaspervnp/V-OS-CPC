@@ -1,0 +1,57 @@
+# Greek keyboard: the Greek PC layout on the CPC keys. Keys not listed keep
+# the English map (lang/en/keymap.txt). Characters are written in UTF-8
+# and stored as ISO 8859-7.
+#
+# Dead keys: "dead:<name>" gives no character; the next key is looked up
+# in the combo lines. A key with no combo is typed as is.
+# On the CPC the ; key is the tonos dead key and SHIFT+; the dialytika
+# (the PC uses the same key). The Greek question mark is ; on the Q key.
+
+key 69 α Α      # A
+key 54 β Β      # B
+key 62 ψ Ψ      # C
+key 61 δ Δ      # D
+key 58 ε Ε      # E
+key 53 φ Φ      # F
+key 52 γ Γ      # G
+key 44 η Η      # H
+key 35 ι Ι      # I
+key 45 ξ Ξ      # J
+key 37 κ Κ      # K
+key 36 λ Λ      # L
+key 38 μ Μ      # M
+key 46 ν Ν      # N
+key 34 ο Ο      # O
+key 27 π Π      # P
+key 67 ; :      # Q
+key 50 ρ Ρ      # R
+key 60 σ Σ      # S
+key 51 τ Τ      # T
+key 42 θ Θ      # U
+key 55 ω Ω      # V
+key 59 ς Σ      # W
+key 63 χ Χ      # X
+key 43 υ Υ      # Y
+key 71 ζ Ζ      # Z
+key 28 dead:tonos dead:dialytika   # ;
+
+combo tonos α ά
+combo tonos ε έ
+combo tonos η ή
+combo tonos ι ί
+combo tonos ο ό
+combo tonos υ ύ
+combo tonos ω ώ
+combo tonos Α Ά
+combo tonos Ε Έ
+combo tonos Η Ή
+combo tonos Ι Ί
+combo tonos Ο Ό
+combo tonos Υ Ύ
+combo tonos Ω Ώ
+combo tonos space ΄
+combo dialytika ι ϊ
+combo dialytika υ ϋ
+combo dialytika Ι Ϊ
+combo dialytika Υ Ϋ
+combo dialytika space ¨

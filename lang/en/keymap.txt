@@ -1,0 +1,87 @@
+# English CPC 6128 keyboard map: key number -> character, normal and SHIFT.
+# Built into the kernel (tools/mklng.py --kernel). Language packs list only
+# the keys they change (see lang/el/keymap.txt).
+#
+# Tokens: one character = itself, "space", "none" (no character),
+# "#hh" = code in hex. Lines: key <number> <normal> <shift>  [# name]
+
+key  0 none none    # cursor up
+key  1 none none    # cursor right
+key  2 none none    # cursor down
+key  3 none none    # f9
+key  4 none none    # f6
+key  5 none none    # f3
+key  6 #0D  #0D     # small ENTER
+key  7 none none    # f.
+key  8 none none    # cursor left
+key  9 none none    # COPY
+key 10 none none    # f7
+key 11 none none    # f8
+key 12 none none    # f5
+key 13 none none    # f1
+key 14 none none    # f2
+key 15 none none    # f0
+key 16 #7F  #7F     # CLR
+key 17 [    {
+key 18 #0D  #0D     # RETURN
+key 19 ]    }
+key 20 none none    # f4
+key 21 none none    # SHIFT
+key 22 \    `
+key 23 none none    # CONTROL
+key 24 ^    none    # shift gives the pound sign, not in ASCII
+key 25 -    =
+key 26 @    |
+key 27 p    P
+key 28 ;    +
+key 29 :    *
+key 30 /    ?
+key 31 .    >
+key 32 0    _
+key 33 9    )
+key 34 o    O
+key 35 i    I
+key 36 l    L
+key 37 k    K
+key 38 m    M
+key 39 ,    <
+key 40 8    (
+key 41 7    '
+key 42 u    U
+key 43 y    Y
+key 44 h    H
+key 45 j    J
+key 46 n    N
+key 47 space space
+key 48 6    &
+key 49 5    %
+key 50 r    R
+key 51 t    T
+key 52 g    G
+key 53 f    F
+key 54 b    B
+key 55 v    V
+key 56 4    $
+key 57 3    #
+key 58 e    E
+key 59 w    W
+key 60 s    S
+key 61 d    D
+key 62 c    C
+key 63 x    X
+key 64 1    !
+key 65 2    "
+key 66 #1B  #1B     # ESC
+key 67 q    Q
+key 68 #09  #09     # TAB
+key 69 a    A
+key 70 none none    # CAPS LOCK
+key 71 z    Z
+key 72 none none    # joystick 0 up
+key 73 none none    # joystick 0 down
+key 74 none none    # joystick 0 left
+key 75 none none    # joystick 0 right
+key 76 none none    # joystick 0 fire 2
+key 77 none none    # joystick 0 fire 1
+key 78 none none    # joystick 0 fire 3
+key 79 #08  #08     # DEL

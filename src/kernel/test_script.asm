@@ -16,10 +16,15 @@
 ;   frame 185      COPY click   -> dot
 ;   frame 195-204  RIGHT held   -> x about 266
 ;   frame 210      COPY click   -> second dot
-;   frame 220/228  'h', 'i'     -> "hi" in TYPED
-;   frame 400      F2           -> mode 0, x clamped to 191
-;   frame 420-434  LEFT held    -> x about 170
-;   frame 440      COPY click   -> dot in the mode 0 box
+;   frame 220-240  h i space    -> "hi " in TYPED
+;   frame 250-262  CONTROL+SHIFT -> typing EL, event "LANG EL"
+;   frame 270-371  k a l h m ; e r a space G e i a space ; A
+;                               -> "hi καλημέρα Γεια Ά" (; = tonos)
+;   frame 600      F3           -> labels in English
+;   frame 700      F2           -> mode 0, x clamped to 191
+;   frame 720-734  LEFT held    -> x about 170
+;   frame 740      COPY click   -> dot in the mode 0 box
+;   frame 800      F3           -> labels in Greek again
 ; =====================================================================
 
 ; ---------------------------------------------------------------------
@@ -81,7 +86,31 @@ test_keys:
         dw 210, 213 : db 1, %00000010     ; COPY
         dw 220, 223 : db 5, %00010000     ; H
         dw 228, 231 : db 4, %00001000     ; I
-        dw 400, 403 : db 1, %01000000     ; F2
-        dw 420, 435 : db 1, %00000001     ; LEFT
-        dw 440, 443 : db 1, %00000010     ; COPY
+        dw 236, 239 : db 5, %10000000     ; SPACE
+        dw 250, 263 : db 2, %10000000     ; CONTROL held ...
+        dw 254, 259 : db 2, %00100000     ; ... then SHIFT: typing EL
+        dw 270, 273 : db 4, %00100000     ; K  κ
+        dw 276, 279 : db 8, %00100000     ; A  α
+        dw 282, 285 : db 4, %00010000     ; L  λ
+        dw 288, 291 : db 5, %00010000     ; H  η
+        dw 294, 297 : db 4, %01000000     ; M  μ
+        dw 300, 303 : db 3, %00010000     ; ;  tonos (dead)
+        dw 306, 309 : db 7, %00000100     ; E  έ
+        dw 312, 315 : db 6, %00000100     ; R  ρ
+        dw 318, 321 : db 8, %00100000     ; A  α
+        dw 324, 327 : db 5, %10000000     ; SPACE
+        dw 329, 335 : db 2, %00100000     ; SHIFT ...
+        dw 330, 333 : db 6, %00010000     ; ... G  Γ
+        dw 336, 339 : db 7, %00000100     ; E  ε
+        dw 342, 345 : db 4, %00001000     ; I  ι
+        dw 348, 351 : db 8, %00100000     ; A  α
+        dw 354, 357 : db 5, %10000000     ; SPACE
+        dw 360, 363 : db 3, %00010000     ; ;  tonos (dead)
+        dw 365, 371 : db 2, %00100000     ; SHIFT ...
+        dw 366, 369 : db 8, %00100000     ; ... A  Ά
+        dw 600, 603 : db 0, %00100000     ; F3: English labels
+        dw 700, 703 : db 1, %01000000     ; F2: mode 0
+        dw 720, 735 : db 1, %00000001     ; LEFT
+        dw 740, 743 : db 1, %00000010     ; COPY
+        dw 800, 803 : db 0, %00100000     ; F3: Greek labels
         dw #FFFF

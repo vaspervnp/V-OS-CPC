@@ -8,8 +8,9 @@
 
         include "include/hw.inc"
         include "include/memmap.inc"
+        include "lang/msg_ids.inc"
 
-VOS_VERSION     equ #0003           ; 0.03
+VOS_VERSION     equ #0004           ; 0.04
 VOS_API_VERSION equ #0000
 
 ; ---- loader, runs at LOADER_ADDR ------------------------------------
@@ -25,6 +26,8 @@ kernel_start:
         include "kernel/kernel.asm"
         include "kernel/interrupts.asm"
         include "kernel/events.asm"
+        include "kernel/lang.asm"
+        include "lang/lang_en.asm"
         IFDEF TEST_SCRIPT
         include "kernel/test_script.asm"
         ENDIF
@@ -40,6 +43,7 @@ kernel_end:
 KERNEL_SIZE     equ kernel_end - kernel_start
 
         assert KERNEL_SIZE <= KERNEL_LIMIT - KERNEL_BASE
+        assert LOADER_ADDR + kernel_image - loader_start + KERNEL_SIZE <= LANG_LOAD
 
         IFDEF TEST_SCRIPT
         save "VOS.BIN", loader_start, kernel_image - loader_start + KERNEL_SIZE, DSK, "build/vos_test.dsk"

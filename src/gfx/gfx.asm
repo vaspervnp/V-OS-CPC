@@ -333,30 +333,20 @@ txt_set_colours:
 ; ---------------------------------------------------------------------
 ; txt_char - HL = x (multiple of 4 in mode 1, of 2 in mode 0),
 ; DE = y, A = character. Draws an opaque 8x8 cell in txt_fg/txt_bg.
-; Codes outside 32..127 draw as '?'.
+; 32..127 use the kernel font, 128..255 the language pack's font;
+; anything else (or 128..255 without a pack) draws as '?'.
 ; Destroys: all
 ; ---------------------------------------------------------------------
 txt_char:
-        sub 32
-        cp 96
-        jr c,.code_ok
-        ld a,'?' - 32
-.code_ok:
         push ix
         push de                     ; y
-        ex de,hl                    ; DE = x
-        ld l,a
-        ld h,0
-        add hl,hl
-        add hl,hl
-        add hl,hl
-        ld bc,font_ascii
-        add hl,bc
-        push hl                     ; glyph
-        ex de,hl
+        push hl                     ; x
+        call txt_glyph
+        ld b,h
+        ld c,l                      ; BC = glyph row
+        pop hl
         call gfx_x_to_byte
         ld (txt_col),hl
-        pop bc                      ; BC = glyph row
         pop hl
         add hl,hl
         ld de,gfx_lines
@@ -446,6 +436,37 @@ txt_char:
         dec a
         jr nz,.row0
         pop ix
+        ret
+
+; ---------------------------------------------------------------------
+; txt_glyph - A = character -> HL = its 8 glyph bytes
+; Destroys: AF, DE
+; ---------------------------------------------------------------------
+txt_glyph:
+        cp 128
+        jr nc,.pack
+        sub 32
+        jr nc,.kernel
+.unknown:
+        ld a,'?' - 32
+.kernel:
+        ld de,font_ascii
+        jr .address
+.pack:
+        ld e,a
+        ld a,(lang_loaded)
+        or a
+        jr z,.unknown
+        ld a,e
+        sub 128
+        ld de,lang_font
+.address:
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,de
         ret
 
 ; ---------------------------------------------------------------------
