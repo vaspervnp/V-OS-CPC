@@ -13,6 +13,7 @@
 make          # build/vos.dsk
 make run      # εκκίνηση στον Caprice32 με RUN"VOS"
 make shot     # εκκίνηση χωρίς παράθυρο και screenshot
+make test-input  # σενάριο πλήκτρων/pointer και δύο screenshots
 ```
 
 Στον CPC: `RUN"VOS"` από τη δισκέτα.
@@ -23,7 +24,7 @@ make shot     # εκκίνηση χωρίς παράθυρο και screenshot
 src/vos.asm          ρίζα του build: loader + kernel image, εγγραφή στο DSK
 src/boot/            loader που τρέχει η AMSDOS στο #4000
 src/kernel/          vectors (#0000), είσοδος kernel, interrupts
-src/drivers/         Gate Array, CRTC (και αργότερα FDC, πληκτρολόγιο, ποντίκι)
+src/drivers/         Gate Array, CRTC, πληκτρολόγιο, ποντίκι (και αργότερα FDC)
 src/gfx/             γραφικά overscan, κείμενο, γραμματοσειρά (font_ascii.asm παράγεται)
 src/include/         θύρες υλικού, χάρτης μνήμης
 tools/               scripts: screenshot στον Caprice32, mkfont.py (γραμματοσειρά → ASM)
@@ -33,6 +34,16 @@ docs/                απαιτήσεις, πρότυπα
 Τα hex στον κώδικα γράφονται με `#` (π.χ. `#C000`), γιατί η RASM διαβάζει το `&` ως AND.
 
 ## Κατάσταση
+
+**M2 (είσοδος):**
+- Σάρωση πληκτρολογίου 50 φορές το δευτερόλεπτο, με αγγλικό χάρτη, SHIFT, CONTROL, CAPS LOCK και auto-repeat. Τα ελληνικά έρχονται με το language pack στο M2b.
+- Το `txt_char` είναι ξετυλιγμένο, με πίνακα ευθυγραμμισμένο σε σελίδα 256 bytes, ώστε να γράφει πιο γρήγορα.
+- Ουρά 32 συμβάντων για πλήκτρα και pointer.
+- Pointer από cursor keys (COPY = κλικ) και AMX Mouse (300 Hz, δεν έχει δοκιμαστεί σε υλικό).
+- Δείκτης λογισμικού με save-under σε mode 0 και mode 1.
+- Οι συντεταγμένες των γραφικών καλύπτουν πλέον μόνο την ωφέλιμη περιοχή 384×259 / 192×259 (φυσικές γραμμές 6–264).
+- Οθόνη δοκιμής: τελευταία συμβάντα, πίνακας πληκτρολογίου σε πραγματικό χρόνο, πεδίο κειμένου, θέση pointer, κουτί για κλικ. F1/F2 αλλάζουν mode.
+- Το `make test-input` χτίζει έκδοση που «πατάει» cursor keys, COPY, H, I και F2 από σενάριο (`src/kernel/test_script.asm`), γιατί ο Caprice32 δεν μπορεί να πληκτρολογήσει αυτά τα πλήκτρα.
 
 **M1 (οθόνη):** overscan 32K στο `#8000–#FFFF` (384×272 σε mode 1, 192×272 σε mode 0). Υπάρχουν πίνακας διευθύνσεων για τις 272 γραμμές και ρουτίνες `gfx_plot`, `gfx_fill_rect`, `gfx_cls`, `txt_char` και `txt_print`, που δουλεύουν και στα δύο modes. Η γραμματοσειρά ASCII 8×8 είναι η font8x8, public domain. Η οθόνη δοκιμής εναλλάσσει mode 1 και mode 0 κάθε 3 δευτερόλεπτα και δείχνει στον τίτλο πόσα frames πήρε η σχεδίαση: 34 σε mode 1, 39 σε mode 0, χωρίς βελτιστοποιήσεις ακόμα.
 

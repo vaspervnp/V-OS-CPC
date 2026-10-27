@@ -2,7 +2,8 @@
 ; gfx.asm - overscan screen, mode-aware plot / rectangle / text
 ;
 ; Coordinates: x in pixels of the current mode (0..383 in mode 1,
-; 0..191 in mode 0), y in pixel lines 0..271. Pens are 0..3 (mode 1)
+; 0..191 in mode 0), y in drawable lines 0..GFX_H-1 (physical line
+; GFX_TOP + y, see memmap.inc). Pens are 0..3 (mode 1)
 ; or 0..15 (mode 0); higher pens wrap.
 ;
 ; Byte layout (bit 7 = left):
@@ -18,8 +19,8 @@
 gfx_init:
         ld hl,crtc_overscan
         call crtc_load
-        ; gfx_lines[y] = address of pixel line y
-        ld ix,gfx_lines
+        ; gfx_lines_all[line] = address of physical pixel line
+        ld ix,gfx_lines_all
         ld hl,SCREEN_TOP
         ld c,0                      ; char row
 .row:
@@ -114,9 +115,9 @@ gfx_x_to_byte:
 gfx_plot:
         ld (gfx_tmp_pen),a
         ld (gfx_tmp_x),hl
-        ld hl,SCREEN_H - 1
+        ld hl,GFX_H - 1
         or a
-        sbc hl,de                   ; carry if y > 271
+        sbc hl,de                   ; carry if y is below the drawable area
         ret c
         ld hl,(gfx_width)
         ld bc,(gfx_tmp_x)
@@ -259,7 +260,8 @@ gfx_fill_rect:
         ret
 
 ; ---------------------------------------------------------------------
-; gfx_cls - A = pen. Fills the visible screen (not the free gaps).
+; gfx_cls - A = pen. Fills all 272 lines, margins included (not the
+; free RAM gaps).
 ; Destroys: all except IX
 ; ---------------------------------------------------------------------
 gfx_cls:
@@ -340,7 +342,8 @@ txt_char:
         jr c,.code_ok
         ld a,'?' - 32
 .code_ok:
-        push de
+        push ix
+        push de                     ; y
         ex de,hl                    ; DE = x
         ld l,a
         ld h,0
@@ -349,63 +352,100 @@ txt_char:
         add hl,hl
         ld bc,font_ascii
         add hl,bc
-        ld (txt_glyph),hl
-        ex de,hl                    ; HL = x
+        push hl                     ; glyph
+        ex de,hl
         call gfx_x_to_byte
         ld (txt_col),hl
-        pop hl                      ; HL = y
+        pop bc                      ; BC = glyph row
+        pop hl
         add hl,hl
         ld de,gfx_lines
         add hl,de
-        ld b,8
-.row:
-        push bc
-        ld e,(hl)
-        inc hl
-        ld d,(hl)
-        inc hl
         push hl
-        ld hl,(txt_col)
-        add hl,de
-        ex de,hl                    ; DE = screen byte
-        ld hl,(txt_glyph)
-        ld c,(hl)
-        inc hl
-        ld (txt_glyph),hl
+        pop ix                      ; IX -> line addresses
         ld a,(gfx_mode)
         or a
-        jr z,.mode0
-        ld a,c                      ; mode 1: two nibbles
+        ld a,8
+        jr z,.row0
+.row1:                              ; mode 1: two nibbles per row
+        ld (txt_rows),a
+        ld l,(ix+0)
+        ld h,(ix+1)
+        inc ix
+        inc ix
+        ld de,(txt_col)
+        add hl,de
+        ex de,hl                    ; DE = screen
+        ld h,txt_expand >> 8        ; txt_expand is page aligned
+        ld a,(bc)
+        inc bc
+        ld (txt_bits),a
         rrca
         rrca
         rrca
         rrca
         and 15
-        call .emit
-        ld a,c
-        and 15
-        call .emit
-        jr .row_done
-.mode0:
-        ld b,4                      ; mode 0: four pairs, left first
-.pair:
-        rlc c
-        rlc c
-        ld a,c
-        and 3
-        call .emit
-        djnz .pair
-.row_done:
-        pop hl
-        pop bc
-        djnz .row
-        ret
-; (DE++) = txt_expand[A]
-.emit:
-        ld hl,txt_expand
-        call tbl_a
+        ld l,a
+        ld a,(hl)
         ld (de),a
         inc de
+        ld a,(txt_bits)
+        and 15
+        ld l,a
+        ld a,(hl)
+        ld (de),a
+        ld a,(txt_rows)
+        dec a
+        jr nz,.row1
+        pop ix
+        ret
+.row0:                              ; mode 0: four pairs per row
+        ld (txt_rows),a
+        ld l,(ix+0)
+        ld h,(ix+1)
+        inc ix
+        inc ix
+        ld de,(txt_col)
+        add hl,de
+        ex de,hl
+        ld h,txt_expand >> 8
+        ld a,(bc)
+        inc bc
+        ld (txt_bits),a
+        rlca                        ; bits 7-6
+        rlca
+        and 3
+        ld l,a
+        ld a,(hl)
+        ld (de),a
+        inc de
+        ld a,(txt_bits)             ; bits 5-4
+        rrca
+        rrca
+        rrca
+        rrca
+        and 3
+        ld l,a
+        ld a,(hl)
+        ld (de),a
+        inc de
+        ld a,(txt_bits)             ; bits 3-2
+        rrca
+        rrca
+        and 3
+        ld l,a
+        ld a,(hl)
+        ld (de),a
+        inc de
+        ld a,(txt_bits)             ; bits 1-0
+        and 3
+        ld l,a
+        ld a,(hl)
+        ld (de),a
+        ld a,(txt_rows)
+        dec a
+        jr nz,.row0
+        pop ix
         ret
 
 ; ---------------------------------------------------------------------
@@ -468,7 +508,7 @@ gfx_lmask:  dw gfx_lmask1
 gfx_rmask:  dw gfx_rmask1
 gfx_fill:   dw gfx_fill1
 
-gfx_cls_rect: dw 0, 0, 384, SCREEN_H
+gfx_cls_rect: dw 0, -GFX_TOP, 384, SCREEN_H     ; y relative to gfx_lines
             db 0
 
 gfx_tmp_x:  dw 0
@@ -483,8 +523,11 @@ txt_fg:     db 1
 txt_bg:     db 0
 txt_fg_byte: db 0
 txt_bg_byte: db 0
-txt_glyph:  dw 0
 txt_col:    dw 0
-txt_expand: ds 16
+txt_rows:   db 0
+txt_bits:   db 0
 
-gfx_lines:  ds SCREEN_H * 2
+            align 256
+txt_expand: ds 16                   ; page aligned, see txt_char
+gfx_lines_all: ds SCREEN_H * 2
+gfx_lines   equ gfx_lines_all + GFX_TOP * 2  ; drawable line 0

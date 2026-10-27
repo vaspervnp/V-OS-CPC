@@ -5,12 +5,17 @@
 ; frame. The first one after VSYNC starts is slice 0; it is detected by
 ; reading the VSYNC bit on PPI port B. Slices drive raster effects and
 ; the frame counter drives everything that runs at 50 Hz.
+;
+; Input: the AMX mouse is sampled on every interrupt; the keyboard and
+; the pointer are polled on slice 0 (50 Hz).
 ; =====================================================================
 
 int_handler:
         push af
         push bc
+        push de
         push hl
+        push ix
 
         ld hl,(int_ticks)           ; 300 Hz tick counter
         inc hl
@@ -34,6 +39,15 @@ int_handler:
 .slice_set:
         ld (int_slice),a
 
+        call amx_tick
+        ld a,(int_slice)
+        or a
+        jr nz,.no_input
+        call kbd_scan
+        call ptr_poll
+.no_input:
+        ld a,(int_slice)
+
         ; per-slice hook (raster effects); A = slice
         ld hl,(int_slice_hook)
         ld b,a
@@ -42,7 +56,9 @@ int_handler:
         ld a,b
         call nz,.call_hl
 
+        pop ix
         pop hl
+        pop de
         pop bc
         pop af
         ei

@@ -22,5 +22,11 @@ SCREEN_TOP      equ #8020           ; char row 0, pixel line 0
 SCREEN_LOW      equ #C000           ; char row 21, pixel line 0
 SCREEN_SPLIT    equ 21              ; first char row in the #C000 page
 SCREEN_ROWS     equ 34
-SCREEN_H        equ 272             ; pixel lines
+SCREEN_H        equ 272             ; pixel lines in video RAM
 SCREEN_BPL      equ 96              ; bytes per pixel line
+
+; Drawable area. The monitor shows 271 lines; the top 6 and the bottom
+; 6 of them are not used, so graphics y = 0 is physical line 6 and the
+; last drawable line is physical line 264.
+GFX_TOP         equ 6
+GFX_H           equ 259

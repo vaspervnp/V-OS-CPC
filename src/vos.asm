@@ -9,7 +9,7 @@
         include "include/hw.inc"
         include "include/memmap.inc"
 
-VOS_VERSION     equ #0002           ; 0.02
+VOS_VERSION     equ #0003           ; 0.03
 VOS_API_VERSION equ #0000
 
 ; ---- loader, runs at LOADER_ADDR ------------------------------------
@@ -24,9 +24,16 @@ kernel_start:
         include "kernel/vectors.asm"
         include "kernel/kernel.asm"
         include "kernel/interrupts.asm"
+        include "kernel/events.asm"
+        IFDEF TEST_SCRIPT
+        include "kernel/test_script.asm"
+        ENDIF
         include "drivers/ga.asm"
         include "drivers/crtc.asm"
+        include "drivers/kbd.asm"
+        include "drivers/mouse.asm"
         include "gfx/gfx.asm"
+        include "gfx/pointer.asm"
         include "gfx/font_ascii.asm"
 kernel_end:
 
@@ -34,4 +41,8 @@ KERNEL_SIZE     equ kernel_end - kernel_start
 
         assert KERNEL_SIZE <= KERNEL_LIMIT - KERNEL_BASE
 
+        IFDEF TEST_SCRIPT
+        save "VOS.BIN", loader_start, kernel_image - loader_start + KERNEL_SIZE, DSK, "build/vos_test.dsk"
+        ELSE
         save "VOS.BIN", loader_start, kernel_image - loader_start + KERNEL_SIZE, DSK, "build/vos.dsk"
+        ENDIF
