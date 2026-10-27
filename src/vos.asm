@@ -9,7 +9,7 @@
         include "include/hw.inc"
         include "include/memmap.inc"
 
-VOS_VERSION     equ #0001           ; 0.01
+VOS_VERSION     equ #0002           ; 0.02
 VOS_API_VERSION equ #0000
 
 ; ---- loader, runs at LOADER_ADDR ------------------------------------
@@ -26,6 +26,8 @@ kernel_start:
         include "kernel/interrupts.asm"
         include "drivers/ga.asm"
         include "drivers/crtc.asm"
+        include "gfx/gfx.asm"
+        include "gfx/font_ascii.asm"
 kernel_end:
 
 KERNEL_SIZE     equ kernel_end - kernel_start
