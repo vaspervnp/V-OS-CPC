@@ -12,6 +12,7 @@
 ;   #7500  sprites, the script table and state, variables, counters
 ;   #7800  the scripts' stacks (MAX_SCRIPTS x 128)
 ;
+; WHEN I RECEIVE n starts on SEND n (a number; SEND takes any value).
 ; Lines before the first WHEN, and the lines of a script whose sprite
 ; does not exist, are left out. A script ends at the next WHEN, or at
 ; the end: blocks still open are closed there. Motion and looks blocks
@@ -50,7 +51,8 @@ K_EDGE          equ 8
 K_CMP           equ 9
 
 OP_HATS         equ 3               ; WHEN START, KEY, CLICKED = EVT_*
-OP_COUNT        equ 24
+OP_RECEIVE      equ 24              ; WHEN I RECEIVE: EVT_RECEIVE
+OP_COUNT        equ 26
 
 MAX_SCRIPTS     equ 16
 MAX_DEPTH       equ 16              ; open FOREVER / REPEAT / IF
@@ -221,8 +223,11 @@ pl_compile:
         ld a,(ix + 0)
         cp OP_COUNT
         jr nc,.next
+        cp OP_RECEIVE
+        jr z,.hat
         cp OP_HATS
         jr nc,.block
+.hat:
         call pl_hat
         jr .next
 .block:
@@ -279,11 +284,28 @@ pl_hat:
         ld (pl_own),a
         ld (pl_param),a             ; WHEN CLICKED: its sprite
         ld a,(ix + 0)
+        cp OP_RECEIVE
+        jr nz,.event
+        ld a,EVT_RECEIVE
+.event:
+        ld (pl_event),a
         cp EVT_KEY
+        jr z,.slot1
+        cp EVT_RECEIVE
         jr nz,.entry
-        ld a,1                      ; WHEN KEY: the key
-        call pl_slot
+.slot1:
+        ld a,1                      ; WHEN KEY: the key; WHEN I RECEIVE:
+        call pl_slot                ; the message (a number, else 0)
+        ld a,b
+        cp K_NUM
         ld a,e
+        jr z,.param
+        ld a,(pl_event)
+        cp EVT_KEY
+        ld a,e
+        jr z,.param
+        xor a
+.param:
         ld (pl_param),a
 .entry:
         ld a,(pl_nscripts)
@@ -312,7 +334,7 @@ pl_hat:
         ld a,(pl_own)               ; db sprite, event, parameter
         ld (hl),a
         inc hl
-        ld a,(ix + 0)
+        ld a,(pl_event)
         ld (hl),a
         inc hl
         or a
@@ -348,6 +370,7 @@ pl_ops:
         dw op_goto, op_chx, op_chy, op_speed, op_move, op_bounce
         dw op_colour, op_show, op_hide
         dw op_print, op_note, op_set, op_change
+        dw 0, op_broadcast          ; WHEN I RECEIVE (pl_hat), SEND
 
 op_forever:
         ld a,T_LOOP
@@ -607,6 +630,14 @@ op_note:                            ; NOTE note FOR frames: and wait
         inc hl
         djnz .copy
         ret
+
+op_broadcast:                       ; SEND n: ld a,l : call rt_broadcast
+        xor a
+        call pl_value
+        ld a,#7D
+        call e_byte
+        ld de,rt_broadcast
+        jp e_call
 
 op_set:
         ld a,1
@@ -908,6 +939,7 @@ pl_open:        db 0                ; a script is being compiled
 pl_own:         db 0                ; its sprite, #FF: the stage
 pl_own_rec:     dw 0
 pl_param:       db 0
+pl_event:       db 0
 pl_lineno:      db 0
 pl_out:         dw 0
 pl_depth:       db 0

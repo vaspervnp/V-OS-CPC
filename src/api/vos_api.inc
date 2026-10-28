@@ -160,5 +160,9 @@ VC_LAUNCHER     equ 17
 VC_COMMANDER    equ 18
 VC_SETUP        equ 19
 
-; menu separators, and system texts a program may use
+; menu separators, and system texts a program may use (in dialogs, as
+; buttons, or with VOS_MSG)
 VOS_SEPARATOR   equ #FF
+VM_OK           equ 17              ; = MSG_BTN_OK (kernel/api.asm checks)
+VM_YES          equ 18
+VM_NO           equ 19

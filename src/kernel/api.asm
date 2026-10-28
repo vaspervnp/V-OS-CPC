@@ -44,6 +44,7 @@ api_jumps:
         jp api_bank_get
         jp api_bank_put
         assert $ == VOS_API + VOS_API_COUNT * 3
+        assert VM_OK == MSG_BTN_OK && VM_YES == MSG_BTN_YES && VM_NO == MSG_BTN_NO
 
 api_exit:
         call api_end

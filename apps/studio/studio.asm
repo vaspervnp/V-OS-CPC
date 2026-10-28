@@ -125,7 +125,9 @@ OP_END          equ 7
 OP_SPEED        equ 14
 OP_MOVE         equ 15
 OP_BOUNCE       equ 16
-OP_COUNT        equ 24
+OP_RECEIVE      equ 24              ; after the first 24: old files stay good
+OP_BROADCAST    equ 25
+OP_COUNT        equ 26
 OP_INFO         equ 13              ; flags, 3 classes, 3 default slots
 
 FOCUS_SCRIPT    equ 0
@@ -523,6 +525,15 @@ pal_op:
         call cat_base
         ld hl,pal
         add a,(hl)
+        ; fall through
+
+; A = place in the palette -> A = its block (keeps BC)
+pal_nth:
+        ld e,a
+        ld d,0
+        ld hl,pal_order
+        add hl,de
+        ld a,(hl)
         ret
 
 ; A = the first block of the category (keeps BC)
@@ -2314,6 +2325,7 @@ draw_pal_row:
         pop bc
         call cat_base               ; its name without the slots
         add a,b
+        call pal_nth
         call op_name
         ld a,13
         call clip_lbuf
@@ -3148,7 +3160,7 @@ menu_edit:      db T_EDIT, 4
                 db T_DEL_SPRITE, CMD_DEL_SPRITE, 0, 0
                 db T_BG, CMD_BG, 0, 0
 
-dlg_new:        db T_STUDIO, T_D_NEW, 2, T_B_YES, T_B_NO
+dlg_new:        db T_STUDIO, T_D_NEW, 2, VM_YES, VM_NO
 
 ; blocks: flags, the classes of slots 0..2, default slots (kind, value)
 ops:
@@ -3179,10 +3191,18 @@ ops:
         db 0,      C_VALUE, C_VALUE, 0,     K_NUM, 60, 0, K_NUM, 10, 0, 0, 0, 0       ; NOTE
         db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 0, 0, 0, 0, 0         ; SET
         db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 1, 0, 0, 0, 0         ; CHANGE
+        db F_HAT,  C_SPR, C_VALUE, 0,       K_SPR, 0, 0, K_NUM, 1, 0, 0, 0, 0         ; WHEN I RECEIVE
+        db 0,      C_VALUE, 0, 0,           K_NUM, 1, 0, 0, 0, 0, 0, 0, 0             ; BROADCAST
         assert $ - ops == OP_COUNT * OP_INFO
 
 CATS            equ 5
-cat_first:      db 0, 3, 11, 17, 22, OP_COUNT
+cat_first:      db 0, 5, 13, 19, 24, OP_COUNT  ; in pal_order
+pal_order:      db 0, 1, 2, OP_RECEIVE, OP_BROADCAST    ; events
+                db 3, 4, 5, 6, 7, 8, 9, 10              ; control
+                db 11, 12, 13, 14, 15, 16               ; motion
+                db 17, 18, 19, 20, 21                   ; looks, sound
+                db 22, 23                               ; variables
+        assert $ - pal_order == OP_COUNT
 class_help:     db T_H_LINE, T_H_VALUE, T_H_VAR, T_H_CMP, T_H_SPR, T_H_KEYN
 first_values:   db 0, 0, 0, 0, 10, VK_SPACE, 1, 0   ; K_NUM .. K_EDGE
 cmp_chars:      db "<=>"

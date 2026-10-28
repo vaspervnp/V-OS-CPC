@@ -48,6 +48,8 @@ OP_PRINT    | PRINT ~0 AT ~1 ~2     | ΓΡΑΨΕ ~0 ΣΤΟ ~1 ~2
 OP_NOTE     | NOTE ~0 FOR ~1        | ΝΟΤΑ ~0 ΓΙΑ ~1
 OP_SET      | SET ~0 TO ~1          | ΘΕΣΕ ~0 ΣΕ ~1
 OP_CHANGE   | CHANGE ~0 BY ~1       | ΑΛΛΑΞΕ ~0 ΚΑΤΑ ~1
+OP_RECEIVE  | WHEN I RECEIVE ~1 ~0  | ΟΤΑΝ ΛΑΒΕΙ ~1 ~0
+OP_BROADCAST | SEND ~0              | ΣΤΕΙΛΕ ~0
 
 # words in slots and panels
 W_KEY       | KEY                   | ΠΛΗΚΤΡΟ
@@ -73,7 +75,5 @@ H_STAGE     | ARROWS: MOVE  1-6  C: COLOUR  W H: SIZE  TAB | ΒΕΛΑΚΙΑ: Θ�
 M_SAVED     | SAVED                 | ΑΠΟΘΗΚΕΥΤΗΚΕ
 M_FULL      | NO MORE ROOM          | ΔΕΝ ΧΩΡΑΕΙ ΑΛΛΟ
 D_NEW       | CLEAR THE PROGRAM?    | ΝΑ ΣΒΗΣΤΕΙ|ΤΟ ΠΡΟΓΡΑΜΜΑ;
-B_YES       | YES                   | ΝΑΙ
-B_NO        | NO                    | ΟΧΙ
 I_NAME      | PROGRAM NAME          | ΟΝΟΜΑ ΠΡΟΓΡΑΜΜΑΤΟΣ
 O_TITLE     | OPEN A .VBS           | ΑΝΟΙΓΜΑ .VBS
