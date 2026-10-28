@@ -47,7 +47,7 @@ endef
 
 # Programs (apps/): each is assembled on its own, with only the API
 # include, and goes on the disc as a binary loading at #4000.
-APPS    := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/PONG.BIN $(BUILD)/CATCH.BIN $(BUILD)/STARCAT.BIN
+APPS    := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/STUDIO.BIN $(BUILD)/PONG.BIN $(BUILD)/CATCH.BIN $(BUILD)/STARCAT.BIN
 APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
 
 $(BUILD)/DEMO.BIN: apps/demo/demo.asm src/api/vos_api.inc
@@ -57,6 +57,14 @@ $(BUILD)/DEMO.BIN: apps/demo/demo.asm src/api/vos_api.inc
 $(BUILD)/MIXED.BIN: apps/mixed/mixed.asm src/api/vos_api.inc
 	@mkdir -p $(BUILD)
 	$(RASM) apps/mixed/mixed.asm -I src -o $(BUILD)/mixed > /dev/null
+
+# Studio: its texts (English and Greek) come from texts.txt
+$(BUILD)/studio_texts.asm: apps/studio/texts.txt tools/mktexts.py
+	@mkdir -p $(BUILD)
+	$(PYTHON) -I tools/mktexts.py $< $@
+
+$(BUILD)/STUDIO.BIN: apps/studio/studio.asm $(BUILD)/studio_texts.asm src/api/vos_api.inc
+	$(RASM) apps/studio/studio.asm -I src -I $(BUILD) -o $(BUILD)/studio > /dev/null
 
 # Block programs (blocks/): compiled to assembly by vbc.py, with the
 # runtime. The .BIN takes the name inside the .vbp.
@@ -121,11 +129,11 @@ $(TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	$(call add_apps,$(TEST_DSK))
 	$(PYTHON) -I tools/dsk_ext.py $(TEST_DSK)
 
-# Shots along the script (src/kernel/test_script.asm): Launcher, the
-# STARCAT block program (costumes, a tune, lists), its cat walking left
-# and right, back to the Launcher. One run per shot: runs are short,
-# shots are per second.
-TEST_SHOTS := 150 200 240 290 400
+# Shots along the script (src/kernel/test_script.asm): Studio, a slot
+# typed into, a block added, the sprite moved, the name dialog, the
+# file list and the program opened again. One run per shot: runs are
+# short, shots are per second.
+TEST_SHOTS := 230 290 350 410 450 560 680
 test-input: $(TEST_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(TEST_SHOTS); do \

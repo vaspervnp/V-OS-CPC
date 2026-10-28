@@ -4,7 +4,7 @@
 ; file_pick - A = title MSG_*, after fs_catalog filled FS_CAT.
 ; Returns A = the chosen file (index in FS_CAT), carry if cancelled.
 ;
-; Up to FP_MAX_ROWS files are shown; the list scrolls with the selection.
+; Up to FP_MAX_ROWS files are shown (FP_SPLIT_ROWS with a mixed screen); the list scrolls with the selection.
 ; UP/DOWN move, RETURN/ENTER/SPACE choose, ESC cancels, a click on a
 ; file chooses it. The last line shows the free space on the disc.
 ; Rows read "NAME    .EXT  nnnK". Uses the save-under buffer, like
@@ -12,6 +12,7 @@
 ; =====================================================================
 
 FP_MAX_ROWS         equ 10
+FP_SPLIT_ROWS   equ 8               ; in a mixed screen's mode 0 band
 FP_CHARS        equ 22              ; box width in characters
 
 file_pick:
@@ -24,10 +25,16 @@ file_pick:
         ld (ptr_keys_on),a
         ld (fp_sel),a
         ld (fp_top),a
-        ld a,(fp_count)             ; rows on screen
-        cp FP_MAX_ROWS
+        ld a,(split_on)             ; rows on screen
+        or a
+        ld c,FP_MAX_ROWS
+        jr z,.max
+        ld c,FP_SPLIT_ROWS
+.max:
+        ld a,(fp_count)
+        cp c
         jr c,.rows
-        ld a,FP_MAX_ROWS
+        ld a,c
 .rows:
         ld (fp_rows),a
         ld b,a                      ; height = 12 + 4 + rows*10 + 4 + 10 + 4

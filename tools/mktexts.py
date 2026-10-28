@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+"""mktexts - a program's texts (VOS_TEXTS) from a text file.
+
+usage: mktexts.py texts.txt out.asm
+
+Lines: NAME | English | the pack's language (Greek), "#" starts a
+comment. Writes T_NAME equ VT_FIRST + n for each, and the table
+"texts:" for VOS_TEXTS, Greek in ISO 8859-7. An empty third column
+uses the English text.
+"""
+import sys
+
+
+def data(label, text, codec):
+    try:
+        raw = text.encode(codec)
+    except UnicodeEncodeError:
+        sys.exit(f"mktexts: {text!r} is not {codec}")
+    return f"{label}: db " + ", ".join(str(b) for b in raw + b"\0") + f"   ; {text}"
+
+
+def main():
+    if len(sys.argv) != 3:
+        sys.exit(__doc__.split("\n")[2])
+    rows = []
+    for n, line in enumerate(open(sys.argv[1], encoding="utf-8"), 1):
+        line = line.rstrip("\n")
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        part = [p.strip() for p in line.split("|", 2)]
+        if len(part) != 3 or not part[0].isidentifier():
+            sys.exit(f"mktexts: {sys.argv[1]}:{n}: NAME | English | Greek")
+        rows.append(part)
+    if len(rows) > 64:
+        sys.exit(f"mktexts: {len(rows)} texts, at most 64 (#C0..#FF)")
+    out = [f"; made by tools/mktexts.py from {sys.argv[1]}: do not edit", ""]
+    for i, (name, _, _) in enumerate(rows):
+        out.append(f"T_{name:<14} equ VT_FIRST + {i}")
+    out += ["", f"texts:  db {len(rows)}"]
+    for i, (name, _, el) in enumerate(rows):
+        out.append(f"        dw te_{i}, {'tg_' + str(i) if el else 0}")
+    for i, (name, en, el) in enumerate(rows):
+        out.append(data(f"te_{i}", en, "ascii"))
+        if el:
+            out.append(data(f"tg_{i}", el, "iso8859_7"))
+    open(sys.argv[2], "w", encoding="utf-8").write("\n".join(out) + "\n")
+
+
+if __name__ == "__main__":
+    main()

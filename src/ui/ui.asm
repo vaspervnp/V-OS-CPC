@@ -335,7 +335,8 @@ ui_copy_area:
 
 ; ---------------------------------------------------------------------
 ; Windows for dialogs: uw_w (dw) and uw_h (db) set by the caller.
-; ui_centre       uw_x, uw_y centre the window (x a multiple of 8)
+; ui_centre       uw_x, uw_y centre the window (x a multiple of 8;
+;                 with a mixed screen, in the mode 0 band)
 ; ui_save_window  save what the window and its shadow cover
 ; ui_window       A = title MSG_*: shadow, box, frame, title bar
 ; Destroy: all except IX
@@ -351,14 +352,29 @@ ui_centre:
         and %11111000
         ld l,a
         ld (uw_x),hl
-        ld a,(uw_h)
-        ld e,a
+        ld a,(uw_h)                 ; in the mode 0 band of a mixed
+        ld e,a                      ; screen, if drawn in mode 0
         ld d,0
         ld hl,GFX_H
+        ld bc,0
+        ld a,(split_on)
+        or a
+        jr z,.height
+        ld a,(gfx_mode)
+        or a
+        jr nz,.height
+        ld hl,(split_y2)
+        ld bc,(split_y1)
+        sbc hl,bc                   ; carry is clear
+.height:
         or a
         sbc hl,de
+        jr nc,.fits
+        ld hl,0
+.fits:
         srl h
         rr l
+        add hl,bc
         ld (uw_y),hl
         ret
 
