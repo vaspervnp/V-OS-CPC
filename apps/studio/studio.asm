@@ -29,9 +29,16 @@
 ; palette's block below, CLR deletes the line; with a slot chosen,
 ; typing edits it (the status line says how). Palette: arrows choose,
 ; RETURN adds. Stage: arrows move the sprite, 1-6 choose one, C colour,
-; W/H size. Mouse: a click on a palette block adds it, on a slot
+; W/H size, K its costume (none, 1, 2, ...), E draws it (a new one if
+; it has none). Mouse: a click on a palette block adds it, on a slot
 ; chooses it, on the chosen slot changes its kind; a click on the stage
 ; places the sprite.
+;
+; Costumes: up to COS_MAX images of 16 x 16 pixels, for any sprite. The
+; costume editor takes the stage's place: arrows move, SPACE or RETURN
+; paints with the pen, 0-9 A-F choose it, "." is no pen (transparent),
+; E or TAB is done. A click paints a cell, or chooses a pen in the row
+; under the cells.
 ;
 ; Files: STUDIO > SAVE writes NAME.VBS (the VBS record below, as a
 ; binary file); OPEN reads it back. RUN saves it, writes NAME.BIN (the
@@ -77,15 +84,24 @@ STG_H           equ 124
 LIST_X          equ 104             ; sprite list
 LIST_Y          equ 26
 LIST_H          equ 12
+ED_GX           equ 8               ; costume editor: cells of 4 x 7
+ED_GY           equ Y1 + 4
+ED_PY           equ ED_GY + 16 * 7 + 2  ; the pens, under the cells
+        assert ED_PY + 7 <= Y2
+ED_TX           equ 88              ; its title and the pen
 
 ; ---- the program (VBS) ----------------------------------------------
-; db "VBS", version (2); db background pen (+ V_MODE1: the program
+; db "VBS", version (3); db background pen (+ V_MODE1: the program
 ; runs in mode 1, 384 pixels wide), sprite count;
-; SPR_MAX sprites (dw x, y; db w, h, colour, 0); TEXT_MAX texts of
-; TEXT_SIZE bytes (zero-terminated); dw line count; lines.
+; SPR_MAX sprites (dw x, y; db w, h, colour, costume: 0 none, 1..);
+; TEXT_MAX texts of TEXT_SIZE bytes (zero-terminated); dw line count;
+; lines; db costume count, costumes (db 0, 0, then 16 x 16 pens, a byte
+; a pixel, bit 7: none). Here the costumes stay at a fixed place
+; (costumes): SAVE and RUN move them after the lines for a while.
 ; A line: db OP_*, then 3 slots of db K_*, dw value.
-; Version 1 had no texts: OPEN makes room for them.
-VBS_VERSION     equ 2
+; Version 1 had no texts: OPEN makes room for them; 1 and 2 have no
+; costumes.
+VBS_VERSION     equ 3
 SPR_MAX         equ 6
 SPR_SIZE        equ 8
 TEXT_MAX        equ 32
@@ -101,7 +117,10 @@ V_TEXTS         equ V_SPR + SPR_MAX * SPR_SIZE
 V_NLINES        equ V_TEXTS + TEXT_MAX * TEXT_SIZE
 V_LINES         equ V_NLINES + 2
 V1_NLINES       equ V_TEXTS             ; version 1
-VBS_ROOM        equ 3 * 1024        ; files of up to 3K are read
+VBS_ROOM        equ 5 * 1024        ; files of up to 5K are read
+COS_MAX         equ 8
+COS_SIZE        equ 258
+NO_PEN          equ #80
 
 ; slot kinds
 K_NONE          equ 0
@@ -118,6 +137,7 @@ K_SPR           equ 10              ; 0 the stage, 1..6 a sprite
 K_KEYN          equ 11              ; a key (WHEN KEY)
 K_BUTTON        equ 12              ; the last button pressed (0..)
 K_TEXT          equ 13              ; text 0..TEXT_MAX-1
+K_COSTUME       equ 14              ; the script's sprite's costume
 ; what a slot may hold
 C_NONE          equ 0
 C_VALUE         equ 1               ; K_NUM..K_EDGE
@@ -151,7 +171,9 @@ OP_WINDOW       equ 30
 OP_BUTTON       equ 31
 OP_PRESSED      equ 32
 OP_TEXT         equ 33
-OP_COUNT        equ 34
+OP_COSTUME      equ 34
+OP_NEXT_COSTUME equ 35
+OP_COUNT        equ 36
 OP_INFO         equ 13              ; flags, 3 classes, 3 default slots
 
 FOCUS_SCRIPT    equ 0
@@ -301,9 +323,11 @@ prog_new:
         ldir
         xor a
         ld (named),a
+        ld (costumes),a
         ; fall through
 editor_home:
         xor a
+        ld (editing),a
         ld (cursor),a
         ld (top),a
         ld (spr_sel),a
@@ -357,6 +381,9 @@ key:
         ld a,(awaiting)
         or a
         jp nz,key_chosen
+        ld a,(editing)
+        or a
+        jp nz,edit_key
         ld a,(k_code)
         cp 68                       ; TAB
         jr nz,.focus
@@ -588,10 +615,49 @@ stage_key:
         cp (hl)
         ret nc
         ld (spr_sel),a
-        jr .changed
+        jp .changed
 .not_digit:
         call spr_ptr                ; HL -> the chosen sprite
+        ld de,7
+        add hl,de                   ; HL -> its costume
         ld a,(k_letter)
+        cp "K"                      ; the next costume, or none
+        jr nz,.not_k
+        ld a,(costumes)
+        cp (hl)
+        ld a,0
+        jr z,.wear
+        ld a,(hl)
+        inc a
+.wear:
+        ld (hl),a
+        jp .changed
+.not_k:
+        cp "E"
+        jr nz,.not_e
+        ld a,(hl)                   ; draw its costume: a new one if none
+        or a
+        jr nz,.edit
+        ld a,(costumes)
+        cp COS_MAX
+        jp nc,full
+        inc a
+        ld (costumes),a
+        ld (hl),a
+        call cos_px
+        ld d,h
+        ld e,l
+        inc de
+        ld bc,255
+        ld (hl),NO_PEN
+        ldir
+        ld a,(costumes)
+.edit:
+        ld (editing),a
+        jp .changed
+.not_e:
+        or a
+        sbc hl,de
         cp "C"
         jr nz,.not_colour
         ld de,6
@@ -746,6 +812,9 @@ click:
         or a
         sbc hl,de
         jp nc,click_lower
+        ld a,(editing)
+        or a
+        jp nz,edit_click
         ld hl,(click_y)                 ; the stage, a sprite's row
         ld de,STG_Y
         sbc hl,de
@@ -986,12 +1055,13 @@ do_add_sprite:
         ld hl,vbs + V_NSPR
         ld a,(hl)
         cp SPR_MAX
-        jr c,.room
+        jr c,add_room
+full:
         ld a,T_M_FULL
         ld (msg),a
         ld a,R_STATUS
         jp refresh
-.room:
+add_room:
         inc (hl)
         ld (spr_sel),a
         push af
@@ -1148,6 +1218,7 @@ write_file:
         ld hl,fcb
         ld de,vbs
         call VOS_SAVE
+        call cos_unpack
         jp c,VOS_ERROR
         ld hl,fcb
         call keep_name
@@ -1196,6 +1267,7 @@ run_bin:
         ld hl,vbs
         ld de,VOS_APP_ADDR + PLAYER_SIZE
         call VOS_BANK_PUT
+        call cos_unpack
         pop hl
         ld de,PLAYER_SIZE
         add hl,de
@@ -1224,12 +1296,65 @@ keep_name:
         or a
         ret
 
-; -> HL = the program's bytes: V_LINES + lines * 10
+; -> HL = the program's bytes, the costumes moved after the lines
+; (cos_unpack puts them back)
 vbs_bytes:
+        call cos_after
+        ld (cos_len),bc
+        push de
+        push bc
+        ldir
+        pop bc
+        pop hl
+        add hl,bc
+        ld bc,0 - vbs
+        add hl,bc
+        ret
+
+; keeps AF
+cos_unpack:
+        push af
+        call cos_after
+        ld bc,(cos_len)             ; (the count may be written over)
+        ex de,hl
+        add hl,bc
+        dec hl
+        ex de,hl
+        add hl,bc
+        dec hl
+        ex de,hl
+        lddr
+        pop af
+        ret
+
+; -> HL = costumes, DE -> after the lines, BC = the costumes' bytes
+cos_after:
         ld hl,(vbs + V_NLINES)
         call times10
-        ld bc,V_LINES
-        add hl,bc
+        ld de,vbs + V_LINES
+        add hl,de
+        ex de,hl
+cos_bytes:                          ; -> BC, HL = costumes
+        ld a,(costumes)
+        ld h,a
+        ld l,1
+        add a,a
+        ld c,a
+        ld b,0
+        add hl,bc                   ; count * 258 + 1
+        ld b,h
+        ld c,l
+        ld hl,costumes
+        ret
+
+; A = costume 1.. -> HL -> its pixels
+cos_px:
+        dec a
+        ld h,a
+        add a,a
+        ld l,a
+        ld de,costumes + 3
+        add hl,de
         ret
 
 ; fcb = prog_name, padded with spaces, "VBS"
@@ -1345,18 +1470,18 @@ load_prog:
         inc de
         dec a
         jr nz,.magic
-        ld a,(hl)                   ; version 1 or 2
+        ld a,(hl)                   ; version 1 to 3
         dec a
         cp VBS_VERSION
-        jr nc,.broken
+        jp nc,.broken
         ld a,(lbuf + V_NSPR)
         cp SPR_MAX + 1
-        jr nc,.broken
+        jp nc,.broken
         ld hl,(lbuf + V_SPR)
         ld de,MAX_LINES + 1
         or a
         sbc hl,de
-        jr nc,.broken
+        jp nc,.broken
         push bc
         ld hl,LOAD_AT               ; good: the head and the sprites,
         ld de,vbs                   ; no texts yet, then the rest
@@ -1387,6 +1512,34 @@ load_prog:
         ld hl,LOAD_AT + V_TEXTS
 .get:
         call VOS_BANK_GET
+        xor a
+        ld (costumes),a
+        ld a,(vbs + 3)              ; version 3: the costumes
+        cp 3
+        jr c,.no_costumes
+        ld hl,(vbs + V_NLINES)
+        call times10
+        ld de,LOAD_AT + V_LINES
+        add hl,de
+        push hl
+        ld de,costumes
+        ld bc,1
+        call VOS_BANK_GET
+        ld a,(costumes)
+        cp COS_MAX + 1
+        jr c,.costumes
+        xor a
+        ld (costumes),a
+.costumes:
+        call cos_bytes
+        dec bc
+        pop hl
+        inc hl
+        ld a,b
+        or c
+        ld de,costumes + 1
+        call nz,VOS_BANK_GET
+.no_costumes:
         ld a,VBS_VERSION
         ld (vbs + 3),a
         pop bc
@@ -1964,6 +2117,9 @@ slot_char:
         cp "P"
         ld b,K_BUTTON
         jr z,.kind
+        cp "U"
+        ld b,K_COSTUME
+        jr z,.kind
         ld de,10
         cp "R"
         ld b,K_RND
@@ -2169,13 +2325,17 @@ cycle_kind:
         ld (hl),K_NONE
         ret
 .value:
-        ld a,(hl)                   ; NUM .. EDGE, BUTTON, then NUM again
+        ld a,(hl)                   ; NUM .. EDGE, BUTTON, COSTUME, NUM
         inc a
         cp K_EDGE + 1
         jr c,.kind
-        jr nz,.again
+        jr nz,.not_button
         ld a,K_BUTTON
         jr .kind
+.not_button:
+        cp K_TEXT
+        ld a,K_COSTUME
+        jr z,.kind
 .again:
         ld a,K_NUM
 .kind:
@@ -2198,6 +2358,9 @@ cycle_kind:
 ; drawing: the stage and the sprite list (mode 0)
 ; ---------------------------------------------------------------------
 draw_stage:
+        ld a,(editing)
+        or a
+        jp nz,draw_editor
         ld a,Q_WHITE                ; frame and background
         ld (fill_pen),a
         ld hl,0
@@ -2266,6 +2429,21 @@ draw_preview:
         ret nc
         ld (dp_y),a
         ex de,hl
+        inc hl                      ; a costume: its pixels
+        inc hl
+        inc hl
+        ld a,(hl)
+        dec hl
+        dec hl
+        dec hl
+        or a
+        jr z,.rect
+        ld b,a
+        ld a,(costumes)
+        cp b
+        ld a,b
+        jp nc,dp_costume
+.rect:
         call prog_mode              ; w / 2 (mode 1: / 4), at least 1,
         ld b,a                      ; clipped
         ld a,(hl)
@@ -2516,6 +2694,349 @@ draw_list_row:
         ld d,0
         ld bc,lbuf
         jp VOS_PRINT
+
+; A = costume: at half size (mode 1: across, a quarter), pixel by pixel
+dp_costume:
+        call cos_px
+        xor a
+        ld (dp_row),a
+.row:
+        push hl
+        ld b,8                      ; every other pixel (mode 1: fourth)
+        ld c,2
+        call prog_mode
+        or a
+        jr z,.cols
+        ld b,4
+        ld c,4
+.cols:
+        xor a
+        ld (dp_ink),a               ; the column
+.col:
+        ld a,(hl)
+        bit 7,a
+        jr nz,.next
+        ld (fill_pen),a
+        push bc
+        push hl
+        ld a,(dp_ink)
+        ld hl,dp_x
+        add a,(hl)
+        cp STG_W
+        jr nc,.out
+        add a,STG_X
+        ld l,a
+        ld h,0
+        ld a,(dp_row)
+        ld de,dp_y
+        ex de,hl
+        add a,(hl)
+        ex de,hl
+        cp STG_H
+        jr nc,.out
+        add a,STG_Y
+        ld e,a
+        ld d,0
+        ld bc,1
+        ld a,c
+        call fill
+.out:
+        pop hl
+        pop bc
+.next:
+        ld a,l                      ; the next pixel shown
+        add a,c
+        ld l,a
+        adc a,h
+        sub l
+        ld h,a
+        ld a,(dp_ink)
+        inc a
+        ld (dp_ink),a
+        djnz .col
+        pop hl
+        ld de,32                    ; every other row
+        add hl,de
+        ld a,(dp_row)
+        inc a
+        ld (dp_row),a
+        cp 8
+        jr c,.row
+        ret
+
+; ---------------------------------------------------------------------
+; the costume editor (in the stage's place, mode 0)
+; ---------------------------------------------------------------------
+draw_editor:
+        ld a,Q_BLUE
+        ld (fill_pen),a
+        ld hl,0
+        ld de,Y1
+        ld bc,192
+        ld a,Y2 - Y1
+        call fill
+        xor a                       ; the cells
+.cell:
+        push af
+        call ed_cell
+        pop af
+        inc a
+        jr nz,.cell
+        ld b,16                     ; the pens under them
+.pen:
+        ld a,b
+        dec a
+        ld (fill_pen),a
+        push bc
+        add a,a
+        add a,a
+        add a,ED_GX
+        ld l,a
+        ld h,0
+        ld de,ED_PY
+        ld bc,4
+        ld a,7
+        call fill
+        pop bc
+        djnz .pen
+        ld a,T_W_COSTUME            ; "COSTUME n"
+        call VOS_MSG
+        ld de,lbuf
+        call append
+        ld a," "
+        ld (de),a
+        inc de
+        ld a,(editing)
+        call num_a
+        xor a
+        ld (de),a
+        call list_colours
+        ld hl,ED_TX
+        ld de,ED_GY
+        ld bc,lbuf
+        call VOS_PRINT
+        ; fall through
+ed_show_pen:                        ; the pen, beside the cells
+        ld a,(ce_pen)
+        call ed_ink
+        ld hl,ED_TX
+        ld de,ED_GY + 14
+        ld bc,16
+        ld a,16
+        jp fill
+
+; A = pen or NO_PEN -> fill_pen (no pen: the stage's colour)
+ed_ink:
+        bit 7,a
+        jr z,.pen
+        ld a,(vbs + V_BG)
+.pen:
+        and 15
+        ld (fill_pen),a
+        ret
+
+; -> A = the cursor's cell
+ed_index:
+        ld a,(ce_y)
+        add a,a
+        add a,a
+        add a,a
+        add a,a
+        ld hl,ce_x
+        add a,(hl)
+        ret
+
+; A = cell (row * 16 + column): draw it, and the cursor if it is there
+ed_cell:
+        ld (ce_i),a
+        call ed_pixel
+        ld a,(hl)
+        call ed_ink
+        call .at
+        ld bc,4
+        ld a,7
+        call fill
+        call ed_index
+        ld hl,ce_i
+        cp (hl)
+        ret nz
+        ld a,(fill_pen)             ; the cursor: a dot that shows
+        cp Q_WHITE
+        ld a,Q_WHITE
+        jr nz,.dot
+        ld a,Q_BLACK
+.dot:
+        ld (fill_pen),a
+        call .at
+        inc hl
+        inc de
+        inc de
+        ld bc,2
+        ld a,3
+        jp fill
+.at:                                ; -> HL = x, DE = y of cell ce_i
+        ld a,(ce_i)
+        and 15
+        add a,a
+        add a,a
+        add a,ED_GX
+        ld l,a
+        ld h,0
+        ld a,(ce_i)
+        rra
+        rra
+        rra
+        rra
+        and 15
+        ld b,a                      ; row * 7
+        add a,a
+        add a,a
+        add a,a
+        sub b
+        add a,ED_GY
+        ld e,a
+        ld d,0
+        ret
+
+; -> HL -> the pixel of cell ce_i
+ed_pixel:
+        ld a,(editing)
+        call cos_px
+        ld a,(ce_i)
+        add a,l
+        ld l,a
+        adc a,h
+        sub l
+        ld h,a
+        ret
+
+; paint the cursor's cell with the pen
+ed_paint:
+        call ed_index
+        ld (ce_i),a
+        call ed_pixel
+        ld a,(ce_pen)
+        ld (hl),a
+        ld a,(ce_i)
+        jr ed_cell
+
+edit_key:
+        ld a,(k_code)
+        cp 68                       ; TAB or E: done
+        jr z,.done
+        ld a,(k_letter)
+        cp "E"
+        jr z,.done
+        ld b,NO_PEN
+        cp "."
+        jr z,.pen
+        sub "0"
+        jr c,.not_pen
+        cp 10
+        jr c,.pen_a
+        sub "A" - "0" - 10
+        cp 10
+        jr c,.not_pen
+        cp 16
+        jr nc,.not_pen
+.pen_a:
+        ld b,a
+.pen:
+        ld a,b
+        ld (ce_pen),a
+        jp ed_show_pen
+.not_pen:
+        ld a,(k_code)
+        cp VK_SPACE
+        jr z,ed_paint
+        cp VK_RETURN
+        jr z,ed_paint
+        ld hl,ce_x
+        ld b,1
+        cp VK_RIGHT
+        jr z,.move
+        ld b,-1
+        cp VK_LEFT
+        jr z,.move
+        inc hl
+        cp VK_UP
+        jr z,.move
+        cp VK_DOWN
+        ret nz
+        ld b,1
+.move:
+        push hl
+        push bc
+        call ed_index               ; the old cell without the cursor
+        pop bc
+        pop hl
+        push af
+        ld a,(hl)
+        add a,b
+        and 15
+        ld (hl),a
+        pop af
+        call ed_cell
+        call ed_index
+        jp ed_cell
+.done:
+        xor a
+        ld (editing),a
+        ld a,R_STAGE
+        jp parts
+
+; a click in the editor: a cell (paint it) or a pen under the cells
+edit_click:
+        ld hl,(click_x)
+        ld de,ED_GX
+        or a
+        sbc hl,de
+        ret c
+        ld a,h
+        or a
+        ret nz
+        ld a,l
+        cp 64
+        ret nc
+        rra                         ; the column
+        rra
+        and 15
+        ld c,a
+        ld hl,(click_y)
+        ld de,ED_PY
+        or a
+        sbc hl,de
+        jr c,.cells
+        ld a,l
+        cp 7
+        ret nc
+        ld a,c                      ; a pen
+        ld (ce_pen),a
+        jp ed_show_pen
+.cells:
+        add hl,de
+        ld de,ED_GY
+        or a
+        sbc hl,de
+        ret c
+        ld a,l
+        ld b,-1
+.row:
+        inc b
+        sub 7
+        jr nc,.row
+        ld a,b
+        cp 16
+        ret nc
+        push bc
+        call ed_index               ; the old cell without the cursor
+        call ed_cell
+        pop bc
+        ld a,c
+        ld (ce_x),a
+        ld a,b
+        ld (ce_y),a
+        jp ed_paint
 
 ; ---------------------------------------------------------------------
 ; drawing: palette, script, status line (mode 1)
@@ -2809,6 +3330,10 @@ draw_status:
 status_text:
         ld a,(msg)
         or a
+        ret nz
+        ld a,(editing)
+        or a
+        ld a,T_H_EDIT
         ret nz
         ld a,(focus)
         cp FOCUS_PAL
@@ -3120,6 +3645,9 @@ render_slot:
 .not_spr:
         cp K_BUTTON
         ld c,T_W_BUTTON
+        jp z,.word
+        cp K_COSTUME
+        ld c,T_W_COSTUME
         jp z,.word
         cp K_TEXT
         jr z,.quoted
@@ -3504,21 +4032,23 @@ ops:
         db F_HAT,  C_SPR, 0, 0,             K_SPR, 0, 0, 0, 0, 0, 0, 0, 0             ; WHEN BUTTON
         db 0,      C_TEXT, C_VALUE, C_VALUE
         db                                  K_TEXT, 0, 0, K_NUM, 8, 0, K_NUM, 4, 0    ; TEXT
+        db 0,      C_VALUE, 0, 0,           K_NUM, 1, 0, 0, 0, 0, 0, 0, 0             ; COSTUME
+        db 0,      0, 0, 0,                 0, 0, 0, 0, 0, 0, 0, 0, 0                 ; NEXT COSTUME
         assert $ - ops == OP_COUNT * OP_INFO
 
 CATS            equ 6
-cat_first:      db 0, 5, 13, 19, 24, 30, OP_COUNT  ; in pal_order
+cat_first:      db 0, 5, 13, 19, 26, 32, OP_COUNT  ; in pal_order
 pal_order:      db 0, 1, 2, OP_RECEIVE, OP_BROADCAST    ; events
                 db 3, 4, 5, 6, 7, 8, 9, 10              ; control
                 db 11, 12, 13, 14, 15, 16               ; motion
-                db 17, 18, 19, 20, 21                   ; looks, sound
+                db 17, 18, 19, OP_COSTUME, OP_NEXT_COSTUME, 20, 21  ; looks, sound
                 db 22, 23, OP_SUB, OP_MUL, OP_DIV, OP_MOD   ; variables
                 db OP_WINDOW, OP_BUTTON, OP_PRESSED, OP_TEXT    ; windows
         assert $ - pal_order == OP_COUNT
 class_help:     db T_H_LINE, T_H_VALUE, T_H_VAR, T_H_CMP, T_H_SPR, T_H_KEYN
                 db T_H_TEXT
 first_values:   db 0, 0, 0, 0, 10, VK_SPACE, 1, 0   ; K_NUM .. K_EDGE
-                db 0, 0, 0, 0                       ; .. K_BUTTON
+                db 0, 0, 0, 0, 0, 0                 ; .. K_COSTUME
 cmp_chars:      db "<=>"
 tens:           dw 10000, 1000, 100, 10, 1, 0
 
@@ -3570,6 +4100,12 @@ focus:          db 0
 cat:            db 0                ; palette: category, block in it
 pal:            db 0
 spr_sel:        db 0
+editing:        db 0                ; the costume drawn, 0: none
+ce_x:           db 0                ; its cursor
+ce_y:           db 0
+ce_pen:         db 1
+ce_i:           db 0
+cos_len:        dw 0
 msg:            db 0                ; status line text, 0: the keys
 named:          db 0                ; prog_name chosen by the user
 run_after:      db 0                ; saving for RUN
@@ -3640,6 +4176,7 @@ tbuf:           ds 40
 player:         incbin "VBRUN.BIN"
 PLAYER_SIZE     equ $ - player
 vbs             equ player
+costumes        equ vbs + V_LINES + MAX_LINES * LINE_SIZE
 LOAD_AT         equ VOS_APP_ADDR + PLAYER_SIZE  ; OPEN, in the data bank
         IF PLAYER_SIZE < VBS_ROOM
         ds VBS_ROOM - PLAYER_SIZE
@@ -3647,4 +4184,5 @@ LOAD_AT         equ VOS_APP_ADDR + PLAYER_SIZE  ; OPEN, in the data bank
 studio_end:
         assert studio_end <= VOS_APP_ADDR + #4000
         assert VOS_APP_ADDR + PLAYER_SIZE + VBS_ROOM <= VOS_APP_ADDR + #4000
+        assert costumes + 1 + COS_MAX * COS_SIZE <= vbs + VBS_ROOM
         save "build/STUDIO.BIN", VOS_APP_ADDR, player + PLAYER_SIZE - VOS_APP_ADDR

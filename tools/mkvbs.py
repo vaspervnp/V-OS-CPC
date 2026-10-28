@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""mkvbs - a Studio program (.VBS, version 2) from text.
+"""mkvbs - a Studio program (.VBS, version 3) from text.
 
 usage: mkvbs.py prog.vbt out.VBS [player.BIN out.BIN]
 
@@ -11,21 +11,24 @@ spaces are ignored):
   BG pen                      the stage's background
   MODE 0 or 1                 the screen mode it runs in (mode 1: 384
                               pixels wide, pens 0..3)
-  SPRITE x y w h colour       up to 6
+  SPRITE x y w h colour [n]   up to 6; n: its costume (1..), else none
+  IMAGE                       a costume (1, 2, ... in order), then 16
+                              lines of 16 pixels: a pen in hex, "."
+                              none; at most 8
   OP slot slot slot           a block: its name in apps/studio/blocks.txt
                               without OP_ (START, IF, WINDOW, ...), then
                               its slots in slot order (not as shown)
 Slots: 12 or -3 (a number), A..H (a variable), "text", X, Y, EDGE,
-BUTTON, RND:n, KEY:n, TOUCH:n (values); < = > (comparisons; _ is
+BUTTON, COSTUME, RND:n, KEY:n, TOUCH:n (values); < = > (comparisons; _ is
 none); STAGE or SPRITE:n (whose script); KEYN:n (WHEN KEY's key).
 """
 import os
 import struct
 import sys
 
-SPR_MAX, TEXT_MAX, TEXT_SIZE, MAX_LINES = 6, 32, 16, 200
+SPR_MAX, TEXT_MAX, TEXT_SIZE, MAX_LINES, COS_MAX = 6, 32, 16, 200, 8
 K = dict(NUM=1, VAR=2, X=3, Y=4, RND=5, KEY=6, TOUCH=7, EDGE=8, CMP=9,
-         SPR=10, KEYN=11, BUTTON=12, TEXT=13)
+         SPR=10, KEYN=11, BUTTON=12, TEXT=13, COSTUME=14)
 
 
 class Error(Exception):
@@ -76,7 +79,7 @@ def slot(word, texts):
         return K["NUM"], int(w)
     if len(w) == 1 and "A" <= w <= "H":
         return K["VAR"], ord(w) - ord("A")
-    if w in ("X", "Y", "EDGE", "BUTTON"):
+    if w in ("X", "Y", "EDGE", "BUTTON", "COSTUME"):
         return K[w], 0
     if w in "<=>":
         return K["CMP"], "<=>".index(w)
@@ -94,13 +97,23 @@ def slot(word, texts):
 
 def compile_vbt(lines):
     ops = op_names()
-    bg, mode, sprites, texts, code = 0, 0, [], [], []
+    bg, mode, sprites, texts, code, images = 0, 0, [], [], [], []
+    rows = None                         # an IMAGE's lines still to come
     for n, line in enumerate(lines, 1):
         line = line.split("#", 1)[0] if '"' not in line else line
         w = words(line)
         if not w:
             continue
         try:
+            if rows is not None:
+                row = w[0]
+                if len(w) > 1 or len(row) != 16:
+                    raise Error("an IMAGE line: 16 pixels")
+                for ch in row:
+                    rows.append(0x80 if ch == "." else int(ch, 16))
+                if len(rows) == 256:
+                    rows = None
+                continue
             head = w[0].upper()
             if head == "BG":
                 bg = int(w[1]) & 15
@@ -108,10 +121,15 @@ def compile_vbt(lines):
                 mode = int(w[1])
                 if mode not in (0, 1):
                     raise Error("MODE 0 or MODE 1")
-            elif head == "SPRITE" and len(w) == 6:
+            elif head == "SPRITE" and len(w) in (6, 7):
                 if len(sprites) == SPR_MAX:
                     raise Error(f"more than {SPR_MAX} sprites")
-                sprites.append([int(v) for v in w[1:]])
+                sprites.append([int(v) for v in w[1:]] + [0] * (7 - len(w)))
+            elif head == "IMAGE" and len(w) == 1:
+                if len(images) == COS_MAX:
+                    raise Error(f"more than {COS_MAX} images")
+                rows = []
+                images.append(rows)
             elif head in ops:
                 if len(w) > 4:
                     raise Error("at most 3 slots")
@@ -123,16 +141,23 @@ def compile_vbt(lines):
                 raise Error(f"{w[0]}: no such block")
         except (Error, ValueError, IndexError) as e:
             raise Error(f"line {n}: {e}")
+    if rows is not None:
+        raise Error("an IMAGE without its 16 lines")
     if len(code) > MAX_LINES:
         raise Error(f"more than {MAX_LINES} lines")
-    out = bytearray(b"VBS\x02" + bytes([bg | mode << 7, len(sprites)]))
-    for x, y, wd, ht, colour in sprites:
-        out += struct.pack("<hhBBBB", x, y, wd, ht, colour & 15, 0)
+    out = bytearray(b"VBS\x03" + bytes([bg | mode << 7, len(sprites)]))
+    for x, y, wd, ht, colour, costume in sprites:
+        if costume > len(images):
+            raise Error(f"no costume {costume}")
+        out += struct.pack("<hhBBBB", x, y, wd, ht, colour & 15, costume)
     out += bytes(8 * (SPR_MAX - len(sprites)))
     for t in texts:
         out += t + bytes(TEXT_SIZE - len(t))
     out += bytes(TEXT_SIZE * (TEXT_MAX - len(texts)))
     out += struct.pack("<H", len(code)) + b"".join(code)
+    out.append(len(images))
+    for image in images:
+        out += bytes(2) + bytes(image)
     return bytes(out)
 
 

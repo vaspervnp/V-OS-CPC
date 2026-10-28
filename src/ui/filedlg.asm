@@ -264,18 +264,21 @@ fp_event:
 .choose:
         ld a,1
         ret
-.up:
+.up:                                ; from the first to the last
         ld a,(fp_sel)
         or a
-        jr z,.none
+        jr nz,.prev
+        ld a,(fp_count)
+.prev:
         dec a
         jr .move
-.down:
+.down:                              ; and from the last to the first
         ld a,(fp_sel)
         inc a
         ld hl,fp_count
         cp (hl)
-        jr nc,.none
+        jr c,.move
+        xor a
 .move:
         ld hl,fp_sel
         ld b,(hl)

@@ -15,8 +15,9 @@
 ;   rt_stacks, rt_state  room for the scripts' stacks and state
 ; SCRIPT_COUNT, SPRITE_COUNT and PROG_BG are immediates at rt_nscripts_n,
 ; rt_nsprites_n and rt_bg_n, PROG_MODE at rt_mode_1, PROG_WIDTH (a word)
-; at rt_width_n: blocks/player.asm sets them when it starts. (The
-; player has no costumes: images are drawn for PROG_MODE as assembled.)
+; at rt_width_n: blocks/player.asm sets them when it starts. With
+; RT_ANY_MODE (the player) images are drawn for mode 0, and the player
+; writes the mode 1 instructions at rt_m1_n when the program is in mode 1.
 ; With RT_UI defined the runtime also has windows and buttons
 ; (rt_window, rt_button, rt_write; scripts call them with rt_on_main),
 ; the value of the last button pressed (rt_button_n) and EVT_BUTTON;
@@ -622,6 +623,7 @@ rt_nsprites_3 equ $ - 1
         jr z,.at
         ld a,l
         and 256 - RT_PPB
+rt_m1_and_1 equ $ - 1
         ld l,a
 .at:
         ld e,(ix + SP_OY)
@@ -726,6 +728,7 @@ rt_draw_one:
         pop de
         ld a,l
         and 256 - RT_PPB
+rt_m1_and_2 equ $ - 1
         ld l,a
         jp rt_blit
 
@@ -768,6 +771,10 @@ rt_blit:
         add hl,hl
         IF RT_PPB == 4
         add hl,hl
+        ELSE
+        IFDEF RT_ANY_MODE
+rt_m1_1: nop                        ; add hl,hl in mode 1
+        ENDIF
         ENDIF
         ld (rt_box + 4),hl
         inc bc
@@ -790,6 +797,10 @@ rt_blit:
         IF RT_PPB == 4
         srl d
         rr e
+        ELSE
+        IFDEF RT_ANY_MODE
+rt_m1_2: ds 4                       ; srl d, rr e in mode 1
+        ENDIF
         ENDIF
         add hl,de
         ld de,(rt_blt + 6)
@@ -805,6 +816,10 @@ rt_blit:
         IF RT_PPB == 4
         srl h
         rr l
+        ELSE
+        IFDEF RT_ANY_MODE
+rt_m1_3: ds 4                       ; srl h, rr l in mode 1
+        ENDIF
         ENDIF
         ld a,l
         ld (rt_blt + 4),a
@@ -917,6 +932,10 @@ rt_set_costume:
         add a,a
         IF RT_PPB == 4
         add a,a
+        ELSE
+        IFDEF RT_ANY_MODE
+rt_m1_4: nop                        ; add a,a in mode 1
+        ENDIF
         ENDIF
         ld (ix + SP_W),a
         inc hl

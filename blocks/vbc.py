@@ -28,7 +28,7 @@ set {var, to}, change {var, by}, broadcast {message},
 go_to {x, y}, set_x {to}, set_y {to}, change_x {by}, change_y {by},
 set_velocity {vx, vy}, move, bounce, set_colour {to}, set_size {w, h},
 show, hide, print {text or value, x, y}, text_colour {to}, clear,
-switch_costume {to: name}, next_costume,
+switch_costume {to: name, or a value: its number}, next_costume,
 play_note {note, frames, channel} (waits), start_note {note, frames,
 channel} (does not wait), noise {pitch 0..31, frames, channel},
 stop_sounds, set_volume {to: 0..15},
@@ -449,8 +449,12 @@ class Compiler:
             self.emit("call rt_clear")
         elif b == "switch_costume":
             s = self.sprite(None, own)
-            self.emit(f"ld ix,spr_{s}", f"ld a,{self.costume_index(s, st['to'])}",
-                      "call rt_set_costume")
+            if isinstance(st["to"], dict):  # a value: its number, from 1
+                self.expr(st["to"], own)
+                self.emit("ld a,l", "dec a")
+            else:
+                self.emit(f"ld a,{self.costume_index(s, st['to'])}")
+            self.emit(f"ld ix,spr_{s}", "call rt_set_costume")
         elif b == "next_costume":
             self.emit(f"ld ix,spr_{self.sprite(None, own)}", "call rt_next_costume")
         elif b in ("play_note", "start_note", "noise"):

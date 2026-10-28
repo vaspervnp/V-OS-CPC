@@ -11,8 +11,8 @@
 ; keep the pointer hidden at the moment of the shot.
 ;
 ; M8b/M8c Studio, English UI. Drive A: VOS.BIN, the view overlays,
-; GREEK.LNG, DEMO.BIN, MIXED.BIN, STUDIO.BIN, PONG, CATCH, STARCAT, and
-; CALC.BIN, CALC.VBS.
+; GREEK.LNG, DEMO.BIN, MIXED.BIN, STUDIO.BIN, PONG, CATCH, STARCAT,
+; COUNTER, FLAP.BIN, FLAP.VBS, CALC.BIN, CALC.VBS.
 ; Expected result:
 ;   frame  300  F2           -> Launcher
 ;   frame  420, 470 RIGHT    -> STUDIO chosen
@@ -34,7 +34,8 @@
 ;   frame 1600  CONTROL+N    -> "clear the program?"
 ;   frame 1650  RETURN       -> yes: the new program
 ;   frame 1750  CONTROL+O    -> the file list
-;   frame 1850-2044 DOWN held -> its last file, NONAME.VBS
+;   frame 1850  UP           -> from the first file to the last,
+;                               NONAME.VBS
 ;   frame 2050  RETURN       -> opened: SPEED 5 2, REPEAT 10, the
 ;                               orange sprite at 116 120
 ;   (test only) the pointer is placed and COPY clicks:
@@ -246,16 +247,17 @@ test_frame:     dw 0
 ; make test-calc (-DTEST_SCRIPT=2): CALC.BIN, a Studio program
 ; (blocks/examples/calc.vbt), then Studio with CALC.VBS. Expected:
 ;   frame  300  F2           -> Launcher
-;   frame  420, 470 DOWN, 510 RIGHT -> CALC chosen (after COUNTER)
+;   frame  420, 470 DOWN, 510, 535 RIGHT -> CALC chosen (after
+;                               COUNTER and FLAP)
 ;   frame  560  RETURN       -> the calculator in mode 1: a window,
 ;                               16 buttons
 ;   (the pointer is placed and COPY clicks)
 ;   frame  950, 1050, 1150   -> 1, 2, +: 12 shown
 ;   frame 1250, 1350         -> 3, =: 15 shown
 ;   frame 1500  CONTROL+Q    -> the Launcher, CALC still chosen
-;   frame 1700, 1750 UP, 1800 RIGHT, 1900 RETURN -> Studio
+;   frame 1700, 1750 UP, 1900 RETURN -> Studio
 ;   frame 2100  CONTROL+O    -> the file list
-;   frame 2160-2394 DOWN held, 2400 RETURN -> CALC.VBS opened
+;   frame 2160  UP, 2400 RETURN -> the last file, CALC.VBS, opened
 ;   frame 2600  TAB, 2650 LEFT -> the palette: WINDOWS
 ;   frame 2800  RETURN       -> WINDOW added, the dialog asks its text
 ;   frame 2900, 2950 H, I, 3050 RETURN -> WINDOW "ΗΙ" 120 100
@@ -264,6 +266,7 @@ test_keys:
         dw  420,  424 : db 0, %00000100   ; DOWN
         dw  470,  474 : db 0, %00000100   ; DOWN
         dw  510,  514 : db 0, %00000010   ; RIGHT
+        dw  535,  539 : db 0, %00000010   ; RIGHT
         dw  560,  564 : db 2, %00000100   ; RETURN
         dw  900,  901 : db #80, 1         ; COPY is the left button
         dw  900, 1000 : db #81, 56        ; 1 (x = 112 in mode 1)
@@ -286,11 +289,10 @@ test_keys:
         dw 1500, 1504 : db 8, %00001000   ; Q
         dw 1700, 1704 : db 0, %00000001   ; UP
         dw 1750, 1754 : db 0, %00000001   ; UP
-        dw 1800, 1804 : db 0, %00000010   ; RIGHT
         dw 1900, 1904 : db 2, %00000100   ; RETURN
         dw 2095, 2110 : db 2, %10000000   ; CONTROL
         dw 2100, 2104 : db 4, %00000100   ; O
-        dw 2160, 2395 : db 0, %00000100   ; DOWN held
+        dw 2160, 2164 : db 0, %00000001   ; UP: the last file
         dw 2400, 2404 : db 2, %00000100   ; RETURN
         dw 2600, 2604 : db 8, %00010000   ; TAB
         dw 2650, 2654 : db 1, %00000001   ; LEFT
@@ -298,6 +300,62 @@ test_keys:
         dw 2900, 2904 : db 5, %00010000   ; H
         dw 2950, 2954 : db 4, %00001000   ; I
         dw 3050, 3054 : db 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 4
+; make test-costume (-DTEST_SCRIPT=4): a costume drawn in Studio.
+; Expected:
+;   frame  300  F2, 420, 470 RIGHT, 560 RETURN -> Studio, a new program
+;   frame  800, 850 TAB      -> the stage
+;   frame  900  E            -> the costume editor, costume 1, empty
+;   frame  950  9            -> pen 9 (orange)
+;   frame 1000-1210 SPACE, RIGHT, SPACE, DOWN, SPACE -> cells 0,0 1,0 1,1
+;   frame 1150  A            -> pen 10 (bright red); 1180 RIGHT, 1210
+;                               SPACE -> cell 2,1
+;   (the pointer is placed and COPY clicks)
+;   frame 1300  click on cell 10,10 -> painted red
+;   frame 1360  click on pen 3 in the row under the cells
+;   frame 1420  click on cell 11,10 -> painted bright blue
+;   frame 1500  E            -> the stage, the sprite in its costume
+;   frame 1600  CONTROL+R    -> the name dialog: NONAME
+;   frame 1700  RETURN       -> NONAME.VBS and .BIN saved, it runs:
+;                               the sprite in its costume bounces
+;   frame 2400  CONTROL+Q    -> Studio again, NONAME.VBS opened: the
+;                               costume is still there
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  420,  424 : db 0, %00000010   ; RIGHT
+        dw  470,  474 : db 0, %00000010   ; RIGHT
+        dw  560,  564 : db 2, %00000100   ; RETURN
+        dw  800,  804 : db 8, %00010000   ; TAB
+        dw  850,  854 : db 8, %00010000   ; TAB
+        dw  900,  904 : db 7, %00000100   ; E
+        dw  950,  954 : db 4, %00000010   ; 9
+        dw 1000, 1004 : db 5, %10000000   ; SPACE
+        dw 1030, 1034 : db 0, %00000010   ; RIGHT
+        dw 1060, 1064 : db 5, %10000000   ; SPACE
+        dw 1090, 1094 : db 0, %00000100   ; DOWN
+        dw 1120, 1124 : db 5, %10000000   ; SPACE
+        dw 1150, 1154 : db 8, %00100000   ; A
+        dw 1180, 1184 : db 0, %00000010   ; RIGHT
+        dw 1210, 1214 : db 5, %10000000   ; SPACE
+        dw 1250, 1251 : db #80, 1         ; COPY is the left button
+        dw 1250, 1340 : db #81, 49        ; cell 10,10: x 49 in mode 0
+        dw 1250, 1340 : db #82, 89
+        dw 1300, 1304 : db 1, %00000010   ; COPY
+        dw 1340, 1400 : db #81, 21        ; pen 3
+        dw 1340, 1400 : db #82, 133
+        dw 1360, 1364 : db 1, %00000010
+        dw 1400, 1450 : db #81, 53        ; cell 11,10
+        dw 1400, 1450 : db #82, 89
+        dw 1420, 1424 : db 1, %00000010
+        dw 1460, 1461 : db #80, 0
+        dw 1500, 1504 : db 7, %00000100   ; E
+        dw 1595, 1610 : db 2, %10000000   ; CONTROL
+        dw 1600, 1604 : db 6, %00000100   ; R
+        dw 1700, 1704 : db 2, %00000100   ; RETURN: the name NONAME
+        dw 2395, 2410 : db 2, %10000000   ; CONTROL
+        dw 2400, 2404 : db 8, %00001000   ; Q
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 3
@@ -342,7 +400,7 @@ test_keys:
         dw 1650, 1654 : db 2, %00000100   ; RETURN
         dw 1745, 1760 : db 2, %10000000   ; CONTROL
         dw 1750, 1754 : db 4, %00000100   ; O
-        dw 1850, 2045 : db 0, %00000100   ; DOWN held
+        dw 1850, 1854 : db 0, %00000001   ; UP
         dw 2050, 2054 : db 2, %00000100   ; RETURN
         dw 2150, 2151 : db #80, 1         ; COPY is the left button
         dw 2150, 2700 : db #81, 20        ; palette, row 3: IF
@@ -360,5 +418,6 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF

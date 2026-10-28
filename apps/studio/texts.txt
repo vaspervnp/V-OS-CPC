@@ -35,18 +35,20 @@ W_STAGE     | STAGE                 | ΣΚΗΝΗ
 W_SPRITE    | SPRITE                | ΑΝΤΙΚ.
 W_SPRITES   | SPRITES               | ΑΝΤΙΚΕΙΜΕΝΑ
 W_BUTTON    | BUTTON                | ΚΟΥΜΠΙ
+W_COSTUME   | COSTUME               | ΚΟΣΤΟΥΜΙ
 
 # the status line: what the keys do here
 H_LINE      | RETURN: ADD BLOCK  CLR: DELETE  TAB: PALETTE  | RETURN: ΝΕΟ ΜΠΛΟΚ  CLR: ΣΒΗΣΙΜΟ  TAB: ΠΑΛΕΤΑ
-H_VALUE     | 0-9 - A-H X Y R:RND K:KEY T:TOUCH Z:EDGE P:BTN | 0-9 - A-H X Y R:ΤΥΧ K:ΠΛΗΚΤΡΟ T Z:ΑΚΡΗ P:ΚΟΥΜΠΙ
+H_VALUE     | 0-9 - A-H X Y R:RND K:KEY T:TOUCH Z:EDGE P U | 0-9 - A-H X Y R:ΤΥΧ K:ΠΛΗΚΤΡΟ T Z:ΑΚΡΗ P U
 H_VAR       | A-H: VARIABLE         | A-H: ΜΕΤΑΒΛΗΤΗ
 H_CMP       | < = >  SPACE: NONE    | < = >  SPACE: ΚΑΝΕΝΑ
 H_SPR       | 0: STAGE  1-6: SPRITE | 0: ΣΚΗΝΗ  1-6: ΑΝΤΙΚΕΙΜΕΝΟ
 H_KEYN      | RETURN, THEN PRESS THE KEY | RETURN ΚΑΙ ΜΕΤΑ ΤΟ ΠΛΗΚΤΡΟ
 H_TEXT      | RETURN: CHANGE THE TEXT | RETURN: ΑΛΛΑΓΗ ΚΕΙΜΕΝΟΥ
 H_AWAIT     | PRESS THE KEY         | ΠΑΤΗΣΕ ΤΟ ΠΛΗΚΤΡΟ
+H_EDIT      | SPACE: PAINT  0-F .: PEN  E: DONE | SPACE: ΒΑΨΕ  0-F .: ΠΕΝΑ  E: ΤΕΛΟΣ
 H_PAL       | ARROWS: CHOOSE  RETURN: ADD  TAB: STAGE | ΒΕΛΑΚΙΑ: ΕΠΙΛΟΓΗ  RETURN: ΠΡΟΣΘΗΚΗ  TAB: ΣΚΗΝΗ
-H_STAGE     | ARROWS: MOVE  1-6  C: COLOUR  W H: SIZE  TAB | ΒΕΛΑΚΙΑ: ΘΕΣΗ  1-6  C: ΧΡΩΜΑ  W H: ΜΕΓΕΘΟΣ  TAB
+H_STAGE     | ARROWS 1-6 C:COLOUR W H:SIZE K:COSTUME E:DRAW | ΒΕΛΑΚΙΑ 1-6 C:ΧΡΩΜΑ W H:ΜΕΓΕΘΟΣ K:ΚΟΣΤ. E:ΣΧΕΔΙΟ
 
 # messages and dialogs
 M_SAVED     | SAVED                 | ΑΠΟΘΗΚΕΥΤΗΚΕ

@@ -5,7 +5,11 @@
 ; program's VBS record (vbs_data). When it starts, the player compiles
 ; the VBS lines to Z80 code after them, the same code blocks/vbc.py
 ; writes for those blocks, then the runtime (runtime.asm) runs it:
-; scripts are coroutines, sprites rectangles, in mode 0 or 1 (V_MODE1).
+; scripts are coroutines, sprites rectangles or costumes, in mode 0 or
+; 1 (V_MODE1). The costumes (16 x 16 pens, after the lines) become
+; images in place for the mode (pl_costumes); every sprite may wear any
+; of them: COSTUME n (from 1; 0 changes nothing), NEXT COSTUME, and the
+; value COSTUME (0: a rectangle).
 ;
 ;   #4000  the player and the runtime, then the VBS record
 ;          the compiled scripts, up to CODE_LIMIT
@@ -30,13 +34,14 @@
         include "api/vos_api.inc"
 
 RT_UI           equ 1               ; windows and buttons (runtime.asm)
+RT_ANY_MODE     equ 1               ; images in mode 1 too (pl_costumes)
 PROG_MODE       equ 0               ; set at rt_mode_1: the program's
 PROG_WIDTH      equ 192             ; mode, and at rt_width_n (mode 1: 384)
 PROG_BG         equ 0               ; set at rt_bg_n, see pl_init
 SCRIPT_COUNT    equ 0               ; rt_nscripts_n
 SPRITE_COUNT    equ 0               ; rt_nsprites_n
 
-; the VBS record, version 2 (as apps/studio/studio.asm)
+; the VBS record, version 3 (as apps/studio/studio.asm)
 SPR_MAX         equ 6
 SPR_SIZE        equ 8
 TEXT_MAX        equ 32
@@ -60,11 +65,15 @@ K_TOUCH         equ 7
 K_EDGE          equ 8
 K_CMP           equ 9
 K_BUTTON        equ 12
+K_COSTUME       equ 14
 
 OP_HATS         equ 3               ; WHEN START, KEY, CLICKED = EVT_*
 OP_RECEIVE      equ 24              ; WHEN I RECEIVE: EVT_RECEIVE
 OP_PRESSED      equ 32              ; WHEN BUTTON: EVT_BUTTON
-OP_COUNT        equ 34
+OP_COUNT        equ 36
+COS_MAX         equ 8               ; costumes after the lines: db count,
+COS_SIZE        equ 258             ; then db 0, 0, 16 x 16 pens (bit 7:
+                                    ; none); pl_costumes makes them images
 
 MAX_SCRIPTS     equ 16
 MAX_DEPTH       equ 16              ; open FOREVER / REPEAT / IF
@@ -94,7 +103,6 @@ CODE_LIMIT      equ prog_sprites - 64   ; a line's code is shorter
         include "runtime.asm"
 
 prog_palette:   db 0, 26, 1, 2, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16, 0
-rt_no_costumes: db 0
 
 ; ---------------------------------------------------------------------
 pl_init:
@@ -157,6 +165,7 @@ pl_init:
         ld (pl_nspr),a
         ld hl,pl_spr_sites
         call pl_patch
+        call pl_costumes
         call pl_sprites
         ld hl,rt_state              ; script state, variables and
         ld de,rt_state + 1          ; counters 0
@@ -216,11 +225,16 @@ pl_sprites:
         ld a,(hl)
         ld (ix + SP_COLOUR),a
         inc hl
-        inc hl
         ld (ix + SP_VISIBLE),1
         ld (ix + SP_COSTUME),#FF
-        ld (ix + SP_CTAB),rt_no_costumes & #FF
-        ld (ix + SP_CTAB + 1),rt_no_costumes >> 8
+        ld (ix + SP_CTAB),pl_ctab & #FF
+        ld (ix + SP_CTAB + 1),pl_ctab >> 8
+        ld a,(hl)                   ; its costume, 0: none
+        inc hl
+        push hl
+        dec a
+        call rt_set_costume
+        pop hl
         ld de,SP_SIZE
         add ix,de
         pop bc
@@ -238,16 +252,7 @@ pl_compile:
         ld (pl_lineno),a
         ld bc,(vbs_data + V_NLINES)
         ld ix,vbs_data + V_LINES
-        ld h,b                      ; the code after the lines
-        ld l,c
-        add hl,hl
-        ld d,h
-        ld e,l
-        add hl,hl
-        add hl,hl
-        add hl,de
-        ld de,vbs_data + V_LINES
-        add hl,de
+        ld hl,(pl_cos_end)          ; the code after the costumes
         ld (pl_out),hl
         ld a,c
         or a
@@ -426,6 +431,7 @@ pl_ops:
         dw 0, op_broadcast          ; WHEN I RECEIVE (pl_hat), SEND
         dw op_sub, op_mul, op_div, op_mod
         dw op_window, op_button, 0, op_write    ; WHEN BUTTON: pl_hat
+        dw op_costume, op_next_costume
 
 op_forever:
         ld a,T_LOOP
@@ -658,6 +664,30 @@ op_visible:
         ld a,#32
         jp e_op_w
 
+op_costume:                         ; COSTUME n: 1.., 0 none (no change)
+        ld de,0
+        call pl_own_prop
+        ret c
+        push de
+        xor a
+        call pl_value
+        ld a,#7D                    ; ld a,l
+        call e_byte
+        ld a,#3D                    ; dec a
+        call e_byte
+        pop de
+        call e_ld_ix
+        ld de,rt_set_costume
+        jp e_call
+
+op_next_costume:
+        ld de,0
+        call pl_own_prop
+        ret c
+        call e_ld_ix
+        ld de,rt_next_costume
+        jp e_call
+
 op_print:                           ; PRINT value AT x y
         call pl_at
         xor a
@@ -824,6 +854,8 @@ pl_value:
         jr z,.edge
         cp K_BUTTON
         jp z,.button
+        cp K_COSTUME
+        jp z,.costume
 .zero:
         ld de,0
 .num:
@@ -893,6 +925,13 @@ pl_value:
         ld de,rt_button_n
         ld a,#2A
         jp e_op_w
+.costume:
+        ld de,0
+        call pl_own_prop
+        jp c,.zero
+        call e_ld_ix
+        ld de,rt_costume_number
+        jp e_call
 
 ; IF / WAIT UNTIL: code for HL = 0 when false. Slot 1 compares slots
 ; 0 and 2; without a comparison, slot 0 alone.
@@ -1105,7 +1144,7 @@ rt_texts:       db 2 + TEXT_MAX     ; the runtime's, then the program's
                 dw vbs_data + V_TEXTS + (n - 1) * TEXT_SIZE, 0
         REND
 
-pl_magic:       db "VBS", 2
+pl_magic:       db "VBS", 3
 pl_bg_sites:    dw rt_bg_1, rt_bg_2, rt_bg_3, rt_bg_4, 0
 pl_spr_sites:   dw rt_nsprites_1, rt_nsprites_2, rt_nsprites_3, rt_nsprites_4, 0
 pl_script_sites: dw rt_nscripts_1, rt_nscripts_2, 0
@@ -1123,7 +1162,170 @@ pl_out:         dw 0
 pl_depth:       db 0
 pl_ctrl:        ds MAX_DEPTH * CT_SIZE
 
+; ---------------------------------------------------------------------
+; costumes: after the lines, made images in place for the program's
+; mode; one table for all sprites (pl_ctab). Mode 1 also writes the
+; runtime's mode 1 instructions (rt_m1_n).
+; ---------------------------------------------------------------------
+pl_costumes:
+        ld a,(rt_mode_1)
+        or a
+        ld hl,pl_mode0
+        jr z,.mode
+        ld hl,pl_m1_sites
+.site:
+        ld e,(hl)
+        inc hl
+        ld d,(hl)
+        inc hl
+        ld a,d
+        or e
+        jr z,.patched
+        ld a,(hl)
+        inc hl
+        ld (de),a
+        jr .site
+.patched:
+        ld hl,pl_mode1
+.mode:
+        ld de,pl_ppb
+        ld bc,5
+        ldir
+        ld hl,(vbs_data + V_NLINES) ; after the lines
+        add hl,hl
+        ld d,h
+        ld e,l
+        add hl,hl
+        add hl,hl
+        add hl,de
+        ld de,vbs_data + V_LINES
+        add hl,de
+        ld a,(hl)
+        cp COS_MAX + 1
+        jr c,.count
+        xor a
+.count:
+        ld (pl_ctab),a
+        inc hl
+        ld de,pl_ctab + 1
+        or a
+        jr z,.end
+        ld b,a
+.costume:
+        ex de,hl                    ; its address in the table
+        ld (hl),e
+        inc hl
+        ld (hl),d
+        inc hl
+        ex de,hl
+        push bc
+        push de
+        ld a,(pl_rowb)              ; bytes, rows
+        ld (hl),a
+        inc hl
+        ld (hl),16
+        inc hl
+        push hl
+        call pl_image
+        pop hl
+        ld bc,256
+        add hl,bc
+        pop de
+        pop bc
+        djnz .costume
+.end:
+        ld (pl_cos_end),hl
+        ret
+
+; HL -> 16 x 16 pens: (mask, pixels) pairs there. Each byte's pixels
+; are read last first: acc = acc / 2 + the bits of a pixel 0
+pl_image:
+        ld d,h
+        ld e,l
+        ld a,(pl_obytes)
+        ld b,a
+.out:
+        push bc
+        ld a,(pl_ppb)
+        ld b,a
+        dec a
+        add a,l                     ; HL -> the byte's last pixel
+        ld l,a
+        adc a,h
+        sub l
+        ld h,a
+        push hl
+        ld c,0                      ; mask
+        xor a
+        ld (pl_px),a
+.pixel:
+        srl c
+        ld a,(pl_px)
+        srl a
+        ld (pl_px),a
+        ld a,(hl)
+        dec hl
+        bit 7,a                     ; none
+        jr nz,.next
+        push hl
+        ld hl,pl_pens
+        and (hl)
+        ld hl,pl_spread
+        add a,l
+        ld l,a
+        adc a,h
+        sub l
+        ld h,a
+        ld a,(pl_px)
+        or (hl)
+        ld (pl_px),a
+        ld a,(pl_m0)
+        or c
+        ld c,a
+        pop hl
+.next:
+        djnz .pixel
+        ld a,c
+        ld (de),a
+        inc de
+        ld a,(pl_px)
+        ld (de),a
+        inc de
+        pop hl
+        inc hl
+        pop bc
+        djnz .out
+        ret
+
+; a pen's bits as pixel 0 of a byte (mode 1: pens 0..3, the same)
+pl_spread:      db #00, #80, #08, #88, #20, #A0, #28, #A8
+                db #02, #82, #0A, #8A, #22, #A2, #2A, #AA
+pl_mode0:       db 2, 128, 15, #AA, 8   ; pl_ppb .. pl_rowb
+pl_mode1:       db 4, 64, 3, #88, 4
+pl_ppb:         db 0                ; pixels a byte
+pl_obytes:      db 0                ; bytes of an image (pairs)
+pl_pens:        db 0                ; the pen bits used
+pl_m0:          db 0                ; pixel 0's bits
+pl_rowb:        db 0                ; bytes a row
+pl_px:          db 0
+pl_cos_end:     dw 0
+pl_ctab:        db 0                ; count, dw costume...
+                ds COS_MAX * 2
+pl_m1_sites:    dw rt_m1_and_1 : db #FC
+                dw rt_m1_and_2 : db #FC
+                dw rt_m1_1 : db #29         ; add hl,hl
+                dw rt_m1_2 : db #CB         ; srl d
+                dw rt_m1_2 + 1 : db #3A
+                dw rt_m1_2 + 2 : db #CB     ; rr e
+                dw rt_m1_2 + 3 : db #1B
+                dw rt_m1_3 : db #CB         ; srl h
+                dw rt_m1_3 + 1 : db #3C
+                dw rt_m1_3 + 2 : db #CB     ; rr l
+                dw rt_m1_3 + 3 : db #1D
+                dw rt_m1_4 : db #87         ; add a,a
+                dw 0
+
 ; Studio appends the program here
 vbs_data:
-        assert vbs_data + V_LINES + MAX_LINES * LINE_SIZE <= CODE_LIMIT - 2048
+        assert vbs_data + V_LINES + MAX_LINES * LINE_SIZE + 1 + COS_MAX * COS_SIZE <= CODE_LIMIT - 2048
         save "build/VBRUN.BIN", VOS_APP_ADDR, vbs_data - VOS_APP_ADDR
