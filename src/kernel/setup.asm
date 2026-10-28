@@ -97,5 +97,5 @@ cfg_save:
 
 cfg_file:       db "SETUP   CFG"
 cfg_magic:      db "VCFG", 1
-cfg_data:       db VIEW_DESKTOP, 1, 25, 3, 1, 0, 1
+cfg_data:       db VIEW_DESKTOP, 0, 25, 3, 1, 0, 1  ; English at first
 cfg_head:       ds CFG_SIZE

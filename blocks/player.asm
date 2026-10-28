@@ -74,11 +74,6 @@ T_IF            equ 3
 T_ELSE          equ 4
 CT_SIZE         equ 5               ; db type, dw a, dw b
 
-MAX_BUTTONS     equ 16
-BUTTON_H        equ 14                  ; as the kernel draws them
-WIN_PEN         equ 1                   ; windows: white, with a black
-WIN_INK         equ 0                   ; frame, title bar and shadow
-T_RT_TEXT0      equ VT_FIRST + 2        ; the program's texts (rt_texts)
 V_MODE1         equ #80
 
 prog_sprites    equ #7500           ; SPR_MAX * SP_SIZE
@@ -140,7 +135,7 @@ pl_init:
         jr z,.width
         add hl,hl
 .width:
-        ld (pl_width),hl
+        ld (rt_ui_width),hl
         ex de,hl
         ld hl,pl_width_sites
 .site:
@@ -172,7 +167,6 @@ pl_init:
         ld a,(pl_nscripts)
         ld hl,pl_script_sites
         call pl_patch
-        call rt_ui_reset
         jp rt_init
 
 ; A = value, HL -> dw address... 0: the value at each address
@@ -694,7 +688,7 @@ op_placed:
         call pl_at
         pop hl
 op_texted:                          ; HL = routine: ld a,text, ld de,HL,
-        push hl                     ; call pl_on_main
+        push hl                     ; call rt_on_main
         xor a
         call pl_slot
         ld a,#3E
@@ -704,7 +698,7 @@ op_texted:                          ; HL = routine: ld a,text, ld de,HL,
         pop de
         ld a,#11
         call e_op_w
-        ld de,pl_on_main
+        ld de,rt_on_main
         jp e_call
 
 ; slots 1, 2: code for (rt_px), (rt_py) = x, y from the window's inside
@@ -1088,49 +1082,8 @@ pl_note_code:
 pl_note_end:
 
 ; ---------------------------------------------------------------------
-; windows and buttons (called by the scripts through pl_on_main)
+; the program's texts, for the runtime's windows and buttons
 ; ---------------------------------------------------------------------
-
-; DE = routine: call it on the main stack (the kernel's buttons and
-; texts), with A and HL as they are
-pl_on_main:
-        ld (rt_script_sp),sp
-        ld sp,(rt_main_sp)
-        call .go
-        ld sp,(rt_script_sp)
-        ret
-.go:
-        push de
-        ret
-
-; no window, no buttons
-rt_ui_reset:
-        xor a
-        ld (rt_win),a
-        ld (rt_buttons),a
-        ld hl,0
-        ld (rt_ox),hl
-        ld (rt_oy),hl
-        ld (rt_button_n),hl
-        ld hl,rt_buttons
-        jp VOS_SET_WIDGETS
-
-; the window and the buttons again (rt_redraw)
-rt_ui_redraw:
-        ld a,(rt_win)
-        or a
-        call nz,rt_win_draw
-        jp VOS_DRAW_WIDGETS
-
-; A = command: button A - RT_CMD_BUTTON was pressed
-rt_pressed:
-        sub RT_CMD_BUTTON
-        ld l,a
-        ld h,0
-        ld (rt_button_n),hl
-        ld bc,EVT_BUTTON * 256
-        jp rt_start_all
-
 ; A = text -> HL -> it
 rt_text_ptr:
         and TEXT_MAX - 1
@@ -1144,268 +1097,6 @@ rt_text_ptr:
         add hl,de
         ret
 
-; HL = value, DE = least, BC = most -> HL in DE..BC
-rt_clamp:
-        push bc
-        call rt_lt_signed
-        pop bc
-        jr nc,.not_less
-        ex de,hl
-        ret
-.not_less:
-        ld d,b
-        ld e,c
-        ex de,hl
-        call rt_lt_signed           ; most < value?
-        ret c
-        ex de,hl
-        ret
-
-; A = title, (rt_ww), (rt_wh) = size: the window, in the middle
-rt_window:
-        ld (rt_wtitle),a
-        ld a,(rt_win)               ; the last one goes
-        or a
-        jr z,.size
-        ld hl,(rt_wx)
-        ld de,(rt_wy)
-        call rt_win_size
-        inc b
-        inc b
-        ld a,c
-        add a,4
-        ld c,a
-        ld a,(vbs_data + V_BG)
-        and 15
-        call rt_rect
-.size:
-        ld hl,(rt_ww)               ; 32..width - 2, even
-        ld de,32
-        ld bc,(pl_width)
-        dec bc
-        dec bc
-        call rt_clamp
-        res 0,l
-        ld (rt_ww),hl
-        ld hl,(rt_wh)
-        ld de,32
-        ld bc,RT_BOTTOM - RT_TOP - 4
-        call rt_clamp
-        ld (rt_wh),hl
-        ld hl,(pl_width)            ; x: the middle, on a whole byte
-        dec hl
-        dec hl
-        ld de,(rt_ww)
-        or a
-        sbc hl,de
-        srl h
-        rr l
-        ld a,l
-        and %11111100
-        ld l,a
-        ld (rt_wx),hl
-        ld de,4                     ; its inside: 4 in, under the title
-        add hl,de
-        ld (rt_ox),hl
-        ld hl,RT_BOTTOM - RT_TOP - 4
-        ld de,(rt_wh)
-        or a
-        sbc hl,de
-        srl h
-        rr l
-        ld de,RT_TOP
-        add hl,de
-        ld (rt_wy),hl
-        ld de,14
-        add hl,de
-        ld (rt_oy),hl
-        ld a,1
-        ld (rt_win),a
-        xor a                       ; its buttons come after it
-        ld (rt_buttons),a
-        ld hl,rt_buttons
-        call VOS_SET_WIDGETS
-        ld a,WIN_INK                ; PRINT and TEXT write on it
-        ld (rt_ink),a
-        ld a,WIN_PEN
-        ld (rt_bg_3),a
-        ; fall through
-
-; the window: shadow, frame and title bar, inside, title
-rt_win_draw:
-        ld hl,(rt_wx)
-        inc hl
-        inc hl
-        ld de,(rt_wy)
-        inc de
-        inc de
-        inc de
-        inc de
-        call rt_win_size
-        ld a,WIN_INK
-        call rt_rect
-        ld hl,(rt_wx)
-        ld de,(rt_wy)
-        call rt_win_size
-        ld a,WIN_INK
-        call rt_rect
-        ld hl,(rt_wx)
-        inc hl
-        ld de,(rt_wy)
-        ld a,12
-        add a,e
-        ld e,a
-        jr nc,.inside
-        inc d
-.inside:
-        call rt_win_size
-        dec b
-        dec b
-        ld a,c
-        sub 13
-        ld c,a
-        ld a,WIN_PEN
-        call rt_rect
-        ld a,(rt_wtitle)            ; the title: what fits, centred
-        call rt_text_ptr
-        ld de,rt_wtext
-        ld a,(rt_ww)
-        sub 8
-        rrca
-        rrca
-        rrca
-        and 31
-        ld b,a
-        ld c,0
-.copy:
-        ld a,(hl)
-        or a
-        jr z,.copied
-        ld (de),a
-        inc hl
-        inc de
-        inc c
-        djnz .copy
-.copied:
-        xor a
-        ld (de),a
-        ld a,c
-        add a,a
-        add a,a
-        add a,a
-        ld e,a
-        ld d,0
-        ld hl,(rt_ww)
-        or a
-        sbc hl,de
-        srl h
-        rr l
-        ld de,(rt_wx)
-        add hl,de
-        push hl
-        ld a,WIN_PEN
-        ld c,WIN_INK
-        call VOS_COLOURS
-        pop hl
-        ld de,(rt_wy)
-        inc de
-        inc de
-        ld bc,rt_wtext
-        jp VOS_PRINT
-
-; -> B, C = the window's width and height
-rt_win_size:
-        ld a,(rt_ww)
-        ld b,a
-        ld a,(rt_wh)
-        ld c,a
-        ret
-
-; A = text, (rt_px), (rt_py) = where: a button, if it is on the stage
-rt_button:
-        ld (rt_btext),a
-        ld a,(rt_buttons)
-        cp MAX_BUTTONS
-        ret nc
-        ld a,(rt_btext)
-        call rt_text_ptr
-        ld c,2                      ; characters: the text's and 2
-.length:
-        ld a,(hl)
-        or a
-        jr z,.measured
-        inc hl
-        inc c
-        jr .length
-.measured:
-        ld a,c
-        ld (rt_bchars),a
-        ld hl,(rt_px)               ; 0 <= x, x + w <= width
-        bit 7,h
-        ret nz
-        add a,a
-        add a,a
-        add a,a
-        ld e,a
-        ld d,0
-        add hl,de
-        ld de,(pl_width)
-        inc de
-        call rt_lt_signed
-        ret nc
-        ld hl,(rt_py)               ; RT_TOP <= y, y + h <= RT_BOTTOM
-        ld de,RT_TOP
-        call rt_lt_signed
-        ret c
-        ld de,BUTTON_H
-        add hl,de
-        ld de,RT_BOTTOM + 1
-        call rt_lt_signed
-        ret nc
-        ld a,(rt_buttons)           ; dw x, y; db characters, text,
-        ld l,a                      ; command, 0
-        ld h,0
-        add hl,hl
-        add hl,hl
-        add hl,hl
-        ld de,rt_buttons + 1
-        add hl,de
-        ld de,(rt_px)
-        ld (hl),e
-        inc hl
-        ld (hl),d
-        inc hl
-        ld de,(rt_py)
-        ld (hl),e
-        inc hl
-        ld (hl),d
-        inc hl
-        ld a,(rt_bchars)
-        ld (hl),a
-        inc hl
-        ld a,(rt_btext)
-        and TEXT_MAX - 1
-        add a,T_RT_TEXT0
-        ld (hl),a
-        inc hl
-        ld a,(rt_buttons)
-        add a,RT_CMD_BUTTON
-        ld (hl),a
-        inc hl
-        ld (hl),0
-        ld hl,rt_buttons
-        inc (hl)
-        jp VOS_DRAW_WIDGETS
-
-; A = text, (rt_px), (rt_py) = where: write it
-rt_write:
-        call rt_text_ptr
-        ld b,h
-        ld c,l
-        ld hl,(rt_px)
-        ld de,(rt_py)
-        jp rt_print
-
 ; ---- data -----------------------------------------------------------
 rt_texts:       db 2 + TEXT_MAX     ; the runtime's, then the program's
                 dw rt_t_menu_en, rt_t_menu_el
@@ -1413,27 +1104,12 @@ rt_texts:       db 2 + TEXT_MAX     ; the runtime's, then the program's
         REPEAT TEXT_MAX, n
                 dw vbs_data + V_TEXTS + (n - 1) * TEXT_SIZE, 0
         REND
-rt_win:         db 0                ; a window is open
-rt_wx:          dw 0
-rt_wy:          dw 0
-rt_ww:          dw 0
-rt_wh:          dw 0
-rt_wtitle:      db 0
-rt_wtext:       ds 24
-rt_ox:          dw 0                ; where x, y = 0, 0 is
-rt_oy:          dw 0
-rt_button_n:    dw 0                ; the last button pressed
-rt_btext:       db 0
-rt_bchars:      db 0
-rt_buttons:     db 0                ; VOS_SET_WIDGETS
-                ds MAX_BUTTONS * 8
 
 pl_magic:       db "VBS", 2
-pl_bg_sites:    dw rt_bg_1, rt_bg_2, rt_bg_3, 0
+pl_bg_sites:    dw rt_bg_1, rt_bg_2, rt_bg_3, rt_bg_4, 0
 pl_spr_sites:   dw rt_nsprites_1, rt_nsprites_2, rt_nsprites_3, rt_nsprites_4, 0
 pl_script_sites: dw rt_nscripts_1, rt_nscripts_2, 0
 pl_width_sites: dw rt_width_1, rt_width_2, rt_width_3, rt_width_4, 0
-pl_width:       dw PROG_WIDTH
 
 pl_nspr:        db 0
 pl_nscripts:    db 0

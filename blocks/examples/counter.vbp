@@ -1,0 +1,20 @@
+{"format": "vbp", "version": 1, "name": "COUNTER", "mode": 1, "background": 2,
+ "sprites": [],
+ "variables": {"count": 0},
+ "lists": {},
+ "scripts": [
+  {"when": {"event": "start"}, "do": [
+    {"block": "window", "title": "ΜΕΤΡΗΤΗΣ", "w": 152, "h": 70},
+    {"block": "button", "text": " +1 ", "x": 8, "y": 30},
+    {"block": "button", "text": " -1 ", "x": 56, "y": 30},
+    {"block": "button", "text": " 0 ", "x": 104, "y": 30},
+    {"block": "print", "value": {"var": "count"}, "x": 8, "y": 8}]},
+  {"when": {"event": "button"}, "do": [
+    {"block": "if", "cond": {"op": "=", "a": {"button": true}, "b": 0},
+     "then": [{"block": "change", "var": "count", "by": 1}]},
+    {"block": "if", "cond": {"op": "=", "a": {"button": true}, "b": 1},
+     "then": [{"block": "change", "var": "count", "by": -1}]},
+    {"block": "if", "cond": {"op": "=", "a": {"button": true}, "b": 2},
+     "then": [{"block": "set", "var": "count", "to": 0}]},
+    {"block": "print", "value": {"var": "count"}, "x": 8, "y": 8}]}
+ ]}

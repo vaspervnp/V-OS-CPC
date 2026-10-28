@@ -19,7 +19,8 @@ Program (JSON):
 
 Events: start; key (with "key": a letter, digit, or up down left right
 space return enter copy tab del any); click (the script's sprite, or the
-stage for a stage script); receive (with "message").
+stage for a stage script); receive (with "message"); button (any button
+pressed: the value {"button": true} says which).
 
 Statements ({"block": ...}): forever {do}, repeat {times, do},
 if {cond, then, else}, wait {frames}, wait_until {cond}, stop, stop_all,
@@ -32,7 +33,8 @@ play_note {note, frames, channel} (waits), start_note {note, frames,
 channel} (does not wait), noise {pitch 0..31, frames, channel},
 stop_sounds, set_volume {to: 0..15},
 list_add {list, item}, list_delete {list, index}, list_insert {list,
-index, item}, list_replace {list, index, item}, list_clear {list}.
+index, item}, list_replace {list, index, item}, list_clear {list},
+window {title, w, h}, button {text, x, y}.
 Notes are MIDI numbers (60 = middle C), channels 0..2, lists count
 from 1.
 
@@ -52,6 +54,13 @@ visible, "of": sprite (default: the script's)}; {"frames": true};
 {"length": list}; {"contains": list, "value": E}.
 Numbers are 16-bit signed; comparisons give 1 or 0. Text is written in
 ISO 8859-7, so Greek works with the Greek pack.
+
+Windows and buttons, as Studio's (blocks/runtime.asm, RT_UI): window
+draws a window in the middle of the stage and takes away the last one
+and its buttons; from then on print and button place things from its
+inside. Buttons are the system's, numbered from 0 in the order they
+appear, at most 16 for a window, and at most 32 texts for windows and
+buttons in a program.
 """
 import argparse
 import json
@@ -70,7 +79,8 @@ SP_SIZE = 24
 MAX_COSTUME = 128
 PROPS = {"x": (0, 2), "y": (2, 2), "vx": (4, 2), "vy": (6, 2), "w": (8, 1),
          "h": (9, 1), "colour": (10, 1), "visible": (11, 1)}
-EVENTS = {"start": 0, "key": 1, "click": 2, "receive": 3}
+EVENTS = {"start": 0, "key": 1, "click": 2, "receive": 3, "button": 4}
+UI_TEXTS = 32
 NAMED_KEYS = {"up": 0, "right": 1, "down": 2, "enter": 6, "left": 8,
               "copy": 9, "return": 18, "space": 47, "tab": 68, "del": 79,
               "any": 0xFF}
@@ -84,6 +94,17 @@ PALETTE = {0: [0, 26, 1, 2, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16, 0],
 
 class Error(Exception):
     pass
+
+
+def uses_ui(x):
+    """windows, buttons, the button event or value anywhere in x"""
+    if isinstance(x, list):
+        return any(uses_ui(v) for v in x)
+    if isinstance(x, dict):
+        if x.get("block") in ("window", "button") or x.get("event") == "button" or "button" in x:
+            return True
+        return any(uses_ui(v) for v in x.values())
+    return False
 
 
 def char_keys():
@@ -129,6 +150,8 @@ class Compiler:
         self.labels = 0
         self.counters = 0
         self.strings = []
+        self.ui = uses_ui(prog.get("scripts", []))
+        self.ui_texts = []
 
     # ---- helpers -----------------------------------------------------
     def emit(self, *lines):
@@ -229,6 +252,19 @@ class Compiler:
         self.strings.append(text)
         return f"str_{len(self.strings) - 1}"
 
+    def ui_text(self, text):
+        """a text for a window or a button -> its number"""
+        if len(self.ui_texts) == UI_TEXTS:
+            raise Error(f"at most {UI_TEXTS} texts for windows and buttons")
+        self.ui_texts.append(self.string(str(text)))
+        return len(self.ui_texts) - 1
+
+    def at(self, e, origin, own):
+        """HL = e, from the window's inside"""
+        self.expr(e, own)
+        if self.ui:
+            self.emit(f"ld de,({origin})", "add hl,de")
+
     # ---- expressions: the value in HL --------------------------------
     def expr(self, e, own):
         if isinstance(e, bool):
@@ -286,6 +322,8 @@ class Compiler:
         elif "contains" in e:
             self.expr(e["value"], own)
             self.emit(f"ld de,{self.list(e['contains'])}", "call rt_list_contains")
+        elif "button" in e:
+            self.emit("ld hl,(rt_button_n)")
         else:
             raise Error(f"unknown expression: {json.dumps(e)}")
 
@@ -380,18 +418,30 @@ class Compiler:
                 self.emit("ld a,l", f"ld (spr_{s} + {PROPS[p][0]}),a")
         elif b == "print":
             if "text" in st:
-                self.expr(st["x"], own)
+                self.at(st["x"], "rt_ox", own)
                 self.emit("push hl")
-                self.expr(st["y"], own)
+                self.at(st["y"], "rt_oy", own)
                 self.emit("ex de,hl", "pop hl", f"ld bc,{self.string(str(st['text']))}",
                           "call rt_print")
             else:
-                self.expr(st["x"], own)
+                self.at(st["x"], "rt_ox", own)
                 self.emit("ld (rt_px),hl")
-                self.expr(st["y"], own)
+                self.at(st["y"], "rt_oy", own)
                 self.emit("ld (rt_py),hl")
                 self.expr(st["value"], own)
                 self.emit("call rt_print_number")
+        elif b == "window":
+            n = self.ui_text(st.get("title", ""))
+            self.expr(st["w"], own)
+            self.emit("ld (rt_ww),hl")
+            self.expr(st["h"], own)
+            self.emit("ld (rt_wh),hl", f"ld a,{n}", "ld de,rt_window", "call rt_on_main")
+        elif b == "button":
+            n = self.ui_text(st.get("text", ""))
+            self.at(st["x"], "rt_ox", own)
+            self.emit("ld (rt_px),hl")
+            self.at(st["y"], "rt_oy", own)
+            self.emit("ld (rt_py),hl", f"ld a,{n}", "ld de,rt_button", "call rt_on_main")
         elif b == "text_colour":
             self.expr(st["to"], own)
             self.emit("ld a,l", "ld (rt_ink),a")
@@ -455,6 +505,8 @@ class Compiler:
                 param = 0xFF if own is None else own
             elif event == "receive":
                 param = self.message(when.get("message"))
+            elif event == "button":
+                param = 0
             table.append((n, 0xFF if own is None else own, EVENTS[event], param, event))
             self.code.append("")
             self.code.append(f"; ---- script {n}: when {event}"
@@ -487,6 +539,7 @@ class Compiler:
             "",
             '        include "api/vos_api.inc"',
             "",
+            *(["RT_UI           equ 1               ; windows and buttons"] if self.ui else []),
             f"PROG_MODE       equ {self.mode}",
             f"PROG_BG         equ {int(p.get('background', 0))}",
             f"PROG_WIDTH      equ {192 if self.mode == 0 else 384}",
@@ -522,7 +575,27 @@ class Compiler:
             "        jp z,rt_true",
             "        jp rt_false",
         ]
+        if self.ui:
+            out += ["",
+                    "rt_text_ptr:                        ; A = text -> HL -> it",
+                    f"        and {UI_TEXTS - 1}",
+                    "        add a,a",
+                    "        ld l,a",
+                    "        ld h,0",
+                    "        ld de,ui_texts",
+                    "        add hl,de",
+                    "        ld a,(hl)",
+                    "        inc hl",
+                    "        ld h,(hl)",
+                    "        ld l,a",
+                    "        ret"]
         out += self.code
+        if self.ui:
+            out += ["", "rt_texts:        db " + str(2 + len(self.ui_texts)),
+                    "                dw rt_t_menu_en, rt_t_menu_el",
+                    "                dw rt_t_stop_en, rt_t_stop_el"]
+            out += [f"                dw {label}, 0" for label in self.ui_texts]
+            out.append("ui_texts:        dw " + (", ".join(self.ui_texts) or "0"))
         out += ["", "; ---- tables", "prog_palette:    db " + ", ".join(map(str, palette)),
                 "prog_scripts:                       ; code, stack top, sprite, event, parameter"]
         for n, sprite, event, param, name in table:

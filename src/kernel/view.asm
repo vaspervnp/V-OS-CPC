@@ -255,6 +255,7 @@ view_command:
         ld a,(lang_ui)
         xor 1
         ld (lang_ui),a
+        ld (cfg_data + CFG_LANG),a  ; Setup shows it, and saves it
         jp OV_REDRAW
 .not_lang:
         ld hl,dlg_keys

@@ -103,9 +103,8 @@ lang_init:
         ld de,lang_name
         ld bc,12
         ldir
-        ld a,1
-        ld (lang_loaded),a
-        ld (lang_ui),a              ; the pack's language is the default
+        ld a,1                      ; English until SETUP.CFG chooses
+        ld (lang_loaded),a          ; the pack's language (cfg_apply)
 .bad:
         jp ram_home
 ; HL = offset in the pack, DE = destination, BC = length

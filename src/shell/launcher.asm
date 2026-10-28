@@ -120,12 +120,14 @@ ln_load:
         jr nz,.remember
         call file_find
         jr c,.remember
+        ld e,a
         ld hl,ln_list               ; its place among the programs
         ld a,(ln_count)
         or a
         jr z,.remember
         ld b,a
         ld c,0
+        ld a,e
 .place:
         cp (hl)
         jr z,.found

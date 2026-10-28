@@ -10,7 +10,7 @@
 ; types "\(" before taking a screenshot). Otherwise their events would
 ; keep the pointer hidden at the moment of the shot.
 ;
-; M8b/M8c Studio, Greek UI. Drive A: VOS.BIN, the view overlays,
+; M8b/M8c Studio, English UI. Drive A: VOS.BIN, the view overlays,
 ; GREEK.LNG, DEMO.BIN, MIXED.BIN, STUDIO.BIN, PONG, CATCH, STARCAT, and
 ; CALC.BIN, CALC.VBS.
 ; Expected result:
@@ -74,8 +74,10 @@ test_inject:
         ld a,(kbd_now + 5)
         and %11111110
         ld (kbd_now + 5),a
-        ld hl,(int_frames)
-        ld ix,test_keys
+        ld hl,(test_frame)          ; frames as scans of the keyboard (one
+        inc hl                      ; a frame): int_frames stops while
+        ld (test_frame),hl          ; VSYNC goes unseen (disc transfers),
+        ld ix,test_keys             ; and a key would stay held, repeating
 .entry:
         ld e,(ix+0)
         ld d,(ix+1)
@@ -194,9 +196,11 @@ tt_pc:          dw 0
 ; of the screen (12 bytes a line, a bit = a screen byte, #C0 or 0: its
 ; first pixel is pen 1 or 0 in either mode), to read from a screenshot. At SP + 2: test_inject's return, then
 ; kbd_scan's, IX, HL, DE, BC, AF (int_handler), the interrupted PC.
+        IFDEF TEST_TRACE
 test_show_ring:
         ld hl,TT_BUF
         jr test_show.at
+        ENDIF
 test_show:
         IFDEF TEST_DUMP_AT              ; or 96 bytes from there
         ld hl,TEST_DUMP_AT
@@ -233,6 +237,8 @@ test_show:
         ret
         ENDIF
 
+test_frame:     dw 0
+
 ; dw first frame, frame after the last; db matrix line, bits
 ; (line #80: bits = ptr_keys_on; #81: pointer x = bits * 2, in pixels
 ; of the mode the pointer is in; #82: pointer y = bits)
@@ -240,14 +246,14 @@ test_show:
 ; make test-calc (-DTEST_SCRIPT=2): CALC.BIN, a Studio program
 ; (blocks/examples/calc.vbt), then Studio with CALC.VBS. Expected:
 ;   frame  300  F2           -> Launcher
-;   frame  420, 470 DOWN     -> CALC chosen
+;   frame  420, 470 DOWN, 510 RIGHT -> CALC chosen (after COUNTER)
 ;   frame  560  RETURN       -> the calculator in mode 1: a window,
 ;                               16 buttons
 ;   (the pointer is placed and COPY clicks)
 ;   frame  950, 1050, 1150   -> 1, 2, +: 12 shown
 ;   frame 1250, 1350         -> 3, =: 15 shown
-;   frame 1500  CONTROL+Q    -> the Launcher
-;   frame 1700, 1750 UP, 1800, 1850 RIGHT, 1900 RETURN -> Studio
+;   frame 1500  CONTROL+Q    -> the Launcher, CALC still chosen
+;   frame 1700, 1750 UP, 1800 RIGHT, 1900 RETURN -> Studio
 ;   frame 2100  CONTROL+O    -> the file list
 ;   frame 2160-2394 DOWN held, 2400 RETURN -> CALC.VBS opened
 ;   frame 2600  TAB, 2650 LEFT -> the palette: WINDOWS
@@ -257,6 +263,7 @@ test_keys:
         dw  300,  304 : db 1, %01000000   ; F2
         dw  420,  424 : db 0, %00000100   ; DOWN
         dw  470,  474 : db 0, %00000100   ; DOWN
+        dw  510,  514 : db 0, %00000010   ; RIGHT
         dw  560,  564 : db 2, %00000100   ; RETURN
         dw  900,  901 : db #80, 1         ; COPY is the left button
         dw  900, 1000 : db #81, 56        ; 1 (x = 112 in mode 1)
@@ -280,7 +287,6 @@ test_keys:
         dw 1700, 1704 : db 0, %00000001   ; UP
         dw 1750, 1754 : db 0, %00000001   ; UP
         dw 1800, 1804 : db 0, %00000010   ; RIGHT
-        dw 1850, 1854 : db 0, %00000010   ; RIGHT
         dw 1900, 1904 : db 2, %00000100   ; RETURN
         dw 2095, 2110 : db 2, %10000000   ; CONTROL
         dw 2100, 2104 : db 4, %00000100   ; O
@@ -292,6 +298,24 @@ test_keys:
         dw 2900, 2904 : db 5, %00010000   ; H
         dw 2950, 2954 : db 4, %00001000   ; I
         dw 3050, 3054 : db 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 3
+; make test-lang (-DTEST_SCRIPT=3): the default language. Expected:
+;   frame  200               -> the Desktop in English (no SETUP.CFG)
+;   frame  300  F4           -> Setup, LANGUAGE: ENGLISH
+;   frame  450  CONTROL+L    -> Greek (VIEW > LANGUAGE), and the setting
+;   frame  550  RETURN       -> SETUP.CFG saved
+;   frame  700  CONTROL+Q, 800 RETURN -> BASIC; then RUN"VOS
+;                               (tools/cap32_reboot_check.sh): Greek
+test_keys:
+        dw  300,  304 : db 2, %00010000   ; F4
+        dw  445,  460 : db 2, %10000000   ; CONTROL
+        dw  450,  454 : db 4, %00010000   ; L
+        dw  550,  554 : db 2, %00000100   ; RETURN
+        dw  695,  710 : db 2, %10000000   ; CONTROL
+        dw  700,  704 : db 8, %00001000   ; Q
+        dw  800,  804 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
 test_keys:
@@ -336,4 +360,5 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF

@@ -170,7 +170,7 @@ const UI = {
     c_events: "Γεγονότα", c_control: "Έλεγχος", c_motion: "Κίνηση", c_looks: "Εμφάνιση",
     c_text: "Κείμενο", c_ops: "Τελεστές", c_sense: "Αισθητήρες", c_vars: "Μεταβλητές",
     new_var: "Νέα μεταβλητή", new_list: "Νέα λίστα", stage_name: "σκηνή", self: "αυτό",
-    c_sound: "Ήχος", c_lists: "Λίστες", costumes: "Κοστούμια", copy: "Αντίγραφο",
+    c_sound: "Ήχος", c_lists: "Λίστες", c_ui: "Παράθυρα", costumes: "Κοστούμια", copy: "Αντίγραφο",
     no_sprite: "(κανένα αντικείμενο)", no_costume: "Χωρίς κοστούμι: ορθογώνιο με το χρώμα του.",
     paint_hint: "Κλικ: βάψε με την πένα · δεξί κλικ: διάφανο. Σε mode 0 τα pixels είναι διπλά σε πλάτος.",
     saved: "Αποθηκεύτηκε: {f}", opened: "Άνοιξε: {f}", bad: "Δεν ανοίγει: {e}",
@@ -186,7 +186,7 @@ const UI = {
     c_events: "Events", c_control: "Control", c_motion: "Motion", c_looks: "Looks",
     c_text: "Text", c_ops: "Operators", c_sense: "Sensing", c_vars: "Variables",
     new_var: "New variable", new_list: "New list", stage_name: "stage", self: "this",
-    c_sound: "Sound", c_lists: "Lists", costumes: "Costumes", copy: "Copy",
+    c_sound: "Sound", c_lists: "Lists", c_ui: "Windows", costumes: "Costumes", copy: "Copy",
     no_sprite: "(no sprites)", no_costume: "No costume: a rectangle in its colour.",
     paint_hint: "Click: paint with the pen · right click: transparent. In mode 0 pixels are twice as wide.",
     saved: "Saved: {f}", opened: "Opened: {f}", bad: "Cannot open it: {e}",
@@ -218,6 +218,8 @@ const BT = {
     list_add: "πρόσθεσε %1 στη %2", list_delete: "διάγραψε το %1 της %2", list_insert: "βάλε %1 στη θέση %2 της %3",
     list_replace: "άλλαξε το %1 της %2 σε %3", list_clear: "άδειασε τη %1",
     item: "στοιχείο %1 της %2", length: "μήκος της %1", contains: "η %1 έχει το %2;",
+    window: "παράθυρο %1 πλάτος %2 ύψος %3", button: "κουμπί %1 στο x %2 y %3",
+    when_button: "όταν πατηθεί κουμπί %1", button_value: "αριθμός κουμπιού",
   },
   en: {
     when_start: "when started %1", when_key: "when %1 key pressed %2", when_click: "when clicked %1",
@@ -241,6 +243,8 @@ const BT = {
     list_add: "add %1 to %2", list_delete: "delete %1 of %2", list_insert: "insert %1 at %2 of %3",
     list_replace: "replace item %1 of %2 with %3", list_clear: "delete all of %1",
     item: "item %1 of %2", length: "length of %1", contains: "%1 contains %2?",
+    window: "window %1 width %2 height %3", button: "button %1 at x %2 y %3",
+    when_button: "when a button is pressed %1", button_value: "button number",
   },
 };
 let lang = "el";
@@ -276,7 +280,7 @@ function spriteOptions(withStage, withSelf) {
 
 // ---- the blocks -----------------------------------------------------------
 const COL = { events: 40, control: 200, motion: 220, looks: 280, text: 160, ops: 120, sense: 180, vars: 330,
-  sound: 300, lists: 20 };
+  sound: 300, lists: 20, ui: 60 };
 const costumeOptions = () => {
   const names = [...new Set(sprites.flatMap(s => (s.costumes || []).map(c => c.name)))];
   return names.length ? names.map(n => [n, n]) : [["—", "—"]];
@@ -363,6 +367,11 @@ function defineBlocks() {
   ex("item", [num("INDEX"), listField("LIST")], COL.lists);
   ex("length", [listField("LIST")], COL.lists);
   ex("contains", [listField("LIST"), num("VALUE")], COL.lists);
+  // windows and buttons (blocks/runtime.asm, RT_UI)
+  st("window", [{ type: "field_input", name: "TITLE", text: "WINDOW" }, num("W"), num("H")], COL.ui);
+  st("button", [{ type: "field_input", name: "TEXT", text: " OK " }, num("X"), num("Y")], COL.ui);
+  hat("when_button", [spriteField("SPRITE", true)], { colour: COL.ui });
+  ex("button_value", [], COL.ui);
   Blockly.defineBlocksWithJsonArray(defs);
 }
 
@@ -385,6 +394,8 @@ function toolbox() {
       b("text_colour", { TO: N(1) }), b("clear")]),
     cat("c_ops", COL.ops, [b("num"), b("op", { A: N(0), B: N(0) }), b("not"), b("random", { FROM: N(1), TO: N(10) })]),
     cat("c_sense", COL.sense, [b("key_held"), b("touching"), b("at_edge"), b("prop"), b("frames")]),
+    cat("c_ui", COL.ui, [b("window", { W: N(160), H: N(80) }), b("button", { X: N(8), Y: N(24) }),
+      b("when_button"), b("button_value")]),
     { kind: "category", name: t("c_vars"), colour: COL.vars, custom: "VOS_VARS" },
     { kind: "category", name: t("c_lists"), colour: COL.lists, custom: "VOS_LISTS" },
   ] };
@@ -418,7 +429,8 @@ function listsCategory(ws) {
 
 // ---- blocks <-> .vbp --------------------------------------------------------
 // both sides are plain JSON: Blockly's serialization state and the .vbp
-const HATS = { v_when_start: "start", v_when_key: "key", v_when_click: "click", v_when_receive: "receive" };
+const HATS = { v_when_start: "start", v_when_key: "key", v_when_click: "click", v_when_receive: "receive",
+  v_when_button: "button" };
 const STMT_INPUTS = {   // block -> [vbp key, Blockly input]
   repeat: [["times", "TIMES"]], if: [["cond", "COND"]], if_else: [["cond", "COND"]], wait: [["frames", "FRAMES"]],
   wait_until: [["cond", "COND"]], go_to: [["x", "X"], ["y", "Y"]], set_x: [["to", "TO"]], set_y: [["to", "TO"]],
@@ -430,6 +442,7 @@ const STMT_INPUTS = {   // block -> [vbp key, Blockly input]
   noise: [["pitch", "PITCH"], ["frames", "FRAMES"]], set_volume: [["to", "TO"]],
   list_add: [["item", "ITEM"]], list_delete: [["index", "INDEX"]],
   list_insert: [["index", "INDEX"], ["item", "ITEM"]], list_replace: [["index", "INDEX"], ["item", "ITEM"]],
+  window: [["w", "W"], ["h", "H"]], button: [["x", "X"], ["y", "Y"]],
 };
 
 function toVbp(ws) {
@@ -457,6 +470,7 @@ function toVbp(ws) {
       case "item": return { item: e("INDEX"), of: fieldVar(f.LIST) };
       case "length": return { length: fieldVar(f.LIST) };
       case "contains": return { contains: fieldVar(f.LIST), value: e("VALUE") };
+      case "button_value": return { button: true };
     }
     return 0;
   };
@@ -474,6 +488,8 @@ function toVbp(ws) {
       if (ty === "set" || ty === "change") s.var = fieldVar(f.VAR);
       if (ty === "broadcast") s.message = f.MESSAGE;
       if (ty === "switch_costume") s.to = f.COSTUME;
+      if (ty === "window") s.title = f.TITLE;
+      if (ty === "button") s.text = f.TEXT;
       if (f.CHANNEL !== undefined) s.channel = +f.CHANNEL;
       if (f.LIST) s.list = fieldVar(f.LIST);
       out.push(s);
@@ -552,6 +568,7 @@ function fromVbp(p) {
     if ("item" in e) return { type: "v_item", fields: { LIST: L(e.of) }, inputs: { INDEX: exprIn(e.item) } };
     if ("length" in e) return { type: "v_length", fields: { LIST: L(e.length) } };
     if ("contains" in e) return { type: "v_contains", fields: { LIST: L(e.contains) }, inputs: { VALUE: exprIn(e.value) } };
+    if ("button" in e) return { type: "v_button_value" };
     throw new Error("expression " + JSON.stringify(e));
   };
   const chain = list => {
@@ -569,6 +586,8 @@ function fromVbp(p) {
       if (ty === "set" || ty === "change") b.fields.VAR = V(s.var);
       if (ty === "broadcast") b.fields.MESSAGE = String(s.message);
       if (ty === "switch_costume") b.fields.COSTUME = String(s.to);
+      if (ty === "window") b.fields.TITLE = String(s.title ?? "");
+      if (ty === "button") b.fields.TEXT = String(s.text ?? "");
       if (["play_note", "start_note", "noise"].includes(ty)) b.fields.CHANNEL = String(s.channel || 0);
       if (s.list !== undefined) b.fields.LIST = L(s.list);
       if (!Blockly.Blocks[b.type]) throw new Error("block " + s.block);

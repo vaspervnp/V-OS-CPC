@@ -17,9 +17,12 @@
 ; rt_nsprites_n and rt_bg_n, PROG_MODE at rt_mode_1, PROG_WIDTH (a word)
 ; at rt_width_n: blocks/player.asm sets them when it starts. (The
 ; player has no costumes: images are drawn for PROG_MODE as assembled.)
-; With RT_UI defined (the player) the program also provides rt_texts,
-; rt_ui_redraw (after the stage is cleared) and rt_pressed (A = a
-; command from RT_CMD_BUTTON: a button was pressed).
+; With RT_UI defined the runtime also has windows and buttons
+; (rt_window, rt_button, rt_write; scripts call them with rt_on_main),
+; the value of the last button pressed (rt_button_n) and EVT_BUTTON;
+; PRINT and the like place things from the window's inside (rt_ox,
+; rt_oy). The program then provides rt_texts (its texts from
+; T_RT_TEXT0) and rt_text_ptr (A = text -> HL -> it).
 ;
 ; Scripts are coroutines: each has its own stack and gives the processor
 ; back (rt_yield) at the end of every loop pass and in waits. On each
@@ -72,11 +75,19 @@ RT_PPB          equ 4
 
 RT_CMD_STOP     equ 1
 RT_CMD_BUTTON   equ 32              ; and up: the buttons (RT_UI)
+RT_MAX_BUTTONS  equ 16
+RT_BUTTON_H     equ 14              ; as the kernel draws them
+WIN_PEN         equ 1               ; windows: white, with a black
+WIN_INK         equ 0               ; frame, title bar and shadow
+T_RT_TEXT0      equ VT_FIRST + 2    ; the program's texts (rt_texts)
 T_RT_MENU       equ VT_FIRST
 T_RT_STOP       equ VT_FIRST + 1
 
 ; ---------------------------------------------------------------------
 rt_init:
+        IFDEF RT_UI
+        call rt_ui_reset
+        ENDIF
         ld hl,rt_texts
         call VOS_TEXTS
         ld a,PROG_MODE
@@ -1492,6 +1503,314 @@ rt_print_number:
         ld bc,rt_number
         jp rt_print
 
+        IFDEF RT_UI
+; ---------------------------------------------------------------------
+; windows and buttons (called by the scripts through rt_on_main)
+; ---------------------------------------------------------------------
+
+; DE = routine: call it on the main stack (the kernel's buttons and
+; texts), with A and HL as they are
+rt_on_main:
+        ld (rt_script_sp),sp
+        ld sp,(rt_main_sp)
+        call .go
+        ld sp,(rt_script_sp)
+        ret
+.go:
+        push de
+        ret
+
+; no window, no buttons
+rt_ui_reset:
+        xor a
+        ld (rt_win),a
+        ld (rt_buttons),a
+        ld hl,0
+        ld (rt_ox),hl
+        ld (rt_oy),hl
+        ld (rt_button_n),hl
+        ld hl,rt_buttons
+        jp VOS_SET_WIDGETS
+
+; the window and the buttons again (rt_redraw)
+rt_ui_redraw:
+        ld a,(rt_win)
+        or a
+        call nz,rt_win_draw
+        jp VOS_DRAW_WIDGETS
+
+; A = command: button A - RT_CMD_BUTTON was pressed
+rt_pressed:
+        sub RT_CMD_BUTTON
+        ld l,a
+        ld h,0
+        ld (rt_button_n),hl
+        ld bc,EVT_BUTTON * 256
+        jp rt_start_all
+
+; HL = value, DE = least, BC = most -> HL in DE..BC
+rt_clamp:
+        push bc
+        call rt_lt_signed
+        pop bc
+        jr nc,.not_less
+        ex de,hl
+        ret
+.not_less:
+        ld d,b
+        ld e,c
+        ex de,hl
+        call rt_lt_signed           ; most < value?
+        ret c
+        ex de,hl
+        ret
+
+; A = title, (rt_ww), (rt_wh) = size: the window, in the middle
+rt_window:
+        ld (rt_wtitle),a
+        ld a,(rt_win)               ; the last one goes
+        or a
+        jr z,.size
+        ld hl,(rt_wx)
+        ld de,(rt_wy)
+        call rt_win_size
+        inc b
+        inc b
+        ld a,c
+        add a,4
+        ld c,a
+        ld a,PROG_BG
+rt_bg_4 equ $ - 1
+        call rt_rect
+.size:
+        ld hl,(rt_ww)               ; 32..width - 2, even
+        ld de,32
+        ld bc,(rt_ui_width)
+        dec bc
+        dec bc
+        call rt_clamp
+        res 0,l
+        ld (rt_ww),hl
+        ld hl,(rt_wh)
+        ld de,32
+        ld bc,RT_BOTTOM - RT_TOP - 4
+        call rt_clamp
+        ld (rt_wh),hl
+        ld hl,(rt_ui_width)            ; x: the middle, on a whole byte
+        dec hl
+        dec hl
+        ld de,(rt_ww)
+        or a
+        sbc hl,de
+        srl h
+        rr l
+        ld a,l
+        and %11111100
+        ld l,a
+        ld (rt_wx),hl
+        ld de,4                     ; its inside: 4 in, under the title
+        add hl,de
+        ld (rt_ox),hl
+        ld hl,RT_BOTTOM - RT_TOP - 4
+        ld de,(rt_wh)
+        or a
+        sbc hl,de
+        srl h
+        rr l
+        ld de,RT_TOP
+        add hl,de
+        ld (rt_wy),hl
+        ld de,14
+        add hl,de
+        ld (rt_oy),hl
+        ld a,1
+        ld (rt_win),a
+        xor a                       ; its buttons come after it
+        ld (rt_buttons),a
+        ld hl,rt_buttons
+        call VOS_SET_WIDGETS
+        ld a,WIN_INK                ; PRINT and TEXT write on it
+        ld (rt_ink),a
+        ld a,WIN_PEN
+        ld (rt_bg_3),a
+        ; fall through
+
+; the window: shadow, frame and title bar, inside, title
+rt_win_draw:
+        ld hl,(rt_wx)
+        inc hl
+        inc hl
+        ld de,(rt_wy)
+        inc de
+        inc de
+        inc de
+        inc de
+        call rt_win_size
+        ld a,WIN_INK
+        call rt_rect
+        ld hl,(rt_wx)
+        ld de,(rt_wy)
+        call rt_win_size
+        ld a,WIN_INK
+        call rt_rect
+        ld hl,(rt_wx)
+        inc hl
+        ld de,(rt_wy)
+        ld a,12
+        add a,e
+        ld e,a
+        jr nc,.inside
+        inc d
+.inside:
+        call rt_win_size
+        dec b
+        dec b
+        ld a,c
+        sub 13
+        ld c,a
+        ld a,WIN_PEN
+        call rt_rect
+        ld a,(rt_wtitle)            ; the title: what fits, centred
+        call rt_text_ptr
+        ld de,rt_wtext
+        ld a,(rt_ww)
+        sub 8
+        rrca
+        rrca
+        rrca
+        and 31
+        ld b,a
+        ld c,0
+.copy:
+        ld a,(hl)
+        or a
+        jr z,.copied
+        ld (de),a
+        inc hl
+        inc de
+        inc c
+        djnz .copy
+.copied:
+        xor a
+        ld (de),a
+        ld a,c
+        add a,a
+        add a,a
+        add a,a
+        ld e,a
+        ld d,0
+        ld hl,(rt_ww)
+        or a
+        sbc hl,de
+        srl h
+        rr l
+        ld de,(rt_wx)
+        add hl,de
+        push hl
+        ld a,WIN_PEN
+        ld c,WIN_INK
+        call VOS_COLOURS
+        pop hl
+        ld de,(rt_wy)
+        inc de
+        inc de
+        ld bc,rt_wtext
+        jp VOS_PRINT
+
+; -> B, C = the window's width and height
+rt_win_size:
+        ld a,(rt_ww)
+        ld b,a
+        ld a,(rt_wh)
+        ld c,a
+        ret
+
+; A = text, (rt_px), (rt_py) = where: a button, if it is on the stage
+rt_button:
+        ld (rt_btext),a
+        ld a,(rt_buttons)
+        cp RT_MAX_BUTTONS
+        ret nc
+        ld a,(rt_btext)
+        call rt_text_ptr
+        ld c,2                      ; characters: the text's and 2
+.length:
+        ld a,(hl)
+        or a
+        jr z,.measured
+        inc hl
+        inc c
+        jr .length
+.measured:
+        ld a,c
+        ld (rt_bchars),a
+        ld hl,(rt_px)               ; 0 <= x, x + w <= width
+        bit 7,h
+        ret nz
+        add a,a
+        add a,a
+        add a,a
+        ld e,a
+        ld d,0
+        add hl,de
+        ld de,(rt_ui_width)
+        inc de
+        call rt_lt_signed
+        ret nc
+        ld hl,(rt_py)               ; RT_TOP <= y, y + h <= RT_BOTTOM
+        ld de,RT_TOP
+        call rt_lt_signed
+        ret c
+        ld de,RT_BUTTON_H
+        add hl,de
+        ld de,RT_BOTTOM + 1
+        call rt_lt_signed
+        ret nc
+        ld a,(rt_buttons)           ; dw x, y; db characters, text,
+        ld l,a                      ; command, 0
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,rt_buttons + 1
+        add hl,de
+        ld de,(rt_px)
+        ld (hl),e
+        inc hl
+        ld (hl),d
+        inc hl
+        ld de,(rt_py)
+        ld (hl),e
+        inc hl
+        ld (hl),d
+        inc hl
+        ld a,(rt_bchars)
+        ld (hl),a
+        inc hl
+        ld a,(rt_btext)
+        and 31                      ; at most 32 texts (rt_texts)
+        add a,T_RT_TEXT0
+        ld (hl),a
+        inc hl
+        ld a,(rt_buttons)
+        add a,RT_CMD_BUTTON
+        ld (hl),a
+        inc hl
+        ld (hl),0
+        ld hl,rt_buttons
+        inc (hl)
+        jp VOS_DRAW_WIDGETS
+
+; A = text, (rt_px), (rt_py) = where: write it
+rt_write:
+        call rt_text_ptr
+        ld b,h
+        ld c,l
+        ld hl,(rt_px)
+        ld de,(rt_py)
+        jp rt_print
+        ENDIF
+
 ; ---- data -----------------------------------------------------------
 rt_tens:        dw 10000, 1000, 100, 10, 1, 0
 rt_bar:         db 3
@@ -1531,3 +1850,20 @@ rt_blt:         dw 0, 0
 rt_volume:      db 12
 rt_periods:     dw 1911, 1804, 1703, 1607, 1517, 1432   ; C1..B1 (AY at 1 MHz)
                 dw 1351, 1276, 1204, 1136, 1073, 1012
+        IFDEF RT_UI
+rt_win:         db 0                ; a window is open
+rt_wx:          dw 0
+rt_wy:          dw 0
+rt_ww:          dw 0
+rt_wh:          dw 0
+rt_wtitle:      db 0
+rt_wtext:       ds 24
+rt_ox:          dw 0                ; where x, y = 0, 0 is
+rt_oy:          dw 0
+rt_button_n:    dw 0                ; the last button pressed
+rt_btext:       db 0
+rt_bchars:      db 0
+rt_buttons:     db 0                ; VOS_SET_WIDGETS
+                ds RT_MAX_BUTTONS * 8
+rt_ui_width:    dw PROG_WIDTH       ; (the player sets it)
+        ENDIF

@@ -7,6 +7,8 @@
 #                 (src/kernel/test_script.asm) and six screenshots
 #   make test-calc   the calculator (CALC.BIN) clicked, then CALC.VBS
 #                 in Studio (TEST_SCRIPT=2)
+#   make test-lang   English at boot, Greek saved in Setup, then V-OS
+#                 again starts in Greek (TEST_SCRIPT=3)
 #   make test-amsdos  the same script, then AMSDOS in BASIC reads the
 #                 files V-OS wrote (one screenshot)
 #   make test-reboot  the same, then RUN"VOS" with the saved SETUP.CFG
@@ -27,7 +29,7 @@ IDSK    ?= iDSK
 LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG
 
-.PHONY: all run shot test-input test-calc test-amsdos test-reboot test-system clean
+.PHONY: all run shot test-input test-calc test-lang test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -50,7 +52,7 @@ endef
 # Programs (apps/): each is assembled on its own, with only the API
 # include, and goes on the disc as a binary loading at #4000.
 APPS    := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/STUDIO.BIN $(BUILD)/PONG.BIN $(BUILD)/CATCH.BIN $(BUILD)/STARCAT.BIN \
-           $(BUILD)/CALC.BIN $(BUILD)/CALC.VBS
+           $(BUILD)/COUNTER.BIN $(BUILD)/CALC.BIN $(BUILD)/CALC.VBS
 APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
 
 # Icons for the Launcher (VOS_ICON): text in apps/icons, made into
@@ -94,6 +96,9 @@ $(BUILD)/CATCH.BIN: blocks/examples/catch.vbp $(BLOCKS_RT)
 	$(PYTHON) -I blocks/vbc.py $< -o $(BUILD) > /dev/null
 
 $(BUILD)/STARCAT.BIN: blocks/examples/starcat.vbp $(BLOCKS_RT)
+	$(PYTHON) -I blocks/vbc.py $< -o $(BUILD) > /dev/null
+
+$(BUILD)/COUNTER.BIN: blocks/examples/counter.vbp $(BLOCKS_RT)
 	$(PYTHON) -I blocks/vbc.py $< -o $(BUILD) > /dev/null
 
 # Studio programs from text (tools/mkvbs.py): the .VBS Studio opens, and
@@ -182,6 +187,28 @@ test-calc: $(CALC_DSK) $(TEST_DSK_B)
 	  cp $(CALC_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
+	ls $(BUILD)/shots/*/*.png
+
+# The default language (TEST_SCRIPT=3): English at boot, Greek chosen
+# and saved in Setup, then V-OS again from BASIC starts in Greek
+LANG_DSK := $(BUILD)/vos_lang.dsk
+$(LANG_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_lang -DTEST_SCRIPT=3
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-lang: $(LANG_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in 150; do \
+	  cp $(LANG_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	cp $(LANG_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/reboot VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_reboot_check.sh) 300" || true
 	ls $(BUILD)/shots/*/*.png
 
 # Caprice32 keeps disc writes in memory only, so V-OS's writes are
