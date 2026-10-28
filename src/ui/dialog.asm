@@ -41,24 +41,24 @@ dialog_run:
         ld bc,DLG_TEXT_MAX
         ldir
         ld hl,dlg_text
-        ld bc,0                     ; B = longest line, C = lines
+        ld de,0                     ; D = longest line, E = lines
 .line:
-        inc c
-        call ui_line_len
-        cp b
+        inc e
+        call ui_line_len            ; (destroys B)
+        cp d
         jr c,.shorter
-        ld b,a
+        ld d,a
 .shorter:
-        ld e,a
-        ld d,0
-        add hl,de
+        ld c,a
+        ld b,0
+        add hl,bc
         ld a,(hl)
         inc hl
         cp "|"
         jr z,.line
-        ld a,b
+        ld a,d
         ld (dlg_chars),a
-        ld a,c
+        ld a,e
         ld (dlg_lines),a
 
         ld hl,(dlg_def)             ; title

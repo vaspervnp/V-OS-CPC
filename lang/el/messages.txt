@@ -38,9 +38,9 @@ COPIED      ΑΝΤΙΓΡΑΦΗΚΕ ΣΤΟ
 DELETE_Q    ΔΙΑΓΡΑΦΗ
 QMARK       ;
 DLG_ABOUT_T ΣΧΕΤΙΚΑ
-DLG_ABOUT   V-OS 0.08|AMSTRAD CPC 6128|ΕΠΙΦΑΝΕΙΑ, ΠΡΟΓΡΑΜΜΑΤΑ|ΚΑΙ COMMANDER
+DLG_ABOUT   V-OS 0.09|AMSTRAD CPC 6128|ΕΠΙΦΑΝΕΙΑ, ΠΡΟΓΡΑΜΜΑΤΑ|ΚΑΙ COMMANDER
 DLG_KEYS_T  ΠΛΗΚΤΡΑ
-DLG_KEYS    F1 F2 F3 ΟΨΕΙΣ|ESC ΜΕΝΟΥ|ΒΕΛΗ ΕΠΙΛΟΓΗ|TAB ΜΟΝΑΔΑ|ENTER ΣΤΟΙΧΕΙΑ|^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.|^N ΜΕΤΟΝΟΜΑΣΙΑ|CTRL+SHIFT EN/EL
+DLG_KEYS    F1-F4 ΟΨΕΙΣ|ESC ΜΕΝΟΥ|ΒΕΛΗ ΕΠΙΛΟΓΗ|TAB ΜΟΝΑΔΑ|ENTER ΣΤΟΙΧΕΙΑ|^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.|^N ΜΕΤΟΝΟΜΑΣΙΑ|CTRL+SHIFT EN/EL
 DLG_QUIT_T  ΕΞΟΔΟΣ
 DLG_QUIT    ΕΠΑΝΕΚΚΙΝΗΣΗ CPC|ΕΞΟΔΟΣ ΣΤΗ BASIC;
 DLG_FILE_T  ΑΡΧΕΙΟ
@@ -63,3 +63,39 @@ LN_KEYS     ΒΕΛΗ ΚΙΝΗΣΗ ENTER ΕΚΚΙΝ.
 NO_PROGRAMS ΚΑΝΕΝΑ ΠΡΟΓΡΑΜΜΑ ΣΤΟ A:
 PAGE        ΣΕΛΙΔΑ
 DLG_RUN     Η ΕΚΚΙΝΗΣΗ ΕΡΧΕΤΑΙ|ΣΤΟ M6
+ITEM_FORMAT ΦΟΡΜΑΡΙΣΜΑ ΔΙΣΚΕΤΑΣ (DATA)
+ITEM_SETUP  ΡΥΘΜΙΣΕΙΣ     F4
+ITEM_SAVE_SET ΑΠΟΘΗΚΕΥΣΗ ΡΥΘΜΙΣΕΩΝ
+REPLACE_Q   ΑΝΤΙΚΑΤΑΣΤΑΣΗ
+COPYING     ΑΝΤΙΓΡΑΦΗ
+WAIT        ΠΕΡΙΜΕΝΕΤΕ
+FORMAT_Q    ΦΟΡΜΑΡΙΣΜΑ
+FORMAT_LOST ΧΑΝΟΝΤΑΙ ΤΑ ΑΡΧΕΙΑ
+FORMATTING  ΦΟΡΜΑΡΙΣΜΑ ΔΙΣΚΕΤΑΣ
+SET_TITLE   ΡΥΘΜΙΣΕΙΣ
+SET_VIEW    ΟΨΗ ΕΚΚΙΝΗΣΗΣ
+SET_LANG    ΓΛΩΣΣΑ
+SET_DELAY   ΚΑΘΥΣΤ. ΕΠΑΝΑΛΗΨΗΣ
+SET_RATE    ΤΑΧΥΤ. ΕΠΑΝΑΛΗΨΗΣ
+SET_AMX     ΠΟΝΤΙΚΙ AMX
+SET_AMX_MODE ΑΝΑΓΝΩΣΗ AMX
+SET_DESK    ΧΡΩΜΑ ΦΟΝΤΟΥ
+VW_DESKTOP  ΕΠΙΦΑΝΕΙΑ
+VW_LAUNCHER ΠΡΟΓΡΑΜΜΑΤΑ
+VW_COMMANDER COMMANDER
+VAL_ENGLISH ENGLISH
+VAL_SHORT   ΣΥΝΤΟΜΗ
+VAL_MEDIUM  ΜΕΣΑΙΑ
+VAL_LONG    ΜΕΓΑΛΗ
+VAL_SLOW    ΑΡΓΗ
+VAL_FAST    ΓΡΗΓΟΡΗ
+VAL_ON      ΝΑΙ
+VAL_OFF     ΟΧΙ
+VAL_PULSES  ΠΑΛΜΟΙ
+VAL_LEVELS  ΣΤΑΘΜΕΣ
+COL_BLUE    ΜΠΛΕ
+COL_BLACK   ΜΑΥΡΟ
+COL_GREEN   ΠΡΑΣΙΝΟ
+COL_RED     ΚΟΚΚΙΝΟ
+SET_KEYS    ΠΑΝΩ ΚΑΤΩ ΕΠΙΛΟΓΗ  ΑΡΙΣΤ. ΔΕΞΙΑ ΑΛΛΑΓΗ  ^S
+SET_SAVED   ΑΠΟΘΗΚΕΥΤΗΚΑΝ ΣΤΟ A:SETUP.CFG

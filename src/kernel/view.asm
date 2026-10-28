@@ -1,7 +1,7 @@
 ; =====================================================================
 ; view.asm - the shell's views as overlays
 ;
-; Each view (Desktop, Launcher, Commander) is a file on drive A:,
+; Each view (Desktop, Launcher, Commander, Setup) is a file on drive A:,
 ; assembled for VIEW_ADDR, and runs in bank 5 (VIEW_BANK_CFG). It
 ; starts with
 ;   +0  jp init     set mode, palette and menus, read, draw everything
@@ -9,7 +9,7 @@
 ;   +6  jp redraw   draw everything again (the language changed)
 ;   +9  db "VV", view number
 ; Views share the VIEW and HELP menus and their commands (view_command).
-; F1, F2 and F3 (or a view's VIEW menu, through view_request) switch
+; F1 to F4 (or a view's VIEW menu, through view_request) switch
 ; views. A new view is loaded into bank 4 first and checked, so a disc
 ; error leaves the running view intact.
 ; =====================================================================
@@ -17,6 +17,7 @@
 VIEW_DESKTOP    equ 0
 VIEW_LAUNCHER   equ 1
 VIEW_COMMANDER  equ 2
+VIEW_SETUP      equ 3
 VIEW_NONE       equ #FF
 
 OV_INIT         equ VIEW_ADDR
@@ -34,9 +35,12 @@ CMD_QUIT        equ 6
 CMD_LANG        equ 7
 CMD_KEYS        equ 8
 CMD_ABOUT       equ 9
-CMD_DESKTOP     equ 10              ; CMD_DESKTOP + view number
-CMD_LAUNCHER    equ 11
-CMD_COMMANDER   equ 12
+CMD_FORMAT      equ 10
+CMD_SAVE        equ 11
+CMD_DESKTOP     equ 16              ; CMD_DESKTOP + view number
+CMD_LAUNCHER    equ 17
+CMD_COMMANDER   equ 18
+CMD_SETUP       equ 19
 
 ; A = view to switch to once the current event is handled
 view_request:
@@ -127,7 +131,7 @@ view_switch:
         ld a,FS_ERR_FORMAT
         jp sys_error
 
-; ev_cur: F1/F2/F3 outside menus -> carry, a switch is requested
+; ev_cur: F1-F4 outside menus -> carry, a switch is requested
 view_keys:
         ld a,(ev_cur)
         cp EV_KEY_DOWN
@@ -144,6 +148,9 @@ view_keys:
         jr z,.view
         inc b
         cp KEY_F3
+        jr z,.view
+        inc b
+        cp KEY_F4
         jr nz,.no
 .view:
         ld a,b
@@ -186,15 +193,22 @@ view_command:
         di                          ; restart: lower ROM back at #0000
         ld bc,GA_PORT + GA_RAMCFG
         out (c),c
+        ld hl,.reset                ; the last two instructions run from
+        ld de,fs_buf                ; RAM at #C000+: once the lower ROM is
+        ld bc,3                     ; on, #0000-#3FFF is not this code
+        ldir
         ld bc,GA_PORT + GA_RMR + GA_RMR_HIROM_OFF + 1
+        jp fs_buf
+.reset:
         out (c),c
         rst 0
 
 menu_view:
-        db MSG_MENU_VIEW, 5
+        db MSG_MENU_VIEW, 6
         db MSG_ITEM_DESKTOP, CMD_DESKTOP, 0, 0
         db MSG_ITEM_LAUNCHER, CMD_LAUNCHER, 0, 0
         db MSG_ITEM_COMMANDER, CMD_COMMANDER, 0, 0
+        db MSG_ITEM_SETUP, CMD_SETUP, 0, 0
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_LANG, CMD_LANG, "L", 0
 menu_help:
@@ -211,9 +225,10 @@ view_files:
         db "DESKTOP OVL"
         db "LAUNCHEROVL"
         db "COMMANDROVL"
+        db "SETUP   OVL"
 
 view_cur:       db VIEW_NONE
-view_next:      db VIEW_DESKTOP     ; the first view
+view_next:      db VIEW_DESKTOP     ; the first view (SETUP.CFG)
 vw_n:           db 0
 vw_left:        db 0
 vw_ptr:         dw 0

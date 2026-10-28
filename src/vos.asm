@@ -12,7 +12,7 @@
         include "include/memmap.inc"
         include "lang/msg_ids.inc"
 
-VOS_VERSION     equ #0008           ; 0.08
+VOS_VERSION     equ #0009           ; 0.09
 VOS_API_VERSION equ #0000
 
 ; ---- loader, runs at LOADER_ADDR ------------------------------------
@@ -31,6 +31,7 @@ kernel_start:
         include "kernel/fs.asm"
         include "kernel/files.asm"
         include "kernel/view.asm"
+        include "kernel/setup.asm"
         include "kernel/util.asm"
         include "kernel/lang.asm"
         include "lang/lang_en.asm"
@@ -94,4 +95,15 @@ commander_end:
         save "COMMANDR.OVL", VIEW_ADDR, commander_end - VIEW_ADDR, DSK, "build/vos_test.dsk"
         ELSE
         save "COMMANDR.OVL", VIEW_ADDR, commander_end - VIEW_ADDR, DSK, "build/vos.dsk"
+        ENDIF
+
+        BANK
+        org VIEW_ADDR
+        include "shell/setup.asm"
+setup_end:
+        assert setup_end <= VIEW_ADDR + #4000
+        IFDEF TEST_SCRIPT
+        save "SETUP.OVL", VIEW_ADDR, setup_end - VIEW_ADDR, DSK, "build/vos_test.dsk"
+        ELSE
+        save "SETUP.OVL", VIEW_ADDR, setup_end - VIEW_ADDR, DSK, "build/vos.dsk"
         ENDIF

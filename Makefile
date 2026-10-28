@@ -7,6 +7,7 @@
 #                 (src/kernel/test_script.asm) and six screenshots
 #   make test-amsdos  the same script, then AMSDOS in BASIC reads the
 #                 files V-OS wrote (one screenshot)
+#   make test-reboot  the same, then RUN"VOS" with the saved SETUP.CFG
 #   make test-system  the script with drive A in SYSTEM format
 #   make clean
 
@@ -24,7 +25,7 @@ IDSK    ?= iDSK
 LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/GREEK.LNG
 
-.PHONY: all run shot test-input test-amsdos test-system clean
+.PHONY: all run shot test-input test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -88,10 +89,10 @@ $(TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
 	$(call add_packs,$(TEST_DSK))
 	$(PYTHON) -I tools/dsk_ext.py $(TEST_DSK)
 
-# Shots along the script (src/kernel/test_script.asm): Desktop and file
-# info, copy of the 20K file to A:, Commander and rename, Launcher,
-# Desktop again. One run per shot: runs are short, shots are per second.
-TEST_SHOTS := 160 300 600 750 850 900 950 1000
+# Shots along the script (src/kernel/test_script.asm): selection kept
+# from Desktop to Commander, copy, "replace?", format of B:, Setup.
+# One run per shot: runs are short, shots are per second.
+TEST_SHOTS := 110 170 230 260 300 500 820 900
 test-input: $(TEST_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(TEST_SHOTS); do \
@@ -101,7 +102,11 @@ test-input: $(TEST_DSK) $(TEST_DSK_B)
 # Caprice32 keeps disc writes in memory only, so V-OS's writes are
 # checked in the same run: the script ends by restarting into BASIC.
 test-amsdos: $(TEST_DSK) $(TEST_DSK_B)
-	$(call run_test,tools/cap32_amsdos_check.sh,1150)
+	$(call run_test,tools/cap32_amsdos_check.sh,1100)
+
+# The same, then RUN"VOS" again: V-OS starts as SETUP.CFG says.
+test-reboot: $(TEST_DSK) $(TEST_DSK_B)
+	$(call run_test,tools/cap32_reboot_check.sh,1100)
 
 # The script with drive A: in SYSTEM format, up to the copy to A:.
 test-system: $(TEST_DSK) $(TEST_DSK_B)

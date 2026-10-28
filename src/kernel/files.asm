@@ -8,6 +8,10 @@
 ;   file_copy     copy to the other drive, any size (fs_copy)
 ;   file_delete   ask, then delete
 ;   file_rename   ask for the new name (input_run), then rename
+;   file_format   ask, then format the drive (DATA)
+; Copying onto a file of the same name asks first.
+; file_name and sys_drive also say which file is selected, so the next
+; view selects it again (file_find).
 ; Copy, delete and rename return carry when nothing was tried (the user
 ; said no); otherwise the disc may have changed, so the view reads it
 ; again. Errors are shown with sys_error.
@@ -100,12 +104,29 @@ file_info:
 
 ; A = source drive; the target is the other one
 file_copy:
-        ld b,a
+        ld (fi_drive),a
         xor 1
-        ld c,a
         ld (fi_target),a
+        call fdc_select
+        ld hl,file_name
+        call fs_exists
+        jr c,.copy                  ; not there (or unreadable: the copy says)
+        ld de,dlg_custom            ; REPLACE|NAME.EXT?
+        ld a,MSG_REPLACE_Q
+        call file_question
+        ret c
+.copy:
+        ld a,MSG_COPYING
+        call ui_busy
+        ld a,(fi_drive)
+        ld b,a
+        ld a,(fi_target)
+        ld c,a
         ld hl,file_name
         call fs_copy
+        push af
+        call ui_restore
+        pop af
         jp c,sys_error_nc
         ld de,dlg_custom            ; COPIED TO B:|NAME.EXT
         ld a,MSG_COPIED
@@ -128,18 +149,8 @@ file_delete:
         ld (fi_drive),a
         ld de,dlg_custom            ; DELETE|NAME.EXT?
         ld a,MSG_DELETE_Q
-        call util_msg
-        call file_newline
-        call file_name_text
-        ld a,MSG_QMARK
-        call util_msg
-        xor a
-        ld (de),a
-        ld hl,dlg_yes_no
-        call dialog_run
-        or a                        ; 0 = YES
-        scf
-        ret nz
+        call file_question
+        ret c
         ld a,(fi_drive)
         call fdc_select
         ld hl,file_name
@@ -166,7 +177,53 @@ file_rename:
         ld hl,file_name
         ld de,fi_new
         call fs_rename
-        jr c,sys_error_nc
+        jp c,sys_error_nc
+        ret
+
+file_format:
+        ld (fi_drive),a
+        ld de,dlg_custom            ; FORMAT A:?|ALL FILES ARE LOST
+        ld a,MSG_FORMAT_Q
+        call file_label
+        ld a,(fi_drive)
+        add a,"A"
+        call util_char
+        ld a,":"
+        call util_char
+        ld a,MSG_QMARK
+        call util_msg
+        call file_newline
+        ld a,MSG_FORMAT_LOST
+        call file_ask
+        ret c
+        ld a,MSG_FORMATTING
+        call ui_busy
+        ld a,(fi_drive)
+        call fdc_select
+        call fs_format
+        push af
+        call ui_restore
+        pop af
+        jp c,sys_error_nc
+        ret
+
+; DE = dlg_custom, A = MSG_*: "TEXT|NAME.EXT?", YES / NO -> carry if NO
+file_question:
+        call util_msg
+        call file_newline
+        call file_name_text
+        ld a,MSG_QMARK
+        ; fall through
+; A = MSG_* to end the text with -> carry if the answer is NO
+file_ask:
+        call util_msg
+        xor a
+        ld (de),a
+        ld hl,dlg_yes_no
+        call dialog_run
+        or a                        ; 0 = YES
+        ret z
+        scf
         ret
 
 ; fi_text "name.ext" -> fi_new, 11 bytes, upper case, padded. Carry if
@@ -244,6 +301,47 @@ file_parse:
 file_bad_chars: db "*?,;:=[]<>|"
 FILE_BAD_COUNT  equ $ - file_bad_chars
 
+; FS_CAT -> A = the entry named file_name; carry if there is none
+file_find:
+        ld a,(fc_count)
+        or a
+        scf
+        ret z
+        ld b,a
+        ld hl,FS_CAT
+        ld c,0
+.entry:
+        push bc
+        push hl
+        ld de,file_name
+        ld b,11
+.compare:
+        ld a,(de)
+        cp (hl)
+        jr nz,.differ
+        inc hl
+        inc de
+        djnz .compare
+.differ:
+        pop hl
+        pop bc
+        ld a,c
+        ret z
+        ld de,16
+        add hl,de
+        inc c
+        djnz .entry
+        scf
+        ret
+
+; HL -> 11-byte name, A = drive: the selected file
+file_select:
+        ld (sys_drive),a
+        ld de,file_name
+        ld bc,11
+        ldir
+        ret
+
 ; A = FDC_ERR_* / FS_ERR_* -> error dialog. Carry kept clear: the disc
 ; may have changed.
 sys_error_nc:
@@ -276,6 +374,7 @@ dlg_error:      db MSG_DLG_ERR_T, DLG_OWN_TEXT, 1, MSG_BTN_OK
 dlg_yes_no:     db MSG_DLG_FILE_T, DLG_OWN_TEXT, 2, MSG_BTN_YES, MSG_BTN_NO
 
 file_name:      ds 11
+sys_drive:      db 0
 fi_new:         ds 11
 fi_text:        ds FILE_TEXT_MAX + 2  ; + the cursor of input_run
 fi_drive:       db 0

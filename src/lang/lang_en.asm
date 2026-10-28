@@ -63,6 +63,42 @@ msg_en_table:
         dw msg_en_no_programs
         dw msg_en_page
         dw msg_en_dlg_run
+        dw msg_en_item_format
+        dw msg_en_item_setup
+        dw msg_en_item_save_set
+        dw msg_en_replace_q
+        dw msg_en_copying
+        dw msg_en_wait
+        dw msg_en_format_q
+        dw msg_en_format_lost
+        dw msg_en_formatting
+        dw msg_en_set_title
+        dw msg_en_set_view
+        dw msg_en_set_lang
+        dw msg_en_set_delay
+        dw msg_en_set_rate
+        dw msg_en_set_amx
+        dw msg_en_set_amx_mode
+        dw msg_en_set_desk
+        dw msg_en_vw_desktop
+        dw msg_en_vw_launcher
+        dw msg_en_vw_commander
+        dw msg_en_val_english
+        dw msg_en_val_short
+        dw msg_en_val_medium
+        dw msg_en_val_long
+        dw msg_en_val_slow
+        dw msg_en_val_fast
+        dw msg_en_val_on
+        dw msg_en_val_off
+        dw msg_en_val_pulses
+        dw msg_en_val_levels
+        dw msg_en_col_blue
+        dw msg_en_col_black
+        dw msg_en_col_green
+        dw msg_en_col_red
+        dw msg_en_set_keys
+        dw msg_en_set_saved
 msg_en_menu_file:              ; FILE
         db #46,#49,#4C,#45,#00
 msg_en_menu_view:              ; VIEW
@@ -140,15 +176,15 @@ msg_en_qmark:              ; ?
         db #3F,#00
 msg_en_dlg_about_t:              ; ABOUT
         db #41,#42,#4F,#55,#54,#00
-msg_en_dlg_about:              ; V-OS 0.08|AMSTRAD CPC 6128|DESKTOP, LAUNCHER|AND COMMANDER
-        db #56,#2D,#4F,#53,#20,#30,#2E,#30,#38,#7C,#41,#4D,#53,#54,#52,#41
+msg_en_dlg_about:              ; V-OS 0.09|AMSTRAD CPC 6128|DESKTOP, LAUNCHER|AND COMMANDER
+        db #56,#2D,#4F,#53,#20,#30,#2E,#30,#39,#7C,#41,#4D,#53,#54,#52,#41
         db #44,#20,#43,#50,#43,#20,#36,#31,#32,#38,#7C,#44,#45,#53,#4B,#54
         db #4F,#50,#2C,#20,#4C,#41,#55,#4E,#43,#48,#45,#52,#7C,#41,#4E,#44
         db #20,#43,#4F,#4D,#4D,#41,#4E,#44,#45,#52,#00
 msg_en_dlg_keys_t:              ; KEYS
         db #4B,#45,#59,#53,#00
-msg_en_dlg_keys:              ; F1 F2 F3  VIEWS|ESC       MENU|ARROWS    SELECT|TAB       DRIVE|ENTER     INFO|^C COPY  ^D DELETE|^N RENAME|CTRL+SHIFT  EN/EL
-        db #46,#31,#20,#46,#32,#20,#46,#33,#20,#20,#56,#49,#45,#57,#53,#7C
+msg_en_dlg_keys:              ; F1-F4     VIEWS|ESC       MENU|ARROWS    SELECT|TAB       DRIVE|ENTER     INFO|^C COPY  ^D DELETE|^N RENAME|CTRL+SHIFT  EN/EL
+        db #46,#31,#2D,#46,#34,#20,#20,#20,#20,#20,#56,#49,#45,#57,#53,#7C
         db #45,#53,#43,#20,#20,#20,#20,#20,#20,#20,#4D,#45,#4E,#55,#7C,#41
         db #52,#52,#4F,#57,#53,#20,#20,#20,#20,#53,#45,#4C,#45,#43,#54,#7C
         db #54,#41,#42,#20,#20,#20,#20,#20,#20,#20,#44,#52,#49,#56,#45,#7C
@@ -210,6 +246,84 @@ msg_en_page:              ; PAGE
 msg_en_dlg_run:              ; PROGRAMS START|FROM M6 ON
         db #50,#52,#4F,#47,#52,#41,#4D,#53,#20,#53,#54,#41,#52,#54,#7C,#46
         db #52,#4F,#4D,#20,#4D,#36,#20,#4F,#4E,#00
+msg_en_item_format:              ; FORMAT DISC (DATA)
+        db #46,#4F,#52,#4D,#41,#54,#20,#44,#49,#53,#43,#20,#28,#44,#41,#54
+        db #41,#29,#00
+msg_en_item_setup:              ; SETUP        F4
+        db #53,#45,#54,#55,#50,#20,#20,#20,#20,#20,#20,#20,#20,#46,#34,#00
+msg_en_item_save_set:              ; SAVE SETTINGS
+        db #53,#41,#56,#45,#20,#53,#45,#54,#54,#49,#4E,#47,#53,#00
+msg_en_replace_q:              ; REPLACE
+        db #52,#45,#50,#4C,#41,#43,#45,#00
+msg_en_copying:              ; COPYING
+        db #43,#4F,#50,#59,#49,#4E,#47,#00
+msg_en_wait:              ; PLEASE WAIT
+        db #50,#4C,#45,#41,#53,#45,#20,#57,#41,#49,#54,#00
+msg_en_format_q:              ; FORMAT
+        db #46,#4F,#52,#4D,#41,#54,#00
+msg_en_format_lost:              ; ALL FILES ARE LOST
+        db #41,#4C,#4C,#20,#46,#49,#4C,#45,#53,#20,#41,#52,#45,#20,#4C,#4F
+        db #53,#54,#00
+msg_en_formatting:              ; FORMATTING THE DISC
+        db #46,#4F,#52,#4D,#41,#54,#54,#49,#4E,#47,#20,#54,#48,#45,#20,#44
+        db #49,#53,#43,#00
+msg_en_set_title:              ; SETUP
+        db #53,#45,#54,#55,#50,#00
+msg_en_set_view:              ; START VIEW
+        db #53,#54,#41,#52,#54,#20,#56,#49,#45,#57,#00
+msg_en_set_lang:              ; LANGUAGE
+        db #4C,#41,#4E,#47,#55,#41,#47,#45,#00
+msg_en_set_delay:              ; REPEAT DELAY
+        db #52,#45,#50,#45,#41,#54,#20,#44,#45,#4C,#41,#59,#00
+msg_en_set_rate:              ; REPEAT SPEED
+        db #52,#45,#50,#45,#41,#54,#20,#53,#50,#45,#45,#44,#00
+msg_en_set_amx:              ; AMX MOUSE
+        db #41,#4D,#58,#20,#4D,#4F,#55,#53,#45,#00
+msg_en_set_amx_mode:              ; AMX READING
+        db #41,#4D,#58,#20,#52,#45,#41,#44,#49,#4E,#47,#00
+msg_en_set_desk:              ; DESK COLOUR
+        db #44,#45,#53,#4B,#20,#43,#4F,#4C,#4F,#55,#52,#00
+msg_en_vw_desktop:              ; DESKTOP
+        db #44,#45,#53,#4B,#54,#4F,#50,#00
+msg_en_vw_launcher:              ; LAUNCHER
+        db #4C,#41,#55,#4E,#43,#48,#45,#52,#00
+msg_en_vw_commander:              ; COMMANDER
+        db #43,#4F,#4D,#4D,#41,#4E,#44,#45,#52,#00
+msg_en_val_english:              ; ENGLISH
+        db #45,#4E,#47,#4C,#49,#53,#48,#00
+msg_en_val_short:              ; SHORT
+        db #53,#48,#4F,#52,#54,#00
+msg_en_val_medium:              ; MEDIUM
+        db #4D,#45,#44,#49,#55,#4D,#00
+msg_en_val_long:              ; LONG
+        db #4C,#4F,#4E,#47,#00
+msg_en_val_slow:              ; SLOW
+        db #53,#4C,#4F,#57,#00
+msg_en_val_fast:              ; FAST
+        db #46,#41,#53,#54,#00
+msg_en_val_on:              ; ON
+        db #4F,#4E,#00
+msg_en_val_off:              ; OFF
+        db #4F,#46,#46,#00
+msg_en_val_pulses:              ; PULSES
+        db #50,#55,#4C,#53,#45,#53,#00
+msg_en_val_levels:              ; LEVELS
+        db #4C,#45,#56,#45,#4C,#53,#00
+msg_en_col_blue:              ; BLUE
+        db #42,#4C,#55,#45,#00
+msg_en_col_black:              ; BLACK
+        db #42,#4C,#41,#43,#4B,#00
+msg_en_col_green:              ; GREEN
+        db #47,#52,#45,#45,#4E,#00
+msg_en_col_red:              ; RED
+        db #52,#45,#44,#00
+msg_en_set_keys:              ; UP DOWN CHOOSE  LEFT RIGHT CHANGE  ^S SAVE
+        db #55,#50,#20,#44,#4F,#57,#4E,#20,#43,#48,#4F,#4F,#53,#45,#20,#20
+        db #4C,#45,#46,#54,#20,#52,#49,#47,#48,#54,#20,#43,#48,#41,#4E,#47
+        db #45,#20,#20,#5E,#53,#20,#53,#41,#56,#45,#00
+msg_en_set_saved:              ; SAVED IN A:SETUP.CFG
+        db #53,#41,#56,#45,#44,#20,#49,#4E,#20,#41,#3A,#53,#45,#54,#55,#50
+        db #2E,#43,#46,#47,#00
 
 ; English keyboard map: key number -> character (0 = none)
 kbd_map:

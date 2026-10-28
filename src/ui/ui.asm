@@ -397,6 +397,55 @@ ui_window:
         ld a,(uw_h)
         ret
 
+; ui_busy - A = MSG_*: a small "please wait" window with that text,
+; while the disc works. ui_restore takes it away.
+ui_busy:
+        ld (uw_title),a
+        call ui_msg
+        ld b,a
+        push bc
+        ld a,MSG_WAIT
+        call ui_msg
+        pop bc
+        cp b
+        jr c,.width
+        ld b,a
+.width:
+        ld a,b
+        add a,4
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld (uw_w),hl
+        ld a,34
+        ld (uw_h),a
+        call ui_centre
+        call ui_save_window
+        ld a,(uw_title)
+        push af
+        ld a,MSG_WAIT
+        call ui_window
+        ld a,UIP_TEXT
+        ld c,UIP_BAR
+        call ui_colours
+        pop af
+        call lang_msg
+        ld b,h
+        ld c,l
+        ld hl,(uw_x)
+        ld de,16
+        add hl,de
+        ld de,(uw_y)
+        ld a,18
+        add a,e
+        ld e,a
+        jr nc,.y
+        inc d
+.y:
+        jp txt_print
+
 ; A = characters -> HL = x that centres them in the window (multiple of 8)
 ui_centre_text:
         ld l,a

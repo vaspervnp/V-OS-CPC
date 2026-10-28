@@ -40,6 +40,7 @@ cm_init:
         call ui_set_widgets
         xor a
         ld (ptr_keys_on),a
+        ld a,(sys_drive)            ; the file selected in the last view
         ld (cm_active),a
         ld a,1
         call ui_set_mode
@@ -215,6 +216,8 @@ cm_command:
         jp z,cm_delete
         cp CMD_RENAME
         jp z,cm_rename
+        cp CMD_FORMAT
+        jp z,cm_format
         jp view_command
 
 ; ---------------------------------------------------------------------
@@ -257,6 +260,17 @@ cm_load:
         call fs_catalog
         jr c,.failed
         ld (cm_n),a
+        ld a,(cm_p)                 ; the active panel: the selected file
+        ld hl,cm_active
+        cp (hl)
+        jr nz,.listed
+        call file_find
+        jr c,.listed
+        ld hl,cm_sel
+        call cm_at
+        ld (hl),a
+.listed:
+        ld a,(cm_n)
         ld l,a                      ; count * 16 bytes to bank 7
         ld h,0
         add hl,hl
@@ -558,6 +572,7 @@ cm_entry:
 ; A = panel to make active
 cm_activate:
         ld (cm_active),a
+        call cm_remember
         xor a
         call .redraw
         ld a,1
@@ -601,6 +616,11 @@ cm_select:
         call cm_at
         ld b,(hl)                   ; old
         ld (hl),a
+        push af
+        push bc
+        call cm_remember
+        pop bc
+        pop af
         ld c,a
         ld hl,cm_top
         call cm_at
@@ -655,6 +675,18 @@ cm_selected:
         or a
         ret
 
+; the active panel's selection, for the next view
+cm_remember:
+        ld a,(cm_p)
+        push af
+        call cm_selected
+        pop bc
+        jr c,.back
+        ld (sys_drive),a
+.back:
+        ld a,b
+        jp cm_set_p
+
 ; ---------------------------------------------------------------------
 ; file commands (kernel/files.asm); afterwards the changed drive is
 ; read again
@@ -688,18 +720,27 @@ cm_rename:
         ld a,(cm_active)
         jp cm_load
 
+; format the active panel's drive
+cm_format:
+        ld a,(cm_active)
+        call file_format
+        ret c
+        ld a,(cm_active)
+        jp cm_load
+
 ; ---- menus ----------------------------------------------------------
 cm_bar:
         db 3
         dw cm_menu_file, menu_view, menu_help
 cm_menu_file:
-        db MSG_MENU_FILE, 8
+        db MSG_MENU_FILE, 9
         db MSG_ITEM_INFO, CMD_INFO, 0, 0
         db MSG_ITEM_COPY, CMD_COPY, "C", 0
         db MSG_ITEM_DELETE, CMD_DELETE, "D", 0
         db MSG_ITEM_RENAME, CMD_RENAME, "N", 0
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_REFRESH, CMD_REFRESH, "R", 0
+        db MSG_ITEM_FORMAT, CMD_FORMAT, 0, 0
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_QUIT, CMD_QUIT, "Q", 0
 

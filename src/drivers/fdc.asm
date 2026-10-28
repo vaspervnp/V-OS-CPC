@@ -11,6 +11,8 @@
 ; fdc_init          motor off, SPECIFY, track unknown
 ; fdc_read          D = track, E = sector ID, HL = 512-byte buffer
 ; fdc_write         same, writes the buffer
+; fdc_format        D = track, E = first sector ID: 9 sectors of 512
+;                   bytes filled with #E5, interleaved as AMSDOS does
 ; fdc_read_id       A = ID of the first sector found on the current track
 ; fdc_recalibrate   head to track 0
 ; fdc_select        A = drive for the calls above
@@ -34,6 +36,7 @@ FDC_CMD_SEEK    equ #0F
 FDC_CMD_WRITE   equ #45             ; MFM, one side
 FDC_CMD_READ    equ #46
 FDC_CMD_READ_ID equ #4A
+FDC_CMD_FORMAT  equ #4D             ; MFM format track
 
 FDC_ERR_NOT_READY equ 1
 FDC_ERR_PROTECTED equ 2
@@ -315,6 +318,9 @@ fdc_read_id:
 ; ---------------------------------------------------------------------
 ; fdc_read / fdc_write - D = track, E = sector ID, HL = buffer
 ; ---------------------------------------------------------------------
+fdc_format:
+        ld a,FDC_CMD_FORMAT
+        jr fdc_rw
 fdc_read:
         ld a,FDC_CMD_READ
         jr fdc_rw
@@ -364,10 +370,12 @@ fdc_rw:
         ld (fdc_busy),a
         ret
 
-; one sector, the transfer itself
+; one sector, the transfer itself (or a whole track for FORMAT)
 fdc_transfer:
         di
         ld a,(fdc_cmd)
+        cp FDC_CMD_FORMAT
+        jr z,.format
         call fdc_send
         ld a,(fdc_drive)            ; head 0
         call fdc_send
@@ -387,7 +395,7 @@ fdc_transfer:
         call fdc_send
         ld a,(fdc_abort)            ; a command byte timed out
         or a
-        jr nz,.done
+        jp nz,.done
         ld hl,(fdc_buf)
         ld de,0                     ; bounds the waits of the whole sector
         ld bc,FDC_STATUS
@@ -428,6 +436,34 @@ fdc_transfer:
         inc hl
         dec c
         jp .write
+.format:
+        call fdc_send               ; #4D, drive, N, sectors, gap, filler
+        ld a,(fdc_drive)
+        call fdc_send
+        ld a,2
+        call fdc_send
+        ld a,9
+        call fdc_send
+        ld a,#52
+        call fdc_send
+        ld a,#E5
+        call fdc_send
+        ld hl,fdc_interleave        ; then C, H, R, N of each sector
+.id:
+        ld a,(fdc_sector + 1)
+        call fdc_send
+        xor a
+        call fdc_send
+        ld a,(fdc_sector)
+        add a,(hl)
+        call fdc_send
+        ld a,2
+        call fdc_send
+        inc hl
+        ld a,(hl)
+        inc a
+        jr nz,.id
+        jp .done
 .timeout:
         ld a,1
         ld (fdc_abort),a
@@ -480,6 +516,8 @@ fdc_error:
         ret nz
         ld a,FDC_ERR_OTHER
         ret
+
+fdc_interleave: db 0, 5, 1, 6, 2, 7, 3, 8, 4, #FF
 
 ; ---- state ----------------------------------------------------------
 fdc_drive:      db 0                ; 0 = A:, 1 = B:

@@ -3,8 +3,8 @@
 ;
 ; Sets up the screen, the disc and the language pack, then starts the
 ; first view and hands it every event. Views are overlays
-; (kernel/view.asm); F1/F2/F3 switch between Desktop, Launcher and
-; Commander.
+; (kernel/view.asm); F1-F4 switch between Desktop, Launcher, Commander
+; and Setup.
 ; =====================================================================
 
 kernel_entry:
@@ -17,6 +17,7 @@ kernel_entry:
         ei
         call fdc_init
         call lang_init              ; GREEK.LNG from the disc
+        call cfg_load               ; SETUP.CFG, if there is one
         ld a,1                      ; a plain desk until the view is up
         call ui_set_mode
         ld hl,palette_mode1

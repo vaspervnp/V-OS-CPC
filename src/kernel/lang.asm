@@ -276,7 +276,7 @@ lang_loaded:    db 0
 lang_ui:        db 0
 lang_input:     db 0
 lang_code:      db "EN"
-lang_name:      ds 12
+lang_name:      ds 13               ; 12 + a zero
 lm_id:          db 0
 lang_file:      db "GREEK   LNG"
 ; tables in the video RAM gaps (memmap.inc)

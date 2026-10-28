@@ -51,6 +51,8 @@ dt_init:
         ld a,2
         ld (ptr_pen_out),a
         call ptr_clamp
+        ld a,(sys_drive)            ; the file selected in the last view
+        ld (dt_drive),a
         call dt_draw_screen
         jp dt_load
 
@@ -170,6 +172,10 @@ dt_load:
         ld (dt_free),a
         ld a,(fs_reserved)
         ld (dt_fmt),a
+        call file_find              ; the selected file, if it is here
+        jr c,.clamp
+        ld (dt_sel),a
+.clamp:
         ld a,(dt_sel)               ; selection still inside the list
         ld hl,dt_count
         cp (hl)
@@ -183,6 +189,7 @@ dt_load:
 .sel_ok:
         xor a
         ld (dt_top),a
+        call dt_remember
         call dt_scroll
         ; fall through
 
@@ -470,6 +477,7 @@ dt_select:
         ld b,(hl)
         ld (hl),a
         push bc
+        call dt_remember
         call dt_scroll
         pop bc
         jp c,dt_draw_cells
@@ -487,6 +495,23 @@ dt_select:
         ld a,(dt_sel)
         sub c
         jp dt_draw_cell
+
+; the selection, for the next view
+dt_remember:
+        ld a,(dt_count)
+        or a
+        ret z
+        ld a,(dt_sel)
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,FS_CAT
+        add hl,de
+        ld a,(dt_drive)
+        jp file_select
 
 ; A = drive to open
 dt_open_drive:

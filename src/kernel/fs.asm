@@ -28,6 +28,9 @@
 ;               whole file, sector by sector, header and all, 16K at
 ;               a time through bank 4; any size
 ; fs_rename     HL = name, DE = new name, on the drive selected
+; fs_exists     HL = name, on the drive selected -> carry if it is not
+;               there (or the disc cannot be read)
+; fs_format     the drive selected: 40 tracks in DATA format, empty
 ; fs_delete     HL = name
 ; fs_free_k     -> A = free kilobytes (after a mount)
 ; All return carry set and A = FDC_ERR_* or FS_ERR_* on failure.
@@ -713,6 +716,28 @@ fs_delete:
         call fs_write_dir
         ret c
         jp fs_build_map
+
+; ---------------------------------------------------------------------
+fs_exists:
+        call fs_set_name
+        call fs_mount
+        ret c
+        xor a
+        jp fs_find
+
+fs_format:
+        xor a
+.track:
+        ld (fs_e),a
+        ld d,a
+        ld e,#C1
+        call fdc_format
+        ret c
+        ld a,(fs_e)
+        inc a
+        cp 40
+        jr c,.track
+        ret
 
 ; ---------------------------------------------------------------------
 ; fs_rename

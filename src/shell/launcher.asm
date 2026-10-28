@@ -107,6 +107,29 @@ ln_load:
         inc c
         djnz .file
 .listed:
+        ld a,(sys_drive)            ; the program selected in the last view
+        or a
+        jr nz,.remember
+        call file_find
+        jr c,.remember
+        ld hl,ln_list               ; its place among the programs
+        ld a,(ln_count)
+        or a
+        jr z,.remember
+        ld b,a
+        ld c,0
+.place:
+        cp (hl)
+        jr z,.found
+        inc hl
+        inc c
+        djnz .place
+        jr .remember
+.found:
+        ld a,c
+        ld (ln_sel),a
+.remember:
+        call ln_remember
         ; fall through
 
 ln_draw_tiles:
@@ -373,6 +396,7 @@ ln_select:
         ld b,(hl)
         ld (hl),a
         push bc
+        call ln_remember
         ld a,b
         call ln_first
         ld c,a
@@ -391,6 +415,27 @@ ln_select:
         ld a,(ln_sel)
         sub c
         jp ln_draw_tile
+
+; the selection, for the next view
+ln_remember:
+        ld a,(ln_count)
+        or a
+        ret z
+        ld a,(ln_sel)
+        ld e,a
+        ld d,0
+        ld hl,ln_list
+        add hl,de
+        ld l,(hl)
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,FS_CAT
+        add hl,de
+        xor a
+        jp file_select
 
 ; ---------------------------------------------------------------------
 ln_event:
