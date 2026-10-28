@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """mktexts - a program's texts (VOS_TEXTS) from a text file.
 
-usage: mktexts.py texts.txt out.asm
+usage: mktexts.py texts.txt out.asm [label]
 
 Lines: NAME | English | the pack's language (Greek), "#" starts a
 comment. Writes T_NAME equ VT_FIRST + n for each, and the table
-"texts:" for VOS_TEXTS, Greek in ISO 8859-7. An empty third column
-uses the English text.
+"texts:" (or "label:") for VOS_TEXTS, Greek in ISO 8859-7. An empty
+third column uses the English text. A program with more than 64 texts
+keeps a second table and switches to it with VOS_TEXTS.
 """
 import sys
 
@@ -20,8 +21,10 @@ def data(label, text, codec):
 
 
 def main():
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         sys.exit(__doc__.split("\n")[2])
+    label = sys.argv[3] if len(sys.argv) == 4 else "texts"
+    pre = "t" if label == "texts" else label + "_"
     rows = []
     for n, line in enumerate(open(sys.argv[1], encoding="utf-8"), 1):
         line = line.rstrip("\n")
@@ -36,13 +39,13 @@ def main():
     out = [f"; made by tools/mktexts.py from {sys.argv[1]}: do not edit", ""]
     for i, (name, _, _) in enumerate(rows):
         out.append(f"T_{name:<14} equ VT_FIRST + {i}")
-    out += ["", f"texts:  db {len(rows)}"]
+    out += ["", f"{label}:  db {len(rows)}"]
     for i, (name, _, el) in enumerate(rows):
-        out.append(f"        dw te_{i}, {'tg_' + str(i) if el else 0}")
+        out.append(f"        dw {pre}e_{i}, {pre + 'g_' + str(i) if el else 0}")
     for i, (name, en, el) in enumerate(rows):
-        out.append(data(f"te_{i}", en, "ascii"))
+        out.append(data(f"{pre}e_{i}", en, "ascii"))
         if el:
-            out.append(data(f"tg_{i}", el, "iso8859_7"))
+            out.append(data(f"{pre}g_{i}", el, "iso8859_7"))
     open(sys.argv[2], "w", encoding="utf-8").write("\n".join(out) + "\n")
 
 

@@ -1,4 +1,5 @@
-# Studio texts: NAME | English | Greek (tools/mktexts.py, at most 64).
+# Studio texts: NAME | English | Greek (tools/mktexts.py, at most 64);
+# the blocks' texts are in blocks.txt, a second table.
 # Mode 0 menus and the sprite panel: at most 11-14 characters; the
 # status line (mode 1): at most 48.
 
@@ -15,6 +16,7 @@ DELETE      | DELETE LINE           | ΣΒΗΣΕ ΓΡΑΜΜΗ
 ADD_SPRITE  | + SPRITE              | + ΑΝΤΙΚΕΙΜΕΝΟ
 DEL_SPRITE  | - SPRITE              | - ΑΝΤΙΚΕΙΜΕΝΟ
 BG          | BACKGROUND            | ΦΟΝΤΟ
+MODE        | SCREEN MODE           | MODE ΟΘΟΝΗΣ
 
 # palette categories
 C_EVENTS    | EVENTS                | ΓΕΓΟΝΟΤΑ
@@ -22,34 +24,7 @@ C_CONTROL   | CONTROL               | ΕΛΕΓΧΟΣ
 C_MOTION    | MOTION                | ΚΙΝΗΣΗ
 C_LOOKS     | LOOKS/SOUND           | ΕΜΦΑΝ./ΗΧΟΣ
 C_VARS      | VARIABLES             | ΜΕΤΑΒΛΗΤΕΣ
-
-# blocks, in OP_* order: ~n is slot n
-OP_START    | WHEN START ~0         | ΟΤΑΝ ΞΕΚΙΝΑ ~0
-OP_KEY      | WHEN KEY ~1 ~0        | ΟΤΑΝ ΠΛΗΚΤΡΟ ~1 ~0
-OP_CLICK    | WHEN CLICKED ~0       | ΟΤΑΝ ΚΛΙΚ ~0
-OP_FOREVER  | FOREVER               | ΓΙΑ ΠΑΝΤΑ
-OP_REPEAT   | REPEAT ~0             | ΕΠΑΝΑΛΑΒΕ ~0
-OP_IF       | IF ~0 ~1 ~2           | ΑΝ ~0 ~1 ~2
-OP_ELSE     | ELSE                  | ΑΛΛΙΩΣ
-OP_END      | END                   | ΤΕΛΟΣ
-OP_WAIT     | WAIT ~0               | ΠΕΡΙΜΕΝΕ ~0
-OP_UNTIL    | WAIT UNTIL ~0 ~1 ~2   | ΠΕΡΙΜΕΝΕ ΩΣ ~0 ~1 ~2
-OP_STOP     | STOP                  | ΣΤΑΜΑΤΑ
-OP_GOTO     | GO TO ~0 ~1           | ΠΗΓΑΙΝΕ ~0 ~1
-OP_CHX      | CHANGE X ~0           | ΑΛΛΑΞΕ X ~0
-OP_CHY      | CHANGE Y ~0           | ΑΛΛΑΞΕ Y ~0
-OP_SPEED    | SPEED ~0 ~1           | ΤΑΧΥΤΗΤΑ ~0 ~1
-OP_MOVE     | MOVE                  | ΚΙΝΗΣΟΥ
-OP_BOUNCE   | BOUNCE                | ΑΝΑΠΗΔΗΣΕ
-OP_COLOUR   | COLOUR ~0             | ΧΡΩΜΑ ~0
-OP_SHOW     | SHOW                  | ΕΜΦΑΝΙΣΟΥ
-OP_HIDE     | HIDE                  | ΚΡΥΨΟΥ
-OP_PRINT    | PRINT ~0 AT ~1 ~2     | ΓΡΑΨΕ ~0 ΣΤΟ ~1 ~2
-OP_NOTE     | NOTE ~0 FOR ~1        | ΝΟΤΑ ~0 ΓΙΑ ~1
-OP_SET      | SET ~0 TO ~1          | ΘΕΣΕ ~0 ΣΕ ~1
-OP_CHANGE   | CHANGE ~0 BY ~1       | ΑΛΛΑΞΕ ~0 ΚΑΤΑ ~1
-OP_RECEIVE  | WHEN I RECEIVE ~1 ~0  | ΟΤΑΝ ΛΑΒΕΙ ~1 ~0
-OP_BROADCAST | SEND ~0              | ΣΤΕΙΛΕ ~0
+C_WINDOWS   | WINDOWS               | ΠΑΡΑΘΥΡΑ
 
 # words in slots and panels
 W_KEY       | KEY                   | ΠΛΗΚΤΡΟ
@@ -59,14 +34,16 @@ W_RND       | RANDOM                | ΤΥΧΑΙΟ
 W_STAGE     | STAGE                 | ΣΚΗΝΗ
 W_SPRITE    | SPRITE                | ΑΝΤΙΚ.
 W_SPRITES   | SPRITES               | ΑΝΤΙΚΕΙΜΕΝΑ
+W_BUTTON    | BUTTON                | ΚΟΥΜΠΙ
 
 # the status line: what the keys do here
 H_LINE      | RETURN: ADD BLOCK  CLR: DELETE  TAB: PALETTE  | RETURN: ΝΕΟ ΜΠΛΟΚ  CLR: ΣΒΗΣΙΜΟ  TAB: ΠΑΛΕΤΑ
-H_VALUE     | 0-9 - A-H X Y  R:RANDOM K:KEY T:TOUCH Z:EDGE | 0-9 - A-H X Y  R:ΤΥΧΑΙΟ K:ΠΛΗΚΤΡΟ T Z:ΑΚΡΗ
+H_VALUE     | 0-9 - A-H X Y R:RND K:KEY T:TOUCH Z:EDGE P:BTN | 0-9 - A-H X Y R:ΤΥΧ K:ΠΛΗΚΤΡΟ T Z:ΑΚΡΗ P:ΚΟΥΜΠΙ
 H_VAR       | A-H: VARIABLE         | A-H: ΜΕΤΑΒΛΗΤΗ
 H_CMP       | < = >  SPACE: NONE    | < = >  SPACE: ΚΑΝΕΝΑ
 H_SPR       | 0: STAGE  1-6: SPRITE | 0: ΣΚΗΝΗ  1-6: ΑΝΤΙΚΕΙΜΕΝΟ
 H_KEYN      | RETURN, THEN PRESS THE KEY | RETURN ΚΑΙ ΜΕΤΑ ΤΟ ΠΛΗΚΤΡΟ
+H_TEXT      | RETURN: CHANGE THE TEXT | RETURN: ΑΛΛΑΓΗ ΚΕΙΜΕΝΟΥ
 H_AWAIT     | PRESS THE KEY         | ΠΑΤΗΣΕ ΤΟ ΠΛΗΚΤΡΟ
 H_PAL       | ARROWS: CHOOSE  RETURN: ADD  TAB: STAGE | ΒΕΛΑΚΙΑ: ΕΠΙΛΟΓΗ  RETURN: ΠΡΟΣΘΗΚΗ  TAB: ΣΚΗΝΗ
 H_STAGE     | ARROWS: MOVE  1-6  C: COLOUR  W H: SIZE  TAB | ΒΕΛΑΚΙΑ: ΘΕΣΗ  1-6  C: ΧΡΩΜΑ  W H: ΜΕΓΕΘΟΣ  TAB
@@ -76,4 +53,5 @@ M_SAVED     | SAVED                 | ΑΠΟΘΗΚΕΥΤΗΚΕ
 M_FULL      | NO MORE ROOM          | ΔΕΝ ΧΩΡΑΕΙ ΑΛΛΟ
 D_NEW       | CLEAR THE PROGRAM?    | ΝΑ ΣΒΗΣΤΕΙ|ΤΟ ΠΡΟΓΡΑΜΜΑ;
 I_NAME      | PROGRAM NAME          | ΟΝΟΜΑ ΠΡΟΓΡΑΜΜΑΤΟΣ
+I_TEXT      | TEXT                  | ΚΕΙΜΕΝΟ
 O_TITLE     | OPEN A .VBS           | ΑΝΟΙΓΜΑ .VBS

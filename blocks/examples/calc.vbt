@@ -1,0 +1,76 @@
+# CALC: a calculator in a window, made of Studio's blocks, in mode 1
+# (tools/mkvbs.py makes CALC.VBS and CALC.BIN; Studio opens CALC.VBS).
+# Buttons are numbered in the order they appear: 0..9 are the digits,
+# then + - * / = C (10..15). Their texts have spaces round them, for
+# wider buttons (5 characters: 40 pixels in mode 1).
+# A: the number shown, B: the result so far, C: the operation waiting
+# (0: none, else its button), D: 1 when the next digit starts a number.
+MODE 1
+BG 2
+
+START STAGE
+WINDOW "ΑΡΙΘΜΟΜΗΧΑΝΗ" 216 126
+BUTTON " 0 " 56 90
+BUTTON " 1 " 8 70
+BUTTON " 2 " 56 70
+BUTTON " 3 " 104 70
+BUTTON " 4 " 8 50
+BUTTON " 5 " 56 50
+BUTTON " 6 " 104 50
+BUTTON " 7 " 8 30
+BUTTON " 8 " 56 30
+BUTTON " 9 " 104 30
+BUTTON " + " 152 90
+BUTTON " - " 152 70
+BUTTON " * " 152 50
+BUTTON " / " 152 30
+BUTTON " = " 104 90
+BUTTON " C " 8 90
+PRINT A 16 8
+
+PRESSED STAGE
+# a digit
+IF BUTTON < 10
+  IF D = 1
+    SET A 0
+    SET D 0
+  END
+  MUL A 10
+  CHANGE A BUTTON
+  PRINT A 16 8
+END
+# C: all again
+IF BUTTON = 15
+  SET A 0
+  SET B 0
+  SET C 0
+  SET D 0
+  PRINT A 16 8
+END
+# + - * / =: the operation waiting, then this one waits
+IF BUTTON > 9
+  IF BUTTON < 15
+    IF C = 0
+      SET B A
+    END
+    IF C = 10
+      CHANGE B A
+    END
+    IF C = 11
+      SUB B A
+    END
+    IF C = 12
+      MUL B A
+    END
+    IF C = 13
+      DIV B A
+    END
+    SET A B
+    PRINT A 16 8
+    SET D 1
+    SET C BUTTON
+    IF BUTTON = 14
+      SET C 0
+    END
+  END
+END

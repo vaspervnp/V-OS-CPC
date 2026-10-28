@@ -14,7 +14,12 @@
 ;   lists           dw length, dw room, then room words
 ;   rt_stacks, rt_state  room for the scripts' stacks and state
 ; SCRIPT_COUNT, SPRITE_COUNT and PROG_BG are immediates at rt_nscripts_n,
-; rt_nsprites_n and rt_bg_n: blocks/player.asm sets them when it starts.
+; rt_nsprites_n and rt_bg_n, PROG_MODE at rt_mode_1, PROG_WIDTH (a word)
+; at rt_width_n: blocks/player.asm sets them when it starts. (The
+; player has no costumes: images are drawn for PROG_MODE as assembled.)
+; With RT_UI defined (the player) the program also provides rt_texts,
+; rt_ui_redraw (after the stage is cleared) and rt_pressed (A = a
+; command from RT_CMD_BUTTON: a button was pressed).
 ;
 ; Scripts are coroutines: each has its own stack and gives the processor
 ; back (rt_yield) at the end of every loop pass and in waits. On each
@@ -30,6 +35,7 @@ EVT_START       equ 0
 EVT_KEY         equ 1               ; parameter: key number, #FF any key
 EVT_CLICK       equ 2               ; script's sprite clicked (#FF stage)
 EVT_RECEIVE     equ 3               ; parameter: message number
+EVT_BUTTON      equ 4               ; any button (RT_UI)
 
 SP_X            equ 0               ; sprite record (words are signed)
 SP_Y            equ 2
@@ -65,6 +71,7 @@ RT_PPB          equ 4
         ENDIF
 
 RT_CMD_STOP     equ 1
+RT_CMD_BUTTON   equ 32              ; and up: the buttons (RT_UI)
 T_RT_MENU       equ VT_FIRST
 T_RT_STOP       equ VT_FIRST + 1
 
@@ -73,6 +80,7 @@ rt_init:
         ld hl,rt_texts
         call VOS_TEXTS
         ld a,PROG_MODE
+rt_mode_1 equ $ - 1
         call VOS_MODE
         ld hl,prog_palette
         call VOS_PALETTE
@@ -94,6 +102,9 @@ rt_redraw:
 rt_bg_1 equ $ - 1
         call VOS_CLS
         call VOS_DRAW_BAR
+        IFDEF RT_UI
+        call rt_ui_redraw
+        ENDIF
         ld ix,prog_sprites
         ld b,SPRITE_COUNT
 rt_nsprites_1 equ $ - 1
@@ -151,6 +162,10 @@ rt_event:
 .command:
         cp RT_CMD_STOP
         jp z,VOS_EXIT
+        IFDEF RT_UI
+        cp RT_CMD_BUTTON
+        jp nc,rt_pressed
+        ENDIF
         jp VOS_COMMAND
 
 rt_frame:
@@ -386,10 +401,13 @@ rt_bounce:
         ld e,(ix + SP_W)
         ld d,0
         add hl,de
-        ld de,PROG_WIDTH + 1
+        ld de,PROG_WIDTH
+rt_width_1 equ $ - 2
+        inc de
         call rt_lt_signed           ; x + w <= width ?
         jr c,.top
         ld hl,PROG_WIDTH
+rt_width_2 equ $ - 2
         ld e,(ix + SP_W)
         ld d,0
         or a
@@ -498,6 +516,7 @@ rt_at_edge:
         ld d,0
         add hl,de
         ld de,PROG_WIDTH
+rt_width_3 equ $ - 2
         call rt_lt_signed           ; x + w < width
         jr nc,rt_true
         ld l,(ix + SP_Y)
@@ -809,6 +828,7 @@ rt_clip:
 .right:
         ld hl,(rt_box)
         ld de,PROG_WIDTH
+rt_width_4 equ $ - 2
         call rt_lt_signed
         jr nc,.none
         ex de,hl
@@ -1478,9 +1498,11 @@ rt_bar:         db 3
                 dw rt_menu, 0, 0
 rt_menu:        db T_RT_MENU, 1
                 db T_RT_STOP, RT_CMD_STOP, "Q", 0
+        IFNDEF RT_UI
 rt_texts:       db 2
                 dw rt_t_menu_en, rt_t_menu_el
                 dw rt_t_stop_en, rt_t_stop_el
+        ENDIF
 rt_t_menu_en:   db "PROGRAM", 0
 rt_t_stop_en:   db "STOP", 0
 rt_t_menu_el:   db #D0, #D1, #CF, #C3, #D1, #C1, #CC, #CC, #C1, 0   ; ΠΡΟΓΡΑΜΜΑ

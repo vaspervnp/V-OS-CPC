@@ -5,6 +5,8 @@
 #   make test-input  build/vos_test.dsk (drive A) and build/vos_b.dsk
 #                 (drive B) with scripted key presses
 #                 (src/kernel/test_script.asm) and six screenshots
+#   make test-calc   the calculator (CALC.BIN) clicked, then CALC.VBS
+#                 in Studio (TEST_SCRIPT=2)
 #   make test-amsdos  the same script, then AMSDOS in BASIC reads the
 #                 files V-OS wrote (one screenshot)
 #   make test-reboot  the same, then RUN"VOS" with the saved SETUP.CFG
@@ -25,7 +27,7 @@ IDSK    ?= iDSK
 LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG
 
-.PHONY: all run shot test-input test-amsdos test-reboot test-system clean
+.PHONY: all run shot test-input test-calc test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -47,7 +49,8 @@ endef
 
 # Programs (apps/): each is assembled on its own, with only the API
 # include, and goes on the disc as a binary loading at #4000.
-APPS    := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/STUDIO.BIN $(BUILD)/PONG.BIN $(BUILD)/CATCH.BIN $(BUILD)/STARCAT.BIN
+APPS    := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/STUDIO.BIN $(BUILD)/PONG.BIN $(BUILD)/CATCH.BIN $(BUILD)/STARCAT.BIN \
+           $(BUILD)/CALC.BIN $(BUILD)/CALC.VBS
 APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
 
 # Icons for the Launcher (VOS_ICON): text in apps/icons, made into
@@ -62,17 +65,22 @@ $(BUILD)/DEMO.BIN: apps/demo/demo.asm $(BUILD)/icon_demo.asm src/api/vos_api.inc
 $(BUILD)/MIXED.BIN: apps/mixed/mixed.asm $(BUILD)/icon_mixed.asm src/api/vos_api.inc
 	$(RASM) apps/mixed/mixed.asm -I src -I $(BUILD) -o $(BUILD)/mixed > /dev/null
 
-# Studio: its texts (English and Greek) come from texts.txt
+# Studio: its texts (English and Greek) come from texts.txt, the
+# blocks' texts from blocks.txt (a second table)
 $(BUILD)/studio_texts.asm: apps/studio/texts.txt tools/mktexts.py
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mktexts.py $< $@
+
+$(BUILD)/studio_blocks.asm: apps/studio/blocks.txt tools/mktexts.py
+	@mkdir -p $(BUILD)
+	$(PYTHON) -I tools/mktexts.py $< $@ block_texts
 
 # Studio carries the player (blocks/player.asm): the runtime and a
 # compiler for Studio's programs, which RUN writes in front of one.
 $(BUILD)/VBRUN.BIN: blocks/player.asm blocks/runtime.asm $(BUILD)/icon_blocks.asm src/api/vos_api.inc
 	$(RASM) blocks/player.asm -I src -I blocks -I $(BUILD) -o $(BUILD)/vbrun > /dev/null
 
-$(BUILD)/STUDIO.BIN: apps/studio/studio.asm $(BUILD)/studio_texts.asm $(BUILD)/icon_studio.asm $(BUILD)/VBRUN.BIN src/api/vos_api.inc
+$(BUILD)/STUDIO.BIN: apps/studio/studio.asm $(BUILD)/studio_texts.asm $(BUILD)/studio_blocks.asm $(BUILD)/icon_studio.asm $(BUILD)/VBRUN.BIN src/api/vos_api.inc
 	$(RASM) apps/studio/studio.asm -I src -I $(BUILD) -o $(BUILD)/studio > /dev/null
 
 # Block programs (blocks/): compiled to assembly by vbc.py, with the
@@ -88,8 +96,13 @@ $(BUILD)/CATCH.BIN: blocks/examples/catch.vbp $(BLOCKS_RT)
 $(BUILD)/STARCAT.BIN: blocks/examples/starcat.vbp $(BLOCKS_RT)
 	$(PYTHON) -I blocks/vbc.py $< -o $(BUILD) > /dev/null
 
+# Studio programs from text (tools/mkvbs.py): the .VBS Studio opens, and
+# the .BIN its RUN would write (the player, then the program)
+$(BUILD)/CALC.BIN $(BUILD)/CALC.VBS &: blocks/examples/calc.vbt tools/mkvbs.py apps/studio/blocks.txt $(BUILD)/VBRUN.BIN
+	$(PYTHON) -I tools/mkvbs.py $< $(BUILD)/CALC.VBS $(BUILD)/VBRUN.BIN $(BUILD)/CALC.BIN
+
 define add_apps
-	for p in $(APPS); do $(IDSK) $(1) -i $$p -t 1 -c 4000 -e 4000 > /dev/null; done
+	for p in $(2); do $(IDSK) $(1) -i $$p -t 1 -c 4000 -e 4000 > /dev/null; done
 endef
 
 $(DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
@@ -97,7 +110,7 @@ $(DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@rm -f $(DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos -s -sl
 	$(call add_packs,$(DSK))
-	$(call add_apps,$(DSK))
+	$(call add_apps,$(DSK),$(APPS))
 	$(PYTHON) -I tools/dsk_ext.py $(DSK)
 
 run: $(DSK)
@@ -135,19 +148,41 @@ $(TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@rm -f $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_test -DTEST_SCRIPT=1
 	$(call add_packs,$(TEST_DSK))
-	$(call add_apps,$(TEST_DSK))
+	$(call add_apps,$(TEST_DSK),$(APPS))
 	$(PYTHON) -I tools/dsk_ext.py $(TEST_DSK)
 
 # Shots along the script (src/kernel/test_script.asm): Studio, a slot
 # typed into, a block added, the sprite moved, the name dialog, the
 # file list, the program opened again, running, and Studio after it.
 # One run per shot: runs are short, shots are per second.
-TEST_SHOTS := 230 290 350 410 450 560 680 830 960
+TEST_SHOTS := 230 290 350 410 450 560 680 830 1000
 test-input: $(TEST_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(TEST_SHOTS); do \
 	  $(call run_test,tools/cap32_shot.sh,$$d); \
 	done
+
+# The calculator (blocks/examples/calc.vbt) with clicks on its buttons,
+# then Studio with CALC.VBS (src/kernel/test_script.asm, TEST_SCRIPT=2).
+# src/vos.asm writes test builds to $(TEST_DSK): the image is moved.
+CALC_DSK := $(BUILD)/vos_calc.dsk
+CALC_SHOTS := 200 420 840 960
+$(CALC_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_calc -DTEST_SCRIPT=2
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-calc: $(CALC_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(CALC_SHOTS); do \
+	  cp $(CALC_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
 
 # Caprice32 keeps disc writes in memory only, so V-OS's writes are
 # checked in the same run: the script ends by restarting into BASIC.

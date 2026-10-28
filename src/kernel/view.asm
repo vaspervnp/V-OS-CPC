@@ -202,10 +202,12 @@ view_install:
         ld (ram_home_cfg),a
         ld a,(vw_n)
         ld (view_cur),a
-        xor a                       ; no frame events, no program texts
-        ld (view_ticks),a
+        xor a                       ; no frame events, no program texts,
+        ld (view_ticks),a           ; no buttons of the last program
         ld hl,api_no_texts
         ld (app_texts),hl
+        ld hl,ui_no_widgets
+        ld (ui_widgets),hl
         jp OV_INIT
 
 ; ev_cur: F1-F4 outside menus -> carry, a switch is requested

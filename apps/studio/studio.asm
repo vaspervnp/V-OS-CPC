@@ -19,7 +19,10 @@
 ; script for a sprite or the stage; FOREVER, REPEAT and IF open a
 ; block that END closes, so the script is indented from the lines
 ; alone. Each line has up to three slots (numbers, variables A..H,
-; sprite x, y, random, key held, touching, at an edge, comparisons).
+; sprite x, y, random, key held, touching, at an edge, the button
+; pressed, comparisons, texts). A text slot names one of the program's
+; 32 texts: adding WINDOW, BUTTON or TEXT takes a free one and asks for
+; it; RETURN or a click on the slot changes it.
 ;
 ; Keys: TAB moves between the script, the palette and the stage.
 ; Script: UP/DOWN choose the line, LEFT/RIGHT a slot, RETURN adds the
@@ -76,18 +79,28 @@ LIST_Y          equ 26
 LIST_H          equ 12
 
 ; ---- the program (VBS) ----------------------------------------------
-; db "VBS", version; db background pen, sprite count;
-; SPR_MAX sprites (dw x, y; db w, h, colour, 0); dw line count; lines.
+; db "VBS", version (2); db background pen (+ V_MODE1: the program
+; runs in mode 1, 384 pixels wide), sprite count;
+; SPR_MAX sprites (dw x, y; db w, h, colour, 0); TEXT_MAX texts of
+; TEXT_SIZE bytes (zero-terminated); dw line count; lines.
 ; A line: db OP_*, then 3 slots of db K_*, dw value.
+; Version 1 had no texts: OPEN makes room for them.
+VBS_VERSION     equ 2
 SPR_MAX         equ 6
 SPR_SIZE        equ 8
+TEXT_MAX        equ 32
+TEXT_SIZE       equ 16
+TEXT_CHARS      equ TEXT_SIZE - 2   ; VOS_INPUT needs 2 bytes more
 LINE_SIZE       equ 10
 MAX_LINES       equ 200
 V_BG            equ 4
+V_MODE1         equ #80             ; in V_BG
 V_NSPR          equ 5
 V_SPR           equ 6
-V_NLINES        equ V_SPR + SPR_MAX * SPR_SIZE
+V_TEXTS         equ V_SPR + SPR_MAX * SPR_SIZE
+V_NLINES        equ V_TEXTS + TEXT_MAX * TEXT_SIZE
 V_LINES         equ V_NLINES + 2
+V1_NLINES       equ V_TEXTS             ; version 1
 VBS_ROOM        equ 3 * 1024        ; files of up to 3K are read
 
 ; slot kinds
@@ -103,6 +116,8 @@ K_EDGE          equ 8               ; 1 at an edge of the stage
 K_CMP           equ 9               ; 0 <, 1 =, 2 >
 K_SPR           equ 10              ; 0 the stage, 1..6 a sprite
 K_KEYN          equ 11              ; a key (WHEN KEY)
+K_BUTTON        equ 12              ; the last button pressed (0..)
+K_TEXT          equ 13              ; text 0..TEXT_MAX-1
 ; what a slot may hold
 C_NONE          equ 0
 C_VALUE         equ 1               ; K_NUM..K_EDGE
@@ -110,6 +125,7 @@ C_VAR           equ 2
 C_CMP           equ 3               ; K_CMP or K_NONE
 C_SPR           equ 4
 C_KEYN          equ 5
+C_TEXT          equ 6
 ; block flags
 F_HAT           equ 1               ; starts a script
 F_OPEN          equ 2               ; opens a block, END closes it
@@ -125,9 +141,17 @@ OP_END          equ 7
 OP_SPEED        equ 14
 OP_MOVE         equ 15
 OP_BOUNCE       equ 16
-OP_RECEIVE      equ 24              ; after the first 24: old files stay good
-OP_BROADCAST    equ 25
-OP_COUNT        equ 26
+OP_RECEIVE      equ 24              ; new ones after the others: old
+OP_BROADCAST    equ 25              ; files stay good
+OP_SUB          equ 26
+OP_MUL          equ 27
+OP_DIV          equ 28
+OP_MOD          equ 29
+OP_WINDOW       equ 30
+OP_BUTTON       equ 31
+OP_PRESSED      equ 32
+OP_TEXT         equ 33
+OP_COUNT        equ 34
 OP_INFO         equ 13              ; flags, 3 classes, 3 default slots
 
 FOCUS_SCRIPT    equ 0
@@ -150,6 +174,7 @@ CMD_ADD_SPRITE  equ 7
 CMD_DEL_SPRITE  equ 8
 CMD_BG          equ 9
 CMD_RUN         equ 10
+CMD_MODE        equ 11
 
 KEY_CLR         equ 16
 ERR_BAD_NAME    equ 11              ; system error texts (fs.asm)
@@ -400,6 +425,8 @@ script_key:
         call slot_class
         cp C_KEYN
         jr z,.await
+        cp C_TEXT
+        jp z,edit_text
         call slot_ptr
         ld a,(hl)
         cp K_KEY
@@ -611,19 +638,29 @@ stage_key:
         ret nz
         ld de,-4
 .move_y:
-        ld bc,#0C00 + 259 - 12      ; 12..258
+        ld a,12                     ; 12..258
+        ld bc,259 - 12
         jr .move
 .move_x:
-        ld bc,#0000 + 192           ; 0..191
+        push hl                     ; 0..191, in mode 1 0..383
+        call prog_mode
+        pop hl
+        ld bc,192
+        or a
+        jr z,.move_x0
+        ld bc,384
+.move_x0:
+        xor a
 .move:
         call add_clamp
 .changed:
         ld a,R_STAGE
         jp parts
 
-; HL -> word, DE = delta, B = low, C = count: word = clamp(word + DE,
-; B, B + C - 1)
+; HL -> word, DE = delta, A = low, BC = count: word = clamp(word + DE,
+; A, A + BC - 1)
 add_clamp:
+        ld (ac_low),a
         push hl
         ld a,(hl)
         inc hl
@@ -632,25 +669,26 @@ add_clamp:
         add hl,de
         bit 7,h
         jr nz,.low
-        ld e,b
+        ld a,(ac_low)
+        ld e,a
         ld d,0
         or a
         sbc hl,de
         jr c,.low
-        ld e,c
-        sbc hl,de                   ; carry is clear
+        sbc hl,bc                   ; carry is clear
         jr c,.in
+        ld h,b
         ld l,c
-        ld h,0
         dec hl
         jr .base
 .in:
-        add hl,de
+        add hl,bc
         jr .base
 .low:
         ld hl,0
 .base:
-        ld e,b
+        ld a,(ac_low)
+        ld e,a
         ld d,0
         add hl,de
         ex de,hl
@@ -658,6 +696,13 @@ add_clamp:
         ld (hl),e
         inc hl
         ld (hl),d
+        ret
+
+; -> A = the program's mode, 0 or 1 (keeps BC, DE)
+prog_mode:
+        ld a,(vbs + V_BG)
+        rlca
+        and 1
         ret
 
 ; HL -> the chosen sprite
@@ -718,12 +763,17 @@ click:
         ld a,(k_row)
         cp STG_H
         ret nc
-        ld hl,(click_x)                 ; x = (px - STG_X) * 2
+        ld hl,(click_x)                 ; x = (px - STG_X) * 2 (mode 1: 4)
         ld a,h
         or l
         ret z
         dec hl
         add hl,hl
+        call prog_mode
+        or a
+        jr z,.placed
+        add hl,hl
+.placed:
         ld (click_x),hl
         ld a,(k_row)                ; y = row * 2 + 12
         ld l,a
@@ -910,6 +960,8 @@ command:
         jp z,do_del_sprite
         cp CMD_BG
         jp z,do_bg
+        cp CMD_MODE
+        jp z,do_mode
         jp VOS_COMMAND              ; VIEW and HELP menus
 
 do_new:
@@ -993,11 +1045,40 @@ do_del_sprite:
         jr do_stage
 
 do_bg:
-        ld hl,vbs + V_BG
+        ld hl,vbs + V_BG            ; the next pen, the mode as it was
         ld a,(hl)
+        ld b,a
         inc a
         and 15
+        ld c,a
+        ld a,b
+        and V_MODE1
+        or c
         ld (hl),a
+        jr do_stage
+
+do_mode:                            ; mode 0 <-> mode 1, sprites kept on
+        ld hl,vbs + V_BG            ; the screen
+        ld a,(hl)
+        xor V_MODE1
+        ld (hl),a
+        call prog_mode
+        or a
+        jr nz,do_stage
+        xor a
+.sprite:
+        ld hl,vbs + V_NSPR
+        cp (hl)
+        jr nc,do_stage
+        push af
+        call spr_ptr_a
+        xor a
+        ld de,0
+        ld bc,192
+        call add_clamp
+        pop af
+        inc a
+        jr .sprite
 do_stage:
         ld a,R_STAGE
         jp refresh
@@ -1238,40 +1319,76 @@ load_prog:
         push bc
         ld hl,LOAD_AT               ; its head
         ld de,lbuf
-        ld bc,V_LINES
+        ld bc,V_SPR
+        call VOS_BANK_GET
+        ld hl,LOAD_AT + V1_NLINES   ; the line count, in version 1
+        ld a,(lbuf + 3)
+        cp 1
+        jr z,.count
+        ld hl,LOAD_AT + V_NLINES
+.count:
+        ld (lp_count),hl
+        ld de,lbuf + V_SPR
+        ld bc,2
         call VOS_BANK_GET
         pop bc
-        ld hl,lbuf                  ; "VBS", 1
+        ld hl,lbuf                  ; "VBS"
         ld de,new_prog
-        ld a,4
+        ld a,3
 .magic:
         push af
         ld a,(de)
         cp (hl)
-        jr nz,.pop_broken
+        jp nz,.pop_broken
         pop af
         inc hl
         inc de
         dec a
         jr nz,.magic
+        ld a,(hl)                   ; version 1 or 2
+        dec a
+        cp VBS_VERSION
+        jr nc,.broken
         ld a,(lbuf + V_NSPR)
         cp SPR_MAX + 1
         jr nc,.broken
-        ld hl,(lbuf + V_NLINES)
+        ld hl,(lbuf + V_SPR)
         ld de,MAX_LINES + 1
         or a
         sbc hl,de
         jr nc,.broken
         push bc
-        ld hl,(lbuf + V_NLINES)     ; good: the whole program
+        ld hl,LOAD_AT               ; good: the head and the sprites,
+        ld de,vbs                   ; no texts yet, then the rest
+        ld bc,V_TEXTS
+        call VOS_BANK_GET
+        ld hl,vbs + V_TEXTS
+        ld de,vbs + V_TEXTS + 1
+        ld bc,TEXT_MAX * TEXT_SIZE - 1
+        ld (hl),0
+        ldir
+        ld hl,(lbuf + V_SPR)
         call times10
-        ld bc,V_LINES
+        ld bc,2
         add hl,bc
+        ld a,(vbs + 3)
+        cp 1
+        jr z,.lines                 ; version 1: the line count, lines
+        ld bc,TEXT_MAX * TEXT_SIZE  ; version 2: the texts, too
+        add hl,bc
+.lines:
         ld b,h
         ld c,l
-        ld hl,LOAD_AT
-        ld de,vbs
+        ld de,(lp_count)
+        ex de,hl                    ; HL -> in the data bank
+        ld de,vbs + V_NLINES        ; version 1: after the texts
+        jr z,.get
+        ld de,vbs + V_TEXTS
+        ld hl,LOAD_AT + V_TEXTS
+.get:
         call VOS_BANK_GET
+        ld a,VBS_VERSION
+        ld (vbs + 3),a
         pop bc
         push bc
         ld h,b                      ; its name, without the spaces
@@ -1318,10 +1435,23 @@ insert_block:
         add a,b
         cp MAX_LINES + 1
         jr c,.fits
+.full:
         ld a,T_M_FULL
         ld (msg),a
         ret
 .fits:
+        ld a,#FF                    ; a text slot: a text of its own
+        ld (ib_text),a
+        ld a,(ib_op)
+        call op_ptr
+        inc hl
+        ld a,(hl)
+        cp C_TEXT
+        jr nz,.place
+        call text_alloc
+        jr c,.full
+        ld (ib_text),a
+.place:
         ld a,(vbs + V_NLINES)       ; below the cursor's line
         or a
         jr z,.at
@@ -1361,7 +1491,113 @@ insert_block:
 .done:
         call no_slot
         call show_cursor
+        ld a,(ib_text)              ; its text, empty, then ask for it
+        cp #FF
+        jr z,.drawn
+        ld a,(cursor)
+        call line_ptr
+        inc hl
+        inc hl
+        ld a,(ib_text)
+        ld (hl),a
+        call text_ptr
+        ld (hl),0
+        xor a
+        ld (slot),a
+        call edit_text
+.drawn:
         ld a,R_SCRIPT
+        jp parts
+
+; -> A = a text no line uses; carry if there is none
+text_alloc:
+        ld hl,tbuf                  ; tbuf: 1 for each text in use
+        ld b,TEXT_MAX
+.clear:
+        ld (hl),0
+        inc hl
+        djnz .clear
+        ld a,(vbs + V_NLINES)
+        or a
+        jr z,.find
+        ld b,a
+        ld hl,vbs + V_LINES + 1     ; the first line's slots
+.line:
+        ld c,3
+.slot:
+        ld a,(hl)
+        cp K_TEXT
+        jr nz,.next
+        inc hl
+        ld a,(hl)
+        dec hl
+        and TEXT_MAX - 1
+        ld e,a
+        ld d,0
+        push hl
+        ld hl,tbuf
+        add hl,de
+        ld (hl),1
+        pop hl
+.next:
+        inc hl
+        inc hl
+        inc hl
+        dec c
+        jr nz,.slot
+        inc hl                      ; past the next line's op
+        djnz .line
+.find:
+        xor a
+        ld hl,tbuf
+.free:
+        cp TEXT_MAX
+        ccf
+        ret c
+        inc (hl)
+        dec (hl)
+        ret z                       ; (carry is clear)
+        inc hl
+        inc a
+        jr .free
+
+; A = text -> HL -> it (keeps DE)
+text_ptr:
+        and TEXT_MAX - 1
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        push de
+        ld de,vbs + V_TEXTS
+        add hl,de
+        pop de
+        ret
+
+; the chosen slot's text: VOS_INPUT, on a copy (ESC keeps it as it was)
+edit_text:
+        call slot_ptr
+        inc hl
+        ld a,(hl)
+        call text_ptr
+        push hl
+        ld de,tbuf
+        ld bc,TEXT_SIZE
+        ldir
+        ld a,T_I_TEXT
+        ld hl,tbuf
+        ld c,TEXT_CHARS
+        call VOS_INPUT
+        pop de
+        ret c
+        ld hl,tbuf
+        ld bc,TEXT_SIZE - 1
+        ldir
+        xor a
+        ld (de),a
+        ld a,R_LINE
         jp parts
 
 ; A = op: a new line at ib_at, with the op's default slots
@@ -1725,6 +1961,9 @@ slot_char:
         cp "Z"
         ld b,K_EDGE
         jr z,.kind
+        cp "P"
+        ld b,K_BUTTON
+        jr z,.kind
         ld de,10
         cp "R"
         ld b,K_RND
@@ -1884,6 +2123,8 @@ cycle_kind:
         ld (awaiting),a
         ret
 .not_key:
+        cp C_TEXT
+        jp z,edit_text
         cp C_VAR
         jr nz,.not_var
         inc hl
@@ -1928,10 +2169,14 @@ cycle_kind:
         ld (hl),K_NONE
         ret
 .value:
-        ld a,(hl)                   ; NUM .. EDGE, then NUM again
+        ld a,(hl)                   ; NUM .. EDGE, BUTTON, then NUM again
         inc a
         cp K_EDGE + 1
         jr c,.kind
+        jr nz,.again
+        ld a,K_BUTTON
+        jr .kind
+.again:
         ld a,K_NUM
 .kind:
         ld (hl),a
@@ -1961,6 +2206,7 @@ draw_stage:
         ld a,Y2 - Y1
         call fill
         ld a,(vbs + V_BG)
+        and 15
         ld (fill_pen),a
         ld hl,STG_X
         ld de,STG_Y
@@ -1978,15 +2224,22 @@ draw_stage:
         inc a
         jr .sprite
 
-; A = sprite: at half size, clipped to the preview
+; A = sprite: at half size (mode 1: across, a quarter), clipped to
+; the preview
 draw_preview:
         call spr_ptr_a
-        ld e,(hl)                   ; px = x / 2
+        ld e,(hl)                   ; px = x / 2 (mode 1: / 4)
         inc hl
         ld d,(hl)
         inc hl
         srl d
         rr e
+        call prog_mode
+        or a
+        jr z,.px
+        srl d
+        rr e
+.px:
         ld a,d
         or a
         ret nz
@@ -2013,9 +2266,16 @@ draw_preview:
         ret nc
         ld (dp_y),a
         ex de,hl
-        ld a,(hl)                   ; w / 2, at least 1, clipped
+        call prog_mode              ; w / 2 (mode 1: / 4), at least 1,
+        ld b,a                      ; clipped
+        ld a,(hl)
         inc hl
         srl a
+        dec b
+        jr nz,.w_mode
+        srl a
+.w_mode:
+        or a
         jr nz,.w
         inc a
 .w:
@@ -2144,7 +2404,18 @@ draw_list:
         ld (de),a
         inc de
         ld a,(vbs + V_BG)
+        and 15
         call num_a
+        ld a," "                    ; and the mode: M0 or M1
+        ld (de),a
+        inc de
+        ld a,"M"
+        ld (de),a
+        inc de
+        call prog_mode
+        add a,"0"
+        ld (de),a
+        inc de
         xor a
         ld (de),a
         call list_colours
@@ -2667,8 +2938,7 @@ render_line:
         ld (rl_out),de
         ld hl,(rl_ptr)
         ld a,(hl)
-        add a,T_OP_START
-        call VOS_MSG
+        call block_text
 .char:
         ld a,(hl)
         inc hl
@@ -2848,6 +3118,11 @@ render_slot:
         ld c,T_W_SPRITE
         jr .word_number
 .not_spr:
+        cp K_BUTTON
+        ld c,T_W_BUTTON
+        jp z,.word
+        cp K_TEXT
+        jr z,.quoted
         cp K_KEY
         jr nz,.not_key
         push de
@@ -2871,6 +3146,17 @@ render_slot:
         call VOS_MSG
         pop de
         jp append
+.quoted:                            ; "text"
+        ld a,l
+        call text_ptr
+        ld a,#22
+        ld (de),a
+        inc de
+        call append
+        ld a,#22
+        ld (de),a
+        inc de
+        ret
 .word_number:
         push de
         ld a,c
@@ -2885,8 +3171,7 @@ render_slot:
 
 ; A = op -> lbuf: its text without the slots (palette)
 op_name:
-        add a,T_OP_START
-        call VOS_MSG
+        call block_text
         ld de,lbuf
         ld c,0                      ; the last character put
 .char:
@@ -2916,6 +3201,20 @@ op_name:
 .zero:
         xor a
         ld (de),a
+        ret
+
+; A = op -> HL -> its text, from the blocks' table (block_texts)
+block_text:
+        push af
+        ld hl,block_texts
+        call VOS_TEXTS
+        pop af
+        add a,T_OP_START
+        call VOS_MSG
+        push hl
+        ld hl,texts
+        call VOS_TEXTS
+        pop hl
         ret
 
 ; A = key number, DE -> out: its name
@@ -3154,11 +3453,12 @@ menu_studio:    db T_STUDIO, 8
                 db T_RUN, CMD_RUN, "R", 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
-menu_edit:      db T_EDIT, 4
+menu_edit:      db T_EDIT, 5
                 db T_DELETE, CMD_DELETE, 0, 0
                 db T_ADD_SPRITE, CMD_ADD_SPRITE, 0, 0
                 db T_DEL_SPRITE, CMD_DEL_SPRITE, 0, 0
                 db T_BG, CMD_BG, 0, 0
+                db T_MODE, CMD_MODE, 0, 0
 
 dlg_new:        db T_STUDIO, T_D_NEW, 2, VM_YES, VM_NO
 
@@ -3193,18 +3493,32 @@ ops:
         db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 1, 0, 0, 0, 0         ; CHANGE
         db F_HAT,  C_SPR, C_VALUE, 0,       K_SPR, 0, 0, K_NUM, 1, 0, 0, 0, 0         ; WHEN I RECEIVE
         db 0,      C_VALUE, 0, 0,           K_NUM, 1, 0, 0, 0, 0, 0, 0, 0             ; BROADCAST
+        db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 1, 0, 0, 0, 0         ; DECREASE
+        db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 10, 0, 0, 0, 0        ; MULTIPLY
+        db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 2, 0, 0, 0, 0         ; DIVIDE
+        db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 2, 0, 0, 0, 0         ; REMAINDER
+        db 0,      C_TEXT, C_VALUE, C_VALUE
+        db                                  K_TEXT, 0, 0, K_NUM, 120, 0, K_NUM, 100, 0  ; WINDOW
+        db 0,      C_TEXT, C_VALUE, C_VALUE
+        db                                  K_TEXT, 0, 0, K_NUM, 8, 0, K_NUM, 24, 0   ; BUTTON
+        db F_HAT,  C_SPR, 0, 0,             K_SPR, 0, 0, 0, 0, 0, 0, 0, 0             ; WHEN BUTTON
+        db 0,      C_TEXT, C_VALUE, C_VALUE
+        db                                  K_TEXT, 0, 0, K_NUM, 8, 0, K_NUM, 4, 0    ; TEXT
         assert $ - ops == OP_COUNT * OP_INFO
 
-CATS            equ 5
-cat_first:      db 0, 5, 13, 19, 24, OP_COUNT  ; in pal_order
+CATS            equ 6
+cat_first:      db 0, 5, 13, 19, 24, 30, OP_COUNT  ; in pal_order
 pal_order:      db 0, 1, 2, OP_RECEIVE, OP_BROADCAST    ; events
                 db 3, 4, 5, 6, 7, 8, 9, 10              ; control
                 db 11, 12, 13, 14, 15, 16               ; motion
                 db 17, 18, 19, 20, 21                   ; looks, sound
-                db 22, 23                               ; variables
+                db 22, 23, OP_SUB, OP_MUL, OP_DIV, OP_MOD   ; variables
+                db OP_WINDOW, OP_BUTTON, OP_PRESSED, OP_TEXT    ; windows
         assert $ - pal_order == OP_COUNT
 class_help:     db T_H_LINE, T_H_VALUE, T_H_VAR, T_H_CMP, T_H_SPR, T_H_KEYN
+                db T_H_TEXT
 first_values:   db 0, 0, 0, 0, 10, VK_SPACE, 1, 0   ; K_NUM .. K_EDGE
+                db 0, 0, 0, 0                       ; .. K_BUTTON
 cmp_chars:      db "<=>"
 tens:           dw 10000, 1000, 100, 10, 1, 0
 
@@ -3230,9 +3544,10 @@ name_studio:    db "STUDIO", 0
 keep_mark:      db "STU"            ; VOS_KEEP: "STU", the .VBS name
 
 ; the program after NEW: sprite 1 bounces
-new_prog:       db "VBS", 1, 0, 1
+new_prog:       db "VBS", VBS_VERSION, 0, 1
                 dw 88, 120 : db 8, 8, 8, 0
                 ds (SPR_MAX - 1) * SPR_SIZE
+                ds TEXT_MAX * TEXT_SIZE
                 dw 6
                 db OP_START,   K_SPR, 1, 0, 0, 0, 0, 0, 0, 0
                 db OP_SPEED,   K_NUM, 2, 0, K_NUM, 2, 0, 0, 0, 0
@@ -3243,6 +3558,7 @@ new_prog:       db "VBS", 1, 0, 1
 new_prog_end:
 
         include "studio_texts.asm"
+        include "studio_blocks.asm"
 
 ; ---- state ----------------------------------------------------------
 cursor:         db 0                ; the script's line
@@ -3273,6 +3589,9 @@ k_col:          db 0
 rf_parts:       db 0
 ib_op:          db 0
 ib_at:          db 0
+ib_text:        db 0
+lp_count:       dw 0
+ac_low:         db 0
 dl_op:          db 0
 dl_at:          db 0
 dl_end:         db 0

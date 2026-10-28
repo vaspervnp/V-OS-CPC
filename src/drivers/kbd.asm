@@ -110,6 +110,10 @@ kbd_scan:
         ld b,a                      ; B = key
         ld a,(kbd_repeat_rate)
         ld (hl),a
+        ld a,(ev_tail)              ; not while events wait: a slow view
+        ld hl,ev_head               ; would fill the queue with repeats
+        cp (hl)                     ; and lose the keys after them
+        ret nz
         call kbd_char
         cp 8                        ; a held dead key repeats without text
         jr nc,.repeat_char

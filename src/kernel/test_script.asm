@@ -11,7 +11,8 @@
 ; keep the pointer hidden at the moment of the shot.
 ;
 ; M8b/M8c Studio, Greek UI. Drive A: VOS.BIN, the view overlays,
-; GREEK.LNG, DEMO.BIN, MIXED.BIN, STUDIO.BIN, and PONG, CATCH, STARCAT.
+; GREEK.LNG, DEMO.BIN, MIXED.BIN, STUDIO.BIN, PONG, CATCH, STARCAT, and
+; CALC.BIN, CALC.VBS.
 ; Expected result:
 ;   frame  300  F2           -> Launcher
 ;   frame  420, 470 RIGHT    -> STUDIO chosen
@@ -33,7 +34,7 @@
 ;   frame 1600  CONTROL+N    -> "clear the program?"
 ;   frame 1650  RETURN       -> yes: the new program
 ;   frame 1750  CONTROL+O    -> the file list
-;   frame 1850-1999 DOWN held -> its last file, NONAME.VBS
+;   frame 1850-2044 DOWN held -> its last file, NONAME.VBS
 ;   frame 2050  RETURN       -> opened: SPEED 5 2, REPEAT 10, the
 ;                               orange sprite at 116 120
 ;   (test only) the pointer is placed and COPY clicks:
@@ -53,6 +54,13 @@
 ; Destroys: AF, DE, HL, IX
 ; ---------------------------------------------------------------------
 test_inject:
+        IFDEF TEST_DUMP                 ; from frame TEST_DUMP: the stack
+        ld hl,(int_frames)              ; on the screen (test_show)
+        ld de,TEST_DUMP
+        or a
+        sbc hl,de
+        call nc,test_show
+        ENDIF
         ld a,(kbd_now + 8)          ; hide Z: the harness types it as a wait
         and %01111111
         ld (kbd_now + 8),a
@@ -123,9 +131,106 @@ test_inject:
         add ix,de
         jr .entry
 
+        IFDEF TEST_DUMP
+; -DTEST_DUMP=frame: 96 bytes from the stack, as bits on the top 8 lines
+; of the screen (12 bytes a line, a bit = a whole screen byte, #FF or
+; 0), to read from a screenshot. At SP + 2: test_inject's return, then
+; kbd_scan's, IX, HL, DE, BC, AF (int_handler), the interrupted PC.
+test_show:
+        IFDEF TEST_DUMP_AT              ; or 96 bytes from there
+        ld hl,TEST_DUMP_AT
+        ELSE
+        ld hl,2
+        add hl,sp
+        ENDIF
+        ld de,SCREEN_TOP
+        ld c,8
+.line:
+        push de
+        ld b,12
+.byte:
+        push bc
+        ld c,(hl)
+        inc hl
+        ld b,8
+.bit:
+        sla c
+        sbc a,a
+        ld (de),a
+        inc de
+        djnz .bit
+        pop bc
+        djnz .byte
+        pop de
+        ld a,d
+        add a,8
+        ld d,a
+        dec c
+        jr nz,.line
+        ret
+        ENDIF
+
 ; dw first frame, frame after the last; db matrix line, bits
-; (line #80: bits = ptr_keys_on; #81: pointer x = bits * 2, in mode 1
-; pixels; #82: pointer y = bits)
+; (line #80: bits = ptr_keys_on; #81: pointer x = bits * 2, in pixels
+; of the mode the pointer is in; #82: pointer y = bits)
+        IF TEST_SCRIPT == 2
+; make test-calc (-DTEST_SCRIPT=2): CALC.BIN, a Studio program
+; (blocks/examples/calc.vbt), then Studio with CALC.VBS. Expected:
+;   frame  300  F2           -> Launcher
+;   frame  420, 470 DOWN     -> CALC chosen
+;   frame  560  RETURN       -> the calculator in mode 1: a window,
+;                               16 buttons
+;   (the pointer is placed and COPY clicks)
+;   frame  950, 1050, 1150   -> 1, 2, +: 12 shown
+;   frame 1250, 1350         -> 3, =: 15 shown
+;   frame 1500  CONTROL+Q    -> the Launcher
+;   frame 1700, 1750 UP, 1800, 1850 RIGHT, 1900 RETURN -> Studio
+;   frame 2100  CONTROL+O    -> the file list
+;   frame 2160-2394 DOWN held, 2400 RETURN -> CALC.VBS opened
+;   frame 2600  TAB, 2650 LEFT -> the palette: WINDOWS
+;   frame 2800  RETURN       -> WINDOW added, the dialog asks its text
+;   frame 2900, 2950 H, I, 3050 RETURN -> WINDOW "ΗΙ" 120 100
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  420,  424 : db 0, %00000100   ; DOWN
+        dw  470,  474 : db 0, %00000100   ; DOWN
+        dw  560,  564 : db 2, %00000100   ; RETURN
+        dw  900,  901 : db #80, 1         ; COPY is the left button
+        dw  900, 1000 : db #81, 56        ; 1 (x = 112 in mode 1)
+        dw  900, 1000 : db #82, 161
+        dw  950,  954 : db 1, %00000010   ; COPY
+        dw 1000, 1100 : db #81, 80        ; 2
+        dw 1000, 1100 : db #82, 161
+        dw 1050, 1054 : db 1, %00000010
+        dw 1100, 1200 : db #81, 128       ; +
+        dw 1100, 1200 : db #82, 181
+        dw 1150, 1154 : db 1, %00000010
+        dw 1200, 1300 : db #81, 104       ; 3
+        dw 1200, 1300 : db #82, 161
+        dw 1250, 1254 : db 1, %00000010
+        dw 1300, 1400 : db #81, 104       ; =
+        dw 1300, 1400 : db #82, 181
+        dw 1350, 1354 : db 1, %00000010
+        dw 1450, 1451 : db #80, 0
+        dw 1495, 1510 : db 2, %10000000   ; CONTROL
+        dw 1500, 1504 : db 8, %00001000   ; Q
+        dw 1700, 1704 : db 0, %00000001   ; UP
+        dw 1750, 1754 : db 0, %00000001   ; UP
+        dw 1800, 1804 : db 0, %00000010   ; RIGHT
+        dw 1850, 1854 : db 0, %00000010   ; RIGHT
+        dw 1900, 1904 : db 2, %00000100   ; RETURN
+        dw 2095, 2110 : db 2, %10000000   ; CONTROL
+        dw 2100, 2104 : db 4, %00000100   ; O
+        dw 2160, 2395 : db 0, %00000100   ; DOWN held
+        dw 2400, 2404 : db 2, %00000100   ; RETURN
+        dw 2600, 2604 : db 8, %00010000   ; TAB
+        dw 2650, 2654 : db 1, %00000001   ; LEFT
+        dw 2800, 2804 : db 2, %00000100   ; RETURN
+        dw 2900, 2904 : db 5, %00010000   ; H
+        dw 2950, 2954 : db 4, %00001000   ; I
+        dw 3050, 3054 : db 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
 test_keys:
         dw  300,  304 : db 1, %01000000   ; F2
         dw  420,  424 : db 0, %00000010   ; RIGHT
@@ -150,7 +255,7 @@ test_keys:
         dw 1650, 1654 : db 2, %00000100   ; RETURN
         dw 1745, 1760 : db 2, %10000000   ; CONTROL
         dw 1750, 1754 : db 4, %00000100   ; O
-        dw 1850, 2000 : db 0, %00000100   ; DOWN held
+        dw 1850, 2045 : db 0, %00000100   ; DOWN held
         dw 2050, 2054 : db 2, %00000100   ; RETURN
         dw 2150, 2151 : db #80, 1         ; COPY is the left button
         dw 2150, 2700 : db #81, 20        ; palette, row 3: IF
@@ -168,3 +273,4 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF

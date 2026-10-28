@@ -1,0 +1,38 @@
+# Studio's blocks: NAME | English | Greek (tools/mktexts.py, at most
+# 64), in OP_* order; ~n is slot n. A second VOS_TEXTS table: Studio
+# switches to it for these texts alone (block_text). The palette shows at
+# most 13 characters, the script 33.
+OP_START    | WHEN START ~0         | ΟΤΑΝ ΞΕΚΙΝΑ ~0
+OP_KEY      | WHEN KEY ~1 ~0        | ΟΤΑΝ ΠΛΗΚΤΡΟ ~1 ~0
+OP_CLICK    | WHEN CLICKED ~0       | ΟΤΑΝ ΚΛΙΚ ~0
+OP_FOREVER  | FOREVER               | ΓΙΑ ΠΑΝΤΑ
+OP_REPEAT   | REPEAT ~0             | ΕΠΑΝΑΛΑΒΕ ~0
+OP_IF       | IF ~0 ~1 ~2           | ΑΝ ~0 ~1 ~2
+OP_ELSE     | ELSE                  | ΑΛΛΙΩΣ
+OP_END      | END                   | ΤΕΛΟΣ
+OP_WAIT     | WAIT ~0               | ΠΕΡΙΜΕΝΕ ~0
+OP_UNTIL    | WAIT UNTIL ~0 ~1 ~2   | ΠΕΡΙΜΕΝΕ ΩΣ ~0 ~1 ~2
+OP_STOP     | STOP                  | ΣΤΑΜΑΤΑ
+OP_GOTO     | GO TO ~0 ~1           | ΠΗΓΑΙΝΕ ~0 ~1
+OP_CHX      | CHANGE X ~0           | ΑΛΛΑΞΕ X ~0
+OP_CHY      | CHANGE Y ~0           | ΑΛΛΑΞΕ Y ~0
+OP_SPEED    | SPEED ~0 ~1           | ΤΑΧΥΤΗΤΑ ~0 ~1
+OP_MOVE     | MOVE                  | ΚΙΝΗΣΟΥ
+OP_BOUNCE   | BOUNCE                | ΑΝΑΠΗΔΗΣΕ
+OP_COLOUR   | COLOUR ~0             | ΧΡΩΜΑ ~0
+OP_SHOW     | SHOW                  | ΕΜΦΑΝΙΣΟΥ
+OP_HIDE     | HIDE                  | ΚΡΥΨΟΥ
+OP_PRINT    | PRINT ~0 AT ~1 ~2     | ΓΡΑΨΕ ~0 ΣΤΟ ~1 ~2
+OP_NOTE     | NOTE ~0 FOR ~1        | ΝΟΤΑ ~0 ΓΙΑ ~1
+OP_SET      | SET ~0 TO ~1          | ΘΕΣΕ ~0 ΣΕ ~1
+OP_CHANGE   | CHANGE ~0 BY ~1       | ΑΛΛΑΞΕ ~0 ΚΑΤΑ ~1
+OP_RECEIVE  | WHEN I RECEIVE ~1 ~0  | ΟΤΑΝ ΛΑΒΕΙ ~1 ~0
+OP_BROADCAST | SEND ~0              | ΣΤΕΙΛΕ ~0
+OP_SUB      | DECREASE ~0 BY ~1     | ΜΕΙΩΣΕ ~0 ΚΑΤΑ ~1
+OP_MUL      | MULTIPLY ~0 BY ~1     | ΠΟΛΛΑΠΛΑΣΙΑΣΕ ~0 ΕΠΙ ~1
+OP_DIV      | DIVIDE ~0 BY ~1       | ΔΙΑΙΡΕΣΕ ~0 ΔΙΑ ~1
+OP_MOD      | REMAINDER ~0 BY ~1    | ΥΠΟΛΟΙΠΟ ~0 ΔΙΑ ~1
+OP_WINDOW   | WINDOW ~0 ~1 ~2       | ΠΑΡΑΘΥΡΟ ~0 ~1 ~2
+OP_BUTTON   | BUTTON ~0 AT ~1 ~2    | ΚΟΥΜΠΙ ~0 ΣΤΟ ~1 ~2
+OP_PRESSED  | WHEN BUTTON ~0        | ΟΤΑΝ ΚΟΥΜΠΙ ~0
+OP_TEXT     | TEXT ~0 AT ~1 ~2      | ΚΕΙΜΕΝΟ ~0 ΣΤΟ ~1 ~2
