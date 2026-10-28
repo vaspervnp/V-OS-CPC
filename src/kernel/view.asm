@@ -41,6 +41,7 @@ CMD_ABOUT       equ 9
 CMD_FORMAT      equ 10
 CMD_SAVE        equ 11
 CMD_RUN         equ 12
+CMD_ACC         equ 13              ; Launcher: as the accessory
 CMD_DESKTOP     equ 16              ; CMD_DESKTOP + view number
 CMD_LAUNCHER    equ 17
 CMD_COMMANDER   equ 18
@@ -53,6 +54,9 @@ view_request:
 
 ; main loop: a pending switch
 view_poll:
+        ld a,(acc_req)              ; the accessory opens or closes
+        or a
+        call nz,acc_toggle
         ld a,(view_next)
         cp VIEW_NONE
         ret z
@@ -200,6 +204,9 @@ view_install:
         jr nz,.piece
         ld a,VIEW_BANK_CFG          ; from now on kernel calls map it back
         ld (ram_home_cfg),a
+        ld hl,VIEW_ADDR
+        ld (cur_base),hl
+        call acc_reset              ; an accessory that was open is closed
         ld a,(vw_n)
         ld (view_cur),a
         xor a                       ; no frame events, no program texts,
@@ -219,6 +226,12 @@ view_keys:
         cp UI_NONE
         jr nz,.no
         ld a,(ev_cur + 1)
+        cp KEY_F5                   ; the accessory
+        jr nz,.not_acc
+        ld (acc_req),a
+        scf
+        ret
+.not_acc:
         ld b,VIEW_DESKTOP
         cp KEY_F1
         jr z,.view
@@ -256,7 +269,8 @@ view_command:
         xor 1
         ld (lang_ui),a
         ld (cfg_data + CFG_LANG),a  ; Setup shows it, and saves it
-        jp OV_REDRAW
+        ld de,6
+        jr cur_call
 .not_lang:
         ld hl,dlg_keys
         cp CMD_KEYS
@@ -282,6 +296,113 @@ view_command:
 .reset:
         out (c),c
         rst 0
+
+; DE = 3: event (HL = ev_cur), 6: redraw, of the view or program, or
+; of the accessory while it is open
+cur_call:
+        ld hl,(cur_base)
+        add hl,de
+        push hl
+        ld hl,ev_cur
+        ret
+
+; ---------------------------------------------------------------------
+; The desk accessory: a relocatable program in bank 6 at ACC_ADDR
+; (src/api/vos_api.inc). Open, it is the home bank (ram_home) and
+; cur_base, and has view_ticks, app_texts, ui_widgets and ui_bar of its
+; own: acc_swap exchanges them with acc_ctx.
+; ---------------------------------------------------------------------
+ACC_CFG         equ #C6
+
+; HL -> the relocation table of the program in bank 4 (at BUF_ADDR),
+; BC = its count: the program moved to ACC_ADDR (src/shell/launcher.asm
+; loads accessories)
+acc_reloc:
+        push bc
+        ld a,BUF_CFG
+        call ram_select             ; (destroys B)
+        pop bc
+.entry:
+        ld a,b
+        or c
+        jp z,ram_home
+        ld e,(hl)
+        inc hl
+        ld d,(hl)
+        inc hl
+        push hl
+        ld hl,BUF_ADDR
+        add hl,de
+        ld a,(hl)
+        add a,(ACC_ADDR - BUF_ADDR) >> 8
+        ld (hl),a
+        pop hl
+        dec bc
+        jr .entry
+
+; main loop: open or close it
+acc_toggle:
+        xor a
+        ld (acc_req),a
+        ld a,(acc_loaded)
+        or a
+        ret z
+        call acc_swap
+        ld a,(acc_open)
+        xor 1
+        ld (acc_open),a
+        jr z,.close
+        ld a,ACC_CFG
+        ld hl,ACC_ADDR
+        call .home
+        ld a,1                      ; init, as an accessory
+        jp ACC_ADDR
+.close:
+        ld a,VIEW_BANK_CFG          ; the program draws everything
+        ld hl,VIEW_ADDR
+        call .home
+        ld de,6
+        jp cur_call
+.home:
+        ld (cur_base),hl
+        ld (ram_home_cfg),a
+        jp ram_select
+
+; the accessory closed, its own values fresh for the next time
+acc_reset:
+        xor a
+        ld (acc_open),a
+        ld hl,acc_fresh
+        ld de,acc_ctx
+        ld bc,7
+        ldir
+        ret
+
+acc_swap:
+        ld hl,acc_vars
+        ld de,acc_ctx
+        ld b,7
+.byte:
+        push bc
+        ld c,(hl)
+        inc hl
+        ld b,(hl)
+        inc hl
+        ld a,(bc)
+        push af
+        ld a,(de)
+        ld (bc),a
+        pop af
+        ld (de),a
+        inc de
+        pop bc
+        djnz .byte
+        ret
+
+acc_vars:       dw view_ticks, app_texts, app_texts + 1, ui_widgets
+                dw ui_widgets + 1, ui_bar, ui_bar + 1
+acc_fresh:      db 0
+                dw api_no_texts, ui_no_widgets, ui_no_widgets  ; (no menus)
 
 menu_view:
         db MSG_MENU_VIEW, 6
@@ -318,5 +439,10 @@ app_was_child:  db 0
 app_back:       db 0                ; on VOS_EXIT, run app_parent
 app_self:       ds 12               ; the program running: drive, name
 app_parent:     ds 12               ; the one that called VOS_RUN
+cur_base:       dw VIEW_ADDR        ; whose entries cur_call uses
+acc_loaded:     db 0
+acc_open:       db 0
+acc_req:        db 0                ; open or close it in the main loop
+acc_ctx:        ds 7                ; the other side's acc_vars
 vw_left:        db 0
 vw_ptr:         dw 0

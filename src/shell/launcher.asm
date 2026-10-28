@@ -489,13 +489,15 @@ ln_select:
         ld b,(hl)
         ld (hl),a
         push bc
-        call ln_remember
-        ld a,b
+        call ln_remember            ; (destroys B)
+        pop de                      ; D = old
+        ld a,d
         call ln_first
         ld c,a
         ld a,(ln_sel)
+        push de
         call ln_first
-        pop de                      ; D = old
+        pop de
         cp c
         jp nz,ln_draw_tiles         ; another page
         ld c,a
@@ -635,9 +637,80 @@ ln_run:
         xor a
         jp app_request
 
+; FILE > AS ACCESSORY: the program selected becomes the desk accessory
+; (src/api/vos_api.inc), if it has a relocation table and is small
+; enough: it is read into bank 4, moved to ACC_ADDR (acc_reloc) and
+; copied to bank 6, then it opens (kernel/view.asm)
+ln_acc:
+        ld a,(ln_count)
+        or a
+        ret z
+        call ln_remember
+        xor a
+        call fdc_select
+        ld hl,file_name
+        call view_fetch
+        jr c,.error
+        ld de,"A" * 256 + "V"
+        or a
+        sbc hl,de
+        jr nz,.bad
+        ld a,c
+        cp VOS_API_VERSION + 1
+        jr nc,.bad
+        ld hl,(fs_length)           ; its end: dw count, "RL"
+        ld de,BUF_ADDR - 4
+        add hl,de
+        push hl
+        ld de,bank_buf
+        ld bc,4
+        ld a,BUF_CFG
+        call bank_get
+        pop hl
+        ld a,(bank_buf + 2)
+        cp "R"
+        jr nz,.bad
+        ld a,(bank_buf + 3)
+        cp "L"
+        jr nz,.bad
+        ld bc,(bank_buf)            ; the table: 2 bytes an entry
+        or a
+        sbc hl,bc
+        sbc hl,bc
+        push hl
+        ld de,BUF_ADDR + ACC_MAX + 1
+        or a
+        sbc hl,de
+        pop hl
+        jr nc,.bad                  ; more than ACC_MAX
+        push hl
+        call acc_reloc
+        pop hl
+        ld bc,-BUF_ADDR             ; the program's bytes
+        add hl,bc
+        ld b,h
+        ld c,l
+        ld a,BUF_CFG
+        ld (ab_from),a
+        ld a,ACC_CFG
+        ld (ab_to),a
+        ld hl,BUF_ADDR
+        ld de,ACC_ADDR
+        call bank_copy
+        ld a,1
+        ld (acc_loaded),a
+        ld (acc_req),a              ; it opens after this event
+        jp acc_reset
+.bad:
+        ld a,FS_ERR_NOT_PROGRAM
+.error:
+        jp sys_error
+
 ln_command:
         cp CMD_INFO
-        jr z,ln_run
+        jp z,ln_run
+        cp CMD_ACC
+        jp z,ln_acc
         cp CMD_REFRESH
         jp z,ln_load
         jp view_command
@@ -647,8 +720,9 @@ ln_bar:
         db 3
         dw ln_menu_file, menu_view, menu_help
 ln_menu_file:
-        db MSG_MENU_FILE, 4
+        db MSG_MENU_FILE, 5
         db MSG_ITEM_RUN, CMD_INFO, 0, 0
+        db MSG_ITEM_ACC, CMD_ACC, "A", 0
         db MSG_ITEM_REFRESH, CMD_REFRESH, "R", 0
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_QUIT, CMD_QUIT, "Q", 0

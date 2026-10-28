@@ -97,4 +97,5 @@ MSG_COL_GREEN        equ 93
 MSG_COL_RED          equ 94
 MSG_SET_KEYS         equ 95
 MSG_SET_SAVED        equ 96
-MSG_COUNT             equ 97
+MSG_ITEM_ACC         equ 97
+MSG_COUNT             equ 98

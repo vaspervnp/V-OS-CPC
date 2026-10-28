@@ -12,6 +12,23 @@
 ; a program never waits for input itself. With VOS_TICKS on it also gets
 ; a VE_FRAME event 50 times a second, for animation.
 ;
+;
+; Desk accessory (version 7): a small program (up to ACC_MAX bytes)
+; with a relocation table can also run over any other program or view.
+; The Launcher's FILE > AS ACCESSORY loads it into bank 6 at ACC_ADDR;
+; F5 then opens and closes it. Init gets A = 1 there (0 as a program):
+; it draws a window of its own over the screen as it is, in the mode
+; selected, and sets no mode, palette or menu bar. While it is open it
+; gets every event, the program none; VOS_EXIT closes it, and the
+; program draws everything again (redraw). It must not use the data
+; bank. Its texts, buttons and VOS_TICKS are its own.
+;
+; Relocation table: after the program's bytes, dw offsets (from the
+; start) of the high bytes of its own addresses, then dw count, "RL".
+; tools/mkreloc.py makes it from two builds, at #4000 and #4100
+; (-DVOS_RELOC_PASS=1 sets VOS_APP_ADDR to #4100). The kernel moves a
+; program by whole pages, adding to those bytes.
+;
 ; Calls: CALL VOS_xxx. Arguments in A, BC, DE, HL (IX for VOS_RECT);
 ; results in A or HL, carry set on failure with A = error number
 ; (VOS_ERROR shows it). All registers but IX may be destroyed. Screen
@@ -19,15 +36,23 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 6               ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
-                                    ; 5: RUN, KEEP, 6: the data bank
+VOS_API_VERSION equ 7               ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+                                    ; 5: RUN, KEEP, 6: the data bank,
+                                    ; 7: accessories, relocation
+        IFDEF VOS_RELOC_PASS
+VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
+        ELSE
 VOS_APP_ADDR    equ #4000
+        ENDIF
+ACC_ADDR        equ #7000           ; an accessory, in bank 6
+ACC_MAX         equ #1000
 VOS_API         equ #0108           ; the jump table (after "VOS",0, versions)
 
 ; ---- system ---------------------------------------------------------
 VOS_EXIT        equ VOS_API + 0 * 3     ; back to the view that started it
 VOS_TICKS       equ VOS_API + 1 * 3     ; A = 1: VE_FRAME events, 0: none
-VOS_FRAMES      equ VOS_API + 2 * 3     ; -> HL = frames since boot (50 Hz)
+VOS_FRAMES      equ VOS_API + 2 * 3     ; -> HL = frames since boot (50 Hz),
+                                        ; A = bits 16..23 (version 7)
 VOS_RANDOM      equ VOS_API + 3 * 3     ; -> A = 0..255
 VOS_COMMAND     equ VOS_API + 4 * 3     ; A = VC_*: a shared menu command
 VOS_ERROR       equ VOS_API + 5 * 3     ; A = error number: error dialog

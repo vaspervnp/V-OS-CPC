@@ -43,6 +43,12 @@ int_handler:
         ld hl,(int_frames)          ; new frame
         inc hl
         ld (int_frames),hl
+        ld a,h
+        or l
+        jr nz,.frames
+        ld hl,int_frames_hi
+        inc (hl)
+.frames:
         xor a                       ; slice 0
         ld (int_blind),a
         jr .slice_set
@@ -135,6 +141,7 @@ wait_frame:
 ; ---- state ----------------------------------------------------------
 int_ticks:      dw 0
 int_frames:     dw 0
+int_frames_hi:  db 0                ; bits 16..23 (VOS_FRAMES)
 int_slice:      db 0
 int_blind:      db 0                ; interrupts since VSYNC was seen
 int_slice_hook: dw 0                ; 0 = none; called with A = slice 0..5

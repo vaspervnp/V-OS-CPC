@@ -31,7 +31,8 @@ SCREEN_BPL      equ 96              ; bytes per pixel line
 ; The 64K of extra RAM, seen one 16K bank at a time at #4000-#7FFF:
 ;   bank 4 (#C4)  file buffer: info and copy (kernel/files.asm)
 ;   bank 5 (#C5)  the running view, an overlay file (kernel/view.asm)
-;   bank 6 (#C6)  what menus and dialogs cover (ui/ui.asm)
+;   bank 6 (#C6)  what menus and dialogs cover (ui/ui.asm), up to
+;                 ACC_ADDR; from there the desk accessory (view.asm)
 ;   bank 7 (#C7)  the language pack, the Commander's file lists, the
 ;                 English texts
 ; Kernel code that maps another bank maps the view's bank back

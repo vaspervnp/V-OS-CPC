@@ -307,6 +307,13 @@ ui_copy_area:
         ld a,(sv_h)
 .row:
         push af
+        ld hl,(sv_buf)              ; up to the accessory (ACC_ADDR): the
+        ld de,(sv_bytes)            ; rows after that are not kept
+        add hl,de
+        ld de,ACC_ADDR + 1
+        or a
+        sbc hl,de
+        jr nc,.full
         ld hl,(sv_line)
         ld e,(hl)
         inc hl
@@ -331,6 +338,9 @@ ui_copy_area:
         pop af
         dec a
         jr nz,.row
+        jp ram_home
+.full:
+        pop af
         jp ram_home
 
 ; ---------------------------------------------------------------------

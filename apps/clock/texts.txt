@@ -1,0 +1,5 @@
+# CLOCK's texts: NAME | English | Greek (tools/mktexts.py)
+CLOCK       | CLOCK                 | ΡΟΛΟΙ
+SINCE       | SINCE V-OS STARTED    | ΑΠΟ ΤΗΝ ΕΚΚΙΝΗΣΗ
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+HINT        | F5 OR ESC: CLOSE      | F5 Ή ESC: ΚΛΕΙΣΙΜΟ

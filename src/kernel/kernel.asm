@@ -52,8 +52,8 @@ kernel_entry:
         ld a,(view_cur)
         cp VIEW_NONE
         ret z
-        ld hl,ev_cur
-        jp OV_EVENT
+        ld de,3                     ; event: the view's or the accessory's
+        jp cur_call
 
 palette_black:  ds 17, 0
 palette_mode1:                      ; Desktop / Commander palette

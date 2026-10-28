@@ -1,7 +1,7 @@
 ; =====================================================================
 ; test_script.asm - scripted key presses for emulator tests
 ;
-; Built only with -DTEST_SCRIPT=1 (make test-input). Caprice32 can type
+; Built only with -DTEST_SCRIPT=n (make test-input, ...). Caprice32 can type
 ; text into the emulated CPC but cannot press cursor keys or COPY, so
 ; this script ORs key bits into kbd_now after each matrix scan, by frame
 ; number since boot. Everything after the scan (events, repeat, pointer)
@@ -12,7 +12,7 @@
 ;
 ; M8b/M8c Studio, English UI. Drive A: VOS.BIN, the view overlays,
 ; GREEK.LNG, DEMO.BIN, MIXED.BIN, STUDIO.BIN, PONG, CATCH, STARCAT,
-; COUNTER, FLAP.BIN, FLAP.VBS, CALC.BIN, CALC.VBS.
+; COUNTER, FLAP.BIN, FLAP.VBS, CALC.BIN, CALC.VBS, CLOCK.BIN.
 ; Expected result:
 ;   frame  300  F2           -> Launcher
 ;   frame  420, 470 RIGHT    -> STUDIO chosen
@@ -257,7 +257,8 @@ test_frame:     dw 0
 ;   frame 1500  CONTROL+Q    -> the Launcher, CALC still chosen
 ;   frame 1700, 1750 UP, 1900 RETURN -> Studio
 ;   frame 2100  CONTROL+O    -> the file list
-;   frame 2160  UP, 2400 RETURN -> the last file, CALC.VBS, opened
+;   frame 2160, 2200 UP, 2400 RETURN -> from the first file to the
+;                               last (CLOCK.BIN), then CALC.VBS: opened
 ;   frame 2600  TAB, 2650 LEFT -> the palette: WINDOWS
 ;   frame 2800  RETURN       -> WINDOW added, the dialog asks its text
 ;   frame 2900, 2950 H, I, 3050 RETURN -> WINDOW "ΗΙ" 120 100
@@ -292,7 +293,8 @@ test_keys:
         dw 1900, 1904 : db 2, %00000100   ; RETURN
         dw 2095, 2110 : db 2, %10000000   ; CONTROL
         dw 2100, 2104 : db 4, %00000100   ; O
-        dw 2160, 2164 : db 0, %00000001   ; UP: the last file
+        dw 2160, 2164 : db 0, %00000001   ; UP: the last file (CLOCK.BIN)
+        dw 2200, 2204 : db 0, %00000001   ; UP: CALC.VBS
         dw 2400, 2404 : db 2, %00000100   ; RETURN
         dw 2600, 2604 : db 8, %00010000   ; TAB
         dw 2650, 2654 : db 1, %00000001   ; LEFT
@@ -300,6 +302,35 @@ test_keys:
         dw 2900, 2904 : db 5, %00010000   ; H
         dw 2950, 2954 : db 4, %00001000   ; I
         dw 3050, 3054 : db 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 5
+; make test-acc (-DTEST_SCRIPT=5): CLOCK as the desk accessory.
+; Expected:
+;   frame  300  F2           -> Launcher
+;   frame  420-480 DOWN x3   -> page 2: CLOCK
+;   frame  520  CONTROL+A    -> FILE > AS ACCESSORY: the clock's window
+;                               over the Launcher
+;   frame  700  F5           -> closed, the Launcher drawn again
+;   frame  760-880 UP x3, RIGHT x2 -> STUDIO; 950 RETURN -> Studio
+;   frame 1300  F5           -> the clock over Studio's mixed screen
+;   frame 1600  ESC          -> closed (VOS_EXIT), Studio drawn again
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  420,  424 : db 0, %00000100   ; DOWN
+        dw  450,  454 : db 0, %00000100   ; DOWN
+        dw  480,  484 : db 0, %00000100   ; DOWN
+        dw  515,  530 : db 2, %10000000   ; CONTROL
+        dw  520,  524 : db 8, %00100000   ; A
+        dw  700,  704 : db 1, %00010000   ; F5
+        dw  760,  764 : db 0, %00000001   ; UP
+        dw  790,  794 : db 0, %00000001   ; UP
+        dw  820,  824 : db 0, %00000001   ; UP
+        dw  850,  854 : db 0, %00000010   ; RIGHT
+        dw  880,  884 : db 0, %00000010   ; RIGHT
+        dw  950,  954 : db 2, %00000100   ; RETURN
+        dw 1300, 1304 : db 1, %00010000   ; F5
+        dw 1600, 1604 : db 8, %00000100   ; ESC
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 4
@@ -418,6 +449,7 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

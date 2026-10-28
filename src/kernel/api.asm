@@ -47,6 +47,12 @@ api_jumps:
         assert VM_OK == MSG_BTN_OK && VM_YES == MSG_BTN_YES && VM_NO == MSG_BTN_NO
 
 api_exit:
+        ld a,(acc_open)             ; an accessory: it closes, after
+        or a                        ; this event (view_poll)
+        jr z,.program
+        ld (acc_req),a
+        ret
+.program:
         call api_end
         ld hl,app_back              ; started by VOS_RUN: its caller again
         cp (hl)
@@ -105,6 +111,8 @@ api_bank_copy:
         ld (ab_from),a
         xor 1                       ; the other one
         ld (ab_to),a
+; from bank ab_from to bank ab_to, both at #4000-#7FFF
+bank_copy:
 .piece:
         ld a,b
         or c
@@ -151,6 +159,7 @@ api_ticks:
 
 api_frames:
         ld hl,(int_frames)
+        ld a,(int_frames_hi)
         ret
 
 ; -> A: a 16-bit linear congruential generator, high byte
