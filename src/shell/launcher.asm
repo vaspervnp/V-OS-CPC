@@ -5,7 +5,7 @@
 ; not V-OS's own) as a 3 x 3 grid of coloured tiles, more on the next
 ; pages. The selected tile is white.
 ;   cursor keys      move (UP/DOWN a row; past the edge, the next page)
-;   RETURN/ENTER     start the program (from M6 on; for now a notice)
+;   RETURN/ENTER     start the program (src/api/vos_api.inc)
 ;   ^R read the disc again; mouse: click a tile, again to start it
 ; An overlay (kernel/view.asm).
 ; =====================================================================
@@ -533,13 +533,14 @@ ln_event:
         jp nz,ln_select
         ; again on the selected tile: start it
 
-; starting programs comes with the loader (M6)
+; start the selected program (kernel/view.asm: app_request)
 ln_run:
         ld a,(ln_count)
         or a
         ret z
-        ld hl,dlg_run
-        jp dialog_run
+        call ln_remember
+        xor a
+        jp app_request
 
 ln_command:
         cp CMD_INFO
@@ -559,7 +560,6 @@ ln_menu_file:
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_QUIT, CMD_QUIT, "Q", 0
 
-dlg_run:        db MSG_ITEM_RUN, MSG_DLG_RUN, 1, MSG_BTN_OK
 
 ln_vos:         db "VOS     BIN"
 ln_bin:         db "BIN"

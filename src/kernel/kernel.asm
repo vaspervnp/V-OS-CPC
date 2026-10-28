@@ -35,13 +35,24 @@ kernel_entry:
         jr z,.idle
         call view_keys
         jr c,.events
-        ld a,(view_cur)
-        cp VIEW_NONE
-        call nz,OV_EVENT
+        call .event
         jr .events
 .idle:
+        ld a,(view_ticks)           ; frame events for animation
+        or a
+        jr z,.no_ticks
+        ld hl,ev_cur
+        ld (hl),EV_FRAME
+.no_ticks:
+        call nz,.event
         call ptr_update
         jr .main
+.event:
+        ld a,(view_cur)
+        cp VIEW_NONE
+        ret z
+        ld hl,ev_cur
+        jp OV_EVENT
 
 palette_black:  ds 17, 0
 palette_mode1:                      ; Desktop / Commander palette

@@ -21,6 +21,7 @@ EV_PTR_MOVE     equ 4               ; at most one queued at a time
 EV_PTR_DOWN     equ 5               ; code = button that went down
 EV_PTR_UP       equ 6
 EV_LANG         equ 7               ; code = lang_input after CONTROL+SHIFT
+EV_FRAME        equ 8               ; not queued: the main loop, with ticks on
 
 EV_SIZE         equ 8
 EV_COUNT        equ 32              ; power of two

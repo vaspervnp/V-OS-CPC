@@ -45,11 +45,25 @@ define add_packs
 	for p in $(PACKS); do $(IDSK) $(1) -i $$p -t 1 -c 8000 -e 8000 > /dev/null; done
 endef
 
-$(DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
+# Programs (apps/): each is assembled on its own, with only the API
+# include, and goes on the disc as a binary loading at #4000.
+APPS    := $(BUILD)/DEMO.BIN
+APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
+
+$(BUILD)/DEMO.BIN: apps/demo/demo.asm src/api/vos_api.inc
+	@mkdir -p $(BUILD)
+	$(RASM) apps/demo/demo.asm -I src -o $(BUILD)/demo > /dev/null
+
+define add_apps
+	for p in $(APPS); do $(IDSK) $(1) -i $$p -t 1 -c 4000 -e 4000 > /dev/null; done
+endef
+
+$(DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@mkdir -p $(BUILD)
 	@rm -f $(DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos -s -sl
 	$(call add_packs,$(DSK))
+	$(call add_apps,$(DSK))
 	$(PYTHON) -I tools/dsk_ext.py $(DSK)
 
 run: $(DSK)
@@ -82,17 +96,19 @@ define run_test
 	ls $(BUILD)/shots/$(2)/*.png
 endef
 
-$(TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
+$(TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@mkdir -p $(BUILD)
 	@rm -f $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_test -DTEST_SCRIPT=1
 	$(call add_packs,$(TEST_DSK))
+	$(call add_apps,$(TEST_DSK))
 	$(PYTHON) -I tools/dsk_ext.py $(TEST_DSK)
 
-# Shots along the script (src/kernel/test_script.asm): selection kept
-# from Desktop to Commander, copy, "replace?", format of B:, Setup.
-# One run per shot: runs are short, shots are per second.
-TEST_SHOTS := 110 170 230 260 300 500 820 900
+# Shots along the script (src/kernel/test_script.asm): Launcher, the
+# DEMO program in Greek and English, back to the Launcher, Desktop and
+# "not a V-OS program". One run per shot: runs are short, shots are per
+# second.
+TEST_SHOTS := 100 160 300 380 500 560 625
 test-input: $(TEST_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(TEST_SHOTS); do \

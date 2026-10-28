@@ -679,6 +679,8 @@ dt_command:
         jr z,dt_delete
         cp CMD_RENAME
         jr z,dt_rename
+        cp CMD_RUN
+        jr z,dt_run
         jp view_command
 
 ; selected file -> file_name, A = drive; carry if there is none
@@ -708,6 +710,11 @@ dt_info:
         ret c
         jp file_info
 
+dt_run:
+        call dt_selected
+        ret c
+        jp app_request
+
 ; the target is the other drive, which is not on the screen
 dt_copy:
         call dt_selected
@@ -733,7 +740,8 @@ dt_bar:
         db 3
         dw dt_menu_file, menu_view, menu_help
 dt_menu_file:
-        db MSG_MENU_FILE, 8
+        db MSG_MENU_FILE, 9
+        db MSG_ITEM_RUN, CMD_RUN, 0, 0
         db MSG_ITEM_INFO, CMD_INFO, 0, 0
         db MSG_ITEM_COPY_DRIVE, CMD_COPY, "C", 0
         db MSG_ITEM_DELETE, CMD_DELETE, "D", 0

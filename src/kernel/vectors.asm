@@ -20,8 +20,10 @@ rst_30: ret
 rst_38: jp int_handler              ; IM 1: 300 Hz Gate Array interrupt
         ds API_TABLE - $, 0
 
-; ---- API table (filled in from M6) ----------------------------------
+; ---- API: header, then the jump table (src/api/vos_api.inc) ---------
 api_header:
         db "VOS", 0                 ; signature
         dw VOS_VERSION              ; kernel version, BCD major.minor
         dw VOS_API_VERSION          ; API version
+        assert $ == VOS_API
+        include "api.asm"

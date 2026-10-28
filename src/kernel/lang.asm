@@ -138,6 +138,8 @@ ram_home:
 ; Main context. Destroys: AF, BC, DE
 ; ---------------------------------------------------------------------
 lang_msg:
+        cp VT_FIRST                 ; a program's own text
+        jp nc,api_text
         ld (lm_id),a
         ld a,(lang_ui)
         or a

@@ -218,6 +218,8 @@ cm_command:
         jp z,cm_rename
         cp CMD_FORMAT
         jp z,cm_format
+        cp CMD_RUN
+        jp z,cm_run
         jp view_command
 
 ; ---------------------------------------------------------------------
@@ -696,6 +698,11 @@ cm_info:
         ret c
         jp file_info
 
+cm_run:
+        call cm_selected
+        ret c
+        jp app_request
+
 cm_copy:
         call cm_selected
         ret c
@@ -733,7 +740,8 @@ cm_bar:
         db 3
         dw cm_menu_file, menu_view, menu_help
 cm_menu_file:
-        db MSG_MENU_FILE, 9
+        db MSG_MENU_FILE, 10
+        db MSG_ITEM_RUN, CMD_RUN, 0, 0
         db MSG_ITEM_INFO, CMD_INFO, 0, 0
         db MSG_ITEM_COPY, CMD_COPY, "C", 0
         db MSG_ITEM_DELETE, CMD_DELETE, "D", 0

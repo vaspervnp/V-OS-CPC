@@ -8,6 +8,8 @@
 ;   +3  jp event    handle ev_cur
 ;   +6  jp redraw   draw everything again (the language changed)
 ;   +9  db "VV", view number
+; Programs (app_request, src/api/vos_api.inc) run the same way, from
+; any drive, with "VA" and their API version at +9.
 ; Views share the VIEW and HELP menus and their commands (view_command).
 ; F1 to F4 (or a view's VIEW menu, through view_request) switch
 ; views. A new view is loaded into bank 4 first and checked, so a disc
@@ -18,6 +20,7 @@ VIEW_DESKTOP    equ 0
 VIEW_LAUNCHER   equ 1
 VIEW_COMMANDER  equ 2
 VIEW_SETUP      equ 3
+VIEW_APP        equ 4               ; a program (kernel/api.asm)
 VIEW_NONE       equ #FF
 
 OV_INIT         equ VIEW_ADDR
@@ -37,6 +40,7 @@ CMD_KEYS        equ 8
 CMD_ABOUT       equ 9
 CMD_FORMAT      equ 10
 CMD_SAVE        equ 11
+CMD_RUN         equ 12
 CMD_DESKTOP     equ 16              ; CMD_DESKTOP + view number
 CMD_LAUNCHER    equ 17
 CMD_COMMANDER   equ 18
@@ -55,6 +59,9 @@ view_poll:
         ld b,a
         ld a,VIEW_NONE
         ld (view_next),a
+        ld a,b
+        cp VIEW_APP
+        jr z,app_run
         ld a,(view_cur)
         cp b
         ret z
@@ -79,23 +86,69 @@ view_switch:
         xor a                       ; overlays live on drive A:
         call fdc_select
         pop hl
-        ld de,BUF_ADDR
-        ld c,BUF_CFG
-        call fs_load
+        call view_fetch
         jp c,sys_error
-        ld a,BUF_CFG                ; is it the view asked for?
-        call ram_select
-        ld hl,(BUF_ADDR + OV_MAGIC - VIEW_ADDR)
-        ld a,(BUF_ADDR + OV_MAGIC - VIEW_ADDR + 2)
-        ld c,a                      ; (ram_select destroys B)
-        call ram_home
-        ld de,"V" * 256 + "V"
+        ld de,"V" * 256 + "V"       ; is it the view asked for?
         or a
         sbc hl,de
         jr nz,.bad
         ld a,(vw_n)
         cp c
+        jr z,view_install
+.bad:
+        ld a,FS_ERR_FORMAT
+        jp sys_error
+
+; A = drive: run the program file_name (from a view: it starts once
+; the view's event is handled)
+app_request:
+        ld (app_drive),a
+        ld a,VIEW_APP
+        jp view_request
+
+app_run:
+        ld a,(app_drive)
+        call fdc_select
+        ld hl,file_name
+        call view_fetch
+        jp c,sys_error
+        ld de,"A" * 256 + "V"       ; "VA", and an API we have
+        or a
+        sbc hl,de
         jr nz,.bad
+        ld a,c
+        cp VOS_API_VERSION + 1
+        jr nc,.bad
+        ld a,(view_cur)
+        cp VIEW_APP
+        jr z,.return
+        ld (app_return),a
+.return:
+        ld a,VIEW_APP
+        jr view_install
+.bad:
+        ld a,FS_ERR_NOT_PROGRAM
+        jp sys_error
+
+; HL = name, on the drive selected: the file into bank 4 -> HL = bytes
+; 9 and 10 (the magic), C = byte 11. Carry and A = error on failure.
+view_fetch:
+        ld de,BUF_ADDR
+        ld c,BUF_CFG
+        call fs_load
+        ret c
+        ld a,BUF_CFG
+        call ram_select
+        ld hl,(BUF_ADDR + OV_MAGIC - VIEW_ADDR)
+        ld a,(BUF_ADDR + OV_MAGIC - VIEW_ADDR + 2)
+        ld c,a                      ; (ram_select destroys B)
+        call ram_home
+        or a
+        ret
+
+; A = view: the file in bank 4 becomes the running view, from bank 5
+view_install:
+        ld (vw_n),a
         call ptr_hide
         ld hl,(fs_length)           ; 512-byte pieces through fs_buf
         ld de,511
@@ -126,10 +179,11 @@ view_switch:
         ld (ram_home_cfg),a
         ld a,(vw_n)
         ld (view_cur),a
+        xor a                       ; no frame events, no program texts
+        ld (view_ticks),a
+        ld hl,api_no_texts
+        ld (app_texts),hl
         jp OV_INIT
-.bad:
-        ld a,FS_ERR_FORMAT
-        jp sys_error
 
 ; ev_cur: F1-F4 outside menus -> carry, a switch is requested
 view_keys:
@@ -230,5 +284,8 @@ view_files:
 view_cur:       db VIEW_NONE
 view_next:      db VIEW_DESKTOP     ; the first view (SETUP.CFG)
 vw_n:           db 0
+view_ticks:     db 0                ; EV_FRAME events for the view
+app_drive:      db 0
+app_return:     db VIEW_LAUNCHER    ; the view that started the program
 vw_left:        db 0
 vw_ptr:         dw 0

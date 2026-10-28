@@ -38,7 +38,7 @@ COPIED      ΑΝΤΙΓΡΑΦΗΚΕ ΣΤΟ
 DELETE_Q    ΔΙΑΓΡΑΦΗ
 QMARK       ;
 DLG_ABOUT_T ΣΧΕΤΙΚΑ
-DLG_ABOUT   V-OS 0.09|AMSTRAD CPC 6128|ΕΠΙΦΑΝΕΙΑ, ΠΡΟΓΡΑΜΜΑΤΑ|ΚΑΙ COMMANDER
+DLG_ABOUT   V-OS 0.10|AMSTRAD CPC 6128|ΕΠΙΦΑΝΕΙΑ, ΠΡΟΓΡΑΜΜΑΤΑ|ΚΑΙ COMMANDER
 DLG_KEYS_T  ΠΛΗΚΤΡΑ
 DLG_KEYS    F1-F4 ΟΨΕΙΣ|ESC ΜΕΝΟΥ|ΒΕΛΗ ΕΠΙΛΟΓΗ|TAB ΜΟΝΑΔΑ|ENTER ΣΤΟΙΧΕΙΑ|^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.|^N ΜΕΤΟΝΟΜΑΣΙΑ|CTRL+SHIFT EN/EL
 DLG_QUIT_T  ΕΞΟΔΟΣ
@@ -56,13 +56,13 @@ ERR_8       ΓΕΜΑΤΗ ΔΙΣΚΕΤΑ
 ERR_9       ΓΕΜΑΤΟΣ ΚΑΤΑΛΟΓΟΣ
 ERR_10      ΤΟ ΟΝΟΜΑ ΥΠΑΡΧΕΙ
 ERR_11      ΜΗ ΕΓΚΥΡΟ ΟΝΟΜΑ
+ERR_12      ΔΕΝ ΕΙΝΑΙ ΠΡΟΓΡΑΜΜΑ V-OS
 RENAME_T    ΜΕΤΟΝΟΜΑΣΙΑ
 INPUT_HINT  RETURN ΕΝΤΑΞΕΙ  ESC ΑΚΥΡΟ
 DT_KEYS     TAB ΜΟΝΑΔΑ ^C ΑΝΤΙΓΡΑΦΗ ^D ΔΙΑΓΡΑΦΗ ^N ΜΕΤΟΝ.
 LN_KEYS     ΒΕΛΗ ΚΙΝΗΣΗ ENTER ΕΚΚΙΝ.
 NO_PROGRAMS ΚΑΝΕΝΑ ΠΡΟΓΡΑΜΜΑ ΣΤΟ A:
 PAGE        ΣΕΛΙΔΑ
-DLG_RUN     Η ΕΚΚΙΝΗΣΗ ΕΡΧΕΤΑΙ|ΣΤΟ M6
 ITEM_FORMAT ΦΟΡΜΑΡΙΣΜΑ ΔΙΣΚΕΤΑΣ (DATA)
 ITEM_SETUP  ΡΥΘΜΙΣΕΙΣ     F4
 ITEM_SAVE_SET ΑΠΟΘΗΚΕΥΣΗ ΡΥΘΜΙΣΕΩΝ

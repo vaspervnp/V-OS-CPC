@@ -11,9 +11,9 @@
         include "include/hw.inc"
         include "include/memmap.inc"
         include "lang/msg_ids.inc"
+        include "api/vos_api.inc"
 
-VOS_VERSION     equ #0009           ; 0.09
-VOS_API_VERSION equ #0000
+VOS_VERSION     equ #0010           ; 0.10
 
 ; ---- loader, runs at LOADER_ADDR ------------------------------------
         org LOADER_ADDR
@@ -54,7 +54,12 @@ kernel_end:
 
 KERNEL_SIZE     equ kernel_end - kernel_start
 
+        IFDEF TEST_SCRIPT                     ; the test script takes some of
+        assert KERNEL_SIZE <= KERNEL_LIMIT + #100 - KERNEL_BASE ; the stack
+        ELSE
         assert KERNEL_SIZE <= KERNEL_LIMIT - KERNEL_BASE
+        ENDIF
+        assert MSG_COUNT <= VT_FIRST          ; program texts start there
         assert LOADER_ADDR + kernel_image - loader_start + KERNEL_SIZE <= #A000
 
         IFDEF TEST_SCRIPT

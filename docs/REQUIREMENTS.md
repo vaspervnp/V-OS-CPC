@@ -301,6 +301,8 @@
 | `FILE` | catalog, open, read, write, close, delete, rename, free_space |
 | `SND` | beep, note, volume, silence |
 
+**Υλοποίηση M6** (`src/api/vos_api.inc`, `src/kernel/api.asm`): πίνακας άλματος `CALL VOS_xxx` στο `#0108` (μετά από `"VOS",0`, έκδοση kernel και έκδοση API στο `#0100`), 31 κλήσεις, έκδοση API 1. Παράμετροι σε `A, BC, DE, HL` (και `IX` για ορθογώνιο), σφάλμα στο Carry. Τα προγράμματα δεν περιμένουν είσοδο: ο kernel καλεί το `event` τους για κάθε συμβάν (και ανά frame με `VOS_TICKS`). Τα κείμενα `#C0`+ είναι του προγράμματος (`VOS_TEXTS`), σε δύο γλώσσες.
+
 ### 7.3 Μορφή εφαρμογής (`.BIN` του V-OS)
 
 Header με:
@@ -308,6 +310,8 @@ Header με:
 - μέγεθος κώδικα και δεδομένων, πίνακα relocation,
 - σημεία εισόδου: `init`, `event`, `draw`, `exit`,
 - όνομα (έως 8 χαρακτήρες) και εικονίδιο 16×16 για το shell.
+
+**Υλοποίηση M6:** binary με header AMSDOS για το `#4000`, έως 16K σε μία bank (5). Στην αρχή του: `jp init`, `jp event`, `jp redraw`, `"VA"`, έκδοση API. Το όνομα είναι του αρχείου. Δεν υπάρχουν ακόμα relocation (σταθερή διεύθυνση), εικονίδιο ή επιλογή mode στο header: το πρόγραμμα ορίζει μόνο του mode και παλέτα στο `init`.
 
 ---
 
@@ -369,7 +373,7 @@ Header με:
 5. **M3 — UI:** γραμμή μενού, πτυσσόμενα μενού, εστίαση και TAB, διάλογοι.
 6. **M4 — Δισκέτα:** driver FDC (read/write sector), filesystem συμβατό με AMSDOS (catalog, load, save, delete), παράθυρο επιλογής αρχείου. Το format μένει για αργότερα.
 7. **M5 — Shell:** πρώτα το Commander (C, μόνο κείμενο, γρηγορότερο να γίνει), μετά το Desktop (A) με παράθυρα, τέλος ο Launcher (B) σε mode 0. Εναλλαγή όψεων και Setup. *M5a (έγινε): Commander με δύο πάνελ, στοιχεία, αντιγραφή, διαγραφή. M5b (έγινε): όψεις ως overlays, Desktop, Launcher, μετονομασία, αντιγραφή αρχείων κάθε μεγέθους. M5c (έγινε): Setup και `SETUP.CFG`, format, επιβεβαίωση αντικατάστασης, η επιλογή μένει από όψη σε όψη. Μένει η εκκίνηση προγραμμάτων από τον Launcher (M6).*
-8. **M6 — API και loader:** jump table, header εφαρμογών, banks, πρώτη εφαρμογή-δείγμα.
+8. **M6 — API και loader:** jump table, header εφαρμογών, banks, πρώτη εφαρμογή-δείγμα. *Έγινε: API 31 κλήσεων, loader, εκκίνηση από Launcher/Desktop/Commander, `DEMO.BIN`. Μένουν: banks για προγράμματα, ήχος, relocation, εικονίδια.*
 9. **M7 — Cross-compiler:** web editor blocks → ASM → `.BIN` σε `.DSK`.
 10. **M8 — Studio:** μικτή οθόνη και native editor (προαιρετικό).
 

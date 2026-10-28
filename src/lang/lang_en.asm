@@ -56,13 +56,13 @@ msg_en_table:
         dw msg_en_err_9
         dw msg_en_err_10
         dw msg_en_err_11
+        dw msg_en_err_12
         dw msg_en_rename_t
         dw msg_en_input_hint
         dw msg_en_dt_keys
         dw msg_en_ln_keys
         dw msg_en_no_programs
         dw msg_en_page
-        dw msg_en_dlg_run
         dw msg_en_item_format
         dw msg_en_item_setup
         dw msg_en_item_save_set
@@ -176,8 +176,8 @@ msg_en_qmark:              ; ?
         db #3F,#00
 msg_en_dlg_about_t:              ; ABOUT
         db #41,#42,#4F,#55,#54,#00
-msg_en_dlg_about:              ; V-OS 0.09|AMSTRAD CPC 6128|DESKTOP, LAUNCHER|AND COMMANDER
-        db #56,#2D,#4F,#53,#20,#30,#2E,#30,#39,#7C,#41,#4D,#53,#54,#52,#41
+msg_en_dlg_about:              ; V-OS 0.10|AMSTRAD CPC 6128|DESKTOP, LAUNCHER|AND COMMANDER
+        db #56,#2D,#4F,#53,#20,#30,#2E,#31,#30,#7C,#41,#4D,#53,#54,#52,#41
         db #44,#20,#43,#50,#43,#20,#36,#31,#32,#38,#7C,#44,#45,#53,#4B,#54
         db #4F,#50,#2C,#20,#4C,#41,#55,#4E,#43,#48,#45,#52,#7C,#41,#4E,#44
         db #20,#43,#4F,#4D,#4D,#41,#4E,#44,#45,#52,#00
@@ -226,6 +226,9 @@ msg_en_err_10:              ; NAME ALREADY USED
         db #44,#00
 msg_en_err_11:              ; INVALID NAME
         db #49,#4E,#56,#41,#4C,#49,#44,#20,#4E,#41,#4D,#45,#00
+msg_en_err_12:              ; NOT A V-OS PROGRAM
+        db #4E,#4F,#54,#20,#41,#20,#56,#2D,#4F,#53,#20,#50,#52,#4F,#47,#52
+        db #41,#4D,#00
 msg_en_rename_t:              ; RENAME
         db #52,#45,#4E,#41,#4D,#45,#00
 msg_en_input_hint:              ; RETURN OK  ESC CANCEL
@@ -243,9 +246,6 @@ msg_en_no_programs:              ; NO PROGRAMS ON A:
         db #3A,#00
 msg_en_page:              ; PAGE
         db #50,#41,#47,#45,#00
-msg_en_dlg_run:              ; PROGRAMS START|FROM M6 ON
-        db #50,#52,#4F,#47,#52,#41,#4D,#53,#20,#53,#54,#41,#52,#54,#7C,#46
-        db #52,#4F,#4D,#20,#4D,#36,#20,#4F,#4E,#00
 msg_en_item_format:              ; FORMAT DISC (DATA)
         db #46,#4F,#52,#4D,#41,#54,#20,#44,#49,#53,#43,#20,#28,#44,#41,#54
         db #41,#29,#00
