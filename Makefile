@@ -23,7 +23,7 @@ IDSK    ?= iDSK
 # files are committed (like src/gfx/font_ascii.asm); packs are build
 # products added to the disk.
 LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
-PACKS   := $(BUILD)/GREEK.LNG
+PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG
 
 .PHONY: all run shot test-input test-amsdos test-reboot test-system clean
 
@@ -32,8 +32,8 @@ all: $(DSK)
 # RASM appends to an existing DSK, so start from a fresh one every time.
 # Include paths in src/vos.asm are relative to src/; the DSK path is
 # relative to the repo root, where make runs.
-$(LANG_KERNEL) &: lang/en/keymap.txt lang/en/messages.txt tools/mklng.py
-	$(PYTHON) -I tools/mklng.py kernel lang/en src/lang
+$(LANG_KERNEL) $(BUILD)/ENGLISH.MSG &: lang/en/keymap.txt lang/en/messages.txt tools/mklng.py
+	$(PYTHON) -I tools/mklng.py kernel lang/en src/lang $(BUILD)/ENGLISH.MSG
 
 $(BUILD)/GREEK.LNG: $(wildcard lang/el/*.txt) lang/en/messages.txt lang/en/keymap.txt tools/mklng.py
 	@mkdir -p $(BUILD)

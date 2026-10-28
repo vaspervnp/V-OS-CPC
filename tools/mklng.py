@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Build V-OS language data from the text sources in lang/.
 
-  mklng.py kernel lang/en src/lang
-      English, built into the kernel:
+  mklng.py kernel lang/en src/lang build/ENGLISH.MSG
+      English, the master language:
         src/lang/msg_ids.inc   MSG_<ID> equates and MSG_COUNT
-        src/lang/lang_en.asm   msg_en_table + strings, kbd_map, kbd_map_shift
+        src/lang/lang_en.asm   kbd_map, kbd_map_shift (built into the kernel)
+        ENGLISH.MSG            the texts, a file the kernel loads into
+                               bank 7: "VMSG", db 1, then a messages block
+                               as in .LNG files (offsets from the start)
 
   mklng.py pack lang/el build/GREEK.LNG --master lang/en
       A language pack file (.LNG), format below.
@@ -265,7 +268,10 @@ def asm_bytes(data, per_line=16):
     return out
 
 
-def build_kernel(src, outdir):
+MAX_ENGLISH = 6144                  # EN_MSG_ADDR .. bank end, memmap.inc
+
+
+def build_kernel(src, outdir, msg_file):
     ascii_cs = Charset("ascii")
     normal, shift, combos = read_keymap(os.path.join(src, "keymap.txt"), ascii_cs)
     if combos:
@@ -280,19 +286,28 @@ def build_kernel(src, outdir):
     with open(os.path.join(outdir, "msg_ids.inc"), "w", encoding="ascii") as f:
         f.write("\n".join(ids) + "\n")
 
-    out = banner + ["", "; English UI texts, indexed by MSG_<ID>", "msg_en_table:"]
-    for ident in msgs:
-        out.append(f"        dw msg_en_{ident.lower()}")
+    head = 5
+    table = bytearray(len(msgs).to_bytes(2, "little"))
+    strings = bytearray()
+    first_string = head + 2 + 2 * len(msgs)
     for ident, text in msgs.items():
-        out.append(f"msg_en_{ident.lower()}:              ; {text}")
-        out += asm_bytes(ascii_cs.text(text, f"{src}/messages.txt {ident}") + b"\0")
-    out += ["", "; English keyboard map: key number -> character (0 = none)", "kbd_map:"]
+        table += (first_string + len(strings)).to_bytes(2, "little")
+        strings += ascii_cs.text(text, f"{src}/messages.txt {ident}") + b"\0"
+    data = b"VMSG" + bytes([1]) + table + strings
+    if len(data) > MAX_ENGLISH:
+        fail(f"{msg_file}: {len(data)} bytes, the limit is {MAX_ENGLISH}")
+    os.makedirs(os.path.dirname(msg_file) or ".", exist_ok=True)
+    with open(msg_file, "wb") as f:
+        f.write(data)
+
+    out = banner + ["", "; English keyboard map: key number -> character (0 = none)", "kbd_map:"]
     out += asm_bytes(bytes(normal), 8)
     out.append("kbd_map_shift:")
     out += asm_bytes(bytes(shift), 8)
     with open(os.path.join(outdir, "lang_en.asm"), "w", encoding="ascii") as f:
         f.write("\n".join(out) + "\n")
-    print(f"mklng: {outdir}/msg_ids.inc, {outdir}/lang_en.asm: {len(msgs)} messages")
+    print(f"mklng: {outdir}/msg_ids.inc, {outdir}/lang_en.asm, {msg_file}: "
+          f"{len(msgs)} messages, {len(data)} bytes")
 
 
 def main():
@@ -301,13 +316,14 @@ def main():
     k = sub.add_parser("kernel")
     k.add_argument("src")
     k.add_argument("outdir")
+    k.add_argument("msg_file")
     p = sub.add_parser("pack")
     p.add_argument("src")
     p.add_argument("dst")
     p.add_argument("--master", required=True)
     args = ap.parse_args()
     if args.cmd == "kernel":
-        build_kernel(args.src, args.outdir)
+        build_kernel(args.src, args.outdir, args.msg_file)
     else:
         build_pack(args.src, args.dst, args.master)
 

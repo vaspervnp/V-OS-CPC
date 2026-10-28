@@ -31,7 +31,8 @@ SCREEN_BPL      equ 96              ; bytes per pixel line
 ;   bank 4 (#C4)  file buffer: info and copy (kernel/files.asm)
 ;   bank 5 (#C5)  the running view, an overlay file (kernel/view.asm)
 ;   bank 6 (#C6)  what menus and dialogs cover (ui/ui.asm)
-;   bank 7 (#C7)  the language pack, then the Commander's file lists
+;   bank 7 (#C7)  the language pack, the Commander's file lists, the
+;                 English texts
 ; Kernel code that maps another bank maps the view's bank back
 ; (ram_home), never plain RAM, so a view can call it from #4000.
 ; The language pack: the kernel loads GREEK.LNG from disc into bank 7
@@ -42,6 +43,7 @@ LANG_BANK_ADDR  equ #4000
 LANG_MAX        equ #2000           ; tools/mklng.py MAX_PACK
 LISTS_CFG       equ #C7             ; Commander lists after the pack
 LISTS_ADDR      equ #6000
+EN_MSG_ADDR     equ #6800           ; ENGLISH.MSG, up to 6K
 BUF_CFG         equ #C4
 BUF_ADDR        equ #4000
 VIEW_BANK_CFG   equ #C5

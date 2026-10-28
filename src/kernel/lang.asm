@@ -1,7 +1,8 @@
 ; =====================================================================
 ; lang.asm - language packs (.LNG, see tools/mklng.py for the format)
 ;
-; English is built in: kernel font for 32..127, kbd_map, msg_en_table.
+; English is the master: kernel font for 32..127 and kbd_map built in, the
+; texts in ENGLISH.MSG (bank 7, EN_MSG_ADDR), used when a text is missing.
 ; One pack adds codes 128..255 (font and letter case), a keyboard map
 ; with dead keys, and translated UI texts.
 ;
@@ -36,6 +37,23 @@ lang_init:
         ld (lang_loaded),a
         ld (lang_ui),a
         ld (lang_input),a
+        ld (lang_en_ok),a
+        ld hl,lang_en_file          ; the English texts
+        ld de,EN_MSG_ADDR
+        ld c,LANG_BANK_CFG
+        call fs_load
+        jr c,.pack
+        ld a,LANG_BANK_CFG
+        call ram_select
+        ld hl,(EN_MSG_ADDR)
+        call ram_home
+        ld de,"M" * 256 + "V"       ; "VM(SG)"
+        or a
+        sbc hl,de
+        jr nz,.pack
+        ld a,1
+        ld (lang_en_ok),a
+.pack:
         ld hl,lang_file
         ld de,LANG_BANK_ADDR
         ld c,LANG_BANK_CFG
@@ -141,20 +159,56 @@ lang_msg:
         cp VT_FIRST                 ; a program's own text
         jp nc,api_text
         ld (lm_id),a
+        ld a,LANG_BANK_CFG
+        call ram_select
         ld a,(lang_ui)
         or a
         jr z,.english
-        ld a,LANG_BANK_CFG
-        call ram_select
         ld hl,(LANG_BANK_ADDR + LNG_MSGS)
         ld de,LANG_BANK_ADDR
+        call .find
+        jr nc,.copy
+.english:                           ; not translated: the English one
+        ld a,(lang_en_ok)
+        or a
+        jr z,.none
+        ld hl,5
+        ld de,EN_MSG_ADDR
+        call .find
+        jr nc,.copy
+.none:
+        call ram_home
+        ld hl,lm_none
+        ret
+.copy:
+        ld de,lang_msg_buf
+        ld b,LANG_MSG_MAX
+.byte:
+        ld a,(hl)
+        ld (de),a
+        or a
+        jr z,.copied
+        inc hl
+        inc de
+        djnz .byte
+        xor a
+        ld (de),a
+.copied:
+        call ram_home
+        ld hl,lang_msg_buf
+        ret
+; HL = messages block offset, DE = file base -> HL -> text of lm_id,
+; carry if it has none
+.find:
         add hl,de
-        ld c,(hl)                   ; count
+        ld c,(hl)                   ; count (under 256)
         inc hl
         inc hl
         ld a,(lm_id)
         cp c
-        jr nc,.missing
+        ccf
+        ret c
+        push de
         ld e,a
         ld d,0
         add hl,de
@@ -164,38 +218,11 @@ lang_msg:
         ld d,(hl)                   ; offset of the text, 0 = missing
         ld a,d
         or e
-        jr z,.missing
-        ld hl,LANG_BANK_ADDR
+        pop hl
+        scf
+        ret z
         add hl,de
-        ld de,lang_msg_buf
-        ld b,LANG_MSG_MAX
-.copy:
-        ld a,(hl)
-        ld (de),a
         or a
-        jr z,.copied
-        inc hl
-        inc de
-        djnz .copy
-        xor a
-        ld (de),a
-.copied:
-        call ram_home
-        ld hl,lang_msg_buf
-        ret
-.missing:
-        call ram_home
-.english:
-        ld a,(lm_id)
-        ld l,a
-        ld h,0
-        add hl,hl
-        ld de,msg_en_table
-        add hl,de
-        ld a,(hl)
-        inc hl
-        ld h,(hl)
-        ld l,a
         ret
 
 ; ---------------------------------------------------------------------
@@ -281,6 +308,9 @@ lang_code:      db "EN"
 lang_name:      ds 13               ; 12 + a zero
 lm_id:          db 0
 lang_file:      db "GREEK   LNG"
+lang_en_file:   db "ENGLISH MSG"
+lang_en_ok:     db 0
+lm_none:        db "?", 0
 ; tables in the video RAM gaps (memmap.inc)
 lang_font_lo    equ GAP0            ; glyphs 128..191
 lang_msg_buf    equ GAP0 + 512      ; LANG_MSG_MAX + 1
