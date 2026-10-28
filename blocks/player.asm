@@ -73,6 +73,7 @@ CODE_LIMIT      equ prog_sprites - 64   ; a line's code is shorter
         jp rt_event
         jp rt_redraw
         db "VA", VOS_API_VERSION
+        include "icon_blocks.asm"       ; VOS_ICON, from apps/icons/blocks.txt
 
         include "runtime.asm"
 

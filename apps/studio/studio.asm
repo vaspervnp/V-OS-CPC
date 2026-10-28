@@ -159,6 +159,7 @@ ERR_NOT_FOUND   equ 7
         jp event
         jp redraw
         db "VA", VOS_API_VERSION
+        include "icon_studio.asm"       ; VOS_ICON, from apps/icons/studio.txt
 
 init:
         ld hl,player                ; the player to the data bank: its

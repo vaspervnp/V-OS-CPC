@@ -33,6 +33,7 @@ CMD_BACK        equ 2
         jp event
         jp redraw
         db "VA", VOS_API_VERSION
+        include "icon_demo.asm"       ; VOS_ICON, from apps/icons/demo.txt
 
 init:
         ld hl,texts

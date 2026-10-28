@@ -3,7 +3,10 @@
 ;
 ; Mode 0, 16 colours. The programs on drive A: (.BIN and .BAS files,
 ; not V-OS's own) as a 3 x 3 grid of coloured tiles, more on the next
-; pages. The selected tile is white.
+; pages. The selected tile is white. A program with an icon (VOS_ICON
+; in src/api/vos_api.inc) shows it on its tile: the first time a page
+; is drawn, the first sector of each .BIN on it is read, and the icon
+; kept (ln_icons).
 ;   cursor keys      move (UP/DOWN a row; past the edge, the next page)
 ;   RETURN/ENTER     start the program (src/api/vos_api.inc)
 ;   ^R read the disc again; mouse: click a tile, again to start it
@@ -63,6 +66,11 @@ ln_draw_screen:
 
 ; the programs of drive A:, from its catalog
 ln_load:
+        ld hl,ln_icon_st            ; icons: not read yet
+        ld de,ln_icon_st + 1
+        ld bc,LN_MAX - 1
+        ld (hl),0
+        ldir
         xor a
         call fdc_select
         call fs_catalog
@@ -299,6 +307,7 @@ ln_draw_tile:
         add hl,hl
         ld de,FS_CAT
         add hl,de
+        call ln_icon
         push hl
         ld de,ln_line               ; name, without the padding
         ld b,8
@@ -331,7 +340,7 @@ ln_draw_tile:
         ld hl,(ln_x)
         add hl,de
         ld de,(ln_y)
-        ld a,20
+        ld a,24
         add a,e
         ld e,a
         ld bc,ln_line
@@ -348,11 +357,93 @@ ln_draw_tile:
         ld de,LN_TILE_W / 2 - 12
         add hl,de
         ld de,(ln_y)
-        ld a,34
+        ld a,38
         add a,e
         ld e,a
         ld bc,ln_line
         jp txt_print
+
+; HL -> FS_CAT entry of program ln_i: its icon on the tile, if it has
+; one (keeps HL)
+ln_icon:
+        push hl
+        ld a,(ln_i)
+        ld e,a
+        ld d,0
+        ld hl,ln_icon_st
+        add hl,de
+        ld (ln_st_ptr),hl
+        ld a,(hl)
+        or a
+        pop hl
+        push hl
+        call z,ln_icon_read
+        ld hl,(ln_st_ptr)
+        ld a,(hl)
+        cp 2
+        jr nz,.done
+        ld a,(ln_i)                 ; source: ln_icons + program * 256
+        add a,ln_icons >> 8
+        ld (ln_blit + 7),a
+        ld hl,(ln_x)                ; centred, near the top
+        ld de,LN_TILE_W / 2 - 10
+        add hl,de
+        ld (ln_blit),hl
+        ld hl,(ln_y)
+        ld de,4
+        add hl,de
+        ld (ln_blit + 2),hl
+        push ix
+        ld ix,ln_blit
+        call gfx_blit
+        pop ix
+.done:
+        pop hl
+        ret
+
+; HL -> FS_CAT entry: a .BIN with "VA" and "IC" in its first sector ->
+; its icon to ln_icons, state 2; else state 1
+ln_icon_read:
+        ld de,(ln_st_ptr)
+        ld a,1
+        ld (de),a
+        push hl
+        ld de,8
+        add hl,de
+        ld de,ln_bin
+        ld b,3
+        call ln_program.same
+        pop hl
+        ret nz
+        call fs_set_name            ; the directory is still in memory
+        call fs_collect
+        ret c
+        xor a
+        ld (fl_sector),a
+        call fl_read_next
+        ret c
+        call fs_header_ok
+        ret nz
+        ld hl,(fs_buf + 128 + OV_MAGIC - VIEW_ADDR)
+        ld de,"A" * 256 + "V"
+        or a
+        sbc hl,de
+        ret nz
+        ld hl,(fs_buf + 128 + VOS_ICON)
+        ld de,"C" * 256 + "I"
+        or a
+        sbc hl,de
+        ret nz
+        ld a,(ln_i)
+        add a,ln_icons >> 8
+        ld d,a
+        ld e,0
+        ld hl,fs_buf + 128 + VOS_ICON + 2
+        ld bc,VOS_ICON_SIZE
+        ldir
+        ld hl,(ln_st_ptr)
+        ld (hl),2
+        ret
 
 ; the tile at ln_x, ln_y in pen A
 ln_fill:
@@ -578,3 +669,13 @@ ln_x:           dw 0
 ln_y:           dw 0
 ln_line:        ds 26
 ln_list:        ds LN_MAX           ; FS_CAT numbers of the programs
+ln_st_ptr:      dw 0
+ln_blit:        dw 0, 0             ; VOS_BLIT: x, y, bytes, rows,
+                db 8, 16            ; source, stride
+                dw 0
+                db 16
+ln_icon_st:     ds LN_MAX           ; 0 not read, 1 none, 2 in ln_icons
+
+; the icons, a page each, after the overlay (not in its file)
+ln_icons        equ ($ + 255) & #FF00
+        assert ln_icons + LN_MAX * 256 <= VIEW_ADDR + #4000

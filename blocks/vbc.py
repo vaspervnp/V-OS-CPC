@@ -36,6 +36,9 @@ index, item}, list_replace {list, index, item}, list_clear {list}.
 Notes are MIDI numbers (60 = middle C), channels 0..2, lists count
 from 1.
 
+Icon: "icon": 16 rows of 16 pens (as costumes, "." transparent), the
+program's tile in the Launcher; without it, apps/icons/blocks.txt.
+
 Costumes: a sprite may have "costumes": [{"name", "pixels": ["..1f..",
 ...]}] and "costume": the name it starts with. One character per pixel:
 a pen in hex, "." transparent. Its size is the costume's; x is drawn
@@ -60,6 +63,8 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+sys.path.insert(0, os.path.join(ROOT, "tools"))
+import mkicon  # noqa: E402
 STACK_SIZE = 128
 SP_SIZE = 24
 MAX_COSTUME = 128
@@ -460,6 +465,17 @@ class Compiler:
             self.emit("jp rt_end")
         return self.listing(table)
 
+    def icon(self):
+        """the Launcher's icon: "icon" (16 rows, as costumes) or the
+        blocks one"""
+        rows = self.prog.get("icon")
+        if rows is None:
+            rows = mkicon.read_rows(os.path.join(ROOT, "apps", "icons", "blocks.txt"))
+        try:
+            return mkicon.icon_lines(rows, "icon")
+        except mkicon.Error as e:
+            raise Error(str(e))
+
     def listing(self, table):
         p = self.prog
         palette = p.get("palette", PALETTE[self.mode])
@@ -482,6 +498,7 @@ class Compiler:
             "        jp rt_event",
             "        jp rt_redraw",
             '        db "VA", VOS_API_VERSION',
+            *self.icon(),
             "",
             '        include "runtime.asm"',
             "",

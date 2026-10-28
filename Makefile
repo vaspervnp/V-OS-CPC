@@ -50,13 +50,17 @@ endef
 APPS    := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/STUDIO.BIN $(BUILD)/PONG.BIN $(BUILD)/CATCH.BIN $(BUILD)/STARCAT.BIN
 APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
 
-$(BUILD)/DEMO.BIN: apps/demo/demo.asm src/api/vos_api.inc
+# Icons for the Launcher (VOS_ICON): text in apps/icons, made into
+# assembly by tools/mkicon.py
+$(BUILD)/icon_%.asm: apps/icons/%.txt tools/mkicon.py
 	@mkdir -p $(BUILD)
-	$(RASM) apps/demo/demo.asm -I src -o $(BUILD)/demo > /dev/null
+	$(PYTHON) -I tools/mkicon.py $< $@
 
-$(BUILD)/MIXED.BIN: apps/mixed/mixed.asm src/api/vos_api.inc
-	@mkdir -p $(BUILD)
-	$(RASM) apps/mixed/mixed.asm -I src -o $(BUILD)/mixed > /dev/null
+$(BUILD)/DEMO.BIN: apps/demo/demo.asm $(BUILD)/icon_demo.asm src/api/vos_api.inc
+	$(RASM) apps/demo/demo.asm -I src -I $(BUILD) -o $(BUILD)/demo > /dev/null
+
+$(BUILD)/MIXED.BIN: apps/mixed/mixed.asm $(BUILD)/icon_mixed.asm src/api/vos_api.inc
+	$(RASM) apps/mixed/mixed.asm -I src -I $(BUILD) -o $(BUILD)/mixed > /dev/null
 
 # Studio: its texts (English and Greek) come from texts.txt
 $(BUILD)/studio_texts.asm: apps/studio/texts.txt tools/mktexts.py
@@ -65,16 +69,15 @@ $(BUILD)/studio_texts.asm: apps/studio/texts.txt tools/mktexts.py
 
 # Studio carries the player (blocks/player.asm): the runtime and a
 # compiler for Studio's programs, which RUN writes in front of one.
-$(BUILD)/VBRUN.BIN: blocks/player.asm blocks/runtime.asm src/api/vos_api.inc
-	@mkdir -p $(BUILD)
-	$(RASM) blocks/player.asm -I src -I blocks -o $(BUILD)/vbrun > /dev/null
+$(BUILD)/VBRUN.BIN: blocks/player.asm blocks/runtime.asm $(BUILD)/icon_blocks.asm src/api/vos_api.inc
+	$(RASM) blocks/player.asm -I src -I blocks -I $(BUILD) -o $(BUILD)/vbrun > /dev/null
 
-$(BUILD)/STUDIO.BIN: apps/studio/studio.asm $(BUILD)/studio_texts.asm $(BUILD)/VBRUN.BIN src/api/vos_api.inc
+$(BUILD)/STUDIO.BIN: apps/studio/studio.asm $(BUILD)/studio_texts.asm $(BUILD)/icon_studio.asm $(BUILD)/VBRUN.BIN src/api/vos_api.inc
 	$(RASM) apps/studio/studio.asm -I src -I $(BUILD) -o $(BUILD)/studio > /dev/null
 
 # Block programs (blocks/): compiled to assembly by vbc.py, with the
 # runtime. The .BIN takes the name inside the .vbp.
-BLOCKS_RT := blocks/vbc.py blocks/runtime.asm src/api/vos_api.inc lang/en/keymap.txt
+BLOCKS_RT := blocks/vbc.py blocks/runtime.asm src/api/vos_api.inc lang/en/keymap.txt apps/icons/blocks.txt tools/mkicon.py
 
 $(BUILD)/PONG.BIN: blocks/examples/pong.vbp $(BLOCKS_RT)
 	$(PYTHON) -I blocks/vbc.py $< -o $(BUILD) > /dev/null

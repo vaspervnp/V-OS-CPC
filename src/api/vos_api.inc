@@ -113,6 +113,13 @@ VOS_API_COUNT   equ 39
 ; y1 = 12: 14% of the time). Disc transfers may disturb the split
 ; for a moment. VOS_EXIT ends it.
 
+; Icon (optional): "IC" at +12 (VOS_ICON), then 16 rows of 8 (mask,
+; pixels) pairs, as VOS_BLIT draws them: 16 x 16 pixels in mode 0, in
+; the Launcher's palette. The Launcher shows it on the program's tile.
+; tools/mkicon.py makes it from text. Init then starts at +270.
+VOS_ICON        equ 12
+VOS_ICON_SIZE   equ 256
+
 ; Program texts: numbers VT_FIRST and up, in menus, dialogs, VOS_MSG.
 ; VOS_TEXTS table: db count, then per text dw English, dw other (the
 ; language pack's language; 0 = the English one). Texts end with 0;

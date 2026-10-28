@@ -230,9 +230,29 @@ split_mode:
         ret
 
 ; ---------------------------------------------------------------------
-; split_tick - interrupt, first thing once the slice is known: A = slice
+; split_irq - interrupt, first thing once the slice is known: A = slice.
+; The boundaries, then: VSYNC now, after another slice? Then the slices
+; were counted wrong (a VSYNC interrupt taken late, after a disc
+; transfer or a long wait here), and the next interrupt is slice 0.
+; Without this a wait of 45 lines in the slice before VSYNC kept every
+; VSYNC interrupt late, and the bands wrong for good.
 ; Destroys: AF, BC, DE, HL
 ; ---------------------------------------------------------------------
+split_irq:
+        call split_tick
+        ld a,(int_slice)
+        or a
+        ret z
+        ld b,PPI_B >> 8
+        in a,(c)
+        rra                         ; carry = VSYNC
+        ret nc
+        ld a,5
+        ld (int_slice),a
+        ret
+
+; split_tick - A = slice: the mode and pens at the boundaries in it
+; Destroys: AF, BC, DE, HL
 split_tick:
         ld e,0                      ; lines waited in this slice
         ld hl,split_s1

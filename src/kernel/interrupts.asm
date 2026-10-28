@@ -43,7 +43,7 @@ int_handler:
         ld a,(split_on)
         or a
         ld a,b
-        call nz,split_tick
+        call nz,split_irq
 
         call amx_tick
         ld a,(int_input)            ; once a frame
