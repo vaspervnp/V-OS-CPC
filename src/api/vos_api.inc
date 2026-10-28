@@ -19,8 +19,8 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 5               ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
-                                    ; 5: RUN, KEEP
+VOS_API_VERSION equ 6               ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+                                    ; 5: RUN, KEEP, 6: the data bank
 VOS_APP_ADDR    equ #4000
 VOS_API         equ #0108           ; the jump table (after "VOS",0, versions)
 
@@ -78,7 +78,21 @@ VOS_RUN         equ VOS_API + 35 * 3    ; A = drive, HL -> 11-byte name
 VOS_KEEP        equ VOS_API + 36 * 3    ; -> HL -> 16 bytes the kernel
                                         ; keeps between programs (0 at
                                         ; boot; any program may use them)
-VOS_API_COUNT   equ 37
+; ---- the data bank (version 6) --------------------------------------
+VOS_BANK_GET    equ VOS_API + 37 * 3    ; HL = source in the data bank,
+                                        ; DE = destination, BC = bytes
+VOS_BANK_PUT    equ VOS_API + 38 * 3    ; HL = source, DE = destination
+                                        ; in the data bank, BC = bytes
+VOS_DATA        equ #80                 ; drive + VOS_DATA: VOS_LOAD and
+                                        ; VOS_SAVE use the data bank
+VOS_API_COUNT   equ 39
+
+; The data bank: 16K more for the program (bank 4), seen at the same
+; addresses #4000-#7FFF but never mapped there: the program copies to
+; and from it (VOS_BANK_GET, VOS_BANK_PUT) or loads and saves files in
+; it (drive + VOS_DATA). At the start it holds a copy of the program's
+; file; it lasts until the program ends. Call these on the kernel's
+; stack (in init and event), not on a stack inside #4000-#7FFF.
 
 ; VOS_BLIT draws an image, whole bytes of screen memory (2 pixels in
 ; mode 0, 4 in mode 1; x is rounded down to a byte). The source is, per

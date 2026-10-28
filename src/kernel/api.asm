@@ -41,6 +41,8 @@ api_jumps:
         jp split_set
         jp api_run                  ; 35
         jp api_keep
+        jp api_bank_get
+        jp api_bank_put
         assert $ == VOS_API + VOS_API_COUNT * 3
 
 api_exit:
@@ -90,6 +92,58 @@ api_keep:
         ld hl,app_keep
         ret
 
+        assert BUF_CFG ^ VIEW_BANK_CFG == 1
+; The data bank (bank 4) at #4000-#7FFF, through fs_buf, 512 bytes a
+; time. HL = source, DE = destination, BC = bytes.
+api_bank_get:                       ; from the data bank
+        ld a,BUF_CFG
+        jr api_bank_copy
+api_bank_put:                       ; to the data bank
+        ld a,VIEW_BANK_CFG
+api_bank_copy:
+        ld (ab_from),a
+        xor 1                       ; the other one
+        ld (ab_to),a
+.piece:
+        ld a,b
+        or c
+        jp z,ram_home
+        push bc                     ; this piece: up to 512
+        ld a,b
+        cp 2
+        jr c,.short
+        ld bc,512
+.short:
+        ld (ab_n),bc
+        push de
+        ld a,(ab_from)
+        call ram_select
+        ld de,fs_buf
+        ld bc,(ab_n)
+        ldir
+        ld a,(ab_to)
+        call ram_select
+        pop de
+        push hl
+        ld hl,fs_buf
+        ld bc,(ab_n)
+        ldir
+        pop hl
+        pop bc                      ; bytes left
+        push hl
+        ld hl,(ab_n)
+        ex de,hl                    ; HL = destination, DE = piece
+        push hl
+        ld h,b
+        ld l,c
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        pop de
+        pop hl
+        jr .piece
+
 api_ticks:
         ld (view_ticks),a
         ret
@@ -126,18 +180,37 @@ api_catalog:
         ld hl,FS_CAT
         ret
 
-; A = drive, HL = name, DE = destination in the program's memory
+; A = drive (+ VOS_DATA: the data bank), HL = name, DE = destination
 api_load:
+        call api_drive
+        push bc
         push hl
         push de
         call fdc_select
         pop de
         pop hl
-        ld c,VIEW_BANK_CFG
+        pop bc
         jp fs_load
 
-; A = drive, HL = name, DE = data, BC = bytes: a binary file
+; A = drive + maybe VOS_DATA -> A = drive, C = the bank's RAM config
+api_drive:
+        ld c,VIEW_BANK_CFG
+        bit 7,a
+        ret z
+        ld c,BUF_CFG
+        and #7F
+        ret
+
+; A = drive (+ VOS_DATA), HL = name, DE = data, BC = bytes: a binary
+; file
 api_save:
+        push bc
+        call api_drive
+        push af
+        ld a,c
+        ld (as_cfg),a
+        pop af
+        pop bc
         push hl
         push de
         push bc
@@ -152,7 +225,7 @@ api_save:
         ld hl,0
         ld (fs_hdr_exec),hl
         pop hl
-        ld a,VIEW_BANK_CFG
+        ld a,(as_cfg)
         jp fs_save
 
 api_delete:
@@ -227,5 +300,9 @@ api_text:
 api_empty:      db 0
 api_seed:       dw #1234
 app_keep:       ds 16               ; VOS_KEEP
+as_cfg:         db 0
+ab_from:        db 0
+ab_to:          db 0
+ab_n:           dw 0
 app_texts:      dw api_no_texts
 api_no_texts:   db 0

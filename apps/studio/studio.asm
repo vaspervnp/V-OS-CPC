@@ -32,7 +32,8 @@
 ;
 ; Files: STUDIO > SAVE writes NAME.VBS (the VBS record below, as a
 ; binary file); OPEN reads it back. RUN saves it, writes NAME.BIN (the
-; player with the program) and runs it (VOS_RUN); when it stops,
+; player with the program, put together in the data bank) and runs it
+; (VOS_RUN); when it stops,
 ; Studio starts again and opens NAME.VBS (its name is kept with
 ; VOS_KEEP).
 ;
@@ -160,6 +161,10 @@ ERR_NOT_FOUND   equ 7
         db "VA", VOS_API_VERSION
 
 init:
+        ld hl,player                ; the player to the data bank: its
+        ld de,VOS_APP_ADDR          ; room here is the program's
+        ld bc,PLAYER_SIZE
+        call VOS_BANK_PUT
         ld hl,texts
         call VOS_TEXTS
         xor a
@@ -1091,14 +1096,21 @@ run_bin:
         ld (hl),"I"
         inc hl
         ld (hl),"N"
-        call vbs_bytes
-        ld de,player_end - player
+        call vbs_bytes              ; the program after the player in
+        push hl                     ; the data bank, then both
+        ld b,h
+        ld c,l
+        ld hl,vbs
+        ld de,VOS_APP_ADDR + PLAYER_SIZE
+        call VOS_BANK_PUT
+        pop hl
+        ld de,PLAYER_SIZE
         add hl,de
         ld b,h
         ld c,l
-        xor a
+        ld a,VOS_DATA
         ld hl,fcb
-        ld de,player
+        ld de,VOS_APP_ADDR
         call VOS_SAVE
         jp c,VOS_ERROR
         xor a
@@ -1192,10 +1204,7 @@ do_open:
         ld hl,(cat_list)
         call load_prog
         jr nc,.loaded
-        cp ERR_NOT_PROGRAM
-        jr nz,.error
-        call prog_new               ; read, but not a program
-        call redraw
+        jr .error
 .bad:
         ld a,ERR_NOT_PROGRAM
 .error:
@@ -1204,16 +1213,23 @@ do_open:
         call editor_home
         jp redraw
 
-; HL -> 11-byte name of a .VBS on drive A: read it -> carry and A =
-; error (ERR_NOT_PROGRAM: vbs is not a program any more)
+; HL -> 11-byte name of a .VBS on drive A: read it into the data bank
+; and check it there, then into vbs -> carry and A = error (vbs is as
+; it was)
 load_prog:
         push hl
-        xor a
-        ld de,vbs
+        ld a,VOS_DATA
+        ld de,LOAD_AT
         call VOS_LOAD
         pop bc
         ret c
-        ld hl,vbs                   ; "VBS", 1
+        push bc
+        ld hl,LOAD_AT               ; its head
+        ld de,lbuf
+        ld bc,V_LINES
+        call VOS_BANK_GET
+        pop bc
+        ld hl,lbuf                  ; "VBS", 1
         ld de,new_prog
         ld a,4
 .magic:
@@ -1226,14 +1242,25 @@ load_prog:
         inc de
         dec a
         jr nz,.magic
-        ld a,(vbs + V_NSPR)
+        ld a,(lbuf + V_NSPR)
         cp SPR_MAX + 1
         jr nc,.broken
-        ld hl,(vbs + V_NLINES)
+        ld hl,(lbuf + V_NLINES)
         ld de,MAX_LINES + 1
         or a
         sbc hl,de
         jr nc,.broken
+        push bc
+        ld hl,(lbuf + V_NLINES)     ; good: the whole program
+        call times10
+        ld bc,V_LINES
+        add hl,bc
+        ld b,h
+        ld c,l
+        ld hl,LOAD_AT
+        ld de,vbs
+        call VOS_BANK_GET
+        pop bc
         push bc
         ld h,b                      ; its name, without the spaces
         ld l,c
@@ -3266,11 +3293,18 @@ rc:             dw 0, 0, 0, 0
                 db 0
 lbuf:           ds 96
 tbuf:           ds 40
-; the player, then the program: RUN saves them as one .BIN, which
-; compiles the program when it starts (blocks/player.asm)
+; the player (blocks/player.asm): init copies it to the data bank, and
+; its room here holds the program (vbs). RUN saves the player and the
+; program after it as one .BIN, which compiles the program when it
+; starts.
 player:         incbin "VBRUN.BIN"
-player_end:
-vbs:            ds VBS_ROOM         ; must follow the player
+PLAYER_SIZE     equ $ - player
+vbs             equ player
+LOAD_AT         equ VOS_APP_ADDR + PLAYER_SIZE  ; OPEN, in the data bank
+        IF PLAYER_SIZE < VBS_ROOM
+        ds VBS_ROOM - PLAYER_SIZE
+        ENDIF
 studio_end:
         assert studio_end <= VOS_APP_ADDR + #4000
-        save "build/STUDIO.BIN", VOS_APP_ADDR, vbs - VOS_APP_ADDR
+        assert VOS_APP_ADDR + PLAYER_SIZE + VBS_ROOM <= VOS_APP_ADDR + #4000
+        save "build/STUDIO.BIN", VOS_APP_ADDR, player + PLAYER_SIZE - VOS_APP_ADDR
