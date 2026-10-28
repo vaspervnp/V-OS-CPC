@@ -71,6 +71,8 @@ view_poll:
 ; A = view: load its overlay and start it
 view_switch:
         ld (vw_n),a
+        ld hl,app_back              ; a view: no caller to go back to
+        ld (hl),0
         ld l,a                      ; name = view_files + view * 11
         ld h,0
         ld d,h
@@ -94,7 +96,7 @@ view_switch:
         jr nz,.bad
         ld a,(vw_n)
         cp c
-        jr z,view_install
+        jp z,view_install
 .bad:
         ld a,FS_ERR_FORMAT
         jp sys_error
@@ -107,6 +109,10 @@ app_request:
         jp view_request
 
 app_run:
+        ld hl,app_child             ; asked by VOS_RUN?
+        ld a,(hl)
+        ld (hl),0
+        ld (app_was_child),a
         ld a,(app_drive)
         call fdc_select
         ld hl,file_name
@@ -124,6 +130,23 @@ app_run:
         jr z,.return
         ld (app_return),a
 .return:
+        ld a,(app_was_child)        ; the caller starts again after it
+        or a
+        jr z,.self
+        ld (app_back),a
+        ld hl,app_self
+        ld de,app_parent
+        ld bc,12
+        ldir
+.self:
+        ld a,(app_drive)            ; who runs now: db drive, name
+        ld hl,app_self
+        ld (hl),a
+        inc hl
+        ex de,hl
+        ld hl,file_name
+        ld bc,11
+        ldir
         ld a,VIEW_APP
         jr view_install
 .bad:
@@ -287,5 +310,10 @@ vw_n:           db 0
 view_ticks:     db 0                ; EV_FRAME events for the view
 app_drive:      db 0
 app_return:     db VIEW_LAUNCHER    ; the view that started the program
+app_child:      db 0                ; VOS_RUN asked for the next program
+app_was_child:  db 0
+app_back:       db 0                ; on VOS_EXIT, run app_parent
+app_self:       ds 12               ; the program running: drive, name
+app_parent:     ds 12               ; the one that called VOS_RUN
 vw_left:        db 0
 vw_ptr:         dw 0

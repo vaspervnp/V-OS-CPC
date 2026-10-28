@@ -63,7 +63,13 @@ $(BUILD)/studio_texts.asm: apps/studio/texts.txt tools/mktexts.py
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mktexts.py $< $@
 
-$(BUILD)/STUDIO.BIN: apps/studio/studio.asm $(BUILD)/studio_texts.asm src/api/vos_api.inc
+# Studio carries the player (blocks/player.asm): the runtime and a
+# compiler for Studio's programs, which RUN writes in front of one.
+$(BUILD)/VBRUN.BIN: blocks/player.asm blocks/runtime.asm src/api/vos_api.inc
+	@mkdir -p $(BUILD)
+	$(RASM) blocks/player.asm -I src -I blocks -o $(BUILD)/vbrun > /dev/null
+
+$(BUILD)/STUDIO.BIN: apps/studio/studio.asm $(BUILD)/studio_texts.asm $(BUILD)/VBRUN.BIN src/api/vos_api.inc
 	$(RASM) apps/studio/studio.asm -I src -I $(BUILD) -o $(BUILD)/studio > /dev/null
 
 # Block programs (blocks/): compiled to assembly by vbc.py, with the
@@ -131,9 +137,9 @@ $(TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 
 # Shots along the script (src/kernel/test_script.asm): Studio, a slot
 # typed into, a block added, the sprite moved, the name dialog, the
-# file list and the program opened again. One run per shot: runs are
-# short, shots are per second.
-TEST_SHOTS := 230 290 350 410 450 560 680
+# file list, the program opened again, running, and Studio after it.
+# One run per shot: runs are short, shots are per second.
+TEST_SHOTS := 230 290 350 410 450 560 680 830 960
 test-input: $(TEST_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(TEST_SHOTS); do \

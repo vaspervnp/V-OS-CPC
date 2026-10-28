@@ -10,7 +10,7 @@
 ; types "\(" before taking a screenshot). Otherwise their events would
 ; keep the pointer hidden at the moment of the shot.
 ;
-; M8b Studio, Greek UI. Drive A: VOS.BIN, the view overlays,
+; M8b/M8c Studio, Greek UI. Drive A: VOS.BIN, the view overlays,
 ; GREEK.LNG, DEMO.BIN, MIXED.BIN, STUDIO.BIN, and PONG, CATCH, STARCAT.
 ; Expected result:
 ;   frame  300  F2           -> Launcher
@@ -42,6 +42,10 @@
 ;   frame 2350  click on its first slot -> chosen
 ;   frame 2500  click on it again -> TOUCHING 1
 ;   frame 2650  click on the stage at 20, 40 -> the sprite at 38 66
+;   frame 2750  CONTROL+R    -> NONAME.VBS and NONAME.BIN saved, the
+;                               program runs: the sprite bounces
+;   frame 3400  CONTROL+Q    -> it stops; Studio starts again with
+;                               NONAME.VBS open
 ; =====================================================================
 
 ; ---------------------------------------------------------------------
@@ -159,4 +163,8 @@ test_keys:
         dw 2600, 2700 : db #81, 20        ; the stage
         dw 2600, 2700 : db #82, 40
         dw 2650, 2654 : db 1, %00000010   ; COPY
+        dw 2745, 2760 : db 2, %10000000   ; CONTROL
+        dw 2750, 2754 : db 6, %00000100   ; R
+        dw 3395, 3410 : db 2, %10000000   ; CONTROL
+        dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF

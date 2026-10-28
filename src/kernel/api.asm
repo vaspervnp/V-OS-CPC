@@ -39,15 +39,56 @@ api_jumps:
         jp gfx_blit
         jp snd_play                 ; 33
         jp split_set
+        jp api_run                  ; 35
+        jp api_keep
         assert $ == VOS_API + VOS_API_COUNT * 3
 
 api_exit:
+        call api_end
+        ld hl,app_back              ; started by VOS_RUN: its caller again
+        cp (hl)
+        ld (hl),a
+        jr z,.view
+        ld hl,app_parent
+        ld a,(hl)
+        inc hl
+        call app_name_set
+        jp app_request
+.view:
+        ld a,(app_return)
+        jp view_request
+
+; A = drive, HL -> 11-byte name: run it once this event is handled;
+; when it exits, the program that called starts again
+api_run:
+        push af
+        push hl
+        call api_end                ; the caller ends, as with VOS_EXIT
+        inc a
+        ld (app_child),a
+        pop hl
+        pop af
+        call app_name_set
+        jp app_request
+
+; a program ends: no sound, no split, no frame events -> A = 0
+api_end:
         call snd_off
         call split_off
         xor a
         ld (view_ticks),a
-        ld a,(app_return)
-        jp view_request
+        ret
+
+; HL -> 11-byte name -> file_name (keeps A)
+app_name_set:
+        ld de,file_name
+        ld bc,11
+        ldir
+        ret
+
+api_keep:
+        ld hl,app_keep
+        ret
 
 api_ticks:
         ld (view_ticks),a
@@ -185,5 +226,6 @@ api_text:
 
 api_empty:      db 0
 api_seed:       dw #1234
+app_keep:       ds 16               ; VOS_KEEP
 app_texts:      dw api_no_texts
 api_no_texts:   db 0

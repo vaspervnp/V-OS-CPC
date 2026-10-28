@@ -13,6 +13,8 @@
 ;                   db bytes, rows, then per row (mask, pixels) pairs
 ;   lists           dw length, dw room, then room words
 ;   rt_stacks, rt_state  room for the scripts' stacks and state
+; SCRIPT_COUNT, SPRITE_COUNT and PROG_BG are immediates at rt_nscripts_n,
+; rt_nsprites_n and rt_bg_n: blocks/player.asm sets them when it starts.
 ;
 ; Scripts are coroutines: each has its own stack and gives the processor
 ; back (rt_yield) at the end of every loop pass and in waits. On each
@@ -89,10 +91,12 @@ rt_init:
 ; everything again: background, bar, sprites (printed text is lost)
 rt_redraw:
         ld a,PROG_BG
+rt_bg_1 equ $ - 1
         call VOS_CLS
         call VOS_DRAW_BAR
         ld ix,prog_sprites
         ld b,SPRITE_COUNT
+rt_nsprites_1 equ $ - 1
         ld de,SP_SIZE
         inc b
         jr .first
@@ -162,6 +166,7 @@ rt_start_all:
         xor a
 .script:
         cp SCRIPT_COUNT
+rt_nscripts_1 equ $ - 1
         ret nc
         push af
         push bc
@@ -256,6 +261,7 @@ rt_run_scripts:
         xor a
 .script:
         cp SCRIPT_COUNT
+rt_nscripts_2 equ $ - 1
         ret nc
         ld (rt_cur),a
         call rt_state_ptr
@@ -512,6 +518,7 @@ rt_hit:
         ld (rt_hx),de
         ld (rt_hy),bc
         ld a,SPRITE_COUNT
+rt_nsprites_2 equ $ - 1
 .sprite:
         dec a
         cp #FF
@@ -565,6 +572,7 @@ rt_sprite_ptr:
 rt_draw_sprites:
         ld ix,prog_sprites
         ld b,SPRITE_COUNT
+rt_nsprites_3 equ $ - 1
         inc b
         jr .first
 .erase:
@@ -591,6 +599,7 @@ rt_draw_sprites:
         ld b,(ix + SP_OW)
         ld c,(ix + SP_OH)
         ld a,PROG_BG
+rt_bg_2 equ $ - 1
         call rt_rect
 .kept:
         pop bc
@@ -605,6 +614,7 @@ rt_draw_sprites:
         ld (rt_dirty),a
         ld ix,prog_sprites
         ld b,SPRITE_COUNT
+rt_nsprites_4 equ $ - 1
         inc b
         jr .next
 .draw:
@@ -1389,6 +1399,7 @@ rt_print:
         push bc
         ld a,(rt_ink)
         ld c,PROG_BG
+rt_bg_3 equ $ - 1
         call VOS_COLOURS
         pop bc
         pop de

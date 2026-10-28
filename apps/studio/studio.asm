@@ -31,8 +31,10 @@
 ; places the sprite.
 ;
 ; Files: STUDIO > SAVE writes NAME.VBS (the VBS record below, as a
-; binary file); OPEN reads it back. Running the program is the next
-; step (M8c: compiling it here to a .BIN).
+; binary file); OPEN reads it back. RUN saves it, writes NAME.BIN (the
+; player with the program) and runs it (VOS_RUN); when it stops,
+; Studio starts again and opens NAME.VBS (its name is kept with
+; VOS_KEEP).
 ;
 ; Built on its own (Makefile), with texts.asm made by tools/mktexts.py:
 ;   rasm apps/studio/studio.asm -I src -I build -o build/studio
@@ -144,6 +146,7 @@ CMD_DELETE      equ 6
 CMD_ADD_SPRITE  equ 7
 CMD_DEL_SPRITE  equ 8
 CMD_BG          equ 9
+CMD_RUN         equ 10
 
 KEY_CLR         equ 16
 ERR_BAD_NAME    equ 11              ; system error texts (fs.asm)
@@ -172,6 +175,22 @@ init:
         ld hl,bar
         call VOS_SET_BAR
         call prog_new
+        call VOS_KEEP               ; the program saved or opened last
+        ld de,keep_mark
+        ld b,3
+.mark:
+        ld a,(de)
+        cp (hl)
+        jr nz,redraw
+        inc hl
+        inc de
+        djnz .mark
+        call load_prog
+        call nc,editor_home
+        jr nc,redraw
+        call prog_new               ; gone: forget it
+        call VOS_KEEP
+        ld (hl),0
         ; fall through
 
 ; ---------------------------------------------------------------------
@@ -862,16 +881,18 @@ command:
         jp z,do_save
         cp CMD_SAVE_AS
         jp z,do_save_as
+        cp CMD_RUN
+        jp z,do_run
         cp CMD_BACK
         jp z,VOS_EXIT
         cp CMD_DELETE
-        jr z,do_delete
+        jp z,do_delete
         cp CMD_ADD_SPRITE
-        jr z,do_add_sprite
+        jp z,do_add_sprite
         cp CMD_DEL_SPRITE
-        jr z,do_del_sprite
+        jp z,do_del_sprite
         cp CMD_BG
-        jr z,do_bg
+        jp z,do_bg
         jp VOS_COMMAND              ; VIEW and HELP menus
 
 do_new:
@@ -880,6 +901,8 @@ do_new:
         or a
         ret nz
         call prog_new
+        call VOS_KEEP
+        ld (hl),0
         jp redraw
 
 do_delete:
@@ -1020,10 +1043,7 @@ do_save_as:
 
 write_file:
         call make_fcb
-        ld hl,(vbs + V_NLINES)      ; bytes: V_LINES + lines * 10
-        call times10
-        ld bc,V_LINES
-        add hl,bc
+        call vbs_bytes
         ld b,h
         ld c,l
         xor a
@@ -1031,10 +1051,81 @@ write_file:
         ld de,vbs
         call VOS_SAVE
         jp c,VOS_ERROR
+        ld hl,fcb
+        call keep_name
+        ld a,(run_after)
+        or a
+        jr nz,run_bin
         ld a,T_M_SAVED
         ld (msg),a
         ld a,R_STAGE + R_STATUS     ; the name under the sprites
         jp refresh
+
+; RUN: save NAME.VBS, then NAME.BIN (the player, blocks/player.asm,
+; followed by the program) and run it; Studio starts again after it
+do_run:
+        ld a,1
+        ld (run_after),a
+        call do_save
+        xor a
+        ld (run_after),a
+        ret
+
+run_bin:
+        ld hl,prog_name             ; not over Studio itself
+        ld de,name_studio
+        ld b,7
+.same:
+        ld a,(de)
+        cp (hl)
+        jr nz,.other
+        inc hl
+        inc de
+        djnz .same
+        ld a,ERR_BAD_NAME
+        jp VOS_ERROR
+.other:
+        ld hl,fcb + 8
+        ld (hl),"B"
+        inc hl
+        ld (hl),"I"
+        inc hl
+        ld (hl),"N"
+        call vbs_bytes
+        ld de,player_end - player
+        add hl,de
+        ld b,h
+        ld c,l
+        xor a
+        ld hl,fcb
+        ld de,player
+        call VOS_SAVE
+        jp c,VOS_ERROR
+        xor a
+        ld hl,fcb
+        jp VOS_RUN
+
+; HL -> 11-byte name of the .VBS: Studio opens it when it starts
+keep_name:
+        push hl
+        call VOS_KEEP
+        ex de,hl
+        ld hl,keep_mark
+        ld bc,3
+        ldir
+        pop hl
+        ld c,11
+        ldir
+        or a
+        ret
+
+; -> HL = the program's bytes: V_LINES + lines * 10
+vbs_bytes:
+        ld hl,(vbs + V_NLINES)
+        call times10
+        ld bc,V_LINES
+        add hl,bc
+        ret
 
 ; fcb = prog_name, padded with spaces, "VBS"
 make_fcb:
@@ -1098,21 +1189,43 @@ do_open:
         ld a,(hl)                   ; size in K
         cp VBS_ROOM / 1024 + 1
         jr nc,.bad
-        xor a
         ld hl,(cat_list)
+        call load_prog
+        jr nc,.loaded
+        cp ERR_NOT_PROGRAM
+        jr nz,.error
+        call prog_new               ; read, but not a program
+        call redraw
+.bad:
+        ld a,ERR_NOT_PROGRAM
+.error:
+        jp VOS_ERROR
+.loaded:
+        call editor_home
+        jp redraw
+
+; HL -> 11-byte name of a .VBS on drive A: read it -> carry and A =
+; error (ERR_NOT_PROGRAM: vbs is not a program any more)
+load_prog:
+        push hl
+        xor a
         ld de,vbs
         call VOS_LOAD
-        jr c,.error
+        pop bc
+        ret c
         ld hl,vbs                   ; "VBS", 1
         ld de,new_prog
-        ld b,4
+        ld a,4
 .magic:
+        push af
         ld a,(de)
         cp (hl)
-        jr nz,.broken
+        jr nz,.pop_broken
+        pop af
         inc hl
         inc de
-        djnz .magic
+        dec a
+        jr nz,.magic
         ld a,(vbs + V_NSPR)
         cp SPR_MAX + 1
         jr nc,.broken
@@ -1121,7 +1234,9 @@ do_open:
         or a
         sbc hl,de
         jr nc,.broken
-        ld hl,(cat_list)            ; its name, without the spaces
+        push bc
+        ld h,b                      ; its name, without the spaces
+        ld l,c
         ld de,prog_name
         ld b,8
 .name:
@@ -1137,15 +1252,14 @@ do_open:
         ld (de),a
         inc a
         ld (named),a
-        call editor_home
-        jp redraw
+        pop hl
+        jp keep_name
+.pop_broken:
+        pop af
 .broken:
-        call prog_new
-        call redraw
-.bad:
         ld a,ERR_NOT_PROGRAM
-.error:
-        jp VOS_ERROR
+        scf
+        ret
 
 ; ---------------------------------------------------------------------
 ; editing lines
@@ -2991,11 +3105,13 @@ split:          dw Y1, Y2
 
 bar:            db 4
                 dw menu_studio, menu_edit, 0, 0
-menu_studio:    db T_STUDIO, 6
+menu_studio:    db T_STUDIO, 8
                 db T_NEW, CMD_NEW, "N", 0
                 db T_OPEN, CMD_OPEN, "O", 0
                 db T_SAVE, CMD_SAVE, "S", 0
                 db T_SAVE_AS, CMD_SAVE_AS, 0, 0
+                db VOS_SEPARATOR, 0, 0, 0
+                db T_RUN, CMD_RUN, "R", 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
 menu_edit:      db T_EDIT, 4
@@ -3062,6 +3178,8 @@ key_chars:      db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0       ; 0..15
 vbs_ext:        db "VBS"
 vbs_dot_ext:    db ".VBS", 0
 name_none:      db "NONAME", 0, 0, 0
+name_studio:    db "STUDIO", 0
+keep_mark:      db "STU"            ; VOS_KEEP: "STU", the .VBS name
 
 ; the program after NEW: sprite 1 bounces
 new_prog:       db "VBS", 1, 0, 1
@@ -3090,6 +3208,7 @@ pal:            db 0
 spr_sel:        db 0
 msg:            db 0                ; status line text, 0: the keys
 named:          db 0                ; prog_name chosen by the user
+run_after:      db 0                ; saving for RUN
 prog_name:      ds 9
 name_buf:       ds 11
 fcb:            ds 11
@@ -3147,7 +3266,11 @@ rc:             dw 0, 0, 0, 0
                 db 0
 lbuf:           ds 96
 tbuf:           ds 40
-vbs:            ds VBS_ROOM
+; the player, then the program: RUN saves them as one .BIN, which
+; compiles the program when it starts (blocks/player.asm)
+player:         incbin "VBRUN.BIN"
+player_end:
+vbs:            ds VBS_ROOM         ; must follow the player
 studio_end:
         assert studio_end <= VOS_APP_ADDR + #4000
-        save "build/STUDIO.BIN", VOS_APP_ADDR, studio_end - VOS_APP_ADDR
+        save "build/STUDIO.BIN", VOS_APP_ADDR, vbs - VOS_APP_ADDR

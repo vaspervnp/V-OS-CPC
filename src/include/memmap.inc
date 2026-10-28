@@ -20,6 +20,7 @@ STACK_TOP       equ #4000
 
 LOADER_ADDR     equ #4000           ; where AMSDOS loads VOS.BIN
 
+TXT_EXPAND      equ #8000           ; 16 bytes, page aligned (gfx.asm)
 SCREEN_TOP      equ #8020           ; char row 0, pixel line 0
 SCREEN_LOW      equ #C000           ; char row 21, pixel line 0
 SCREEN_SPLIT    equ 21              ; first char row in the #C000 page

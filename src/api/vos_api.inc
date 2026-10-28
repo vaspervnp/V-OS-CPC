@@ -19,7 +19,8 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 4               ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT
+VOS_API_VERSION equ 5               ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+                                    ; 5: RUN, KEEP
 VOS_APP_ADDR    equ #4000
 VOS_API         equ #0108           ; the jump table (after "VOS",0, versions)
 
@@ -69,7 +70,15 @@ VOS_SOUND       equ VOS_API + 33 * 3    ; A = channel 0..2, HL = period
 ; ---- mixed screen (version 4) ---------------------------------------
 VOS_SPLIT       equ VOS_API + 34 * 3    ; HL -> dw y1, y2; db 4 + 4 colours
                                         ; (HL = 0: off)
-VOS_API_COUNT   equ 35
+; ---- programs that run programs (version 5) ------------------------
+VOS_RUN         equ VOS_API + 35 * 3    ; A = drive, HL -> 11-byte name
+                                        ; ("NAME    BIN"): run it after
+                                        ; this event; when it exits,
+                                        ; this program starts again
+VOS_KEEP        equ VOS_API + 36 * 3    ; -> HL -> 16 bytes the kernel
+                                        ; keeps between programs (0 at
+                                        ; boot; any program may use them)
+VOS_API_COUNT   equ 37
 
 ; VOS_BLIT draws an image, whole bytes of screen memory (2 pixels in
 ; mode 0, 4 in mode 1; x is rounded down to a byte). The source is, per

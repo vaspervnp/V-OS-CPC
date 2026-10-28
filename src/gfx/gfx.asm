@@ -688,7 +688,5 @@ txt_col:    dw 0
 txt_rows:   db 0
 txt_bits:   db 0
 
-            align 256
-txt_expand: ds 16                   ; page aligned, see txt_char
 gfx_lines_all: ds SCREEN_H * 2
 gfx_lines   equ gfx_lines_all + GFX_TOP * 2  ; drawable line 0

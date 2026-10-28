@@ -9,6 +9,7 @@ OPEN        | OPEN                  | ΑΝΟΙΓΜΑ
 SAVE        | SAVE                  | ΑΠΟΘΗΚΕΥΣΗ
 SAVE_AS     | SAVE AS               | ΑΠΟΘ. ΩΣ
 BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+RUN         | RUN                   | ΕΚΤΕΛΕΣΗ
 EDIT        | EDIT                  | ΕΠΕΞΕΡΓΑΣΙΑ
 DELETE      | DELETE LINE           | ΣΒΗΣΕ ΓΡΑΜΜΗ
 ADD_SPRITE  | + SPRITE              | + ΑΝΤΙΚΕΙΜΕΝΟ
