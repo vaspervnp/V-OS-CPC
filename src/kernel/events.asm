@@ -64,7 +64,7 @@ ev_post:
         ld a,(kbd_mods)
         ld (hl),a
         inc hl
-        ld de,(ptr_x)
+        call ptr_ev_x
         ld (hl),e
         inc hl
         ld (hl),d

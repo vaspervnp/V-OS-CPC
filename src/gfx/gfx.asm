@@ -58,8 +58,20 @@ gfx_init:
 gfx_set_mode:
         ld (gfx_mode),a
         push af
-        call ga_set_mode
+        ld hl,split_on              ; mixed screen: the interrupt sets it
+        inc (hl)
+        dec (hl)
+        call z,ga_set_mode
         pop af
+        call gfx_params_for
+        ld a,(txt_bg)
+        ld c,a
+        ld a,(txt_fg)
+        jp txt_set_colours
+
+; gfx_params_for - A = 0 or 1: the pixel tables of that mode, without
+; the text colours (pointer.asm). Destroys: BC, DE, HL
+gfx_params_for:
         ld hl,gfx_mode0
         or a
         jr z,.copy
@@ -68,10 +80,7 @@ gfx_set_mode:
         ld de,gfx_params
         ld bc,GFX_PARAMS_SIZE
         ldir
-        ld a,(txt_bg)
-        ld c,a
-        ld a,(txt_fg)
-        jp txt_set_colours
+        ret
 
 ; ---------------------------------------------------------------------
 ; gfx_pen_byte - A = pen -> A = byte with every pixel set to that pen
@@ -360,6 +369,23 @@ gfx_cls:
         ld (gfx_cls_rect + 4),hl
         ld ix,gfx_cls_rect
         call gfx_fill_rect
+        ld a,(split_on)             ; mixed screen: the unused lines above
+        or a                        ; and below are in mode 1, give them
+        jr z,.done                  ; pen 0, the same in both modes
+        xor a
+        ld (ix+8),a                 ; the rectangle: dw x, y, w, h; db pen
+        ld (ix+7),a
+        ld (ix+6),SCREEN_H - GFX_TOP - GFX_H
+        ld (ix+3),a
+        ld (ix+2),GFX_H
+        call gfx_fill_rect
+        ld (ix+6),GFX_TOP
+        ld (ix+3),#FF
+        ld (ix+2),(-GFX_TOP) & #FF
+        call gfx_fill_rect
+        ld (ix+7),SCREEN_H >> 8     ; as it was
+        ld (ix+6),SCREEN_H & #FF
+.done:
         pop ix
         ret
 

@@ -7,7 +7,8 @@
 ; the frame counter drives everything that runs at 50 Hz.
 ;
 ; Input: the AMX mouse is sampled on every interrupt; the keyboard and
-; the pointer are polled on slice 0 (50 Hz).
+; the pointer are polled once a frame (50 Hz), on slice 0, or with the
+; mixed screen on a slice where it does not wait (split.asm).
 ; =====================================================================
 
 int_handler:
@@ -38,10 +39,16 @@ int_handler:
         xor a                       ; never past 5, even if VSYNC was missed
 .slice_set:
         ld (int_slice),a
+        ld b,a                      ; the mixed screen first: fixed timing
+        ld a,(split_on)
+        or a
+        ld a,b
+        call nz,split_tick
 
         call amx_tick
-        ld a,(int_slice)
-        or a
+        ld a,(int_input)            ; once a frame
+        ld hl,int_slice
+        cp (hl)
         jr nz,.no_input
         call kbd_scan
         call ptr_poll
@@ -86,3 +93,4 @@ int_ticks:      dw 0
 int_frames:     dw 0
 int_slice:      db 0
 int_slice_hook: dw 0                ; 0 = none; called with A = slice 0..5
+int_input:      db 0                ; the slice for keyboard, pointer, disc, sound

@@ -65,13 +65,43 @@ ptr_place:
         ld hl,(ptr_y)
         ld (pd_y),hl
         ei
+        ld a,(split_on)
+        or a
+        jr z,ptr_put
+        ld hl,(pd_y)                ; mixed screen: x is in mode 1 pixels,
+        call split_mode             ; drawn in the mode of its line
+        or a
+        jr nz,.x_ok
+        ld hl,(pd_x)
+        srl h
+        rr l
+        ld (pd_x),hl
+.x_ok:
+        ld hl,gfx_mode
+        cp (hl)
+        jr z,ptr_put
+        push af                     ; the other mode's pixel tables
+        ld hl,gfx_params
+        ld de,ptr_params
+        ld bc,GFX_PARAMS_SIZE
+        ldir
+        pop af
+        call gfx_params_for
+        call ptr_put
+        ld hl,ptr_params
+        ld de,gfx_params
+        ld bc,GFX_PARAMS_SIZE
+        ldir
+        ret
+ptr_put:
         call ptr_geometry
         call ptr_save
         jp ptr_draw
 
 ; ---------------------------------------------------------------------
 ; ptr_guard - HL = x, DE = y, BC = width, A = height (pixels of the
-; current mode). Hides the pointer if it overlaps that area.
+; current mode). Hides the pointer if it overlaps that area. Across
+; the pointer's columns the test is in screen bytes (mixed screen).
 ; Destroys: all except IX
 ; ---------------------------------------------------------------------
 ptr_guard:
@@ -101,23 +131,27 @@ ptr_guard:
         sbc hl,de
         ret c
         ret z
-        ld hl,(pg_x)                ; x < pd_x + PTR_W ?
-        ld de,(pd_x)
-        ex de,hl
-        ld bc,PTR_W
-        add hl,bc
-        ex de,hl
+        ld hl,(pg_x)                ; in screen bytes, whatever the
+        call gfx_x_to_byte          ; mode of the pointer's line:
+        ld de,(pd_col)              ; first byte < pointer end ?
+        ld a,(pd_bytes)
+        add a,e
+        ld e,a
+        adc a,d
+        sub e
+        ld d,a
         or a
         sbc hl,de
         ret nc
-        ld hl,(pg_x)                ; x + w > pd_x ?
+        ld hl,(pg_x)                ; last byte >= pointer start ?
         ld bc,(pg_w)
         add hl,bc
-        ld de,(pd_x)
+        dec hl
+        call gfx_x_to_byte
+        ld de,(pd_col)
         or a
         sbc hl,de
         ret c
-        ret z
         jp ptr_hide
 
 ; size of the covered area, clipped to the drawable area
@@ -329,3 +363,4 @@ pc_rows:        db 0
 pc_line:        dw 0
 pc_buf:         dw 0
 ptr_buf:        ds PTR_H * 5           ; up to 5 bytes per row (mode 0)
+ptr_params:     ds GFX_PARAMS_SIZE     ; drawing in the other mode

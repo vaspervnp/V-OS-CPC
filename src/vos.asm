@@ -46,6 +46,7 @@ kernel_start:
         include "drivers/psg.asm"
         include "gfx/gfx.asm"
         include "gfx/pointer.asm"
+        include "gfx/split.asm"
         include "ui/ui.asm"
         include "ui/dialog.asm"
         include "ui/filedlg.asm"

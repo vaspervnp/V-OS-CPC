@@ -47,12 +47,16 @@ endef
 
 # Programs (apps/): each is assembled on its own, with only the API
 # include, and goes on the disc as a binary loading at #4000.
-APPS    := $(BUILD)/DEMO.BIN $(BUILD)/PONG.BIN $(BUILD)/CATCH.BIN $(BUILD)/STARCAT.BIN
+APPS    := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/PONG.BIN $(BUILD)/CATCH.BIN $(BUILD)/STARCAT.BIN
 APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
 
 $(BUILD)/DEMO.BIN: apps/demo/demo.asm src/api/vos_api.inc
 	@mkdir -p $(BUILD)
 	$(RASM) apps/demo/demo.asm -I src -o $(BUILD)/demo > /dev/null
+
+$(BUILD)/MIXED.BIN: apps/mixed/mixed.asm src/api/vos_api.inc
+	@mkdir -p $(BUILD)
+	$(RASM) apps/mixed/mixed.asm -I src -o $(BUILD)/mixed > /dev/null
 
 # Block programs (blocks/): compiled to assembly by vbc.py, with the
 # runtime. The .BIN takes the name inside the .vbp.

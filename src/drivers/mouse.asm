@@ -158,9 +158,9 @@ ptr_poll:
         ld (hl),a
 
 .apply:
+        call ptr_width
         ld hl,(ptr_x)
         ld a,(pp_dx)
-        ld de,(gfx_width)
         call ptr_add
         ld de,(ptr_x)
         ld (ptr_x),hl
@@ -266,8 +266,8 @@ ptr_add:
 ; ---------------------------------------------------------------------
 ptr_clamp:
         di
+        call ptr_width
         ld hl,(ptr_x)
-        ld de,(gfx_width)
         or a
         sbc hl,de
         jr c,.ok

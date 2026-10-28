@@ -54,6 +54,10 @@ ui_set_mode:
         ld hl,gfx_mode              ; keep the pointer on the same spot
         cp (hl)
         jr z,.same_mode
+        ld hl,split_on              ; (mixed screen: always mode 1 pixels)
+        inc (hl)
+        dec (hl)
+        jr nz,.same_mode
         di
         ld hl,(ptr_x)
         or a
@@ -93,6 +97,35 @@ ui_set_mode:
         ld bc,UI_PEN_COUNT
         ldir
         ret
+
+; ---------------------------------------------------------------------
+; ui_in_band - B = mode, HL = routine, A = its argument: runs it drawing
+; in that mode when the screen is mixed (split.asm), then returns to
+; the mode it was in. Returns the routine's A.
+; ---------------------------------------------------------------------
+ui_in_band:
+        ld (uz_arg),a
+        ld a,(split_on)
+        or a
+        jr z,.run
+        ld a,(gfx_mode)
+        cp b
+        jr z,.run
+        push af                     ; the mode to come back to
+        push hl
+        ld a,b
+        call ui_set_mode
+        pop hl
+        call .run
+        pop bc
+        push af
+        ld a,b
+        call ui_set_mode
+        pop af
+        ret
+.run:
+        ld a,(uz_arg)
+        jp (hl)
 
 ; ---------------------------------------------------------------------
 ; drawing helpers
@@ -489,7 +522,11 @@ ui_menu_ptr:
         ex de,hl
         ret
 
-ui_draw_bar:
+ui_draw_bar:                        ; the bar is in the top band
+        ld b,1
+        ld hl,ui_bar_body
+        jp ui_in_band
+ui_bar_body:
         ld a,UIP_BAR
         ld (ui_fill_pen),a
         ld hl,0
@@ -554,6 +591,10 @@ ui_draw_bar:
 ; A = menu. Draws its title, open or closed. Returns A = its width in
 ; characters (text + ui_title_pad), also stored in ui_title_w.
 ui_draw_title:
+        ld b,1
+        ld hl,ui_title_body
+        jp ui_in_band
+ui_title_body:
         ld (ut_i),a
         call ui_menu_ptr
         ld a,(hl)
@@ -628,6 +669,10 @@ ui_draw_title:
 
 ; keyboard language at the right end of the bar: "EN" or the pack code
 ui_draw_indicator:
+        ld b,1
+        ld hl,ui_ind_body
+        jp ui_in_band
+ui_ind_body:
         ld a,(ui_ind_room)
         or a
         ret z
@@ -657,6 +702,10 @@ ui_draw_indicator:
 ui_open_menu:
         ld (ui_open),a
         call ui_draw_title
+        ld b,0                      ; the menu is in the mode 0 band
+        ld hl,ui_drop_body
+        jp ui_in_band
+ui_drop_body:
         ld a,(ui_open)
         call ui_menu_ptr
         inc hl
@@ -723,6 +772,12 @@ ui_open_menu:
         ld e,(hl)
         inc hl
         ld d,(hl)
+        ld a,(split_on)             ; title x in mode 1 pixels
+        or a
+        jr z,.x_mode
+        srl d
+        rr e
+.x_mode:
         ld (dd_x),de
         ld hl,(dd_w)
         add hl,de
@@ -821,6 +876,10 @@ dd_item_ptr:
 
 ; A = item: draw it (selected or not)
 ui_draw_item:
+        ld b,0
+        ld hl,ui_item_body
+        jp ui_in_band
+ui_item_body:
         ld (di_i),a
         ld b,a                      ; y = UI_BAR_H + 2 + item * 10
         ld a,UI_BAR_H + 2
@@ -919,7 +978,9 @@ ui_close_menu:
         ld a,(ui_open)
         cp UI_NONE
         ret z
-        call ui_restore
+        ld b,0
+        ld hl,ui_restore
+        call ui_in_band
         ld a,(ui_open)
         ld b,a
         ld a,UI_NONE
@@ -1564,6 +1625,7 @@ ui_title_pad:   db 2
 ui_title_off:   db 8
 ui_bar_x:       db 8
 ui_ind_room:    db 1
+uz_arg:         db 0
 ui_title_w:     ds 8
 ub_x:           dw 0
 ub_i:           db 0

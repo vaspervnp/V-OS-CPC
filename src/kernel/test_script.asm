@@ -10,17 +10,22 @@
 ; types "\(" before taking a screenshot). Otherwise their events would
 ; keep the pointer hidden at the moment of the shot.
 ;
-; M7b block programs, Greek UI. Drive A: VOS.BIN, the view overlays,
-; GREEK.LNG, DEMO.BIN, and PONG, CATCH, STARCAT (blocks/examples).
+; M8a mixed screen, Greek UI. Drive A: VOS.BIN, the view overlays,
+; GREEK.LNG, DEMO.BIN, MIXED.BIN, and PONG, CATCH, STARCAT (blocks/).
 ; Expected result:
-;   frame  300  F2           -> Launcher: four tiles
-;   frame  450, 480, 510 RIGHT -> STARCAT chosen
-;   frame  600  RETURN       -> STARCAT runs: mode 0, the cat and the
-;                               star (costumes), a tune, list results
-;                               4 9 5 1 / 0 2 7 0
-;   frame  700-899  LEFT held  -> the cat walks left (two costumes)
-;   frame 1000-1149 RIGHT held -> and right
-;   frame 1300  SPACE        -> "when SPACE pressed: stop all": Launcher
+;   frame  300  F2           -> Launcher: five tiles
+;   frame  450  RIGHT        -> MIXED chosen
+;   frame  600  RETURN       -> MIXED runs: menu bar and status line in
+;                               mode 1, 16 colours and a square in mode 0
+;   frame  680  (test only) cursor keys move the pointer, as in Desktop
+;   frame  700-899  UP and LEFT held -> the pointer at the top left
+;   frame  920-934  RIGHT held -> on the first title, in the mode 1 band
+;   frame 1000  COPY         -> its menu opens, in mode 0, under the bar
+;   frame 1100  ESC          -> closed
+;   frame 1150-1199 DOWN held -> the pointer in the mode 0 band
+;   frame 1250  COPY         -> the status line shows the click's x, y
+;                               (x in mode 0 pixels)
+;   frame 1400  SPACE        -> back to the Launcher, mode 0 everywhere
 ; =====================================================================
 
 ; ---------------------------------------------------------------------
@@ -58,6 +63,13 @@ test_inject:
         sbc hl,de                   ; before the end?
         pop hl
         jr nc,.next
+        ld a,(ix+4)
+        cp #80                      ; not a key: cursor keys move the
+        jr nz,.key                  ; pointer (1) or not (0)
+        ld a,(ix+5)
+        ld (ptr_keys_on),a
+        jr .next
+.key:
         push hl
         ld a,(ix+4)
         ld hl,kbd_now
@@ -74,13 +86,18 @@ test_inject:
         jr .entry
 
 ; dw first frame, frame after the last; db matrix line, bits
+; (line #80: bits = ptr_keys_on)
 test_keys:
         dw  300,  304 : db 1, %01000000   ; F2
         dw  450,  454 : db 0, %00000010   ; RIGHT
-        dw  480,  484 : db 0, %00000010   ; RIGHT
-        dw  510,  514 : db 0, %00000010   ; RIGHT
         dw  600,  604 : db 2, %00000100   ; RETURN
+        dw  680,  681 : db #80, 1         ; cursor keys move the pointer
+        dw  700,  900 : db 0, %00000001   ; UP held
         dw  700,  900 : db 1, %00000001   ; LEFT held
-        dw 1000, 1150 : db 0, %00000010   ; RIGHT held
-        dw 1300, 1304 : db 5, %10000000   ; SPACE
+        dw  920,  935 : db 0, %00000010   ; RIGHT held
+        dw 1000, 1004 : db 1, %00000010   ; COPY
+        dw 1100, 1104 : db 8, %00000100   ; ESC
+        dw 1150, 1200 : db 0, %00000100   ; DOWN held
+        dw 1250, 1254 : db 1, %00000010   ; COPY
+        dw 1400, 1404 : db 5, %10000000   ; SPACE
         dw #FFFF

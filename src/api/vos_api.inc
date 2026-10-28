@@ -19,7 +19,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 3               ; 2: VOS_KEY_HELD, 3: BLIT, SOUND
+VOS_API_VERSION equ 4               ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT
 VOS_APP_ADDR    equ #4000
 VOS_API         equ #0108           ; the jump table (after "VOS",0, versions)
 
@@ -66,7 +66,10 @@ VOS_BLIT        equ VOS_API + 32 * 3    ; IX -> dw x, y; db bytes, rows;
 VOS_SOUND       equ VOS_API + 33 * 3    ; A = channel 0..2, HL = period
                                         ; (bit 15: noise), C = volume
                                         ; 0..15 (0: stop), B = frames
-VOS_API_COUNT   equ 34
+; ---- mixed screen (version 4) ---------------------------------------
+VOS_SPLIT       equ VOS_API + 34 * 3    ; HL -> dw y1, y2; db 4 + 4 colours
+                                        ; (HL = 0: off)
+VOS_API_COUNT   equ 35
 
 ; VOS_BLIT draws an image, whole bytes of screen memory (2 pixels in
 ; mode 0, 4 in mode 1; x is rounded down to a byte). The source is, per
@@ -74,6 +77,18 @@ VOS_API_COUNT   equ 34
 ; Pixels outside the mask keep what is on the screen. The image must be
 ; on the screen. VOS_SOUND: notes stop by themselves after B frames;
 ; VOS_EXIT silences everything.
+;
+; VOS_SPLIT: lines y1..y2-1 are shown in mode 0, the rest in mode 1
+; (0 < y1 < y2 <= 259). The colours are firmware colours for pens 0..3,
+; first in the mode 1 bands, then in the mode 0 band; pens 4..15 come
+; from VOS_PALETTE. VOS_MODE then only picks how the program draws:
+; draw each band in its own mode, and leave mode 0 selected for
+; dialogs. The kernel draws its menu bar in mode 1 and its menus in
+; mode 0; with menus, y1 must be 12. Event x is in pixels of the band
+; the pointer is in. A boundary right below line 22, 74, 126, 178 or
+; 230 costs nothing; any other line waits for it in the interrupt (at
+; y1 = 12: 14% of the time). Disc transfers may disturb the split
+; for a moment. VOS_EXIT ends it.
 
 ; Program texts: numbers VT_FIRST and up, in menus, dialogs, VOS_MSG.
 ; VOS_TEXTS table: db count, then per text dw English, dw other (the
