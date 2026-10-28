@@ -55,11 +55,15 @@
 ; ---------------------------------------------------------------------
 test_inject:
         IFDEF TEST_DUMP                 ; from frame TEST_DUMP: the stack
-        ld hl,(int_frames)              ; on the screen (test_show)
+        ld a,(int_ticks)                ; on the screen (test_show), now
+        and #3F                         ; and then (it takes a while; by
+        jr nz,.no_dump                  ; ticks, which never stop)
+        ld hl,(int_frames)
         ld de,TEST_DUMP
         or a
         sbc hl,de
         call nc,test_show
+.no_dump:
         ENDIF
         ld a,(kbd_now + 8)          ; hide Z: the harness types it as a wait
         and %01111111
@@ -131,11 +135,68 @@ test_inject:
         add ix,de
         jr .entry
 
+        IFDEF TEST_TRACE
+; -DTEST_TRACE: each interrupt, after the mixed screen's waits, adds 3
+; bytes to a ring of TT_SIZE at TT_BUF: the slice it counted as (bits
+; 0..2) and bit 7 = VSYNC then, int_frames' low byte, and the high
+; byte of the address it interrupted. With -DTEST_DUMP it is shown on
+; the screen now and then (test_show_ring).
+TT_BUF          equ GAP2 + 700      ; GAP2 is free from fs_blist's end
+TT_SIZE         equ 96
+TT_POS          equ GAP2 + 698
+test_ring:
+        ld b,PPI_B >> 8
+        in a,(c)
+        rrca
+        and #80
+        ld hl,int_slice
+        or (hl)
+        ld e,a
+        ld hl,12                    ; the interrupted PC: past this call
+        add hl,sp                   ; and int_handler's 5 pushes
+        ld a,(hl)
+        inc hl
+        ld h,(hl)
+        ld l,a
+        ld (tt_pc),hl
+        ld hl,(TT_POS)              ; inside the ring? (not at boot)
+        ld bc,TT_BUF
+        or a
+        sbc hl,bc
+        jr c,.start
+        ld a,l
+        cp TT_SIZE
+        jr c,.inside
+.start:
+        ld hl,0
+.inside:
+        add hl,bc
+        ld (hl),e
+        inc hl
+        ld a,(int_frames)           ; frames (VSYNC seen), PC high
+        ld (hl),a
+        inc hl
+        ld a,(tt_pc + 1)
+        ld (hl),a
+        inc hl
+        ld (TT_POS),hl
+        IFDEF TEST_DUMP                 ; the ring on the screen, now and
+        ld a,(int_ticks)                ; then, whatever the frame count
+        and #3F
+        call z,test_show_ring
+        ENDIF
+        ret
+tt_pc:          dw 0
+        ENDIF
+
         IFDEF TEST_DUMP
 ; -DTEST_DUMP=frame: 96 bytes from the stack, as bits on the top 8 lines
-; of the screen (12 bytes a line, a bit = a whole screen byte, #FF or
-; 0), to read from a screenshot. At SP + 2: test_inject's return, then
+; of the screen (12 bytes a line, a bit = a screen byte, #C0 or 0: its
+; first pixel is pen 1 or 0 in either mode), to read from a screenshot. At SP + 2: test_inject's return, then
 ; kbd_scan's, IX, HL, DE, BC, AF (int_handler), the interrupted PC.
+test_show_ring:
+        ld hl,TT_BUF
+        jr test_show.at
 test_show:
         IFDEF TEST_DUMP_AT              ; or 96 bytes from there
         ld hl,TEST_DUMP_AT
@@ -143,6 +204,7 @@ test_show:
         ld hl,2
         add hl,sp
         ENDIF
+.at:
         ld de,SCREEN_TOP
         ld c,8
 .line:
@@ -156,6 +218,7 @@ test_show:
 .bit:
         sla c
         sbc a,a
+        and #C0                     ; pen 1 in mode 0 and in mode 1
         ld (de),a
         inc de
         djnz .bit
