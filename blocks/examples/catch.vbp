@@ -1,0 +1,189 @@
+{
+ "format": "vbp",
+ "version": 1,
+ "name": "CATCH",
+ "mode": 0,
+ "background": 0,
+ "sprites": [
+  {
+   "name": "star",
+   "x": 90,
+   "y": 20,
+   "w": 6,
+   "h": 6,
+   "colour": 8,
+   "vx": 0,
+   "vy": 2,
+   "visible": true
+  },
+  {
+   "name": "cat",
+   "x": 80,
+   "y": 236,
+   "w": 24,
+   "h": 8,
+   "colour": 4,
+   "vx": 0,
+   "vy": 0,
+   "visible": true
+  }
+ ],
+ "variables": {
+  "score": 0
+ },
+ "scripts": [
+  {
+   "when": {
+    "event": "start"
+   },
+   "do": [
+    {
+     "block": "print",
+     "x": 4,
+     "y": 16,
+     "text": "SCORE"
+    },
+    {
+     "block": "print",
+     "value": {
+      "var": "score"
+     },
+     "x": 60,
+     "y": 16
+    }
+   ]
+  },
+  {
+   "sprite": "star",
+   "when": {
+    "event": "start"
+   },
+   "do": [
+    {
+     "block": "forever",
+     "do": [
+      {
+       "block": "move"
+      },
+      {
+       "block": "if",
+       "cond": {
+        "touching": "cat"
+       },
+       "then": [
+        {
+         "block": "change",
+         "by": 1,
+         "var": "score"
+        },
+        {
+         "block": "broadcast",
+         "message": "score"
+        },
+        {
+         "block": "go_to",
+         "x": {
+          "random": [
+           0,
+           186
+          ]
+         },
+         "y": 20
+        }
+       ]
+      },
+      {
+       "block": "if",
+       "cond": {
+        "op": ">",
+        "a": {
+         "prop": "y"
+        },
+        "b": 250
+       },
+       "then": [
+        {
+         "block": "go_to",
+         "x": {
+          "random": [
+           0,
+           186
+          ]
+         },
+         "y": 20
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "sprite": "cat",
+   "when": {
+    "event": "start"
+   },
+   "do": [
+    {
+     "block": "forever",
+     "do": [
+      {
+       "block": "if",
+       "cond": {
+        "key_held": "left"
+       },
+       "then": [
+        {
+         "block": "change_x",
+         "by": -3
+        }
+       ]
+      },
+      {
+       "block": "if",
+       "cond": {
+        "key_held": "right"
+       },
+       "then": [
+        {
+         "block": "change_x",
+         "by": 3
+        }
+       ]
+      },
+      {
+       "block": "bounce"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "when": {
+    "event": "receive",
+    "message": "score"
+   },
+   "do": [
+    {
+     "block": "print",
+     "value": {
+      "var": "score"
+     },
+     "x": 60,
+     "y": 16
+    }
+   ]
+  },
+  {
+   "when": {
+    "event": "key",
+    "key": "space"
+   },
+   "do": [
+    {
+     "block": "stop_all"
+    }
+   ]
+  }
+ ]
+}

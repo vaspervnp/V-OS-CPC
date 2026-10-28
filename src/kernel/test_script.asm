@@ -10,18 +10,15 @@
 ; types "\(" before taking a screenshot). Otherwise their events would
 ; keep the pointer hidden at the moment of the shot.
 ;
-; M6 programs, Greek UI. Drive A: VOS.BIN, the view overlays, GREEK.LNG,
-; DEMO.BIN (apps/demo). Expected result:
-;   frame  300  F2           -> Launcher: the DEMO tile
-;   frame  600  RETURN       -> DEMO runs: mode 0, a moving square
-;   frame  950  RIGHT, 1000 SPACE -> it turns right, another colour
-;   frame 1100  CONTROL+L    -> its texts in English (VOS_TEXTS)
-;   frame 1250  ESC          -> its own DEMO menu; 1350 ESC closes it
-;   frame 1400  CONTROL+Q    -> back to the Launcher
-;   frame 1700  F1           -> Desktop, DEMO.BIN still selected
-;   frame 2000  LEFT         -> GREEK.LNG
-;   frame 2200  ESC, 2250 RETURN -> FILE / RUN: "NOT A V-OS PROGRAM"
-;   frame 2400  RETURN       -> closed
+; M7 block programs, Greek UI. Drive A: VOS.BIN, the view overlays,
+; GREEK.LNG, DEMO.BIN (apps/demo), PONG.BIN (blocks/examples/pong.vbp).
+; Expected result:
+;   frame  300  F2           -> Launcher: DEMO and PONG tiles
+;   frame  450  RIGHT        -> PONG chosen
+;   frame  600  RETURN       -> PONG runs: mode 0, ball, bat, score
+;   frame  700-899  LEFT held  -> the bat goes to the left edge
+;   frame 1000-1149 RIGHT held -> and to the right
+;   frame 1300  SPACE        -> "when SPACE pressed: stop all": Launcher
 ; =====================================================================
 
 ; ---------------------------------------------------------------------
@@ -77,18 +74,9 @@ test_inject:
 ; dw first frame, frame after the last; db matrix line, bits
 test_keys:
         dw  300,  304 : db 1, %01000000   ; F2
+        dw  450,  454 : db 0, %00000010   ; RIGHT
         dw  600,  604 : db 2, %00000100   ; RETURN
-        dw  950,  954 : db 0, %00000010   ; RIGHT
-        dw 1000, 1004 : db 5, %10000000   ; SPACE
-        dw 1100, 1112 : db 2, %10000000   ; CONTROL held ...
-        dw 1103, 1107 : db 4, %00010000   ; ... L
-        dw 1250, 1254 : db 8, %00000100   ; ESC
-        dw 1350, 1354 : db 8, %00000100   ; ESC
-        dw 1400, 1412 : db 2, %10000000   ; CONTROL held ...
-        dw 1403, 1407 : db 8, %00001000   ; ... Q
-        dw 1700, 1704 : db 1, %00100000   ; F1
-        dw 2000, 2004 : db 1, %00000001   ; LEFT
-        dw 2200, 2204 : db 8, %00000100   ; ESC
-        dw 2250, 2254 : db 2, %00000100   ; RETURN
-        dw 2400, 2404 : db 2, %00000100   ; RETURN
+        dw  700,  900 : db 1, %00000001   ; LEFT held
+        dw 1000, 1150 : db 0, %00000010   ; RIGHT held
+        dw 1300, 1304 : db 5, %10000000   ; SPACE
         dw #FFFF

@@ -19,7 +19,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 1
+VOS_API_VERSION equ 2               ; 2: VOS_KEY_HELD
 VOS_APP_ADDR    equ #4000
 VOS_API         equ #0108           ; the jump table (after "VOS",0, versions)
 
@@ -59,7 +59,8 @@ VOS_FILE_PICK   equ VOS_API + 28 * 3    ; after VOS_CATALOG: A = title
 VOS_TEXTS       equ VOS_API + 29 * 3    ; HL -> the program's texts
 VOS_MENU_OPEN   equ VOS_API + 30 * 3    ; -> NZ while a menu is open (its
                                         ; keys are not the program's)
-VOS_API_COUNT   equ 31
+VOS_KEY_HELD    equ VOS_API + 31 * 3    ; A = key number -> NZ while held
+VOS_API_COUNT   equ 32
 
 ; Program texts: numbers VT_FIRST and up, in menus, dialogs, VOS_MSG.
 ; VOS_TEXTS table: db count, then per text dw English, dw other (the

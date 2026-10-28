@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V-OS Blocks</title>
+<!--
+  The V-OS block editor: programs for V-OS (Amstrad CPC 6128) made of
+  blocks, as in Scratch. It saves and opens .vbp files (JSON); compile
+  one with
+      python3 blocks/vbc.py PROGRAM.vbp --dsk build/vos.dsk
+  and run it from the Launcher. The blocks are those of blocks/vbc.py;
+  the .vbp holds the program only, so files written by hand open too.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<script src="https://unpkg.com/blockly@10.4.3/blockly.min.js"></script>
+<style>
+:root {
+  --bg: #e9ecf3; --panel: #ffffff; --ink: #1d2433; --muted: #5b6478;
+  --line: #c9cfdc; --accent: #0b3fa8; --accent-ink: #ffffff; --cpc: #000080;
+  --warn: #a8300b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151d; --panel: #1b2030; --ink: #e5e9f2; --muted: #9aa3b8;
+    --line: #2e3549; --accent: #6f9bff; --accent-ink: #0b1020; --warn: #ff8a66;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151d; --panel: #1b2030; --ink: #e5e9f2; --muted: #9aa3b8;
+  --line: #2e3549; --accent: #6f9bff; --accent-ink: #0b1020; --warn: #ff8a66;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 14px/1.4 "IBM Plex Sans", system-ui, sans-serif;
+  display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+}
+header {
+  display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center;
+  padding: 8px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px));
+  background: var(--cpc); color: #fff;
+}
+header h1 {
+  margin: 0; font: 600 16px "IBM Plex Mono", monospace; letter-spacing: .08em;
+}
+header label { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+header input, header select {
+  font: 13px "IBM Plex Mono", monospace; padding: 3px 6px; border-radius: 4px;
+  border: 1px solid #3a4aa0; background: #fff; color: #000;
+}
+header input[type=text] { width: 9ch; text-transform: uppercase; }
+header .spacer { flex: 1; }
+button {
+  font: 600 13px "IBM Plex Sans", sans-serif; padding: 5px 12px; border-radius: 4px;
+  border: 1px solid transparent; background: #fff; color: var(--cpc); cursor: pointer;
+}
+button.ghost { background: transparent; color: #fff; border-color: #6b78c8; }
+main { display: grid; grid-template-columns: 1fr 420px; min-height: 0; }
+#blockly { min-height: 0; }
+aside {
+  background: var(--panel); border-left: 1px solid var(--line); overflow: auto;
+  padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0;
+}
+aside h2 {
+  margin: 0; font: 600 12px "IBM Plex Sans", sans-serif; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted);
+}
+#stage {
+  width: 100%; max-width: 384px; aspect-ratio: 384 / 270; image-rendering: pixelated;
+  border: 6px solid #000; background: #000; cursor: grab; align-self: center;
+}
+table { border-collapse: collapse; width: 100%; font: 12px "IBM Plex Mono", monospace; }
+th { text-align: left; font-weight: 600; color: var(--muted); padding: 2px; }
+td { padding: 1px 2px; }
+td input { width: 100%; font: inherit; padding: 2px 3px; border: 1px solid var(--line);
+  border-radius: 3px; background: transparent; color: var(--ink); }
+td input[type=checkbox] { width: auto; }
+td.name input { min-width: 6ch; }
+.swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--line); vertical-align: middle; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+aside button { background: var(--accent); color: var(--accent-ink); }
+aside button.x { background: transparent; color: var(--warn); padding: 0 4px; }
+pre {
+  margin: 0; font: 12px/1.45 "IBM Plex Mono", monospace; background: var(--bg);
+  border: 1px solid var(--line); padding: 8px; border-radius: 4px; overflow-x: auto;
+  white-space: pre-wrap; word-break: break-all;
+}
+#status { font-size: 12px; color: var(--muted); min-height: 1.4em; }
+#status.err { color: var(--warn); }
+@media (max-width: 900px) {
+  body { overflow: auto; }
+  main { grid-template-columns: 1fr; grid-template-rows: 70vh auto; }
+  aside { border-left: 0; border-top: 1px solid var(--line); }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>V-OS BLOCKS</h1>
+  <label><span data-t="name">Όνομα</span> <input id="p-name" type="text" maxlength="8" value="PROGRAM"></label>
+  <label><span data-t="mode">Mode</span>
+    <select id="p-mode"><option value="0">0 · 16</option><option value="1">1 · 4</option></select></label>
+  <label><span data-t="background">Φόντο</span> <input id="p-bg" type="number" min="0" max="15" value="0" style="width:5ch"></label>
+  <span class="spacer"></span>
+  <button class="ghost" id="b-new" data-t="new">Νέο</button>
+  <button class="ghost" id="b-example" data-t="example">Παράδειγμα</button>
+  <button class="ghost" id="b-open" data-t="open">Άνοιγμα</button>
+  <button id="b-save" data-t="save">Αποθήκευση .vbp</button>
+  <button class="ghost" id="b-lang">EN</button>
+  <input id="f-open" type="file" accept=".vbp,.json" hidden>
+</header>
+<main>
+  <div id="blockly"></div>
+  <aside>
+    <h2 data-t="stage">Σκηνή</h2>
+    <canvas id="stage" width="384" height="270"></canvas>
+    <h2 data-t="sprites">Αντικείμενα</h2>
+    <table>
+      <thead><tr><th data-t="name">Όνομα</th><th>x</th><th>y</th><th>w</th><th>h</th>
+        <th data-t="colour">Χρώμα</th><th>vx</th><th>vy</th><th title="visible">👁</th><th></th></tr></thead>
+      <tbody id="sprites"></tbody>
+    </table>
+    <div class="row"><button id="b-sprite" data-t="add_sprite">+ Αντικείμενο</button></div>
+    <h2 data-t="compile">Μεταγλώττιση</h2>
+    <pre id="howto"></pre>
+    <div id="status"></div>
+    <details>
+      <summary data-t="show_vbp">Το .vbp</summary>
+      <pre id="json"></pre>
+    </details>
+  </aside>
+</main>
+<script>
+"use strict";
+// ---- texts ------------------------------------------------------------
+const UI = {
+  el: {
+    name: "Όνομα", mode: "Mode", background: "Φόντο", new: "Νέο", example: "Παράδειγμα",
+    open: "Άνοιγμα", save: "Αποθήκευση .vbp", stage: "Σκηνή", sprites: "Αντικείμενα",
+    colour: "Χρώμα", add_sprite: "+ Αντικείμενο", compile: "Μεταγλώττιση",
+    show_vbp: "Το .vbp", howto: "Μεταγλώττιση και αντιγραφή στη δισκέτα:",
+    then: "Μετά, στον Launcher του V-OS: το πρόγραμμα {n}.",
+    c_events: "Γεγονότα", c_control: "Έλεγχος", c_motion: "Κίνηση", c_looks: "Εμφάνιση",
+    c_text: "Κείμενο", c_ops: "Τελεστές", c_sense: "Αισθητήρες", c_vars: "Μεταβλητές",
+    new_var: "Νέα μεταβλητή", stage_name: "σκηνή", self: "αυτό",
+    saved: "Αποθηκεύτηκε: {f}", opened: "Άνοιξε: {f}", bad: "Δεν ανοίγει: {e}",
+    confirm_new: "Πάτα ξανά «Νέο» για να σβηστεί το πρόγραμμα.",
+    loose: "Μπλοκ εκτός σεναρίου (χωρίς «όταν…») δεν μπαίνουν στο πρόγραμμα: {n}.",
+  },
+  en: {
+    name: "Name", mode: "Mode", background: "Background", new: "New", example: "Example",
+    open: "Open", save: "Save .vbp", stage: "Stage", sprites: "Sprites",
+    colour: "Colour", add_sprite: "+ Sprite", compile: "Compile",
+    show_vbp: "The .vbp", howto: "Compile it and put it on the disc:",
+    then: "Then run {n} from the V-OS Launcher.",
+    c_events: "Events", c_control: "Control", c_motion: "Motion", c_looks: "Looks",
+    c_text: "Text", c_ops: "Operators", c_sense: "Sensing", c_vars: "Variables",
+    new_var: "New variable", stage_name: "stage", self: "this",
+    saved: "Saved: {f}", opened: "Opened: {f}", bad: "Cannot open it: {e}",
+    confirm_new: "Press “New” again to clear the program.",
+    loose: "Blocks outside a script (no “when…”) are left out: {n}.",
+  },
+};
+// block texts: %n are the inputs and fields, in order
+const BT = {
+  el: {
+    when_start: "όταν ξεκινά %1", when_key: "όταν πατηθεί %1 %2", when_click: "όταν πατηθεί με κλικ %1",
+    when_receive: "όταν λάβει %1 %2",
+    forever: "για πάντα", repeat: "επανάλαβε %1 φορές", if: "εάν %1 τότε", if_else: "εάν %1 τότε",
+    else: "αλλιώς", wait: "περίμενε %1 καρέ", wait_until: "περίμενε ώσπου %1", stop: "τέλος σεναρίου",
+    stop_all: "τέλος προγράμματος", broadcast: "μετάδωσε %1",
+    go_to: "πήγαινε στο x %1 y %2", set_x: "όρισε x σε %1", set_y: "όρισε y σε %1",
+    change_x: "άλλαξε x κατά %1", change_y: "άλλαξε y κατά %1",
+    set_velocity: "ταχύτητα vx %1 vy %2", move: "κινήσου", bounce: "αναπήδησε στις άκρες",
+    set_colour: "όρισε χρώμα σε %1", set_size: "όρισε μέγεθος w %1 h %2", show: "εμφανίσου", hide: "κρύψου",
+    print_text: "γράψε %1 στο x %2 y %3", print_value: "γράψε τιμή %1 στο x %2 y %3",
+    text_colour: "χρώμα κειμένου %1", clear: "καθάρισε τη σκηνή",
+    set: "όρισε %1 σε %2", change: "άλλαξε %1 κατά %2",
+    not: "όχι %1", random: "τυχαίος από %1 έως %2", key_held: "πατιέται το %1;",
+    touching: "αγγίζει το %1;", at_edge: "στην άκρη;", prop: "%1 του %2", frames: "καρέ",
+    and: "και", or: "ή", mod: "υπόλοιπο",
+  },
+  en: {
+    when_start: "when started %1", when_key: "when %1 key pressed %2", when_click: "when clicked %1",
+    when_receive: "when I receive %1 %2",
+    forever: "forever", repeat: "repeat %1 times", if: "if %1 then", if_else: "if %1 then",
+    else: "else", wait: "wait %1 frames", wait_until: "wait until %1", stop: "stop this script",
+    stop_all: "stop the program", broadcast: "broadcast %1",
+    go_to: "go to x %1 y %2", set_x: "set x to %1", set_y: "set y to %1",
+    change_x: "change x by %1", change_y: "change y by %1",
+    set_velocity: "velocity vx %1 vy %2", move: "move", bounce: "bounce off the edges",
+    set_colour: "set colour to %1", set_size: "set size w %1 h %2", show: "show", hide: "hide",
+    print_text: "print %1 at x %2 y %3", print_value: "print value %1 at x %2 y %3",
+    text_colour: "text colour %1", clear: "clear the stage",
+    set: "set %1 to %2", change: "change %1 by %2",
+    not: "not %1", random: "random %1 to %2", key_held: "key %1 held?",
+    touching: "touching %1?", at_edge: "at an edge?", prop: "%1 of %2", frames: "frames",
+    and: "and", or: "or", mod: "mod",
+  },
+};
+let lang = "el";
+try { lang = localStorage.getItem("vos-blocks-lang") || "el"; } catch (e) {}
+const t = (k, v = {}) => (UI[lang][k] || k).replace(/\{(\w)\}/g, (_, n) => v[n] ?? "");
+
+// ---- the CPC: 27 firmware colours, default palettes -----------------------
+const LEVEL = [0, 128, 255];
+const cpcRGB = n => `rgb(${LEVEL[Math.floor(n / 3) % 3]},${LEVEL[Math.floor(n / 9)]},${LEVEL[n % 3]})`;
+const PALETTE = {
+  0: [0, 26, 1, 2, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16, 0],
+  1: [1, 26, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+};
+const KEYS = ["space", "up", "down", "left", "right", "return", "enter", "copy", "tab", "del"]
+  .concat("abcdefghijklmnopqrstuvwxyz0123456789".split(""));
+
+// ---- program state outside the blocks ----------------------------------
+let sprites = [];
+let varInit = {};   // variables' starting values, kept from the opened file
+const $ = id => document.getElementById(id);
+const mode = () => +$("p-mode").value;
+const width = () => (mode() === 0 ? 192 : 384);
+const pens = () => (mode() === 0 ? 16 : 4);
+
+function spriteOptions(withStage, withSelf) {
+  const o = [];
+  if (withSelf) o.push([t("self"), "__self"]);
+  if (withStage) o.push([t("stage_name"), "__stage"]);
+  for (const s of sprites) if (s.name) o.push([s.name, s.name]);
+  return o.length ? o : [["—", "__stage"]];
+}
+
+// ---- the blocks -----------------------------------------------------------
+const COL = { events: 40, control: 200, motion: 220, looks: 280, text: 160, ops: 120, sense: 180, vars: 330 };
+const num = name => ({ type: "input_value", name });
+const spriteField = (name, stage, self) => ({ type: "field_dropdown", name, options: () => spriteOptions(stage, self) });
+
+function defineBlocks() {
+  const B = BT[lang];
+  const defs = [];
+  const hat = (type, args, extra = {}) => defs.push(Object.assign({
+    type: "v_" + type, message0: B[type], args0: args, nextStatement: null, colour: COL.events,
+    hat: "cap",
+  }, extra));
+  const st = (type, args = [], colour, extra = {}) => defs.push(Object.assign({
+    type: "v_" + type, message0: B[type], args0: args, previousStatement: null, nextStatement: null,
+    colour, inputsInline: true,
+  }, extra));
+  const ex = (type, args, colour, extra = {}) => defs.push(Object.assign({
+    type: "v_" + type, message0: B[type], args0: args, output: null, colour, inputsInline: true,
+  }, extra));
+  hat("when_start", [spriteField("SPRITE", true)]);
+  hat("when_key", [{ type: "field_dropdown", name: "KEY", options: [["any", "any"]].concat(KEYS.map(k => [k, k])) },
+    spriteField("SPRITE", true)]);
+  hat("when_click", [spriteField("SPRITE", true)]);
+  hat("when_receive", [{ type: "field_input", name: "MESSAGE", text: "start" }, spriteField("SPRITE", true)]);
+  st("forever", [], COL.control, { message0: B.forever + " %1", args0: [{ type: "input_statement", name: "DO" }], nextStatement: undefined });
+  st("repeat", [num("TIMES")], COL.control, { message1: "%1", args1: [{ type: "input_statement", name: "DO" }] });
+  st("if", [num("COND")], COL.control, { message1: "%1", args1: [{ type: "input_statement", name: "THEN" }] });
+  st("if_else", [num("COND")], COL.control, {
+    message1: "%1", args1: [{ type: "input_statement", name: "THEN" }],
+    message2: B.else + " %1", args2: [{ type: "input_statement", name: "ELSE" }] });
+  st("wait", [num("FRAMES")], COL.control);
+  st("wait_until", [num("COND")], COL.control);
+  st("stop", [], COL.control, { nextStatement: undefined });
+  st("stop_all", [], COL.control, { nextStatement: undefined });
+  st("broadcast", [{ type: "field_input", name: "MESSAGE", text: "start" }], COL.events);
+  st("go_to", [num("X"), num("Y")], COL.motion);
+  st("set_x", [num("TO")], COL.motion);
+  st("set_y", [num("TO")], COL.motion);
+  st("change_x", [num("BY")], COL.motion);
+  st("change_y", [num("BY")], COL.motion);
+  st("set_velocity", [num("VX"), num("VY")], COL.motion);
+  st("move", [], COL.motion);
+  st("bounce", [], COL.motion);
+  st("set_colour", [num("TO")], COL.looks);
+  st("set_size", [num("W"), num("H")], COL.looks);
+  st("show", [], COL.looks);
+  st("hide", [], COL.looks);
+  st("print_text", [{ type: "field_input", name: "TEXT", text: "HELLO" }, num("X"), num("Y")], COL.text);
+  st("print_value", [num("VALUE"), num("X"), num("Y")], COL.text);
+  st("text_colour", [num("TO")], COL.text);
+  st("clear", [], COL.text);
+  st("set", [{ type: "field_variable", name: "VAR", variable: "score" }, num("TO")], COL.vars);
+  st("change", [{ type: "field_variable", name: "VAR", variable: "score" }, num("BY")], COL.vars);
+  ex("num", [{ type: "field_number", name: "NUM", value: 0, min: -32768, max: 32767, precision: 1 }], COL.ops, { message0: "%1" });
+  ex("var", [{ type: "field_variable", name: "VAR", variable: "score" }], COL.vars, { message0: "%1" });
+  ex("op", [num("A"), { type: "field_dropdown", name: "OP", options: [
+    ["+", "+"], ["-", "-"], ["×", "*"], ["÷", "/"], [B.mod, "mod"], ["<", "<"], [">", ">"], ["=", "="],
+    [B.and, "and"], [B.or, "or"]] }, num("B")], COL.ops, { message0: "%1 %2 %3" });
+  ex("not", [num("A")], COL.ops);
+  ex("random", [num("FROM"), num("TO")], COL.ops);
+  ex("key_held", [{ type: "field_dropdown", name: "KEY", options: KEYS.map(k => [k, k]) }], COL.sense);
+  ex("touching", [spriteField("SPRITE", false)], COL.sense);
+  ex("at_edge", [], COL.sense);
+  ex("prop", [{ type: "field_dropdown", name: "PROP", options:
+    ["x", "y", "vx", "vy", "w", "h", "colour", "visible"].map(p => [p, p]) }, spriteField("OF", false, true)], COL.sense);
+  ex("frames", [], COL.sense);
+  Blockly.defineBlocksWithJsonArray(defs);
+}
+
+const N = (v = 0) => ({ shadow: { type: "v_num", fields: { NUM: v } } });
+function toolbox() {
+  const b = (type, inputs = {}, fields) => ({ kind: "block", type: "v_" + type, inputs, fields });
+  const cat = (key, colour, contents) => ({ kind: "category", name: t(key), colour, contents });
+  return { kind: "categoryToolbox", contents: [
+    cat("c_events", COL.events, [b("when_start"), b("when_key"), b("when_click"), b("when_receive"), b("broadcast")]),
+    cat("c_control", COL.control, [b("forever"), b("repeat", { TIMES: N(10) }), b("if"), b("if_else"),
+      b("wait", { FRAMES: N(50) }), b("wait_until"), b("stop"), b("stop_all")]),
+    cat("c_motion", COL.motion, [b("go_to", { X: N(0), Y: N(100) }), b("set_x", { TO: N(0) }), b("set_y", { TO: N(100) }),
+      b("change_x", { BY: N(2) }), b("change_y", { BY: N(2) }), b("set_velocity", { VX: N(2), VY: N(2) }),
+      b("move"), b("bounce")]),
+    cat("c_looks", COL.looks, [b("set_colour", { TO: N(1) }), b("set_size", { W: N(8), H: N(8) }), b("show"), b("hide")]),
+    cat("c_text", COL.text, [b("print_text", { X: N(0), Y: N(16) }), b("print_value", { VALUE: N(0), X: N(0), Y: N(16) }),
+      b("text_colour", { TO: N(1) }), b("clear")]),
+    cat("c_ops", COL.ops, [b("num"), b("op", { A: N(0), B: N(0) }), b("not"), b("random", { FROM: N(1), TO: N(10) })]),
+    cat("c_sense", COL.sense, [b("key_held"), b("touching"), b("at_edge"), b("prop"), b("frames")]),
+    { kind: "category", name: t("c_vars"), colour: COL.vars, custom: "VOS_VARS" },
+  ] };
+}
+
+function varsCategory(ws) {
+  const out = [{ kind: "button", text: t("new_var"), callbackKey: "VOS_NEW_VAR" }];
+  for (const v of ws.getAllVariables()) {
+    const f = { VAR: { id: v.getId() } };
+    out.push({ kind: "block", type: "v_var", fields: f });
+  }
+  if (ws.getAllVariables().length) {
+    const f = { VAR: { id: ws.getAllVariables()[0].getId() } };
+    out.push({ kind: "block", type: "v_set", fields: f, inputs: { TO: N(0) } });
+    out.push({ kind: "block", type: "v_change", fields: f, inputs: { BY: N(1) } });
+  }
+  return out;
+}
+
+// ---- blocks <-> .vbp --------------------------------------------------------
+// both sides are plain JSON: Blockly's serialization state and the .vbp
+const HATS = { v_when_start: "start", v_when_key: "key", v_when_click: "click", v_when_receive: "receive" };
+const STMT_INPUTS = {   // block -> [vbp key, Blockly input]
+  repeat: [["times", "TIMES"]], if: [["cond", "COND"]], if_else: [["cond", "COND"]], wait: [["frames", "FRAMES"]],
+  wait_until: [["cond", "COND"]], go_to: [["x", "X"], ["y", "Y"]], set_x: [["to", "TO"]], set_y: [["to", "TO"]],
+  change_x: [["by", "BY"]], change_y: [["by", "BY"]], set_velocity: [["vx", "VX"], ["vy", "VY"]],
+  set_colour: [["to", "TO"]], set_size: [["w", "W"], ["h", "H"]], print_text: [["x", "X"], ["y", "Y"]],
+  print_value: [["value", "VALUE"], ["x", "X"], ["y", "Y"]], text_colour: [["to", "TO"]],
+  set: [["to", "TO"]], change: [["by", "BY"]],
+};
+
+function toVbp(ws) {
+  const state = Blockly.serialization.workspaces.save(ws);
+  const varName = {};
+  for (const v of state.variables || []) varName[v.id] = v.name;
+  const fieldVar = f => varName[f.id] || f.name || f.id;
+  const inputBlock = (b, name) => b.inputs && b.inputs[name] && (b.inputs[name].block || b.inputs[name].shadow);
+  const expr = b => {
+    if (!b) return 0;
+    const ty = b.type.slice(2), f = b.fields || {};
+    const e = n => expr(inputBlock(b, n));
+    switch (ty) {
+      case "num": return Math.trunc(+f.NUM || 0);
+      case "var": return { var: fieldVar(f.VAR) };
+      case "op": return { op: f.OP, a: e("A"), b: e("B") };
+      case "not": return { not: e("A") };
+      case "random": return { random: [e("FROM"), e("TO")] };
+      case "key_held": return { key_held: f.KEY };
+      case "touching": return { touching: f.SPRITE };
+      case "at_edge": return { at_edge: true };
+      case "prop": return f.OF === "__self" ? { prop: f.PROP } : { prop: f.PROP, of: f.OF };
+      case "frames": return { frames: true };
+    }
+    return 0;
+  };
+  const body = b => {
+    const out = [];
+    for (; b; b = b.next && b.next.block) {
+      const ty = b.type.slice(2), f = b.fields || {};
+      const s = { block: ty };
+      for (const [k, n] of STMT_INPUTS[ty] || []) s[k] = expr(inputBlock(b, n));
+      if (ty === "print_text" || ty === "print_value") s.block = "print";
+      if (ty === "print_text") s.text = f.TEXT;
+      if (ty === "if_else") { s.block = "if"; s.else = body(inputBlock(b, "ELSE")); }
+      if (ty === "if" || ty === "if_else") s.then = body(inputBlock(b, "THEN"));
+      if (ty === "forever" || ty === "repeat") s.do = body(inputBlock(b, "DO"));
+      if (ty === "set" || ty === "change") s.var = fieldVar(f.VAR);
+      if (ty === "broadcast") s.message = f.MESSAGE;
+      out.push(s);
+    }
+    return out;
+  };
+  const scripts = [];
+  let loose = 0;
+  for (const top of (state.blocks && state.blocks.blocks) || []) {
+    const ev = HATS[top.type];
+    if (!ev) { loose++; continue; }
+    const f = top.fields || {};
+    const when = { event: ev };
+    if (ev === "key") when.key = f.KEY;
+    if (ev === "receive") when.message = f.MESSAGE;
+    const sc = {};
+    if (f.SPRITE && f.SPRITE !== "__stage") sc.sprite = f.SPRITE;
+    sc.when = when;
+    sc.do = body(top.next && top.next.block);
+    scripts.push(sc);
+  }
+  const variables = {};
+  for (const v of state.variables || []) variables[v.name] = varInit[v.name] || 0;
+  const m = mode();
+  return { prog: {
+    format: "vbp", version: 1,
+    name: $("p-name").value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) || "PROGRAM",
+    mode: m, background: +$("p-bg").value || 0,
+    sprites: sprites.map(s => Object.assign({}, s)),
+    variables, scripts,
+  }, loose };
+}
+
+function fromVbp(p) {
+  varInit = Object.assign({}, p.variables || {});
+  const vars = Object.keys(varInit);
+  const scan = x => {   // variables used but not declared
+    if (Array.isArray(x)) x.forEach(scan);
+    else if (x && typeof x === "object") {
+      if (typeof x.var === "string" && !vars.includes(x.var)) vars.push(x.var);
+      Object.values(x).forEach(scan);
+    }
+  };
+  scan(p.scripts);
+  const V = name => ({ id: "v:" + name });
+  const exprIn = e => {
+    if (typeof e === "number" || typeof e === "boolean") return N(+e);
+    return { block: exprBlock(e), shadow: { type: "v_num", fields: { NUM: 0 } } };
+  };
+  const exprBlock = e => {
+    if (typeof e === "number" || typeof e === "boolean") return { type: "v_num", fields: { NUM: +e } };
+    if ("var" in e) return { type: "v_var", fields: { VAR: V(e.var) } };
+    if ("op" in e) return { type: "v_op", fields: { OP: e.op }, inputs: { A: exprIn(e.a), B: exprIn(e.b) } };
+    if ("not" in e) return { type: "v_not", inputs: { A: exprIn(e.not) } };
+    if ("random" in e) return { type: "v_random", inputs: { FROM: exprIn(e.random[0]), TO: exprIn(e.random[1]) } };
+    if ("key_held" in e) return { type: "v_key_held", fields: { KEY: String(e.key_held).toLowerCase() } };
+    if ("touching" in e) return { type: "v_touching", fields: { SPRITE: e.touching } };
+    if ("at_edge" in e) return { type: "v_at_edge" };
+    if ("prop" in e) return { type: "v_prop", fields: { PROP: e.prop, OF: e.of || "__self" } };
+    if ("frames" in e) return { type: "v_frames" };
+    throw new Error("expression " + JSON.stringify(e));
+  };
+  const chain = list => {
+    let first = null, last = null;
+    for (const s of list || []) {
+      let ty = s.block;
+      if (ty === "print") ty = "text" in s ? "print_text" : "print_value";
+      if (ty === "if" && s.else && s.else.length) ty = "if_else";
+      const b = { type: "v_" + ty, fields: {}, inputs: {} };
+      for (const [k, n] of STMT_INPUTS[ty] || []) b.inputs[n] = exprIn(s[k] ?? 0);
+      if (ty === "print_text") b.fields.TEXT = String(s.text);
+      if (ty === "if" || ty === "if_else") { const c = chain(s.then); if (c) b.inputs.THEN = { block: c }; }
+      if (ty === "if_else") { const c = chain(s.else); if (c) b.inputs.ELSE = { block: c }; }
+      if (ty === "forever" || ty === "repeat") { const c = chain(s.do); if (c) b.inputs.DO = { block: c }; }
+      if (ty === "set" || ty === "change") b.fields.VAR = V(s.var);
+      if (ty === "broadcast") b.fields.MESSAGE = String(s.message);
+      if (!Blockly.Blocks[b.type]) throw new Error("block " + s.block);
+      if (last) last.next = { block: b }; else first = b;
+      last = b;
+    }
+    return first;
+  };
+  const blocks = [];
+  let y = 20;
+  for (const sc of p.scripts || []) {
+    const w = sc.when || { event: "start" };
+    const type = Object.keys(HATS).find(k => HATS[k] === w.event);
+    if (!type) throw new Error("event " + w.event);
+    const hat = { type, x: 20, y, fields: { SPRITE: sc.sprite || "__stage" } };
+    if (w.event === "key") hat.fields.KEY = String(w.key).toLowerCase();
+    if (w.event === "receive") hat.fields.MESSAGE = String(w.message);
+    const c = chain(sc.do);
+    if (c) hat.next = { block: c };
+    blocks.push(hat);
+    y += 60 + 34 * countBlocks(sc.do);
+  }
+  $("p-name").value = p.name || "PROGRAM";
+  $("p-mode").value = String(p.mode || 0);
+  $("p-bg").value = p.background || 0;
+  sprites = (p.sprites || []).map(s => ({
+    name: s.name, x: s.x ?? 0, y: s.y ?? 100, w: s.w ?? 8, h: s.h ?? 8,
+    colour: s.colour ?? 1, vx: s.vx ?? 0, vy: s.vy ?? 0, visible: s.visible ?? true }));
+  renderSprites();
+  Blockly.Events.disable();
+  try {
+    ws.clear();
+    Blockly.serialization.workspaces.load({
+      variables: vars.map(n => ({ name: n, id: "v:" + n })),
+      blocks: { languageVersion: 0, blocks },
+    }, ws);
+    ws.cleanUp();
+  } finally { Blockly.Events.enable(); }
+  changed();
+}
+const countBlocks = list => (list || []).reduce((n, s) =>
+  n + 1 + countBlocks(s.do) + countBlocks(s.then) + countBlocks(s.else) + (s.else && s.else.length ? 1 : 0), 0);
+
+// ---- sprites panel and stage ------------------------------------------------
+function renderSprites() {
+  const tb = $("sprites");
+  tb.innerHTML = "";
+  sprites.forEach((s, i) => {
+    const tr = document.createElement("tr");
+    const cell = (key, type = "number") => {
+      const td = document.createElement("td");
+      if (key === "name") td.className = "name";
+      const inp = document.createElement("input");
+      inp.type = type;
+      if (type === "checkbox") inp.checked = !!s[key]; else inp.value = s[key];
+      inp.addEventListener("change", () => {
+        if (type === "checkbox") s[key] = inp.checked;
+        else if (type === "number") s[key] = Math.trunc(+inp.value || 0);
+        else s[key] = inp.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, "") || "sprite" + (i + 1);
+        if (key === "name") renderSprites();
+        changed();
+      });
+      td.append(inp);
+      if (key === "colour") {
+        const sw = document.createElement("span");
+        sw.className = "swatch";
+        sw.style.background = cpcRGB(PALETTE[mode()][s.colour % pens()]);
+        td.append(sw);
+        td.style.whiteSpace = "nowrap";
+        inp.style.width = "4ch";
+      }
+      tr.append(td);
+    };
+    cell("name", "text");
+    ["x", "y", "w", "h", "colour", "vx", "vy"].forEach(k => cell(k));
+    cell("visible", "checkbox");
+    const td = document.createElement("td");
+    const del = document.createElement("button");
+    del.className = "x"; del.textContent = "✕"; del.title = "delete";
+    del.onclick = () => { sprites.splice(i, 1); renderSprites(); changed(); };
+    td.append(del);
+    tr.append(td);
+    tb.append(tr);
+  });
+}
+
+function drawStage() {
+  const c = $("stage"), g = c.getContext("2d");
+  const sx = 384 / width(), pal = PALETTE[mode()];
+  g.fillStyle = cpcRGB(pal[(+$("p-bg").value || 0) % pens()]);
+  g.fillRect(0, 0, 384, 270);
+  g.fillStyle = "#fff";
+  g.fillRect(0, 0, 384, 11);
+  for (const s of sprites) {
+    if (!s.visible) continue;
+    g.fillStyle = cpcRGB(pal[s.colour % pens()]);
+    g.fillRect(s.x * sx, s.y, s.w * sx, s.h);
+  }
+}
+
+let dragging = null;
+$("stage").addEventListener("pointerdown", e => {
+  const c = $("stage"), r = c.getBoundingClientRect();
+  const px = (e.clientX - r.left - 6) * 384 / (r.width - 12) / (384 / width());
+  const py = (e.clientY - r.top - 6) * 270 / (r.height - 12);
+  for (let i = sprites.length - 1; i >= 0; i--) {
+    const s = sprites[i];
+    if (s.visible && px >= s.x && px < s.x + s.w && py >= s.y && py < s.y + s.h) {
+      dragging = { s, dx: px - s.x, dy: py - s.y };
+      c.setPointerCapture(e.pointerId);
+      return;
+    }
+  }
+});
+$("stage").addEventListener("pointermove", e => {
+  if (!dragging) return;
+  const r = $("stage").getBoundingClientRect();
+  const px = (e.clientX - r.left - 6) * 384 / (r.width - 12) / (384 / width());
+  const py = (e.clientY - r.top - 6) * 270 / (r.height - 12);
+  dragging.s.x = Math.round(px - dragging.dx);
+  dragging.s.y = Math.round(py - dragging.dy);
+  drawStage();
+});
+$("stage").addEventListener("pointerup", () => { if (dragging) { dragging = null; renderSprites(); changed(); } });
+
+// ---- everything else ----------------------------------------------------------
+let ws;
+function changed() {
+  drawStage();
+  if (!ws) return;
+  const { prog, loose } = toVbp(ws);
+  $("json").textContent = JSON.stringify(prog, null, 1);
+  $("howto").textContent = `${t("howto")}\npython3 blocks/vbc.py ${prog.name}.vbp --dsk build/vos.dsk\n${t("then", { n: prog.name })}`;
+  status(loose ? t("loose", { n: loose }) : "", !!loose);
+  try { localStorage.setItem("vos-blocks-current", JSON.stringify(prog)); } catch (e) {}
+}
+function status(text, err) { $("status").textContent = text; $("status").className = err ? "err" : ""; }
+
+function makeWorkspace(saved) {
+  if (ws) ws.dispose();
+  defineBlocks();
+  ws = Blockly.inject("blockly", {
+    toolbox: toolbox(), trashcan: true, renderer: "zelos", sounds: false,
+    zoom: { controls: true, wheel: true, startScale: 0.8 },
+    grid: { spacing: 24, length: 2, colour: "#ccd", snap: true },
+    theme: Blockly.Theme.defineTheme("vos", {
+      base: Blockly.Themes.Classic, fontStyle: { family: "IBM Plex Sans, sans-serif", size: 11 } }),
+  });
+  ws.registerToolboxCategoryCallback("VOS_VARS", varsCategory);
+  ws.registerButtonCallback("VOS_NEW_VAR", b => Blockly.Variables.createVariableButtonHandler(b.getTargetWorkspace()));
+  ws.addChangeListener(e => { if (!e.isUiEvent) changed(); });
+  if (saved) fromVbp(saved);
+}
+
+function setLang(l) {
+  const keep = ws && toVbp(ws).prog;
+  lang = l;
+  try { localStorage.setItem("vos-blocks-lang", l); } catch (e) {}
+  document.documentElement.lang = l;
+  $("b-lang").textContent = l === "el" ? "EN" : "ΕΛ";
+  document.querySelectorAll("[data-t]").forEach(el => { el.textContent = t(el.dataset.t); });
+  makeWorkspace(keep);
+}
+
+const EXAMPLE = {
+  format: "vbp", version: 1, name: "CATCH", mode: 0, background: 0,
+  sprites: [
+    { name: "star", x: 90, y: 20, w: 6, h: 6, colour: 8, vx: 0, vy: 2, visible: true },
+    { name: "cat", x: 80, y: 236, w: 24, h: 8, colour: 4, vx: 0, vy: 0, visible: true }],
+  variables: { score: 0 },
+  scripts: [
+    { when: { event: "start" }, do: [
+      { block: "print", text: "SCORE", x: 4, y: 16 },
+      { block: "print", value: { var: "score" }, x: 60, y: 16 }] },
+    { sprite: "star", when: { event: "start" }, do: [
+      { block: "forever", do: [
+        { block: "move" },
+        { block: "if", cond: { touching: "cat" }, then: [
+          { block: "change", var: "score", by: 1 },
+          { block: "broadcast", message: "score" },
+          { block: "go_to", x: { random: [0, 186] }, y: 20 }] },
+        { block: "if", cond: { op: ">", a: { prop: "y" }, b: 250 }, then: [
+          { block: "go_to", x: { random: [0, 186] }, y: 20 }] }] }] },
+    { sprite: "cat", when: { event: "start" }, do: [
+      { block: "forever", do: [
+        { block: "if", cond: { key_held: "left" }, then: [{ block: "change_x", by: -3 }] },
+        { block: "if", cond: { key_held: "right" }, then: [{ block: "change_x", by: 3 }] },
+        { block: "bounce" }] }] },
+    { when: { event: "receive", message: "score" }, do: [
+      { block: "print", value: { var: "score" }, x: 60, y: 16 }] },
+    { when: { event: "key", key: "space" }, do: [{ block: "stop_all" }] }],
+};
+const EMPTY = { format: "vbp", version: 1, name: "PROGRAM", mode: 0, background: 0,
+  sprites: [{ name: "sprite1", x: 90, y: 120, w: 8, h: 8, colour: 1, vx: 0, vy: 0, visible: true }],
+  variables: {}, scripts: [{ sprite: "sprite1", when: { event: "start" }, do: [] }] };
+
+let newArmed = false;
+$("b-new").onclick = () => {
+  if (!newArmed) { newArmed = true; status(t("confirm_new"), true); setTimeout(() => (newArmed = false), 3000); return; }
+  newArmed = false;
+  fromVbp(EMPTY);
+};
+$("b-example").onclick = () => fromVbp(EXAMPLE);
+$("b-open").onclick = () => $("f-open").click();
+$("f-open").onchange = async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try { fromVbp(JSON.parse(await f.text())); status(t("opened", { f: f.name })); }
+  catch (err) { status(t("bad", { e: err.message }), true); }
+  e.target.value = "";
+};
+$("b-save").onclick = () => {
+  const { prog } = toVbp(ws);
+  const url = URL.createObjectURL(new Blob([JSON.stringify(prog, null, 1) + "\n"], { type: "application/json" }));
+  const a = Object.assign(document.createElement("a"), { href: url, download: prog.name.toLowerCase() + ".vbp" });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  status(t("saved", { f: a.download }));
+};
+$("b-lang").onclick = () => setLang(lang === "el" ? "en" : "el");
+$("b-sprite").onclick = () => {
+  let n = sprites.length + 1;
+  while (sprites.some(s => s.name === "sprite" + n)) n++;
+  sprites.push({ name: "sprite" + n, x: 90, y: 120, w: 8, h: 8, colour: 1 + (n % (pens() - 1)), vx: 0, vy: 0, visible: true });
+  renderSprites(); changed();
+};
+["p-name", "p-mode", "p-bg"].forEach(id => $(id).addEventListener("change", () => { renderSprites(); changed(); }));
+
+let start = EXAMPLE;
+try { const s = localStorage.getItem("vos-blocks-current"); if (s) start = JSON.parse(s); } catch (e) {}
+setLang(lang);
+try { fromVbp(start); } catch (e) { fromVbp(EXAMPLE); }
+</script>
+</body>
+</html>

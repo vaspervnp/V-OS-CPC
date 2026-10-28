@@ -1,0 +1,64 @@
+{
+  "format": "vbp", "version": 1,
+  "name": "PONG", "mode": 0, "background": 0,
+  "sprites": [
+    {"name": "ball", "x": 90, "y": 60, "w": 6, "h": 6, "colour": 8, "vx": 2, "vy": 2},
+    {"name": "bat", "x": 80, "y": 236, "w": 32, "h": 6, "colour": 4}
+  ],
+  "variables": {"score": 0, "lives": 3},
+  "scripts": [
+    {"when": {"event": "start"}, "do": [
+      {"block": "print", "text": "ΣΚΟΡ", "x": 4, "y": 16},
+      {"block": "print", "value": {"var": "score"}, "x": 60, "y": 16},
+      {"block": "print", "text": "LIVES", "x": 110, "y": 16},
+      {"block": "print", "value": {"var": "lives"}, "x": 170, "y": 16}
+    ]},
+    {"sprite": "ball", "when": {"event": "start"}, "do": [
+      {"block": "forever", "do": [
+        {"block": "move"},
+        {"block": "bounce"},
+        {"block": "if", "cond": {"touching": "bat"}, "then": [
+          {"block": "set_velocity", "vx": {"prop": "vx"}, "vy": -2},
+          {"block": "change", "var": "score", "by": 1},
+          {"block": "broadcast", "message": "score"}
+        ]},
+        {"block": "if", "cond": {"op": ">", "a": {"prop": "y"}, "b": 244}, "then": [
+          {"block": "change", "var": "lives", "by": -1},
+          {"block": "go_to", "x": {"random": [20, 160]}, "y": 40},
+          {"block": "broadcast", "message": "score"},
+          {"block": "if", "cond": {"op": "=", "a": {"var": "lives"}, "b": 0}, "then": [
+            {"block": "hide"},
+            {"block": "print", "text": "GAME OVER", "x": 60, "y": 120},
+            {"block": "stop"}
+          ]}
+        ]}
+      ]}
+    ]},
+    {"sprite": "bat", "when": {"event": "start"}, "do": [
+      {"block": "forever", "do": [
+        {"block": "if", "cond": {"key_held": "left"}, "then": [
+          {"block": "change_x", "by": -3}
+        ]},
+        {"block": "if", "cond": {"key_held": "right"}, "then": [
+          {"block": "change_x", "by": 3}
+        ]},
+        {"block": "if", "cond": {"op": "<", "a": {"prop": "x"}, "b": 0}, "then": [
+          {"block": "set_x", "to": 0}
+        ]},
+        {"block": "if", "cond": {"op": ">", "a": {"prop": "x"}, "b": 160}, "then": [
+          {"block": "set_x", "to": 160}
+        ]}
+      ]}
+    ]},
+    {"when": {"event": "receive", "message": "score"}, "do": [
+      {"block": "print", "value": {"var": "score"}, "x": 60, "y": 16},
+      {"block": "print", "value": {"var": "lives"}, "x": 170, "y": 16}
+    ]},
+    {"sprite": "ball", "when": {"event": "click"}, "do": [
+      {"block": "set_colour", "to": {"random": [1, 15]}}
+    ]},
+    {"when": {"event": "key", "key": "space"}, "do": [
+      {"block": "stop_all"}
+    ]}
+  ]
+}

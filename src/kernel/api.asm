@@ -35,6 +35,7 @@ api_jumps:
         jp file_pick
         jp api_texts
         jp api_menu_open            ; 30
+        jp api_key_held
         assert $ == VOS_API + VOS_API_COUNT * 3
 
 api_exit:
@@ -116,6 +117,28 @@ api_delete:
 
 api_texts:
         ld (app_texts),hl
+        ret
+
+; A = key number -> NZ while it is held (the last keyboard scan)
+api_key_held:
+        ld c,a
+        srl a
+        srl a
+        srl a
+        ld e,a
+        ld d,0
+        ld hl,kbd_now
+        add hl,de
+        ld a,c
+        and 7
+        ld b,a
+        ld a,1
+        jr z,.bit
+.shift:
+        add a,a
+        djnz .shift
+.bit:
+        and (hl)
         ret
 
 api_menu_open:

@@ -47,12 +47,22 @@ endef
 
 # Programs (apps/): each is assembled on its own, with only the API
 # include, and goes on the disc as a binary loading at #4000.
-APPS    := $(BUILD)/DEMO.BIN
+APPS    := $(BUILD)/DEMO.BIN $(BUILD)/PONG.BIN $(BUILD)/CATCH.BIN
 APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
 
 $(BUILD)/DEMO.BIN: apps/demo/demo.asm src/api/vos_api.inc
 	@mkdir -p $(BUILD)
 	$(RASM) apps/demo/demo.asm -I src -o $(BUILD)/demo > /dev/null
+
+# Block programs (blocks/): compiled to assembly by vbc.py, with the
+# runtime. The .BIN takes the name inside the .vbp.
+BLOCKS_RT := blocks/vbc.py blocks/runtime.asm src/api/vos_api.inc lang/en/keymap.txt
+
+$(BUILD)/PONG.BIN: blocks/examples/pong.vbp $(BLOCKS_RT)
+	$(PYTHON) -I blocks/vbc.py $< -o $(BUILD) > /dev/null
+
+$(BUILD)/CATCH.BIN: blocks/examples/catch.vbp $(BLOCKS_RT)
+	$(PYTHON) -I blocks/vbc.py $< -o $(BUILD) > /dev/null
 
 define add_apps
 	for p in $(APPS); do $(IDSK) $(1) -i $$p -t 1 -c 4000 -e 4000 > /dev/null; done
@@ -105,10 +115,9 @@ $(TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	$(PYTHON) -I tools/dsk_ext.py $(TEST_DSK)
 
 # Shots along the script (src/kernel/test_script.asm): Launcher, the
-# DEMO program in Greek and English, back to the Launcher, Desktop and
-# "not a V-OS program". One run per shot: runs are short, shots are per
-# second.
-TEST_SHOTS := 100 160 300 380 500 560 625
+# PONG block program running, its bat moved left and right, back to the
+# Launcher. One run per shot: runs are short, shots are per second.
+TEST_SHOTS := 100 150 170 230 290 360
 test-input: $(TEST_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(TEST_SHOTS); do \
