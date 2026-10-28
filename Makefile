@@ -47,7 +47,7 @@ endef
 
 # Programs (apps/): each is assembled on its own, with only the API
 # include, and goes on the disc as a binary loading at #4000.
-APPS    := $(BUILD)/DEMO.BIN $(BUILD)/PONG.BIN $(BUILD)/CATCH.BIN
+APPS    := $(BUILD)/DEMO.BIN $(BUILD)/PONG.BIN $(BUILD)/CATCH.BIN $(BUILD)/STARCAT.BIN
 APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
 
 $(BUILD)/DEMO.BIN: apps/demo/demo.asm src/api/vos_api.inc
@@ -62,6 +62,9 @@ $(BUILD)/PONG.BIN: blocks/examples/pong.vbp $(BLOCKS_RT)
 	$(PYTHON) -I blocks/vbc.py $< -o $(BUILD) > /dev/null
 
 $(BUILD)/CATCH.BIN: blocks/examples/catch.vbp $(BLOCKS_RT)
+	$(PYTHON) -I blocks/vbc.py $< -o $(BUILD) > /dev/null
+
+$(BUILD)/STARCAT.BIN: blocks/examples/starcat.vbp $(BLOCKS_RT)
 	$(PYTHON) -I blocks/vbc.py $< -o $(BUILD) > /dev/null
 
 define add_apps
@@ -115,9 +118,10 @@ $(TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	$(PYTHON) -I tools/dsk_ext.py $(TEST_DSK)
 
 # Shots along the script (src/kernel/test_script.asm): Launcher, the
-# PONG block program running, its bat moved left and right, back to the
-# Launcher. One run per shot: runs are short, shots are per second.
-TEST_SHOTS := 100 150 170 230 290 360
+# STARCAT block program (costumes, a tune, lists), its cat walking left
+# and right, back to the Launcher. One run per shot: runs are short,
+# shots are per second.
+TEST_SHOTS := 150 200 240 290 400
 test-input: $(TEST_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(TEST_SHOTS); do \

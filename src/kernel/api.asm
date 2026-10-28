@@ -36,9 +36,12 @@ api_jumps:
         jp api_texts
         jp api_menu_open            ; 30
         jp api_key_held
+        jp gfx_blit
+        jp snd_play                 ; 33
         assert $ == VOS_API + VOS_API_COUNT * 3
 
 api_exit:
+        call snd_off
         xor a
         ld (view_ticks),a
         ld a,(app_return)

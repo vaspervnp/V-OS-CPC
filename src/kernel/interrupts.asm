@@ -46,6 +46,7 @@ int_handler:
         call kbd_scan
         call ptr_poll
         call fdc_tick
+        call snd_tick
 .no_input:
         ld a,(int_slice)
 

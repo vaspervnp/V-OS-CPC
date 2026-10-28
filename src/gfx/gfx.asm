@@ -279,6 +279,76 @@ gfx_fill_rect:
         ret
 
 ; ---------------------------------------------------------------------
+; gfx_blit (VOS_BLIT) - IX = image: dw x, y; db bytes, rows; dw source;
+; db source stride. Per row the source has (mask, pixels) byte pairs;
+; screen = screen and not mask, or pixels. x is rounded down to a byte.
+; The image must be on screen, bytes and rows > 0 (no clipping).
+; Destroys: all except IX
+; ---------------------------------------------------------------------
+gfx_blit:
+        ld l,(ix+4)                 ; keep the pointer out of the way
+        ld h,0
+        ld a,(gfx_shift)
+.pixels:
+        add hl,hl
+        dec a
+        jr nz,.pixels
+        ld b,h
+        ld c,l
+        ld l,(ix+0)
+        ld h,(ix+1)
+        ld e,(ix+2)
+        ld d,(ix+3)
+        ld a,(ix+5)
+        call ptr_guard
+        ld l,(ix+0)
+        ld h,(ix+1)
+        call gfx_x_to_byte
+        ld (fr_first),hl
+        ld l,(ix+2)
+        ld h,(ix+3)
+        add hl,hl
+        ld de,gfx_lines
+        add hl,de                   ; HL -> gfx_lines[y]
+        ld e,(ix+6)
+        ld d,(ix+7)                 ; DE -> source row
+        ld b,(ix+5)
+.row:
+        push bc
+        push de
+        ld c,(hl)
+        inc hl
+        ld b,(hl)
+        inc hl
+        push hl
+        ld hl,(fr_first)
+        add hl,bc
+        ld b,(ix+4)
+.byte:
+        ld a,(de)                   ; mask
+        cpl
+        and (hl)
+        ld c,a
+        inc de
+        ld a,(de)                   ; pixels
+        or c
+        ld (hl),a
+        inc de
+        inc hl
+        djnz .byte
+        pop hl
+        pop de
+        ld a,(ix+8)                 ; next source row
+        add a,e
+        ld e,a
+        adc a,d
+        sub e
+        ld d,a
+        pop bc
+        djnz .row
+        ret
+
+; ---------------------------------------------------------------------
 ; gfx_cls - A = pen. Fills all 272 lines, margins included (not the
 ; free RAM gaps).
 ; Destroys: all except IX

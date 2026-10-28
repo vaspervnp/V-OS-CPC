@@ -81,6 +81,12 @@ td input { width: 100%; font: inherit; padding: 2px 3px; border: 1px solid var(-
   border-radius: 3px; background: transparent; color: var(--ink); }
 td input[type=checkbox] { width: auto; }
 td.name input { min-width: 6ch; }
+.pen { width: 22px; height: 22px; border: 2px solid var(--line); border-radius: 3px; cursor: pointer; padding: 0; }
+.pen.on { border-color: var(--ink); outline: 2px solid var(--accent); }
+.pen.clear, .chk { background: repeating-conic-gradient(#bbb 0 25%, #fff 0 50%) 0 0 / 8px 8px; }
+.chip { font: 12px "IBM Plex Mono", monospace; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--line);
+  background: transparent; color: var(--ink); cursor: pointer; }
+.chip.on { background: var(--accent); color: var(--accent-ink); }
 .swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--line); vertical-align: middle; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 aside button { background: var(--accent); color: var(--accent-ink); }
@@ -126,6 +132,22 @@ pre {
       <tbody id="sprites"></tbody>
     </table>
     <div class="row"><button id="b-sprite" data-t="add_sprite">+ Αντικείμενο</button></div>
+    <h2 data-t="costumes">Κοστούμια</h2>
+    <div class="row">
+      <select id="c-sprite"></select>
+      <span id="c-list" class="row"></span>
+      <button id="c-add" title="+">+</button>
+      <button id="c-copy" data-t="copy">Αντίγραφο</button>
+      <button class="x" id="c-del" title="delete">✕</button>
+    </div>
+    <div class="row" id="c-props">
+      <label><span data-t="name">Όνομα</span> <input id="c-name" type="text" size="8"></label>
+      <label>w <input id="c-w" type="number" min="1" max="64" style="width:5ch"></label>
+      <label>h <input id="c-h" type="number" min="1" max="64" style="width:5ch"></label>
+    </div>
+    <div class="row" id="c-pens"></div>
+    <canvas id="c-grid" width="320" height="200" style="max-width:100%;touch-action:none;cursor:crosshair;align-self:flex-start"></canvas>
+    <div id="c-hint" style="font-size:12px;color:var(--muted)" data-t="paint_hint"></div>
     <h2 data-t="compile">Μεταγλώττιση</h2>
     <pre id="howto"></pre>
     <div id="status"></div>
@@ -147,7 +169,10 @@ const UI = {
     then: "Μετά, στον Launcher του V-OS: το πρόγραμμα {n}.",
     c_events: "Γεγονότα", c_control: "Έλεγχος", c_motion: "Κίνηση", c_looks: "Εμφάνιση",
     c_text: "Κείμενο", c_ops: "Τελεστές", c_sense: "Αισθητήρες", c_vars: "Μεταβλητές",
-    new_var: "Νέα μεταβλητή", stage_name: "σκηνή", self: "αυτό",
+    new_var: "Νέα μεταβλητή", new_list: "Νέα λίστα", stage_name: "σκηνή", self: "αυτό",
+    c_sound: "Ήχος", c_lists: "Λίστες", costumes: "Κοστούμια", copy: "Αντίγραφο",
+    no_sprite: "(κανένα αντικείμενο)", no_costume: "Χωρίς κοστούμι: ορθογώνιο με το χρώμα του.",
+    paint_hint: "Κλικ: βάψε με την πένα · δεξί κλικ: διάφανο. Σε mode 0 τα pixels είναι διπλά σε πλάτος.",
     saved: "Αποθηκεύτηκε: {f}", opened: "Άνοιξε: {f}", bad: "Δεν ανοίγει: {e}",
     confirm_new: "Πάτα ξανά «Νέο» για να σβηστεί το πρόγραμμα.",
     loose: "Μπλοκ εκτός σεναρίου (χωρίς «όταν…») δεν μπαίνουν στο πρόγραμμα: {n}.",
@@ -160,7 +185,10 @@ const UI = {
     then: "Then run {n} from the V-OS Launcher.",
     c_events: "Events", c_control: "Control", c_motion: "Motion", c_looks: "Looks",
     c_text: "Text", c_ops: "Operators", c_sense: "Sensing", c_vars: "Variables",
-    new_var: "New variable", stage_name: "stage", self: "this",
+    new_var: "New variable", new_list: "New list", stage_name: "stage", self: "this",
+    c_sound: "Sound", c_lists: "Lists", costumes: "Costumes", copy: "Copy",
+    no_sprite: "(no sprites)", no_costume: "No costume: a rectangle in its colour.",
+    paint_hint: "Click: paint with the pen · right click: transparent. In mode 0 pixels are twice as wide.",
     saved: "Saved: {f}", opened: "Opened: {f}", bad: "Cannot open it: {e}",
     confirm_new: "Press “New” again to clear the program.",
     loose: "Blocks outside a script (no “when…”) are left out: {n}.",
@@ -184,6 +212,12 @@ const BT = {
     not: "όχι %1", random: "τυχαίος από %1 έως %2", key_held: "πατιέται το %1;",
     touching: "αγγίζει το %1;", at_edge: "στην άκρη;", prop: "%1 του %2", frames: "καρέ",
     and: "και", or: "ή", mod: "υπόλοιπο",
+    switch_costume: "άλλαξε κοστούμι σε %1", next_costume: "επόμενο κοστούμι", costume: "αριθμός κοστουμιού",
+    play_note: "παίξε νότα %1 για %2 καρέ στο κανάλι %3", start_note: "ξεκίνα νότα %1 για %2 καρέ στο κανάλι %3",
+    noise: "θόρυβος %1 για %2 καρέ στο κανάλι %3", stop_sounds: "σταμάτα τους ήχους", set_volume: "ένταση %1",
+    list_add: "πρόσθεσε %1 στη %2", list_delete: "διάγραψε το %1 της %2", list_insert: "βάλε %1 στη θέση %2 της %3",
+    list_replace: "άλλαξε το %1 της %2 σε %3", list_clear: "άδειασε τη %1",
+    item: "στοιχείο %1 της %2", length: "μήκος της %1", contains: "η %1 έχει το %2;",
   },
   en: {
     when_start: "when started %1", when_key: "when %1 key pressed %2", when_click: "when clicked %1",
@@ -201,6 +235,12 @@ const BT = {
     not: "not %1", random: "random %1 to %2", key_held: "key %1 held?",
     touching: "touching %1?", at_edge: "at an edge?", prop: "%1 of %2", frames: "frames",
     and: "and", or: "or", mod: "mod",
+    switch_costume: "switch costume to %1", next_costume: "next costume", costume: "costume number",
+    play_note: "play note %1 for %2 frames on channel %3", start_note: "start note %1 for %2 frames on channel %3",
+    noise: "noise %1 for %2 frames on channel %3", stop_sounds: "stop all sounds", set_volume: "volume %1",
+    list_add: "add %1 to %2", list_delete: "delete %1 of %2", list_insert: "insert %1 at %2 of %3",
+    list_replace: "replace item %1 of %2 with %3", list_clear: "delete all of %1",
+    item: "item %1 of %2", length: "length of %1", contains: "%1 contains %2?",
   },
 };
 let lang = "el";
@@ -220,6 +260,7 @@ const KEYS = ["space", "up", "down", "left", "right", "return", "enter", "copy",
 // ---- program state outside the blocks ----------------------------------
 let sprites = [];
 let varInit = {};   // variables' starting values, kept from the opened file
+let listInit = {};  // lists' starting items and room, likewise
 const $ = id => document.getElementById(id);
 const mode = () => +$("p-mode").value;
 const width = () => (mode() === 0 ? 192 : 384);
@@ -234,7 +275,14 @@ function spriteOptions(withStage, withSelf) {
 }
 
 // ---- the blocks -----------------------------------------------------------
-const COL = { events: 40, control: 200, motion: 220, looks: 280, text: 160, ops: 120, sense: 180, vars: 330 };
+const COL = { events: 40, control: 200, motion: 220, looks: 280, text: 160, ops: 120, sense: 180, vars: 330,
+  sound: 300, lists: 20 };
+const costumeOptions = () => {
+  const names = [...new Set(sprites.flatMap(s => (s.costumes || []).map(c => c.name)))];
+  return names.length ? names.map(n => [n, n]) : [["—", "—"]];
+};
+const CHANNELS = [["A", "0"], ["B", "1"], ["C", "2"]];
+const listField = name => ({ type: "field_variable", name, variable: null, variableTypes: ["List"], defaultType: "List" });
 const num = name => ({ type: "input_value", name });
 const spriteField = (name, stage, self) => ({ type: "field_dropdown", name, options: () => spriteOptions(stage, self) });
 
@@ -284,10 +332,10 @@ function defineBlocks() {
   st("print_value", [num("VALUE"), num("X"), num("Y")], COL.text);
   st("text_colour", [num("TO")], COL.text);
   st("clear", [], COL.text);
-  st("set", [{ type: "field_variable", name: "VAR", variable: "score" }, num("TO")], COL.vars);
-  st("change", [{ type: "field_variable", name: "VAR", variable: "score" }, num("BY")], COL.vars);
+  st("set", [{ type: "field_variable", name: "VAR", variable: "score", variableTypes: [""] }, num("TO")], COL.vars);
+  st("change", [{ type: "field_variable", name: "VAR", variable: "score", variableTypes: [""] }, num("BY")], COL.vars);
   ex("num", [{ type: "field_number", name: "NUM", value: 0, min: -32768, max: 32767, precision: 1 }], COL.ops, { message0: "%1" });
-  ex("var", [{ type: "field_variable", name: "VAR", variable: "score" }], COL.vars, { message0: "%1" });
+  ex("var", [{ type: "field_variable", name: "VAR", variable: "score", variableTypes: [""] }], COL.vars, { message0: "%1" });
   ex("op", [num("A"), { type: "field_dropdown", name: "OP", options: [
     ["+", "+"], ["-", "-"], ["×", "*"], ["÷", "/"], [B.mod, "mod"], ["<", "<"], [">", ">"], ["=", "="],
     [B.and, "and"], [B.or, "or"]] }, num("B")], COL.ops, { message0: "%1 %2 %3" });
@@ -299,6 +347,22 @@ function defineBlocks() {
   ex("prop", [{ type: "field_dropdown", name: "PROP", options:
     ["x", "y", "vx", "vy", "w", "h", "colour", "visible"].map(p => [p, p]) }, spriteField("OF", false, true)], COL.sense);
   ex("frames", [], COL.sense);
+  st("switch_costume", [{ type: "field_dropdown", name: "COSTUME", options: costumeOptions }], COL.looks);
+  st("next_costume", [], COL.looks);
+  ex("costume", [], COL.looks);
+  for (const ty of ["play_note", "start_note", "noise"])
+    st(ty, [num(ty === "noise" ? "PITCH" : "NOTE"), num("FRAMES"),
+      { type: "field_dropdown", name: "CHANNEL", options: CHANNELS }], COL.sound);
+  st("stop_sounds", [], COL.sound);
+  st("set_volume", [num("TO")], COL.sound);
+  st("list_add", [num("ITEM"), listField("LIST")], COL.lists);
+  st("list_delete", [num("INDEX"), listField("LIST")], COL.lists);
+  st("list_insert", [num("ITEM"), num("INDEX"), listField("LIST")], COL.lists);
+  st("list_replace", [num("INDEX"), listField("LIST"), num("ITEM")], COL.lists);
+  st("list_clear", [listField("LIST")], COL.lists);
+  ex("item", [num("INDEX"), listField("LIST")], COL.lists);
+  ex("length", [listField("LIST")], COL.lists);
+  ex("contains", [listField("LIST"), num("VALUE")], COL.lists);
   Blockly.defineBlocksWithJsonArray(defs);
 }
 
@@ -313,27 +377,43 @@ function toolbox() {
     cat("c_motion", COL.motion, [b("go_to", { X: N(0), Y: N(100) }), b("set_x", { TO: N(0) }), b("set_y", { TO: N(100) }),
       b("change_x", { BY: N(2) }), b("change_y", { BY: N(2) }), b("set_velocity", { VX: N(2), VY: N(2) }),
       b("move"), b("bounce")]),
-    cat("c_looks", COL.looks, [b("set_colour", { TO: N(1) }), b("set_size", { W: N(8), H: N(8) }), b("show"), b("hide")]),
+    cat("c_looks", COL.looks, [b("switch_costume"), b("next_costume"), b("costume"),
+      b("set_colour", { TO: N(1) }), b("set_size", { W: N(8), H: N(8) }), b("show"), b("hide")]),
+    cat("c_sound", COL.sound, [b("play_note", { NOTE: N(60), FRAMES: N(25) }), b("start_note", { NOTE: N(60), FRAMES: N(25) }),
+      b("noise", { PITCH: N(8), FRAMES: N(10) }), b("stop_sounds"), b("set_volume", { TO: N(12) })]),
     cat("c_text", COL.text, [b("print_text", { X: N(0), Y: N(16) }), b("print_value", { VALUE: N(0), X: N(0), Y: N(16) }),
       b("text_colour", { TO: N(1) }), b("clear")]),
     cat("c_ops", COL.ops, [b("num"), b("op", { A: N(0), B: N(0) }), b("not"), b("random", { FROM: N(1), TO: N(10) })]),
     cat("c_sense", COL.sense, [b("key_held"), b("touching"), b("at_edge"), b("prop"), b("frames")]),
     { kind: "category", name: t("c_vars"), colour: COL.vars, custom: "VOS_VARS" },
+    { kind: "category", name: t("c_lists"), colour: COL.lists, custom: "VOS_LISTS" },
   ] };
 }
 
 function varsCategory(ws) {
   const out = [{ kind: "button", text: t("new_var"), callbackKey: "VOS_NEW_VAR" }];
-  for (const v of ws.getAllVariables()) {
+  const vars = ws.getVariablesOfType("");
+  for (const v of vars) {
     const f = { VAR: { id: v.getId() } };
     out.push({ kind: "block", type: "v_var", fields: f });
   }
-  if (ws.getAllVariables().length) {
-    const f = { VAR: { id: ws.getAllVariables()[0].getId() } };
+  if (vars.length) {
+    const f = { VAR: { id: vars[0].getId() } };
     out.push({ kind: "block", type: "v_set", fields: f, inputs: { TO: N(0) } });
     out.push({ kind: "block", type: "v_change", fields: f, inputs: { BY: N(1) } });
   }
   return out;
+}
+
+function listsCategory(ws) {
+  const out = [{ kind: "button", text: t("new_list"), callbackKey: "VOS_NEW_LIST" }];
+  const lists = ws.getVariablesOfType("List");
+  if (!lists.length) return out;
+  const L = { LIST: { id: lists[0].getId() } };
+  const b = (type, inputs = {}) => ({ kind: "block", type: "v_" + type, fields: L, inputs });
+  return out.concat([b("list_add", { ITEM: N(1) }), b("list_delete", { INDEX: N(1) }),
+    b("list_insert", { ITEM: N(1), INDEX: N(1) }), b("list_replace", { INDEX: N(1), ITEM: N(1) }), b("list_clear"),
+    b("item", { INDEX: N(1) }), b("length"), b("contains", { VALUE: N(1) })]);
 }
 
 // ---- blocks <-> .vbp --------------------------------------------------------
@@ -346,6 +426,10 @@ const STMT_INPUTS = {   // block -> [vbp key, Blockly input]
   set_colour: [["to", "TO"]], set_size: [["w", "W"], ["h", "H"]], print_text: [["x", "X"], ["y", "Y"]],
   print_value: [["value", "VALUE"], ["x", "X"], ["y", "Y"]], text_colour: [["to", "TO"]],
   set: [["to", "TO"]], change: [["by", "BY"]],
+  play_note: [["note", "NOTE"], ["frames", "FRAMES"]], start_note: [["note", "NOTE"], ["frames", "FRAMES"]],
+  noise: [["pitch", "PITCH"], ["frames", "FRAMES"]], set_volume: [["to", "TO"]],
+  list_add: [["item", "ITEM"]], list_delete: [["index", "INDEX"]],
+  list_insert: [["index", "INDEX"], ["item", "ITEM"]], list_replace: [["index", "INDEX"], ["item", "ITEM"]],
 };
 
 function toVbp(ws) {
@@ -369,6 +453,10 @@ function toVbp(ws) {
       case "at_edge": return { at_edge: true };
       case "prop": return f.OF === "__self" ? { prop: f.PROP } : { prop: f.PROP, of: f.OF };
       case "frames": return { frames: true };
+      case "costume": return { costume: true };
+      case "item": return { item: e("INDEX"), of: fieldVar(f.LIST) };
+      case "length": return { length: fieldVar(f.LIST) };
+      case "contains": return { contains: fieldVar(f.LIST), value: e("VALUE") };
     }
     return 0;
   };
@@ -385,6 +473,9 @@ function toVbp(ws) {
       if (ty === "forever" || ty === "repeat") s.do = body(inputBlock(b, "DO"));
       if (ty === "set" || ty === "change") s.var = fieldVar(f.VAR);
       if (ty === "broadcast") s.message = f.MESSAGE;
+      if (ty === "switch_costume") s.to = f.COSTUME;
+      if (f.CHANNEL !== undefined) s.channel = +f.CHANNEL;
+      if (f.LIST) s.list = fieldVar(f.LIST);
       out.push(s);
     }
     return out;
@@ -404,30 +495,44 @@ function toVbp(ws) {
     sc.do = body(top.next && top.next.block);
     scripts.push(sc);
   }
-  const variables = {};
-  for (const v of state.variables || []) variables[v.name] = varInit[v.name] || 0;
+  const variables = {}, lists = {};
+  for (const v of state.variables || []) {
+    if (v.type === "List") lists[v.name] = listInit[v.name] || { max: 64, items: [] };
+    else variables[v.name] = varInit[v.name] || 0;
+  }
   const m = mode();
   return { prog: {
     format: "vbp", version: 1,
     name: $("p-name").value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) || "PROGRAM",
     mode: m, background: +$("p-bg").value || 0,
-    sprites: sprites.map(s => Object.assign({}, s)),
-    variables, scripts,
+    sprites: sprites.map(s => {
+      const o = Object.assign({}, s);
+      if (!o.costumes || !o.costumes.length) { delete o.costumes; delete o.costume; }
+      else if (!o.costumes.some(c => c.name === o.costume)) o.costume = o.costumes[0].name;
+      return o;
+    }),
+    variables, lists, scripts,
   }, loose };
 }
 
 function fromVbp(p) {
   varInit = Object.assign({}, p.variables || {});
-  const vars = Object.keys(varInit);
+  listInit = {};
+  for (const [n, v] of Object.entries(p.lists || {}))
+    listInit[n] = Array.isArray(v) ? { max: Math.max(64, v.length), items: v } : v;
+  const vars = Object.keys(varInit), lists = Object.keys(listInit);
   const scan = x => {   // variables used but not declared
     if (Array.isArray(x)) x.forEach(scan);
     else if (x && typeof x === "object") {
       if (typeof x.var === "string" && !vars.includes(x.var)) vars.push(x.var);
+      const used = [x.list, "item" in x ? x.of : null, x.length, x.contains];
+      for (const n of used) if (typeof n === "string" && !lists.includes(n)) lists.push(n);
       Object.values(x).forEach(scan);
     }
   };
   scan(p.scripts);
   const V = name => ({ id: "v:" + name });
+  const L = name => ({ id: "l:" + name });
   const exprIn = e => {
     if (typeof e === "number" || typeof e === "boolean") return N(+e);
     return { block: exprBlock(e), shadow: { type: "v_num", fields: { NUM: 0 } } };
@@ -443,6 +548,10 @@ function fromVbp(p) {
     if ("at_edge" in e) return { type: "v_at_edge" };
     if ("prop" in e) return { type: "v_prop", fields: { PROP: e.prop, OF: e.of || "__self" } };
     if ("frames" in e) return { type: "v_frames" };
+    if ("costume" in e) return { type: "v_costume" };
+    if ("item" in e) return { type: "v_item", fields: { LIST: L(e.of) }, inputs: { INDEX: exprIn(e.item) } };
+    if ("length" in e) return { type: "v_length", fields: { LIST: L(e.length) } };
+    if ("contains" in e) return { type: "v_contains", fields: { LIST: L(e.contains) }, inputs: { VALUE: exprIn(e.value) } };
     throw new Error("expression " + JSON.stringify(e));
   };
   const chain = list => {
@@ -459,6 +568,9 @@ function fromVbp(p) {
       if (ty === "forever" || ty === "repeat") { const c = chain(s.do); if (c) b.inputs.DO = { block: c }; }
       if (ty === "set" || ty === "change") b.fields.VAR = V(s.var);
       if (ty === "broadcast") b.fields.MESSAGE = String(s.message);
+      if (ty === "switch_costume") b.fields.COSTUME = String(s.to);
+      if (["play_note", "start_note", "noise"].includes(ty)) b.fields.CHANNEL = String(s.channel || 0);
+      if (s.list !== undefined) b.fields.LIST = L(s.list);
       if (!Blockly.Blocks[b.type]) throw new Error("block " + s.block);
       if (last) last.next = { block: b }; else first = b;
       last = b;
@@ -484,13 +596,17 @@ function fromVbp(p) {
   $("p-bg").value = p.background || 0;
   sprites = (p.sprites || []).map(s => ({
     name: s.name, x: s.x ?? 0, y: s.y ?? 100, w: s.w ?? 8, h: s.h ?? 8,
-    colour: s.colour ?? 1, vx: s.vx ?? 0, vy: s.vy ?? 0, visible: s.visible ?? true }));
+    colour: s.colour ?? 1, vx: s.vx ?? 0, vy: s.vy ?? 0, visible: s.visible ?? true,
+    costumes: (s.costumes || []).map(c => ({ name: c.name, pixels: c.pixels.slice() })),
+    costume: s.costume }));
+  costumeAt = { sprite: 0, costume: 0 };
   renderSprites();
   Blockly.Events.disable();
   try {
     ws.clear();
     Blockly.serialization.workspaces.load({
-      variables: vars.map(n => ({ name: n, id: "v:" + n })),
+      variables: vars.map(n => ({ name: n, id: "v:" + n }))
+        .concat(lists.map(n => ({ name: n, id: "l:" + n, type: "List" }))),
       blocks: { languageVersion: 0, blocks },
     }, ws);
     ws.cleanUp();
@@ -504,6 +620,7 @@ const countBlocks = list => (list || []).reduce((n, s) =>
 function renderSprites() {
   const tb = $("sprites");
   tb.innerHTML = "";
+  renderCostumes();
   sprites.forEach((s, i) => {
     const tr = document.createElement("tr");
     const cell = (key, type = "number") => {
@@ -512,10 +629,19 @@ function renderSprites() {
       const inp = document.createElement("input");
       inp.type = type;
       if (type === "checkbox") inp.checked = !!s[key]; else inp.value = s[key];
+      if (["w", "h", "colour"].includes(key) && currentCostume(s)) {
+        inp.disabled = true;
+        inp.title = t("costumes");
+        if (key !== "colour") inp.value = spriteBox(s)[key];
+      }
       inp.addEventListener("change", () => {
         if (type === "checkbox") s[key] = inp.checked;
         else if (type === "number") s[key] = Math.trunc(+inp.value || 0);
-        else s[key] = inp.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, "") || "sprite" + (i + 1);
+        else {
+          const old = s.name;
+          s[key] = inp.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, "") || "sprite" + (i + 1);
+          renameSprite(old, s.name);
+        }
         if (key === "name") renderSprites();
         changed();
       });
@@ -543,6 +669,13 @@ function renderSprites() {
   });
 }
 
+// a sprite renamed: its name in the blocks too
+function renameSprite(from, to) {
+  if (!ws || from === to) return;
+  for (const b of ws.getAllBlocks(false))
+    for (const f of ["SPRITE", "OF"]) if (b.getField(f) && b.getFieldValue(f) === from) b.setFieldValue(to, f);
+}
+
 function drawStage() {
   const c = $("stage"), g = c.getContext("2d");
   const sx = 384 / width(), pal = PALETTE[mode()];
@@ -552,10 +685,158 @@ function drawStage() {
   g.fillRect(0, 0, 384, 11);
   for (const s of sprites) {
     if (!s.visible) continue;
-    g.fillStyle = cpcRGB(pal[s.colour % pens()]);
-    g.fillRect(s.x * sx, s.y, s.w * sx, s.h);
+    const c = currentCostume(s);
+    if (!c) {
+      g.fillStyle = cpcRGB(pal[s.colour % pens()]);
+      g.fillRect(s.x * sx, s.y, s.w * sx, s.h);
+      continue;
+    }
+    const x0 = s.x - (((s.x % ppb()) + ppb()) % ppb());   // drawn from a whole byte
+    c.pixels.forEach((row, y) => [...row].forEach((ch, x) => {
+      const pen = parseInt(ch, 16);
+      if (Number.isNaN(pen)) return;
+      g.fillStyle = cpcRGB(pal[pen % pens()]);
+      g.fillRect((x0 + x) * sx, s.y + y, sx, 1);
+    }));
   }
 }
+const ppb = () => (mode() === 0 ? 2 : 4);
+function currentCostume(s) {
+  const cs = s.costumes || [];
+  return cs.find(c => c.name === s.costume) || cs[0];
+}
+// the sprite's size as the program sees it: its costume's, if it has one
+function spriteBox(s) {
+  const c = currentCostume(s);
+  if (!c) return { w: s.w, h: s.h };
+  const w = Math.max(...c.pixels.map(r => r.length));
+  return { w: Math.ceil(w / ppb()) * ppb(), h: c.pixels.length };
+}
+
+// ---- costume painter -----------------------------------------------------------
+let costumeAt = { sprite: 0, costume: 0 };
+let paintPen = 1;
+function renderCostumes() {
+  const sel = $("c-sprite");
+  sel.innerHTML = "";
+  sprites.forEach((s, i) => sel.append(new Option(s.name, i)));
+  if (!sprites.length) sel.append(new Option(t("no_sprite"), -1));
+  if (costumeAt.sprite >= sprites.length) costumeAt.sprite = 0;
+  sel.value = sprites.length ? costumeAt.sprite : -1;
+  const s = sprites[costumeAt.sprite];
+  const cs = (s && s.costumes) || [];
+  if (costumeAt.costume >= cs.length) costumeAt.costume = Math.max(0, cs.length - 1);
+  const list = $("c-list");
+  list.innerHTML = "";
+  cs.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.className = "chip" + (i === costumeAt.costume ? " on" : "");
+    b.textContent = c.name + (s.costume === c.name || (!s.costume && i === 0) ? " ★" : "");
+    b.title = "★ = first costume";
+    b.onclick = () => { costumeAt.costume = i; renderCostumes(); };
+    b.ondblclick = () => { s.costume = c.name; renderCostumes(); changed(); };
+    list.append(b);
+  });
+  const c = cs[costumeAt.costume];
+  $("c-props").hidden = $("c-grid").hidden = $("c-pens").hidden = !c;
+  $("c-del").hidden = $("c-copy").hidden = !c;
+  $("c-add").hidden = !s;
+  $("c-hint").textContent = c ? t("paint_hint") : (s ? t("no_costume") : "");
+  if (!c) return;
+  $("c-name").value = c.name;
+  $("c-w").value = Math.max(...c.pixels.map(r => r.length));
+  $("c-h").value = c.pixels.length;
+  const pensRow = $("c-pens");
+  pensRow.innerHTML = "";
+  for (let p = -1; p < pens(); p++) {
+    const b = document.createElement("button");
+    b.className = "pen" + (p < 0 ? " clear" : "") + (p === paintPen ? " on" : "");
+    if (p >= 0) b.style.background = cpcRGB(PALETTE[mode()][p]);
+    b.title = p < 0 ? "transparent" : "pen " + p;
+    b.onclick = () => { paintPen = p; renderCostumes(); };
+    pensRow.append(b);
+  }
+  drawGrid();
+}
+function gridGeometry() {
+  const c = sprites[costumeAt.sprite].costumes[costumeAt.costume];
+  const w = Math.max(...c.pixels.map(r => r.length)), h = c.pixels.length;
+  const aspect = mode() === 0 ? 2 : 1;
+  const cell = Math.max(4, Math.min(Math.floor(380 / (w * aspect)), Math.floor(300 / h), 24));
+  return { c, w, h, cw: cell * aspect, ch: cell };
+}
+function drawGrid() {
+  const { c, w, h, cw, ch } = gridGeometry();
+  const cv = $("c-grid"), g = cv.getContext("2d");
+  cv.width = w * cw; cv.height = h * ch;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const pen = parseInt((c.pixels[y] || "")[x], 16);
+    if (Number.isNaN(pen)) {
+      g.fillStyle = (x + y) % 2 ? "#ccc" : "#fff";
+    } else g.fillStyle = cpcRGB(PALETTE[mode()][pen % pens()]);
+    g.fillRect(x * cw, y * ch, cw, ch);
+  }
+  g.strokeStyle = "rgba(128,128,128,.35)";
+  for (let x = 0; x <= w; x++) { g.beginPath(); g.moveTo(x * cw + .5, 0); g.lineTo(x * cw + .5, h * ch); g.stroke(); }
+  for (let y = 0; y <= h; y++) { g.beginPath(); g.moveTo(0, y * ch + .5); g.lineTo(w * cw, y * ch + .5); g.stroke(); }
+}
+let painting = null;
+function paintAt(e) {
+  const { c, w, h, cw, ch } = gridGeometry();
+  const r = $("c-grid").getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left) * ($("c-grid").width / r.width) / cw);
+  const y = Math.floor((e.clientY - r.top) * ($("c-grid").height / r.height) / ch);
+  if (x < 0 || y < 0 || x >= w || y >= h) return;
+  const ch2 = painting < 0 ? "." : painting.toString(16);
+  const row = c.pixels[y].padEnd(w, ".");
+  c.pixels[y] = row.slice(0, x) + ch2 + row.slice(x + 1);
+  drawGrid();
+  drawStage();
+}
+$("c-grid").addEventListener("contextmenu", e => e.preventDefault());
+$("c-grid").addEventListener("pointerdown", e => {
+  painting = e.button === 2 ? -1 : paintPen;
+  $("c-grid").setPointerCapture(e.pointerId);
+  paintAt(e);
+});
+$("c-grid").addEventListener("pointermove", e => { if (painting !== null) paintAt(e); });
+$("c-grid").addEventListener("pointerup", () => { if (painting !== null) { painting = null; changed(); } });
+$("c-sprite").onchange = () => { costumeAt = { sprite: +$("c-sprite").value, costume: 0 }; renderCostumes(); };
+const freshName = (cs, base) => { let n = cs.length + 1; while (cs.some(c => c.name === base + n)) n++; return base + n; };
+$("c-add").onclick = () => {
+  const s = sprites[costumeAt.sprite];
+  s.costumes = s.costumes || [];
+  const w = mode() === 0 ? 8 : 12;
+  s.costumes.push({ name: freshName(s.costumes, "costume"), pixels: Array(8).fill(".".repeat(w)) });
+  costumeAt.costume = s.costumes.length - 1;
+  renderCostumes(); changed();
+};
+$("c-copy").onclick = () => {
+  const s = sprites[costumeAt.sprite], c = s.costumes[costumeAt.costume];
+  s.costumes.splice(costumeAt.costume + 1, 0, { name: freshName(s.costumes, c.name.replace(/\d+$/, "")), pixels: c.pixels.slice() });
+  costumeAt.costume++;
+  renderCostumes(); changed();
+};
+$("c-del").onclick = () => {
+  const s = sprites[costumeAt.sprite];
+  s.costumes.splice(costumeAt.costume, 1);
+  renderCostumes(); changed();
+};
+$("c-name").onchange = () => {
+  const s = sprites[costumeAt.sprite], c = s.costumes[costumeAt.costume];
+  const n = $("c-name").value.trim().toLowerCase().replace(/[^a-z0-9_]/g, "") || c.name;
+  if (s.costume === c.name) s.costume = n;
+  c.name = n;
+  renderCostumes(); changed();
+};
+for (const id of ["c-w", "c-h"]) $(id).onchange = () => {
+  const c = sprites[costumeAt.sprite].costumes[costumeAt.costume];
+  const w = Math.max(1, Math.min(64, +$("c-w").value || 1)), h = Math.max(1, Math.min(64, +$("c-h").value || 1));
+  const rows = c.pixels.slice(0, h).map(r => r.padEnd(w, ".").slice(0, w));
+  while (rows.length < h) rows.push(".".repeat(w));
+  c.pixels = rows;
+  renderSprites(); changed();
+};
 
 let dragging = null;
 $("stage").addEventListener("pointerdown", e => {
@@ -564,7 +845,8 @@ $("stage").addEventListener("pointerdown", e => {
   const py = (e.clientY - r.top - 6) * 270 / (r.height - 12);
   for (let i = sprites.length - 1; i >= 0; i--) {
     const s = sprites[i];
-    if (s.visible && px >= s.x && px < s.x + s.w && py >= s.y && py < s.y + s.h) {
+    const box = spriteBox(s);
+    if (s.visible && px >= s.x && px < s.x + box.w && py >= s.y && py < s.y + box.h) {
       dragging = { s, dx: px - s.x, dy: py - s.y };
       c.setPointerCapture(e.pointerId);
       return;
@@ -606,7 +888,9 @@ function makeWorkspace(saved) {
       base: Blockly.Themes.Classic, fontStyle: { family: "IBM Plex Sans, sans-serif", size: 11 } }),
   });
   ws.registerToolboxCategoryCallback("VOS_VARS", varsCategory);
-  ws.registerButtonCallback("VOS_NEW_VAR", b => Blockly.Variables.createVariableButtonHandler(b.getTargetWorkspace()));
+  ws.registerButtonCallback("VOS_NEW_VAR", b => Blockly.Variables.createVariableButtonHandler(b.getTargetWorkspace(), null, ""));
+  ws.registerToolboxCategoryCallback("VOS_LISTS", listsCategory);
+  ws.registerButtonCallback("VOS_NEW_LIST", b => Blockly.Variables.createVariableButtonHandler(b.getTargetWorkspace(), null, "List"));
   ws.addChangeListener(e => { if (!e.isUiEvent) changed(); });
   if (saved) fromVbp(saved);
 }
@@ -621,34 +905,7 @@ function setLang(l) {
   makeWorkspace(keep);
 }
 
-const EXAMPLE = {
-  format: "vbp", version: 1, name: "CATCH", mode: 0, background: 0,
-  sprites: [
-    { name: "star", x: 90, y: 20, w: 6, h: 6, colour: 8, vx: 0, vy: 2, visible: true },
-    { name: "cat", x: 80, y: 236, w: 24, h: 8, colour: 4, vx: 0, vy: 0, visible: true }],
-  variables: { score: 0 },
-  scripts: [
-    { when: { event: "start" }, do: [
-      { block: "print", text: "SCORE", x: 4, y: 16 },
-      { block: "print", value: { var: "score" }, x: 60, y: 16 }] },
-    { sprite: "star", when: { event: "start" }, do: [
-      { block: "forever", do: [
-        { block: "move" },
-        { block: "if", cond: { touching: "cat" }, then: [
-          { block: "change", var: "score", by: 1 },
-          { block: "broadcast", message: "score" },
-          { block: "go_to", x: { random: [0, 186] }, y: 20 }] },
-        { block: "if", cond: { op: ">", a: { prop: "y" }, b: 250 }, then: [
-          { block: "go_to", x: { random: [0, 186] }, y: 20 }] }] }] },
-    { sprite: "cat", when: { event: "start" }, do: [
-      { block: "forever", do: [
-        { block: "if", cond: { key_held: "left" }, then: [{ block: "change_x", by: -3 }] },
-        { block: "if", cond: { key_held: "right" }, then: [{ block: "change_x", by: 3 }] },
-        { block: "bounce" }] }] },
-    { when: { event: "receive", message: "score" }, do: [
-      { block: "print", value: { var: "score" }, x: 60, y: 16 }] },
-    { when: { event: "key", key: "space" }, do: [{ block: "stop_all" }] }],
-};
+const EXAMPLE = {"format": "vbp", "version": 1, "name": "STARCAT", "mode": 0, "background": 2, "sprites": [{"name": "cat", "x": 80, "y": 220, "costumes": [{"name": "walk1", "pixels": ["9.......9...", "99.....99...", "999999999...", "9019990199..", "999999999...", "99aa99999...", ".9999999...9", ".99999999.99", ".9.9..9.9...", ".9.9..9.9..."]}, {"name": "walk2", "pixels": ["9.......9...", "99.....99...", "999999999...", "9019990199..", "999999999...", "99aa99999...", ".9999999...9", ".99999999.99", "..9.99.9....", "..9.99.9...."]}], "costume": "walk1"}, {"name": "star", "x": 40, "y": 40, "vx": 1, "vy": 2, "costumes": [{"name": "star", "pixels": ["...8...", "...8...", "8888888", ".88888.", "..888..", ".88.88.", "8.....8"]}]}], "variables": {"score": 0, "i": 1, "step": 0}, "lists": {"tune": {"max": 16, "items": [60, 64, 67, 72, 67, 64, 60, 55]}, "test": {"max": 8, "items": [1, 2, 3]}}, "scripts": [{"when": {"event": "start"}, "do": [{"block": "text_colour", "to": 8}, {"block": "print", "text": "ΑΣΤΕΡΙΑ", "x": 0, "y": 16}, {"block": "print", "value": {"var": "score"}, "x": 72, "y": 16}, {"block": "list_insert", "list": "test", "index": 2, "item": 9}, {"block": "list_delete", "list": "test", "index": 1}, {"block": "list_replace", "list": "test", "index": 3, "item": 7}, {"block": "list_add", "list": "test", "item": 5}, {"block": "text_colour", "to": 1}, {"block": "print", "value": {"length": "test"}, "x": 0, "y": 28}, {"block": "print", "value": {"item": 1, "of": "test"}, "x": 48, "y": 28}, {"block": "print", "value": {"item": 4, "of": "test"}, "x": 96, "y": 28}, {"block": "print", "value": {"contains": "test", "value": 7}, "x": 144, "y": 28}, {"block": "print", "value": {"contains": "test", "value": 3}, "x": 0, "y": 38}, {"block": "print", "value": {"item": 2, "of": "test"}, "x": 48, "y": 38}, {"block": "print", "value": {"item": 3, "of": "test"}, "x": 96, "y": 38}, {"block": "print", "value": {"item": 9, "of": "test"}, "x": 144, "y": 38}]}, {"when": {"event": "start"}, "do": [{"block": "forever", "do": [{"block": "set", "var": "i", "to": 1}, {"block": "repeat", "times": {"length": "tune"}, "do": [{"block": "play_note", "channel": 0, "note": {"item": {"var": "i"}, "of": "tune"}, "frames": 12}, {"block": "change", "var": "i", "by": 1}]}, {"block": "wait", "frames": 25}]}]}, {"sprite": "cat", "when": {"event": "start"}, "do": [{"block": "forever", "do": [{"block": "if", "cond": {"key_held": "left"}, "then": [{"block": "change_x", "by": -2}, {"block": "change", "var": "step", "by": 1}]}, {"block": "if", "cond": {"key_held": "right"}, "then": [{"block": "change_x", "by": 2}, {"block": "change", "var": "step", "by": 1}]}, {"block": "if", "cond": {"op": ">", "a": {"var": "step"}, "b": 5}, "then": [{"block": "next_costume"}, {"block": "set", "var": "step", "to": 0}]}, {"block": "bounce"}]}]}, {"sprite": "star", "when": {"event": "start"}, "do": [{"block": "forever", "do": [{"block": "move"}, {"block": "bounce"}, {"block": "if", "cond": {"touching": "cat"}, "then": [{"block": "noise", "channel": 1, "pitch": 6, "frames": 8}, {"block": "change", "var": "score", "by": 1}, {"block": "broadcast", "message": "score"}, {"block": "go_to", "x": {"random": [0, 180]}, "y": 40}]}]}]}, {"when": {"event": "receive", "message": "score"}, "do": [{"block": "text_colour", "to": 8}, {"block": "print", "value": {"var": "score"}, "x": 72, "y": 16}]}, {"when": {"event": "key", "key": "space"}, "do": [{"block": "stop_all"}]}]};
 const EMPTY = { format: "vbp", version: 1, name: "PROGRAM", mode: 0, background: 0,
   sprites: [{ name: "sprite1", x: 90, y: 120, w: 8, h: 8, colour: 1, vx: 0, vy: 0, visible: true }],
   variables: {}, scripts: [{ sprite: "sprite1", when: { event: "start" }, do: [] }] };
@@ -680,9 +937,12 @@ $("b-lang").onclick = () => setLang(lang === "el" ? "en" : "el");
 $("b-sprite").onclick = () => {
   let n = sprites.length + 1;
   while (sprites.some(s => s.name === "sprite" + n)) n++;
-  sprites.push({ name: "sprite" + n, x: 90, y: 120, w: 8, h: 8, colour: 1 + (n % (pens() - 1)), vx: 0, vy: 0, visible: true });
+  sprites.push({ name: "sprite" + n, x: 90, y: 120, w: 8, h: 8, colour: 1 + (n % (pens() - 1)), vx: 0, vy: 0,
+    visible: true, costumes: [] });
+  costumeAt = { sprite: sprites.length - 1, costume: 0 };
   renderSprites(); changed();
 };
+$("p-mode").addEventListener("change", () => { if (paintPen >= pens()) paintPen = 1; });
 ["p-name", "p-mode", "p-bg"].forEach(id => $(id).addEventListener("change", () => { renderSprites(); changed(); }));
 
 let start = EXAMPLE;

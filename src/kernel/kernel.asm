@@ -16,6 +16,7 @@ kernel_entry:
         call ga_set_palette
         ei
         call fdc_init
+        call snd_init
         call lang_init              ; GREEK.LNG from the disc
         call cfg_load               ; SETUP.CFG, if there is one
         ld a,1                      ; a plain desk until the view is up

@@ -19,7 +19,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 2               ; 2: VOS_KEY_HELD
+VOS_API_VERSION equ 3               ; 2: VOS_KEY_HELD, 3: BLIT, SOUND
 VOS_APP_ADDR    equ #4000
 VOS_API         equ #0108           ; the jump table (after "VOS",0, versions)
 
@@ -60,7 +60,20 @@ VOS_TEXTS       equ VOS_API + 29 * 3    ; HL -> the program's texts
 VOS_MENU_OPEN   equ VOS_API + 30 * 3    ; -> NZ while a menu is open (its
                                         ; keys are not the program's)
 VOS_KEY_HELD    equ VOS_API + 31 * 3    ; A = key number -> NZ while held
-VOS_API_COUNT   equ 32
+; ---- images and sound (version 3) -----------------------------------
+VOS_BLIT        equ VOS_API + 32 * 3    ; IX -> dw x, y; db bytes, rows;
+                                        ; dw source; db source stride
+VOS_SOUND       equ VOS_API + 33 * 3    ; A = channel 0..2, HL = period
+                                        ; (bit 15: noise), C = volume
+                                        ; 0..15 (0: stop), B = frames
+VOS_API_COUNT   equ 34
+
+; VOS_BLIT draws an image, whole bytes of screen memory (2 pixels in
+; mode 0, 4 in mode 1; x is rounded down to a byte). The source is, per
+; row, pairs of bytes: a mask (1 = the image's pixel) and the pixels.
+; Pixels outside the mask keep what is on the screen. The image must be
+; on the screen. VOS_SOUND: notes stop by themselves after B frames;
+; VOS_EXIT silences everything.
 
 ; Program texts: numbers VT_FIRST and up, in menus, dialogs, VOS_MSG.
 ; VOS_TEXTS table: db count, then per text dw English, dw other (the

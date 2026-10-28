@@ -1,0 +1,418 @@
+{
+ "format": "vbp",
+ "version": 1,
+ "name": "STARCAT",
+ "mode": 0,
+ "background": 2,
+ "sprites": [
+  {
+   "name": "cat",
+   "x": 80,
+   "y": 220,
+   "costumes": [
+    {
+     "name": "walk1",
+     "pixels": [
+      "9.......9...",
+      "99.....99...",
+      "999999999...",
+      "9019990199..",
+      "999999999...",
+      "99aa99999...",
+      ".9999999...9",
+      ".99999999.99",
+      ".9.9..9.9...",
+      ".9.9..9.9..."
+     ]
+    },
+    {
+     "name": "walk2",
+     "pixels": [
+      "9.......9...",
+      "99.....99...",
+      "999999999...",
+      "9019990199..",
+      "999999999...",
+      "99aa99999...",
+      ".9999999...9",
+      ".99999999.99",
+      "..9.99.9....",
+      "..9.99.9...."
+     ]
+    }
+   ],
+   "costume": "walk1"
+  },
+  {
+   "name": "star",
+   "x": 40,
+   "y": 40,
+   "vx": 1,
+   "vy": 2,
+   "costumes": [
+    {
+     "name": "star",
+     "pixels": [
+      "...8...",
+      "...8...",
+      "8888888",
+      ".88888.",
+      "..888..",
+      ".88.88.",
+      "8.....8"
+     ]
+    }
+   ]
+  }
+ ],
+ "variables": {
+  "score": 0,
+  "i": 1,
+  "step": 0
+ },
+ "lists": {
+  "tune": {
+   "max": 16,
+   "items": [
+    60,
+    64,
+    67,
+    72,
+    67,
+    64,
+    60,
+    55
+   ]
+  },
+  "test": {
+   "max": 8,
+   "items": [
+    1,
+    2,
+    3
+   ]
+  }
+ },
+ "scripts": [
+  {
+   "when": {
+    "event": "start"
+   },
+   "do": [
+    {
+     "block": "text_colour",
+     "to": 8
+    },
+    {
+     "block": "print",
+     "text": "ΑΣΤΕΡΙΑ",
+     "x": 0,
+     "y": 16
+    },
+    {
+     "block": "print",
+     "value": {
+      "var": "score"
+     },
+     "x": 72,
+     "y": 16
+    },
+    {
+     "block": "list_insert",
+     "list": "test",
+     "index": 2,
+     "item": 9
+    },
+    {
+     "block": "list_delete",
+     "list": "test",
+     "index": 1
+    },
+    {
+     "block": "list_replace",
+     "list": "test",
+     "index": 3,
+     "item": 7
+    },
+    {
+     "block": "list_add",
+     "list": "test",
+     "item": 5
+    },
+    {
+     "block": "text_colour",
+     "to": 1
+    },
+    {
+     "block": "print",
+     "value": {
+      "length": "test"
+     },
+     "x": 0,
+     "y": 28
+    },
+    {
+     "block": "print",
+     "value": {
+      "item": 1,
+      "of": "test"
+     },
+     "x": 48,
+     "y": 28
+    },
+    {
+     "block": "print",
+     "value": {
+      "item": 4,
+      "of": "test"
+     },
+     "x": 96,
+     "y": 28
+    },
+    {
+     "block": "print",
+     "value": {
+      "contains": "test",
+      "value": 7
+     },
+     "x": 144,
+     "y": 28
+    },
+    {
+     "block": "print",
+     "value": {
+      "contains": "test",
+      "value": 3
+     },
+     "x": 0,
+     "y": 38
+    },
+    {
+     "block": "print",
+     "value": {
+      "item": 2,
+      "of": "test"
+     },
+     "x": 48,
+     "y": 38
+    },
+    {
+     "block": "print",
+     "value": {
+      "item": 3,
+      "of": "test"
+     },
+     "x": 96,
+     "y": 38
+    },
+    {
+     "block": "print",
+     "value": {
+      "item": 9,
+      "of": "test"
+     },
+     "x": 144,
+     "y": 38
+    }
+   ]
+  },
+  {
+   "when": {
+    "event": "start"
+   },
+   "do": [
+    {
+     "block": "forever",
+     "do": [
+      {
+       "block": "set",
+       "var": "i",
+       "to": 1
+      },
+      {
+       "block": "repeat",
+       "times": {
+        "length": "tune"
+       },
+       "do": [
+        {
+         "block": "play_note",
+         "channel": 0,
+         "note": {
+          "item": {
+           "var": "i"
+          },
+          "of": "tune"
+         },
+         "frames": 12
+        },
+        {
+         "block": "change",
+         "var": "i",
+         "by": 1
+        }
+       ]
+      },
+      {
+       "block": "wait",
+       "frames": 25
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "sprite": "cat",
+   "when": {
+    "event": "start"
+   },
+   "do": [
+    {
+     "block": "forever",
+     "do": [
+      {
+       "block": "if",
+       "cond": {
+        "key_held": "left"
+       },
+       "then": [
+        {
+         "block": "change_x",
+         "by": -2
+        },
+        {
+         "block": "change",
+         "var": "step",
+         "by": 1
+        }
+       ]
+      },
+      {
+       "block": "if",
+       "cond": {
+        "key_held": "right"
+       },
+       "then": [
+        {
+         "block": "change_x",
+         "by": 2
+        },
+        {
+         "block": "change",
+         "var": "step",
+         "by": 1
+        }
+       ]
+      },
+      {
+       "block": "if",
+       "cond": {
+        "op": ">",
+        "a": {
+         "var": "step"
+        },
+        "b": 5
+       },
+       "then": [
+        {
+         "block": "next_costume"
+        },
+        {
+         "block": "set",
+         "var": "step",
+         "to": 0
+        }
+       ]
+      },
+      {
+       "block": "bounce"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "sprite": "star",
+   "when": {
+    "event": "start"
+   },
+   "do": [
+    {
+     "block": "forever",
+     "do": [
+      {
+       "block": "move"
+      },
+      {
+       "block": "bounce"
+      },
+      {
+       "block": "if",
+       "cond": {
+        "touching": "cat"
+       },
+       "then": [
+        {
+         "block": "noise",
+         "channel": 1,
+         "pitch": 6,
+         "frames": 8
+        },
+        {
+         "block": "change",
+         "var": "score",
+         "by": 1
+        },
+        {
+         "block": "broadcast",
+         "message": "score"
+        },
+        {
+         "block": "go_to",
+         "x": {
+          "random": [
+           0,
+           180
+          ]
+         },
+         "y": 40
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "when": {
+    "event": "receive",
+    "message": "score"
+   },
+   "do": [
+    {
+     "block": "text_colour",
+     "to": 8
+    },
+    {
+     "block": "print",
+     "value": {
+      "var": "score"
+     },
+     "x": 72,
+     "y": 16
+    }
+   ]
+  },
+  {
+   "when": {
+    "event": "key",
+    "key": "space"
+   },
+   "do": [
+    {
+     "block": "stop_all"
+    }
+   ]
+  }
+ ]
+}

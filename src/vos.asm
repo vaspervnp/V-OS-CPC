@@ -43,6 +43,7 @@ kernel_start:
         include "drivers/kbd.asm"
         include "drivers/mouse.asm"
         include "drivers/fdc.asm"
+        include "drivers/psg.asm"
         include "gfx/gfx.asm"
         include "gfx/pointer.asm"
         include "ui/ui.asm"

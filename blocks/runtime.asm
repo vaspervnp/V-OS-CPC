@@ -9,6 +9,9 @@
 ;   prog_scripts    per script: dw code, dw stack top, db sprite (#FF:
 ;                   the stage), db event (EVT_*), db parameter
 ;   prog_sprites    SP_SIZE bytes per sprite (live state, see SP_*)
+;   costumes        per sprite: db count, dw costume...; a costume is
+;                   db bytes, rows, then per row (mask, pixels) pairs
+;   lists           dw length, dw room, then room words
 ;   rt_stacks, rt_state  room for the scripts' stacks and state
 ;
 ; Scripts are coroutines: each has its own stack and gives the processor
@@ -38,7 +41,12 @@ SP_OX           equ 12              ; as last drawn
 SP_OY           equ 14
 SP_DRAWN        equ 16              ; 1: on the screen at SP_OX, SP_OY
 SP_OCOLOUR      equ 17
-SP_SIZE         equ 18
+SP_COSTUME      equ 18              ; number in its list, #FF: a rectangle
+SP_OCOSTUME     equ 19
+SP_OW           equ 20
+SP_OH           equ 21
+SP_CTAB         equ 22              ; -> db count, dw costume...
+SP_SIZE         equ 24
 
 ST_SP           equ 0               ; script state
 ST_RUN          equ 2
@@ -48,6 +56,11 @@ STACK_SIZE      equ 128
 
 RT_TOP          equ 12              ; below the menu bar
 RT_BOTTOM       equ 259
+        IF PROG_MODE == 0
+RT_PPB          equ 2               ; pixels per screen byte
+        ELSE
+RT_PPB          equ 4
+        ENDIF
 
 RT_CMD_STOP     equ 1
 T_RT_MENU       equ VT_FIRST
@@ -536,13 +549,13 @@ rt_hit:
 rt_sprite_ptr:
         ld l,a
         ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
         ld d,h
         ld e,l
         add hl,hl
-        add hl,hl
-        add hl,hl
-        add hl,de
-        add hl,hl                   ; * 18
+        add hl,de                   ; * 24
         ld de,prog_sprites
         add hl,de
         ret
@@ -566,8 +579,17 @@ rt_draw_sprites:
         ld (ix + SP_DRAWN),0
         ld l,(ix + SP_OX)
         ld h,(ix + SP_OX + 1)
+        ld a,(ix + SP_OCOSTUME)     ; an image: from its first byte
+        inc a
+        jr z,.at
+        ld a,l
+        and 256 - RT_PPB
+        ld l,a
+.at:
         ld e,(ix + SP_OY)
         ld d,(ix + SP_OY + 1)
+        ld b,(ix + SP_OW)
+        ld c,(ix + SP_OH)
         ld a,PROG_BG
         call rt_rect
 .kept:
@@ -589,20 +611,7 @@ rt_draw_sprites:
         push bc
         ld a,(ix + SP_VISIBLE)
         or a
-        jr z,.hidden
-        ld l,(ix + SP_X)
-        ld h,(ix + SP_X + 1)
-        ld (ix + SP_OX),l
-        ld (ix + SP_OX + 1),h
-        ld e,(ix + SP_Y)
-        ld d,(ix + SP_Y + 1)
-        ld (ix + SP_OY),e
-        ld (ix + SP_OY + 1),d
-        ld a,(ix + SP_COLOUR)
-        ld (ix + SP_OCOLOUR),a
-        ld (ix + SP_DRAWN),1
-        call rt_rect
-.hidden:
+        call nz,rt_draw_one
         pop bc
         ld de,SP_SIZE
         add ix,de
@@ -617,9 +626,6 @@ rt_draw_sprites:
         ld a,(ix + SP_DRAWN)
         or a
         ret z
-        ld a,(ix + SP_COLOUR)
-        cp (ix + SP_OCOLOUR)
-        ret nz
         ld a,(ix + SP_X)
         cp (ix + SP_OX)
         ret nz
@@ -631,73 +637,591 @@ rt_draw_sprites:
         ret nz
         ld a,(ix + SP_Y + 1)
         cp (ix + SP_OY + 1)
+        ret nz
+        ld a,(ix + SP_W)
+        cp (ix + SP_OW)
+        ret nz
+        ld a,(ix + SP_H)
+        cp (ix + SP_OH)
+        ret nz
+        ld a,(ix + SP_COLOUR)
+        cp (ix + SP_OCOLOUR)
+        ret nz
+        ld a,(ix + SP_COSTUME)
+        cp (ix + SP_OCOSTUME)
         ret
 
-; IX -> sprite: off the screen now (before its size changes); the next
-; frame draws it again
-rt_erase:
-        ld a,(ix + SP_DRAWN)
-        or a
-        ret z
-        ld (ix + SP_DRAWN),0
-        ld a,1
-        ld (rt_dirty),a
-        ld l,(ix + SP_OX)
-        ld h,(ix + SP_OX + 1)
-        ld e,(ix + SP_OY)
-        ld d,(ix + SP_OY + 1)
-        ld a,PROG_BG
-        jr rt_rect
+; IX -> a visible sprite: draw it, and remember where
+rt_draw_one:
+        ld l,(ix + SP_X)
+        ld h,(ix + SP_X + 1)
+        ld (ix + SP_OX),l
+        ld (ix + SP_OX + 1),h
+        ld e,(ix + SP_Y)
+        ld d,(ix + SP_Y + 1)
+        ld (ix + SP_OY),e
+        ld (ix + SP_OY + 1),d
+        ld a,(ix + SP_W)
+        ld (ix + SP_OW),a
+        ld a,(ix + SP_H)
+        ld (ix + SP_OH),a
+        ld a,(ix + SP_COLOUR)
+        ld (ix + SP_OCOLOUR),a
+        ld (ix + SP_DRAWN),1
+        ld a,(ix + SP_COSTUME)
+        ld (ix + SP_OCOSTUME),a
+        cp #FF
+        jr nz,.image
+        ld b,(ix + SP_W)
+        ld c,(ix + SP_H)
+        ld a,(ix + SP_COLOUR)
+        jp rt_rect
+.image:
+        push de
+        push hl
+        call rt_costume_ptr
+        ld b,h
+        ld c,l
+        pop hl
+        pop de
+        ld a,l
+        and 256 - RT_PPB
+        ld l,a
+        jp rt_blit
 
-; HL = x, DE = y, A = pen, IX -> sprite (its size): the rectangle,
-; cut to the screen below the menu bar
+; HL = x, DE = y, B = w, C = h, A = pen: the rectangle, cut to the stage
 rt_rect:
         ld (rt_box + 8),a
+        ld a,b
+        or a
+        ret z
+        ld a,c
+        or a
+        ret z
         ld (rt_box),hl
         ld (rt_box + 2),de
-        ld a,(ix + SP_W)
-        ld (rt_box + 4),a
-        ld a,(ix + SP_H)
-        ld (rt_box + 6),a
-        bit 7,h                     ; off the screen: not drawn
-        ret nz
-        ld bc,PROG_WIDTH
-        or a
-        sbc hl,bc
-        ret nc
-        ld a,h                      ; past the right edge: narrower
-        inc a                       ; (HL = x - width: near it, #FFxx)
-        jr nz,.width
-        ld a,(rt_box + 4)
-        add a,l
-        jr nc,.width
-        jr z,.width
-        ld a,l
-        neg
-        ld (rt_box + 4),a
-.width:
-        ex de,hl
-        ld bc,RT_TOP
-        or a
-        sbc hl,bc
+        ld l,b
+        ld h,0
+        ld (rt_box + 4),hl
+        ld l,c
+        ld (rt_box + 6),hl
+        call rt_clip
         ret c
-        ld bc,RT_BOTTOM - RT_TOP    ; past the bottom: lower
-        or a
-        sbc hl,bc
-        ret nc
-        ld a,(rt_box + 6)
-        add a,l
-        jr nc,.height
-        jr z,.height
-        ld a,l
-        neg
-        ld (rt_box + 6),a
-.height:
         push ix
         ld ix,rt_box
         call VOS_RECT
         pop ix
         ret
+
+; HL = x (a whole byte), DE = y, BC -> costume: the image, cut to the
+; stage
+rt_blit:
+        ld (rt_box),hl
+        ld (rt_box + 2),de
+        ld a,(bc)                   ; bytes
+        or a
+        ret z
+        ld l,a
+        add a,a
+        ld (rt_blt + 8),a           ; stride
+        ld h,0
+        add hl,hl
+        IF RT_PPB == 4
+        add hl,hl
+        ENDIF
+        ld (rt_box + 4),hl
+        inc bc
+        ld a,(bc)                   ; rows
+        or a
+        ret z
+        ld l,a
+        ld h,0
+        ld (rt_box + 6),hl
+        inc bc
+        ld (rt_blt + 6),bc
+        call rt_clip
+        ret c
+        ld a,(rt_blt + 8)           ; source += cut rows * stride
+        ld l,a
+        ld h,0
+        ld de,(rt_skip_y)
+        call rt_mul
+        ld de,(rt_skip_x)           ; + cut bytes * 2
+        IF RT_PPB == 4
+        srl d
+        rr e
+        ENDIF
+        add hl,de
+        ld de,(rt_blt + 6)
+        add hl,de
+        ld (rt_blt + 6),hl
+        ld hl,(rt_box)
+        ld (rt_blt),hl
+        ld hl,(rt_box + 2)
+        ld (rt_blt + 2),hl
+        ld hl,(rt_box + 4)          ; pixels -> bytes
+        srl h
+        rr l
+        IF RT_PPB == 4
+        srl h
+        rr l
+        ENDIF
+        ld a,l
+        ld (rt_blt + 4),a
+        ld a,(rt_box + 6)
+        ld (rt_blt + 5),a
+        push ix
+        ld ix,rt_blt
+        call VOS_BLIT
+        pop ix
+        ret
+
+; rt_box = x, y, w, h (words, w and h > 0): cut to the stage. rt_skip_x,
+; rt_skip_y = what was cut at the left and top. Carry: nothing is left
+rt_clip:
+        ld hl,0
+        ld (rt_skip_x),hl
+        ld (rt_skip_y),hl
+        ld hl,(rt_box)              ; left
+        bit 7,h
+        jr z,.right
+        call rt_neg
+        ld (rt_skip_x),hl
+        ex de,hl
+        ld hl,(rt_box + 4)
+        or a
+        sbc hl,de
+        jr c,.none
+        jr z,.none
+        ld (rt_box + 4),hl
+        ld hl,0
+        ld (rt_box),hl
+.right:
+        ld hl,(rt_box)
+        ld de,PROG_WIDTH
+        call rt_lt_signed
+        jr nc,.none
+        ex de,hl
+        or a
+        sbc hl,de                   ; room = width - x
+        ld de,(rt_box + 4)
+        call rt_lt_signed
+        jr nc,.top
+        ld (rt_box + 4),hl
+.top:
+        ld hl,(rt_box + 2)
+        ld de,RT_TOP
+        call rt_lt_signed
+        jr nc,.bottom
+        ex de,hl
+        or a
+        sbc hl,de                   ; cut = top - y
+        ld (rt_skip_y),hl
+        ex de,hl
+        ld hl,(rt_box + 6)
+        or a
+        sbc hl,de
+        jr c,.none
+        jr z,.none
+        ld (rt_box + 6),hl
+        ld hl,RT_TOP
+        ld (rt_box + 2),hl
+.bottom:
+        ld hl,(rt_box + 2)
+        ld de,RT_BOTTOM
+        call rt_lt_signed
+        jr nc,.none
+        ex de,hl
+        or a
+        sbc hl,de                   ; room = bottom - y
+        ld de,(rt_box + 6)
+        call rt_lt_signed
+        ret nc
+        ld (rt_box + 6),hl
+        or a
+        ret
+.none:
+        scf
+        ret
+
+; ---------------------------------------------------------------------
+; costumes (IX -> sprite)
+; ---------------------------------------------------------------------
+
+; -> HL -> the current costume
+rt_costume_ptr:
+        ld a,(ix + SP_COSTUME)
+        ld l,(ix + SP_CTAB)
+        ld h,(ix + SP_CTAB + 1)
+        inc hl
+        add a,a
+        ld e,a
+        ld d,0
+        add hl,de
+        ld a,(hl)
+        inc hl
+        ld h,(hl)
+        ld l,a
+        ret
+
+; A = costume number: wear it (its size becomes the sprite's)
+rt_set_costume:
+        ld l,(ix + SP_CTAB)
+        ld h,(ix + SP_CTAB + 1)
+        cp (hl)
+        ret nc                      ; no such costume
+        ld (ix + SP_COSTUME),a
+        call rt_costume_ptr
+        ld a,(hl)
+        add a,a
+        IF RT_PPB == 4
+        add a,a
+        ENDIF
+        ld (ix + SP_W),a
+        inc hl
+        ld a,(hl)
+        ld (ix + SP_H),a
+        ret
+
+rt_next_costume:
+        ld l,(ix + SP_CTAB)
+        ld h,(ix + SP_CTAB + 1)
+        ld a,(ix + SP_COSTUME)
+        inc a
+        cp (hl)
+        jr c,rt_set_costume
+        xor a
+        jr rt_set_costume
+
+; -> HL = the costume's number, from 1 (0: none)
+rt_costume_number:
+        ld a,(ix + SP_COSTUME)
+        inc a
+        ld l,a
+        ld h,0
+        ret
+
+; ---------------------------------------------------------------------
+; sound
+; ---------------------------------------------------------------------
+
+; A = channel, HL = note (MIDI: 60 = middle C, 24..119), DE = frames
+rt_note:
+        ld (rt_t),a
+        call rt_frames_b
+        push bc
+        ld de,24
+        or a
+        sbc hl,de
+        jr nc,.high
+        ld hl,0
+.high:
+        ld a,h
+        or a
+        ld a,l
+        jr nz,.top
+        cp 96
+        jr c,.octave
+.top:
+        ld a,95
+.octave:
+        ld c,0
+.down:
+        cp 12
+        jr c,.found
+        sub 12
+        inc c
+        jr .down
+.found:
+        add a,a
+        ld e,a
+        ld d,0
+        ld hl,rt_periods
+        add hl,de
+        ld e,(hl)
+        inc hl
+        ld d,(hl)
+        ex de,hl
+        ld b,c
+        inc b
+        jr .shift
+.half:
+        srl h
+        rr l
+.shift:
+        djnz .half
+        jr rt_sound
+
+; A = channel, HL = noise pitch 0..31, DE = frames
+rt_noise:
+        ld (rt_t),a
+        call rt_frames_b
+        push bc
+        ld a,l
+        and 31
+        ld l,a
+        ld h,#80
+rt_sound:
+        pop bc
+        ld a,(rt_volume)
+        ld c,a
+        ld a,(rt_t)
+        jp VOS_SOUND
+
+; DE = frames -> B = 1..255 (more: 255)
+rt_frames_b:
+        ld b,255
+        ld a,d
+        or a
+        ret nz
+        ld b,e
+        inc b
+        dec b
+        ret nz
+        inc b
+        ret
+
+; every channel silent
+rt_silence:
+        xor a
+.channel:
+        push af
+        ld bc,0
+        call VOS_SOUND
+        pop af
+        inc a
+        cp 3
+        jr c,.channel
+        ret
+
+; HL = 0..15
+rt_set_volume:
+        ld a,l
+        and 15
+        ld (rt_volume),a
+        ret
+
+; ---------------------------------------------------------------------
+; lists (DE -> list: dw length, room, then the items)
+; ---------------------------------------------------------------------
+
+; HL = index from 1 -> HL -> the item; carry if there is no such item
+rt_list_at:
+        ld a,h
+        or l
+        scf
+        ret z
+        dec hl
+        ex de,hl
+        ld c,(hl)
+        inc hl
+        ld b,(hl)
+        inc hl
+        inc hl
+        inc hl
+        ex de,hl                    ; HL = index - 1, DE -> items
+        push hl
+        or a
+        sbc hl,bc
+        pop hl
+        ccf
+        ret c
+        add hl,hl
+        add hl,de
+        or a
+        ret
+
+; HL = index -> HL = the item (0 if there is none)
+rt_list_item:
+        call rt_list_at
+        jp c,rt_false
+        ld a,(hl)
+        inc hl
+        ld h,(hl)
+        ld l,a
+        ret
+
+; HL = value: at the end, if there is room
+rt_list_add:
+        push hl
+        ex de,hl
+        ld e,(hl)                   ; length
+        inc hl
+        ld d,(hl)
+        inc hl
+        ld c,(hl)                   ; room
+        inc hl
+        ld b,(hl)
+        inc hl
+        push hl                     ; -> items
+        ex de,hl
+        or a
+        sbc hl,bc
+        jr nc,.full
+        add hl,bc
+        inc hl                      ; the new length
+        ex de,hl
+        pop hl
+        dec hl
+        dec hl
+        dec hl
+        ld (hl),d
+        dec hl
+        ld (hl),e
+        dec de                      ; the old length: the new item's place
+        ex de,hl
+        add hl,hl
+        add hl,de
+        inc hl
+        inc hl
+        inc hl
+        inc hl
+        pop de
+        ld (hl),e
+        inc hl
+        ld (hl),d
+        ret
+.full:
+        pop hl
+        pop hl
+        ret
+
+; HL = index: that item out, the ones after it move up
+rt_list_delete:
+        push de
+        call rt_list_at
+        pop de
+        ret c
+        push hl                     ; -> the item
+        ex de,hl
+        ld e,(hl)                   ; length - 1
+        inc hl
+        ld d,(hl)
+        dec de
+        ld (hl),d
+        dec hl
+        ld (hl),e
+        inc hl
+        inc hl
+        inc hl
+        inc hl                      ; -> items
+        ex de,hl
+        add hl,hl
+        add hl,de                   ; the end of the shorter list
+        pop de                      ; -> the item
+        or a
+        sbc hl,de                   ; bytes to move
+        ld b,h
+        ld c,l
+        ld h,d
+        ld l,e
+        inc hl
+        inc hl
+        ld a,b
+        or c
+        ret z
+        ldir
+        ret
+
+; BC = index, HL = value: put it there
+rt_list_replace:
+        push hl
+        ld h,b
+        ld l,c
+        call rt_list_at
+        pop de
+        ret c
+        ld (hl),e
+        inc hl
+        ld (hl),d
+        ret
+
+; BC = index (up to length + 1), HL = value: put it in before that item
+rt_list_insert:
+        ld (rt_hx),hl               ; the value
+        ld (rt_hy),de               ; the list
+        ex de,hl
+        ld e,(hl)                   ; length
+        inc hl
+        ld d,(hl)
+        inc hl
+        ld a,(hl)                   ; room = length: full
+        inc hl
+        cp e
+        jr nz,.room
+        ld a,(hl)
+        cp d
+        ret z
+.room:
+        ld a,b                      ; index 0: none
+        or c
+        ret z
+        ld h,d                      ; index - 1 <= length ?
+        ld l,e
+        dec bc
+        or a
+        sbc hl,bc
+        ret c
+        ld (rt_t),hl                ; items to move: length - (index - 1)
+        inc de
+        ld hl,(rt_hy)               ; length + 1
+        ld (hl),e
+        inc hl
+        ld (hl),d
+        dec de
+        ex de,hl
+        add hl,hl
+        ld de,(rt_hy)
+        add hl,de
+        inc hl
+        inc hl
+        inc hl
+        inc hl                      ; HL -> after the last item
+        ld d,h
+        ld e,l
+        inc de                      ; DE -> the last byte, two on
+        dec hl                      ; HL -> the last byte
+        ld bc,(rt_t)
+        sla c
+        rl b
+        ld a,b
+        or c
+        jr z,.store
+        lddr                        ; HL ends one before the place
+.store:
+        inc hl
+        ld de,(rt_hx)
+        ld (hl),e
+        inc hl
+        ld (hl),d
+        ret
+
+; HL = value -> HL = 1 if the list has it
+rt_list_contains:
+        ld b,h
+        ld c,l
+        ex de,hl
+        ld e,(hl)
+        inc hl
+        ld d,(hl)
+        inc hl
+        inc hl
+        inc hl
+.item:
+        ld a,d
+        or e
+        jp z,rt_false
+        ld a,(hl)
+        inc hl
+        cp c
+        jr nz,.next
+        ld a,(hl)
+        cp b
+        jp z,rt_true
+.next:
+        inc hl
+        dec de
+        jr .item
 
 ; ---------------------------------------------------------------------
 ; numbers (16-bit signed)
@@ -965,3 +1489,12 @@ rt_px:          dw 0
 rt_py:          dw 0
 rt_t:           dw 0
 rt_number:      ds 8
+rt_skip_x:      dw 0
+rt_skip_y:      dw 0
+rt_blt:         dw 0, 0
+                db 0, 0
+                dw 0
+                db 0
+rt_volume:      db 12
+rt_periods:     dw 1911, 1804, 1703, 1607, 1517, 1432   ; C1..B1 (AY at 1 MHz)
+                dw 1351, 1276, 1204, 1136, 1073, 1012

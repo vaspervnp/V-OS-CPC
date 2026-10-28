@@ -13,6 +13,7 @@ Program (JSON):
    "sprites": [{"name": "ball", "x": 90, "y": 100, "w": 6, "h": 6,
                 "colour": 8, "vx": 2, "vy": 2, "visible": true}],
    "variables": {"score": 0},
+   "lists": {"hits": {"max": 32, "items": [1, 2]}},
    "scripts": [{"sprite": "ball", "when": {"event": "start"},
                 "do": [statement, ...]}]}
 
@@ -25,12 +26,27 @@ if {cond, then, else}, wait {frames}, wait_until {cond}, stop, stop_all,
 set {var, to}, change {var, by}, broadcast {message},
 go_to {x, y}, set_x {to}, set_y {to}, change_x {by}, change_y {by},
 set_velocity {vx, vy}, move, bounce, set_colour {to}, set_size {w, h},
-show, hide, print {text or value, x, y}, text_colour {to}, clear.
+show, hide, print {text or value, x, y}, text_colour {to}, clear,
+switch_costume {to: name}, next_costume,
+play_note {note, frames, channel} (waits), start_note {note, frames,
+channel} (does not wait), noise {pitch 0..31, frames, channel},
+stop_sounds, set_volume {to: 0..15},
+list_add {list, item}, list_delete {list, index}, list_insert {list,
+index, item}, list_replace {list, index, item}, list_clear {list}.
+Notes are MIDI numbers (60 = middle C), channels 0..2, lists count
+from 1.
+
+Costumes: a sprite may have "costumes": [{"name", "pixels": ["..1f..",
+...]}] and "costume": the name it starts with. One character per pixel:
+a pen in hex, "." transparent. Its size is the costume's; x is drawn
+rounded down to a screen byte (2 pixels in mode 0, 4 in mode 1).
 
 Expressions: a number; {"var": name}; {"op": + - * / mod < > = and or,
 "a": E, "b": E}; {"not": E}; {"random": [E, E]}; {"key_held": key};
 {"touching": sprite}; {"at_edge": true}; {"prop": x y vx vy w h colour
-visible, "of": sprite (default: the script's)}; {"frames": true}.
+visible, "of": sprite (default: the script's)}; {"frames": true};
+{"costume": true} (its number, from 1); {"item": E, "of": list};
+{"length": list}; {"contains": list, "value": E}.
 Numbers are 16-bit signed; comparisons give 1 or 0. Text is written in
 ISO 8859-7, so Greek works with the Greek pack.
 """
@@ -45,7 +61,8 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 STACK_SIZE = 128
-SP_SIZE = 18
+SP_SIZE = 24
+MAX_COSTUME = 128
 PROPS = {"x": (0, 2), "y": (2, 2), "vx": (4, 2), "vy": (6, 2), "w": (8, 1),
          "h": (9, 1), "colour": (10, 1), "visible": (11, 1)}
 EVENTS = {"start": 0, "key": 1, "click": 2, "receive": 3}
@@ -93,6 +110,14 @@ class Compiler:
         self.vars = {}
         for i, (name, value) in enumerate(prog.get("variables", {}).items()):
             self.vars[name] = (f"var_{i}", int(value))
+        self.lists = {}
+        for i, (name, value) in enumerate(prog.get("lists", {}).items()):
+            items = value.get("items", []) if isinstance(value, dict) else list(value)
+            room = int(value.get("max", 64)) if isinstance(value, dict) else 64
+            room = max(room, len(items))
+            if room > 1000:
+                raise Error(f"list {name}: at most 1000 items")
+            self.lists[name] = (f"list_{i}", [int(v) for v in items], room)
         self.messages = {}
         self.keys = char_keys()
         self.code = []
@@ -137,6 +162,63 @@ class Compiler:
         if name not in self.vars:
             raise Error(f"unknown variable: {name}")
         return self.vars[name][0]
+
+    def list(self, name):
+        if name not in self.lists:
+            raise Error(f"unknown list: {name}")
+        return self.lists[name][0]
+
+    def channel(self, st):
+        ch = int(st.get("channel", 0))
+        if ch not in (0, 1, 2):
+            raise Error("channel must be 0, 1 or 2")
+        return ch
+
+    def costume_index(self, own, name):
+        costumes = self.sprites[own].get("costumes", [])
+        for i, c in enumerate(costumes):
+            if c.get("name") == name:
+                return i
+        if isinstance(name, int) and 1 <= name <= len(costumes):
+            return name - 1
+        raise Error(f"sprite {self.sprites[own].get('name')} has no costume {name}")
+
+    def costume_bytes(self, c, where):
+        """a costume -> (bytes per row, rows, [mask, pixels, ...])"""
+        rows = c.get("pixels", [])
+        if not rows:
+            raise Error(f"{where}: a costume without pixels")
+        ppb = 2 if self.mode == 0 else 4
+        width = max(len(r) for r in rows)
+        if width > MAX_COSTUME or len(rows) > MAX_COSTUME:
+            raise Error(f"{where}: at most {MAX_COSTUME} x {MAX_COSTUME} pixels")
+        nbytes = (width + ppb - 1) // ppb
+        pens = 16 if self.mode == 0 else 4
+        data = []
+        for r in rows:
+            r = r.ljust(nbytes * ppb, ".")
+            for b in range(nbytes):
+                mask = pix = 0
+                for p in range(ppb):
+                    ch = r[b * ppb + p]
+                    if ch in ". ":
+                        continue
+                    try:
+                        pen = int(ch, 16)
+                    except ValueError:
+                        raise Error(f"{where}: {ch!r} is not a pen")
+                    if pen >= pens:
+                        raise Error(f"{where}: pen {pen} in mode {self.mode}")
+                    if self.mode == 0:
+                        bits = [7, 3, 5, 1] if p == 0 else [6, 2, 4, 0]
+                    else:
+                        bits = [7 - p, 3 - p]
+                    for k, bit in enumerate(bits):
+                        mask |= 1 << bit
+                        if pen >> k & 1:
+                            pix |= 1 << bit
+                data += [mask, pix]
+        return nbytes, len(rows), data
 
     def string(self, text):
         self.strings.append(text)
@@ -189,6 +271,16 @@ class Compiler:
                 self.emit(f"ld a,(spr_{s} + {off})", "ld l,a", "ld h,0")
         elif "frames" in e:
             self.emit("call VOS_FRAMES")
+        elif "costume" in e:
+            self.emit(f"ld ix,spr_{self.sprite(None, own)}", "call rt_costume_number")
+        elif "item" in e:
+            self.expr(e["item"], own)
+            self.emit(f"ld de,{self.list(e['of'])}", "call rt_list_item")
+        elif "length" in e:
+            self.emit(f"ld hl,({self.list(e['length'])})")
+        elif "contains" in e:
+            self.expr(e["value"], own)
+            self.emit(f"ld de,{self.list(e['contains'])}", "call rt_list_contains")
         else:
             raise Error(f"unknown expression: {json.dumps(e)}")
 
@@ -278,7 +370,6 @@ class Compiler:
                 self.emit(f"ld a,{int(b == 'show')}", f"ld (spr_{s} + {PROPS['visible'][0]}),a")
         elif b == "set_size":
             s = self.sprite(None, own)
-            self.emit(f"ld ix,spr_{s}", "call rt_erase")
             for p in ("w", "h"):
                 self.expr(st[p], own)
                 self.emit("ld a,l", f"ld (spr_{s} + {PROPS[p][0]}),a")
@@ -301,6 +392,40 @@ class Compiler:
             self.emit("ld a,l", "ld (rt_ink),a")
         elif b == "clear":
             self.emit("call rt_clear")
+        elif b == "switch_costume":
+            s = self.sprite(None, own)
+            self.emit(f"ld ix,spr_{s}", f"ld a,{self.costume_index(s, st['to'])}",
+                      "call rt_set_costume")
+        elif b == "next_costume":
+            self.emit(f"ld ix,spr_{self.sprite(None, own)}", "call rt_next_costume")
+        elif b in ("play_note", "start_note", "noise"):
+            self.expr(st["frames"], own)
+            self.emit("push hl")
+            self.expr(st["pitch" if b == "noise" else "note"], own)
+            self.emit("pop de")
+            if b == "play_note":
+                self.emit("push de")
+            self.emit(f"ld a,{self.channel(st)}", f"call rt_{'noise' if b == 'noise' else 'note'}")
+            if b == "play_note":
+                self.emit("pop hl", "call rt_wait")
+        elif b == "stop_sounds":
+            self.emit("call rt_silence")
+        elif b == "set_volume":
+            self.expr(st["to"], own)
+            self.emit("call rt_set_volume")
+        elif b == "list_add":
+            self.expr(st["item"], own)
+            self.emit(f"ld de,{self.list(st['list'])}", "call rt_list_add")
+        elif b == "list_delete":
+            self.expr(st["index"], own)
+            self.emit(f"ld de,{self.list(st['list'])}", "call rt_list_delete")
+        elif b in ("list_insert", "list_replace"):
+            self.expr(st["index"], own)
+            self.emit("push hl")
+            self.expr(st["item"], own)
+            self.emit("pop bc", f"ld de,{self.list(st['list'])}", f"call rt_{b}")
+        elif b == "list_clear":
+            self.emit("ld hl,0", f"ld ({self.list(st['list'])}),hl")
         else:
             raise Error(f"unknown block: {b}")
 
@@ -387,15 +512,37 @@ class Compiler:
             out.append(f"        dw script_{n}, rt_stacks + {n + 1} * {STACK_SIZE}"
                        f" : db {sprite}, {event}, {param}  ; {name}")
         out.append("prog_sprites:")
+        costume_lines = ["rt_no_costumes:  db 0"]
         for i, s in enumerate(self.sprites):
             vals = [int(s.get(k, d)) for k, d in (("x", 0), ("y", 100), ("vx", 0), ("vy", 0))]
+            w, h, current, ctab = int(s.get("w", 8)), int(s.get("h", 8)), 0xFF, "rt_no_costumes"
+            costumes = s.get("costumes", [])
+            if costumes:
+                ctab = f"ctab_{i}"
+                costume_lines.append(f"{ctab}:          db {len(costumes)} : dw " +
+                                     ", ".join(f"cos_{i}_{k}" for k in range(len(costumes))))
+                for k, c in enumerate(costumes):
+                    nbytes, rows, data = self.costume_bytes(c, f"sprite {s.get('name')}, costume {c.get('name')}")
+                    costume_lines.append(f"cos_{i}_{k}:        db {nbytes}, {rows}   ; {c.get('name')}")
+                    for r in range(rows):
+                        row = data[r * nbytes * 2:(r + 1) * nbytes * 2]
+                        costume_lines.append("        db " + ", ".join(f"#{v:02X}" for v in row))
+                current = self.costume_index(i, s.get("costume", costumes[0].get("name")))
+                nbytes, rows, _ = self.costume_bytes(costumes[current], "")
+                w, h = nbytes * (2 if self.mode == 0 else 4), rows
             out.append(f"spr_{i}:                             ; {s.get('name')}")
             out.append("        dw " + ", ".join(str(v & 0xFFFF) for v in vals))
-            out.append(f"        db {int(s.get('w', 8))}, {int(s.get('h', 8))}, "
-                       f"{int(s.get('colour', 1))}, {int(bool(s.get('visible', True)))}")
-            out.append("        dw 0, 0 : db 0, 0")
+            out.append(f"        db {w}, {h}, {int(s.get('colour', 1))}, {int(bool(s.get('visible', True)))}")
+            out.append(f"        dw 0, 0 : db 0, 0 : db {current}, 0, 0, 0 : dw {ctab}")
         if not self.sprites:
             out.append("        db 0")
+        out += costume_lines
+        for name, (label, items, room) in self.lists.items():
+            out.append(f"{label}:         dw {len(items)}, {room}   ; list {name}")
+            if items:
+                out.append("        dw " + ", ".join(str(v & 0xFFFF) for v in items))
+            if room > len(items):
+                out.append(f"        ds {(room - len(items)) * 2}")
         for name, (label, value) in self.vars.items():
             out.append(f"{label}:          dw {value & 0xFFFF}   ; {name}")
         for i in range(1, self.counters + 1):

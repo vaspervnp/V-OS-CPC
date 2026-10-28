@@ -10,14 +10,16 @@
 ; types "\(" before taking a screenshot). Otherwise their events would
 ; keep the pointer hidden at the moment of the shot.
 ;
-; M7 block programs, Greek UI. Drive A: VOS.BIN, the view overlays,
-; GREEK.LNG, DEMO.BIN (apps/demo), PONG.BIN (blocks/examples/pong.vbp).
+; M7b block programs, Greek UI. Drive A: VOS.BIN, the view overlays,
+; GREEK.LNG, DEMO.BIN, and PONG, CATCH, STARCAT (blocks/examples).
 ; Expected result:
-;   frame  300  F2           -> Launcher: DEMO and PONG tiles
-;   frame  450  RIGHT        -> PONG chosen
-;   frame  600  RETURN       -> PONG runs: mode 0, ball, bat, score
-;   frame  700-899  LEFT held  -> the bat goes to the left edge
-;   frame 1000-1149 RIGHT held -> and to the right
+;   frame  300  F2           -> Launcher: four tiles
+;   frame  450, 480, 510 RIGHT -> STARCAT chosen
+;   frame  600  RETURN       -> STARCAT runs: mode 0, the cat and the
+;                               star (costumes), a tune, list results
+;                               4 9 5 1 / 0 2 7 0
+;   frame  700-899  LEFT held  -> the cat walks left (two costumes)
+;   frame 1000-1149 RIGHT held -> and right
 ;   frame 1300  SPACE        -> "when SPACE pressed: stop all": Launcher
 ; =====================================================================
 
@@ -75,6 +77,8 @@ test_inject:
 test_keys:
         dw  300,  304 : db 1, %01000000   ; F2
         dw  450,  454 : db 0, %00000010   ; RIGHT
+        dw  480,  484 : db 0, %00000010   ; RIGHT
+        dw  510,  514 : db 0, %00000010   ; RIGHT
         dw  600,  604 : db 2, %00000100   ; RETURN
         dw  700,  900 : db 1, %00000001   ; LEFT held
         dw 1000, 1150 : db 0, %00000010   ; RIGHT held
