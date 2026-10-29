@@ -41,11 +41,13 @@
 ; under the cells.
 ;
 ; Files: STUDIO > SAVE writes NAME.VBS (the VBS record below, as a
-; binary file); OPEN reads it back. RUN saves it, writes NAME.BIN (the
-; player with the program, put together in the data bank) and runs it
-; (VOS_RUN); when it stops,
-; Studio starts again and opens NAME.VBS (its name is kept with
-; VOS_KEEP).
+; binary file); OPEN reads it back. RUN saves it, writes NAME.VBN (a
+; V-OS program like a .BIN, its own type so that the Desktop marks it:
+; the player, VBRUN.SYS from drive A:, with the program, put together
+; in the data bank) and runs it (VOS_RUN); when it stops, Studio starts
+; again and opens NAME.VBS (its name is kept with VOS_KEEP). STUDIO >
+; IN BACKGROUND chooses whether the program pauses behind other
+; programs and views (as it starts) or goes on there (V_RUNS).
 ;
 ; Built on its own (Makefile), with texts.asm made by tools/mktexts.py:
 ;   rasm apps/studio/studio.asm -I src -I build -o build/studio
@@ -92,7 +94,8 @@ ED_TX           equ 88              ; its title and the pen
 
 ; ---- the program (VBS) ----------------------------------------------
 ; db "VBS", version (3); db background pen (+ V_MODE1: the program
-; runs in mode 1, 384 pixels wide), sprite count;
+; runs in mode 1, 384 pixels wide; + V_RUNS: it goes on in the
+; background), sprite count;
 ; SPR_MAX sprites (dw x, y; db w, h, colour, costume: 0 none, 1..);
 ; TEXT_MAX texts of TEXT_SIZE bytes (zero-terminated); dw line count;
 ; lines; db costume count, costumes (db 0, 0, then 16 x 16 pens, a byte
@@ -111,6 +114,7 @@ LINE_SIZE       equ 10
 MAX_LINES       equ 200
 V_BG            equ 4
 V_MODE1         equ #80             ; in V_BG
+V_RUNS          equ #40
 V_NSPR          equ 5
 V_SPR           equ 6
 V_TEXTS         equ V_SPR + SPR_MAX * SPR_SIZE
@@ -197,6 +201,7 @@ CMD_DEL_SPRITE  equ 8
 CMD_BG          equ 9
 CMD_RUN         equ 10
 CMD_MODE        equ 11
+CMD_BEHIND      equ 12
 
 KEY_CLR         equ 16
 ERR_BAD_NAME    equ 11              ; system error texts (fs.asm)
@@ -211,10 +216,6 @@ ERR_NOT_FOUND   equ 7
         include "icon_studio.asm"       ; VOS_ICON, from apps/icons/studio.txt
 
 init:
-        ld hl,player                ; the player to the data bank: its
-        ld de,VOS_APP_ADDR          ; room here is the program's
-        ld bc,PLAYER_SIZE
-        call VOS_BANK_PUT
         ld hl,texts
         call VOS_TEXTS
         xor a
@@ -1031,6 +1032,8 @@ command:
         jp z,do_bg
         cp CMD_MODE
         jp z,do_mode
+        cp CMD_BEHIND
+        jp z,do_behind
         jp VOS_COMMAND              ; VIEW and HELP menus
 
 do_new:
@@ -1122,7 +1125,7 @@ do_bg:
         and 15
         ld c,a
         ld a,b
-        and V_MODE1
+        and V_MODE1 + V_RUNS
         or c
         ld (hl),a
         jr do_stage
@@ -1152,6 +1155,23 @@ do_mode:                            ; mode 0 <-> mode 1, sprites kept on
 do_stage:
         ld a,R_STAGE
         jp refresh
+
+; IN BACKGROUND: the program pauses behind others, or goes on (V_RUNS)
+do_behind:
+        ld a,(vbs + V_BG)
+        and V_RUNS
+        ld hl,dlg_pauses
+        jr z,.ask
+        ld hl,dlg_runs
+.ask:
+        call VOS_DIALOG
+        or a                        ; YES: the other way
+        ret nz
+        ld hl,vbs + V_BG
+        ld a,(hl)
+        xor V_RUNS
+        ld (hl),a
+        ret
 
 do_save:
         ld a,(named)
@@ -1230,7 +1250,7 @@ write_file:
         ld a,R_STAGE + R_STATUS     ; the name under the sprites
         jp refresh
 
-; RUN: save NAME.VBS, then NAME.BIN (the player, blocks/player.asm,
+; RUN: save NAME.VBS, then NAME.VBN (the player, blocks/player.asm,
 ; followed by the program) and run it; Studio starts again after it
 do_run:
         ld a,1
@@ -1241,35 +1261,31 @@ do_run:
         ret
 
 run_bin:
-        ld hl,prog_name             ; not over Studio itself
-        ld de,name_studio
-        ld b,7
-.same:
-        ld a,(de)
-        cp (hl)
-        jr nz,.other
-        inc hl
-        inc de
-        djnz .same
-        ld a,ERR_BAD_NAME
-        jp VOS_ERROR
-.other:
+        ld a,VOS_DATA               ; the player to the data bank, the
+        ld hl,name_player           ; program after it, then both
+        ld de,VOS_APP_ADDR
+        call VOS_LOAD
+        jp c,VOS_ERROR
+        ld (player_size),bc
         ld hl,fcb + 8
+        ld (hl),"V"
+        inc hl
         ld (hl),"B"
         inc hl
-        ld (hl),"I"
-        inc hl
         ld (hl),"N"
-        call vbs_bytes              ; the program after the player in
-        push hl                     ; the data bank, then both
+        call vbs_bytes
+        push hl
         ld b,h
         ld c,l
+        ld hl,(player_size)
+        ld de,VOS_APP_ADDR
+        add hl,de
+        ex de,hl
         ld hl,vbs
-        ld de,VOS_APP_ADDR + PLAYER_SIZE
         call VOS_BANK_PUT
         call cos_unpack
         pop hl
-        ld de,PLAYER_SIZE
+        ld de,(player_size)
         add hl,de
         ld b,h
         ld c,l
@@ -3972,13 +3988,14 @@ split:          dw Y1, Y2
 
 bar:            db 4
                 dw menu_studio, menu_edit, 0, 0
-menu_studio:    db T_STUDIO, 8
+menu_studio:    db T_STUDIO, 9
                 db T_NEW, CMD_NEW, "N", 0
                 db T_OPEN, CMD_OPEN, "O", 0
                 db T_SAVE, CMD_SAVE, "S", 0
                 db T_SAVE_AS, CMD_SAVE_AS, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_RUN, CMD_RUN, "R", 0
+                db T_BEHIND, CMD_BEHIND, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
 menu_edit:      db T_EDIT, 5
@@ -3989,6 +4006,8 @@ menu_edit:      db T_EDIT, 5
                 db T_MODE, CMD_MODE, 0, 0
 
 dlg_new:        db T_STUDIO, T_D_NEW, 2, VM_YES, VM_NO
+dlg_pauses:     db T_BEHIND, T_D_PAUSES, 2, VM_YES, VM_NO
+dlg_runs:       db T_BEHIND, T_D_RUNS, 2, VM_YES, VM_NO
 
 ; blocks: flags, the classes of slots 0..2, default slots (kind, value)
 ops:
@@ -4070,7 +4089,8 @@ key_chars:      db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0       ; 0..15
 vbs_ext:        db "VBS"
 vbs_dot_ext:    db ".VBS", 0
 name_none:      db "NONAME", 0, 0, 0
-name_studio:    db "STUDIO", 0
+name_player:    db "VBRUN   SYS"
+player_size:    dw 0
 keep_mark:      db "STU"            ; VOS_KEEP: "STU", the .VBS name
 
 ; the program after NEW: sprite 1 bounces
@@ -4169,20 +4189,13 @@ rc:             dw 0, 0, 0, 0
                 db 0
 lbuf:           ds 96
 tbuf:           ds 40
-; the player (blocks/player.asm): init copies it to the data bank, and
-; its room here holds the program (vbs). RUN saves the player and the
-; program after it as one .BIN, which compiles the program when it
-; starts.
-player:         incbin "VBRUN.BIN"
-PLAYER_SIZE     equ $ - player
-vbs             equ player
+; the program (not in the file). RUN loads the player (VBRUN.SYS,
+; blocks/player.asm) into the data bank and saves it with the program
+; after it as one .VBN, which compiles the program when it starts.
+vbs:            ds VBS_ROOM
 costumes        equ vbs + V_LINES + MAX_LINES * LINE_SIZE
-LOAD_AT         equ VOS_APP_ADDR + PLAYER_SIZE  ; OPEN, in the data bank
-        IF PLAYER_SIZE < VBS_ROOM
-        ds VBS_ROOM - PLAYER_SIZE
-        ENDIF
+LOAD_AT         equ VOS_APP_ADDR    ; OPEN, in the data bank
 studio_end:
         assert studio_end <= VOS_APP_ADDR + #4000
-        assert VOS_APP_ADDR + PLAYER_SIZE + VBS_ROOM <= VOS_APP_ADDR + #4000
         assert costumes + 1 + COS_MAX * COS_SIZE <= vbs + VBS_ROOM
-        save "build/STUDIO.BIN", VOS_APP_ADDR, player + PLAYER_SIZE - VOS_APP_ADDR
+        save "build/STUDIO.BIN", VOS_APP_ADDR, vbs - VOS_APP_ADDR

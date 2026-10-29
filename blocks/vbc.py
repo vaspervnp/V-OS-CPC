@@ -4,19 +4,22 @@
 usage: vbc.py program.vbp [-o build] [--asm-only] [--dsk build/vos.dsk]
 
 Writes <o>/<NAME>.ASM, a readable program for the V-OS API (one comment
-per block), assembles it with RASM into <o>/<NAME>.BIN (twice, for its
+per block), assembles it with RASM into <o>/<NAME>.VBN (twice, for its
 relocation table: tools/mkreloc.py) and, with --dsk, puts it on that
 disc image with iDSK. The program runs blocks/runtime.asm:
 scripts are coroutines, sprites are coloured rectangles.
 
 Program (JSON):
-  {"name": "PONG", "mode": 0, "background": 0, "ink": 1,
+  {"name": "PONG", "mode": 0, "background": 0, "ink": 1, "freeze": true,
    "sprites": [{"name": "ball", "x": 90, "y": 100, "w": 6, "h": 6,
                 "colour": 8, "vx": 2, "vy": 2, "visible": true}],
    "variables": {"score": 0},
    "lists": {"hits": {"max": 32, "items": [1, 2]}},
    "scripts": [{"sprite": "ball", "when": {"event": "start"},
                 "do": [statement, ...]}]}
+
+"freeze" (true when left out): behind another program or a view the
+program pauses; false: it goes on there, unseen and unheard.
 
 Events: start; key (with "key": a letter, digit, or up down left right
 space return enter copy tab del any); click (the script's sprite, or the
@@ -548,6 +551,7 @@ class Compiler:
             *(["RT_UI           equ 1               ; windows and buttons"] if self.ui else []),
             f"PROG_MODE       equ {self.mode}",
             f"PROG_BG         equ {int(p.get('background', 0))}",
+            f"PROG_RUNS       equ {0 if p.get('freeze', True) else 1}",
             f"PROG_WIDTH      equ {192 if self.mode == 0 else 384}",
             f"SCRIPT_COUNT    equ {len(table)}",
             f"SPRITE_COUNT    equ {len(self.sprites)}",
@@ -674,7 +678,7 @@ def main():
         c = Compiler(prog)
         os.makedirs(args.out, exist_ok=True)
         asm_path = os.path.join(args.out, c.name + ".ASM")
-        c.out_bin = os.path.join(args.out, c.name + ".BIN")
+        c.out_bin = os.path.join(args.out, c.name + ".VBN")
         text = c.compile()
     except (Error, KeyError, ValueError, TypeError) as e:
         sys.exit(f"vbc: {args.program}: {e}")
@@ -704,12 +708,12 @@ def main():
         idsk = shutil.which("iDSK")
         if not idsk:
             sys.exit("vbc: iDSK not found")
-        subprocess.run([idsk, args.dsk, "-r", c.name + ".BIN"], capture_output=True)
+        subprocess.run([idsk, args.dsk, "-r", c.name + ".VBN"], capture_output=True)
         r = subprocess.run([idsk, args.dsk, "-i", c.out_bin, "-t", "1", "-c", "4000",
                             "-e", "4000"], capture_output=True, text=True)
         if r.returncode:
             sys.exit("vbc: iDSK failed:\n" + r.stdout + r.stderr)
-        print(f"vbc: {c.name}.BIN on {args.dsk}")
+        print(f"vbc: {c.name}.VBN on {args.dsk}")
 
 
 if __name__ == "__main__":

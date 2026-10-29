@@ -17,6 +17,7 @@ ADD_SPRITE  | + SPRITE              | + ΑΝΤΙΚΕΙΜΕΝΟ
 DEL_SPRITE  | - SPRITE              | - ΑΝΤΙΚΕΙΜΕΝΟ
 BG          | BACKGROUND            | ΦΟΝΤΟ
 MODE        | SCREEN MODE           | MODE ΟΘΟΝΗΣ
+BEHIND      | IN BACKGROUND         | ΣΤΟ ΠΑΡΑΣΚΗΝΙΟ
 
 # palette categories
 C_EVENTS    | EVENTS                | ΓΕΓΟΝΟΤΑ
@@ -54,6 +55,8 @@ H_STAGE     | ARROWS 1-6 C:COLOUR W H:SIZE K:COSTUME E:DRAW | ΒΕΛΑΚΙΑ 1-6
 M_SAVED     | SAVED                 | ΑΠΟΘΗΚΕΥΤΗΚΕ
 M_FULL      | NO MORE ROOM          | ΔΕΝ ΧΩΡΑΕΙ ΑΛΛΟ
 D_NEW       | CLEAR THE PROGRAM?    | ΝΑ ΣΒΗΣΤΕΙ|ΤΟ ΠΡΟΓΡΑΜΜΑ;
+D_PAUSES    | THE PROGRAM PAUSES|THERE. KEEP IT|RUNNING? | ΤΟ ΠΡΟΓΡΑΜΜΑ ΕΚΕΙ|ΠΑΓΩΝΕΙ. ΝΑ ΤΡΕΧΕΙ;
+D_RUNS      | THE PROGRAM KEEPS|RUNNING THERE.|PAUSE IT? | ΤΟ ΠΡΟΓΡΑΜΜΑ ΕΚΕΙ|ΤΡΕΧΕΙ. ΝΑ ΠΑΓΩΝΕΙ;
 I_NAME      | PROGRAM NAME          | ΟΝΟΜΑ ΠΡΟΓΡΑΜΜΑΤΟΣ
 I_TEXT      | TEXT                  | ΚΕΙΜΕΝΟ
 O_TITLE     | OPEN A .VBS           | ΑΝΟΙΓΜΑ .VBS

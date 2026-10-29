@@ -112,6 +112,7 @@ pre {
   <label><span data-t="mode">Mode</span>
     <select id="p-mode"><option value="0">0 · 16</option><option value="1">1 · 4</option></select></label>
   <label><span data-t="background">Φόντο</span> <input id="p-bg" type="number" min="0" max="15" value="0" style="width:5ch"></label>
+  <label><input id="p-freeze" type="checkbox" checked> <span data-t="freeze">Παγώνει στο παρασκήνιο</span></label>
   <span class="spacer"></span>
   <button class="ghost" id="b-new" data-t="new">Νέο</button>
   <button class="ghost" id="b-example" data-t="example">Παράδειγμα</button>
@@ -163,6 +164,7 @@ pre {
 const UI = {
   el: {
     name: "Όνομα", mode: "Mode", background: "Φόντο", new: "Νέο", example: "Παράδειγμα",
+    freeze: "Παγώνει στο παρασκήνιο",
     open: "Άνοιγμα", save: "Αποθήκευση .vbp", stage: "Σκηνή", sprites: "Αντικείμενα",
     colour: "Χρώμα", add_sprite: "+ Αντικείμενο", compile: "Μεταγλώττιση",
     show_vbp: "Το .vbp", howto: "Μεταγλώττιση και αντιγραφή στη δισκέτα:",
@@ -179,6 +181,7 @@ const UI = {
   },
   en: {
     name: "Name", mode: "Mode", background: "Background", new: "New", example: "Example",
+    freeze: "Pauses in the background",
     open: "Open", save: "Save .vbp", stage: "Stage", sprites: "Sprites",
     colour: "Colour", add_sprite: "+ Sprite", compile: "Compile",
     show_vbp: "The .vbp", howto: "Compile it and put it on the disc:",
@@ -520,7 +523,7 @@ function toVbp(ws) {
   return { prog: {
     format: "vbp", version: 1,
     name: $("p-name").value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) || "PROGRAM",
-    mode: m, background: +$("p-bg").value || 0,
+    mode: m, background: +$("p-bg").value || 0, freeze: $("p-freeze").checked,
     sprites: sprites.map(s => {
       const o = Object.assign({}, s);
       if (!o.costumes || !o.costumes.length) { delete o.costumes; delete o.costume; }
@@ -613,6 +616,7 @@ function fromVbp(p) {
   $("p-name").value = p.name || "PROGRAM";
   $("p-mode").value = String(p.mode || 0);
   $("p-bg").value = p.background || 0;
+  $("p-freeze").checked = p.freeze ?? true;
   sprites = (p.sprites || []).map(s => ({
     name: s.name, x: s.x ?? 0, y: s.y ?? 100, w: s.w ?? 8, h: s.h ?? 8,
     colour: s.colour ?? 1, vx: s.vx ?? 0, vy: s.vy ?? 0, visible: s.visible ?? true,
@@ -962,7 +966,7 @@ $("b-sprite").onclick = () => {
   renderSprites(); changed();
 };
 $("p-mode").addEventListener("change", () => { if (paintPen >= pens()) paintPen = 1; });
-["p-name", "p-mode", "p-bg"].forEach(id => $(id).addEventListener("change", () => { renderSprites(); changed(); }));
+["p-name", "p-mode", "p-bg", "p-freeze"].forEach(id => $(id).addEventListener("change", () => { renderSprites(); changed(); }));
 
 let start = EXAMPLE;
 try { const s = localStorage.getItem("vos-blocks-current"); if (s) start = JSON.parse(s); } catch (e) {}

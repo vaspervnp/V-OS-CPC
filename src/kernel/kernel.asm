@@ -4,7 +4,8 @@
 ; Sets up the screen, the disc and the language pack, then starts the
 ; first view and hands it every event. Views are overlays
 ; (kernel/view.asm); F1-F4 switch between Desktop, Launcher, Commander
-; and Setup.
+; and Setup. Programs that go on in the background get their frames
+; after it (bg_frame).
 ; =====================================================================
 
 kernel_entry:
@@ -47,6 +48,7 @@ kernel_entry:
         ld (hl),EV_FRAME
 .no_ticks:
         call nz,.event
+        call bg_frame
         call ptr_update
         jr .main
 .event:
@@ -55,6 +57,21 @@ kernel_entry:
         ret z
         ld de,3                     ; event: the view's or the accessory's
         jp cur_call
+
+; every frame: a VE_FRAME event to each program that goes on in the
+; background (VOS_BACKGROUND), in its bank and as the kernel's program,
+; with the calls not for it there quiet (kernel/ext.asm)
+bg_frame:
+        ld hl,bg_first
+.next:
+        call ext_call
+        ret c
+        ld hl,ev_cur
+        ld (hl),EV_FRAME
+        ld de,3
+        call cur_call
+        ld hl,bg_next
+        jr .next
 
 palette_black:  ds 17, 0
 palette_mode1:                      ; Desktop / Commander palette

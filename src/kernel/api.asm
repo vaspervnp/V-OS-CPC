@@ -43,6 +43,7 @@ api_jumps:
         jp api_keep
         jp api_bank_get
         jp api_bank_put
+        jp api_background           ; 39
         assert $ == VOS_API + VOS_API_COUNT * 3
         assert VM_OK == MSG_BTN_OK && VM_YES == MSG_BTN_YES && VM_NO == MSG_BTN_NO
 
@@ -100,6 +101,18 @@ app_name_set:
 
 api_keep:
         ld hl,app_keep
+        ret
+
+; A = 1: the program goes on in the background, 0: it pauses there
+api_background:
+        ld e,a
+        ld hl,slot_bg               ; (kernel/ext.asm)
+        jp ext_call
+
+; in the background the calls not for a program there come here
+; (kernel/ext.asm, bg_hush): nothing, A = 0, Z, no carry
+api_quiet:
+        xor a
         ret
 
 ; The data bank (bank 4) at #4000-#7FFF, through fs_buf, 512 bytes a

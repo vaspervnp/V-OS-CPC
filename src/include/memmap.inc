@@ -77,6 +77,7 @@ SLOT_PAGES      equ 1
 SLOT_DRIVE      equ 2
 SLOT_NAME       equ 3               ; 11
 SLOT_CFG        equ 14              ; RAM config of its bank
+SLOT_FLAGS      equ 15              ; 1: it goes on in the background
 RAM_BASE_CFG    equ #C0             ; RAM config: plain 64K
 
 ; Drawable area. The monitor shows 271 lines; the top 6 and the bottom

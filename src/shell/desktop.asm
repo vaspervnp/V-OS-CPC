@@ -2,8 +2,9 @@
 ; desktop.asm - the Desktop view (A), the first view at boot
 ;
 ; Mode 1. A window shows the files of one drive as icons (the type in
-; the icon, the name below), four to a row; the drive icons on the
-; right choose which drive. The selected file is dark.
+; the icon, a play sign beside a .VBN, the name below), four to a row;
+; the drive icons on the right choose which drive. The selected file is
+; dark.
 ;   cursor keys      select (UP/DOWN a row)
 ;   TAB              other drive
 ;   RETURN/ENTER     file info
@@ -408,6 +409,7 @@ dt_draw_cell:
         ld e,a
         ld bc,dt_line
         call txt_print
+        call dt_play
         ld hl,(dt_ent)              ; name, without the padding, centred
         ld de,dt_line
         ld b,8
@@ -444,6 +446,47 @@ dt_draw_cell:
         ld e,a
         ld bc,dt_line
         jp txt_print
+
+; dt_line = the type: a .VBN (a program made with blocks) gets a play
+; sign beside its page, in the page's pen
+dt_play:
+        ld hl,dt_line
+        ld de,dt_vbn
+        ld b,3
+.same:
+        ld a,(de)
+        cp (hl)
+        ret nz
+        inc hl
+        inc de
+        djnz .same
+        ld a,(dt_colours)
+        ld (ui_fill_pen),a
+        ld hl,(dt_cx)
+        ld de,53
+        add hl,de
+        ld de,(dt_cy)
+        ld a,7
+        add a,e
+        ld e,a
+        ld b,6                      ; columns 11, 9 ... 1 high
+        ld a,11
+.column:
+        push af
+        push bc
+        push de
+        push hl
+        ld bc,1
+        call ui_rect
+        pop hl
+        pop de
+        pop bc
+        pop af
+        inc hl
+        inc de
+        sub 2
+        djnz .column
+        ret
 
 ; dt_top so that the selection is on the screen -> carry if it moved
 dt_scroll:
@@ -768,3 +811,4 @@ dt_ent:         dw 0
 dt_colours:     dw 0
 dt_name_colours: dw 0
 dt_line:        ds 40
+dt_vbn:         db "VBN"

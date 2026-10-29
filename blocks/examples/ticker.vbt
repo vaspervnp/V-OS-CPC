@@ -1,0 +1,22 @@
+# TICKER: goes on in the background (tools/mkvbs.py makes TICKER.VBS
+# and TICKER.BIN). The stage counts the seconds in A and a ball crosses
+# the screen; behind other programs both go on, unseen, so when it comes
+# back to the front it has counted the time it was away.
+BEHIND RUN
+BG 0
+
+SPRITE 0 100 8 8 6
+
+START STAGE
+FOREVER
+  PRINT A 16 30
+  WAIT 50
+  CHANGE A 1
+END
+
+START SPRITE:1
+SPEED 1 0
+FOREVER
+  MOVE
+  BOUNCE
+END

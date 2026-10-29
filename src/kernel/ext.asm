@@ -135,6 +135,8 @@ slot_alloc:
         ld l,a
         ld a,(sa_cfg)
         ld (hl),a
+        inc l                       ; SLOT_FLAGS: it pauses behind
+        ld (hl),0
         ld (vw_cfg),a
         ld a,e
         ld (vw_page),a
@@ -264,6 +266,163 @@ slot_find:
         jr nz,.rec
         inc a
         ret
+
+; VOS_BACKGROUND: E = 1, the program goes on in the background; 0, it
+; pauses there (not for the accessory)
+slot_bg:
+        ld a,(acc_open)
+        or a
+        ret nz
+        ld a,(app_slot)
+        or a
+        ret z
+        call slot_ptr
+        ld a,l
+        or SLOT_FLAGS
+        ld l,a
+        ld (hl),e
+        ret
+
+; ---------------------------------------------------------------------
+; The background: every frame bg_frame (kernel/kernel.asm) gives a
+; VE_FRAME to each program whose SLOT_FLAGS say it goes on there, but
+; the one in front. bg_first, then bg_next after each, find the next
+; one and make it the kernel's program for its event: its bank home
+; (through ext_home, which ext_call maps on return), vw_cfg, app_slot,
+; cur_base. Its calls but those of bg_open are quiet meanwhile
+; (api_quiet). Carry: no more, everything as it was.
+; ---------------------------------------------------------------------
+bg_first:
+        xor a
+        ld (bg_id),a
+        ld (bg_hushed),a
+        ld a,(ext_home)             ; the one in front: kept
+        ld (bg_home),a
+        ld a,(vw_cfg)
+        ld (bg_cfg),a
+        ld a,(app_slot)
+        ld (bg_slot),a
+        ld hl,(cur_base)
+        ld (bg_base),hl
+        jr bg_find
+bg_next:
+        ld a,(bg_home)              ; the one in front again
+        ld (ext_home),a
+        ld a,(bg_cfg)
+        ld (vw_cfg),a
+        ld a,(bg_slot)
+        ld (app_slot),a
+        ld hl,(bg_base)
+        ld (cur_base),hl
+bg_find:
+        ld a,(bg_id)
+.next:
+        inc a
+        cp 16
+        jr z,.done
+        ld (bg_id),a
+        call slot_ptr
+        ld a,(hl)
+        or a
+        jr z,.skip
+        ld d,a                      ; D = its page, E = its bank
+        ld a,l
+        or SLOT_FLAGS
+        ld l,a
+        bit 0,(hl)
+        jr z,.skip
+        dec l
+        ld e,(hl)
+        ld a,(view_cur)             ; the program in front: not here
+        cp VIEW_APP
+        jr nz,.behind
+        ld a,(acc_open)
+        or a
+        jr nz,.behind
+        ld a,(bg_slot)
+        ld hl,bg_id
+        cp (hl)
+        jr z,.skip
+.behind:
+        ld a,(bg_hushed)
+        or a
+        call z,bg_hush
+        ld a,e
+        ld (ext_home),a
+        ld (vw_cfg),a
+        ld a,(bg_id)
+        ld (app_slot),a
+        ld h,d
+        ld l,0
+        ld (cur_base),hl
+        or a
+        ret
+.skip:
+        ld a,(bg_id)
+        jr .next
+.done:
+        ld a,(bg_hushed)            ; the API as it was
+        or a
+        jr z,.none
+        ld hl,bg_api
+        ld de,VOS_API
+        ld bc,VOS_API_COUNT * 3
+        ldir
+.none:
+        scf
+        ret
+
+; the API table kept in bg_api, then quiet but for bg_open (keeps DE)
+bg_hush:
+        push de
+        ld a,1
+        ld (bg_hushed),a
+        ld hl,VOS_API
+        ld de,bg_api
+        ld bc,VOS_API_COUNT * 3
+        ldir
+        ld de,bg_quiet
+.range:
+        ld a,(de)                   ; the first call, #FF: no more
+        inc de
+        inc a
+        jr z,.hushed
+        dec a
+        ld l,a                      ; its target: VOS_API + 1 + 3 * call
+        ld h,0
+        ld c,l
+        ld b,h
+        add hl,hl
+        add hl,bc
+        ld bc,VOS_API + 1
+        add hl,bc
+        ld a,(de)                   ; how many
+        inc de
+        ld b,a
+.call:
+        ld (hl),api_quiet & #FF
+        inc hl
+        ld (hl),api_quiet >> 8
+        inc hl
+        inc hl
+        djnz .call
+        jr .range
+.hushed:
+        pop de
+        ret
+
+; the calls quiet in the background: first, count; all but VOS_FRAMES,
+; VOS_RANDOM, VOS_KEEP and VOS_BACKGROUND
+bg_quiet:       db 0, 2, 4, 32, 37, 2, #FF
+        assert (VOS_FRAMES - VOS_API) / 3 == 2 && (VOS_KEEP - VOS_API) / 3 == 36
+        assert (VOS_BACKGROUND - VOS_API) / 3 == 39 && VOS_API_COUNT == 40
+bg_id:          db 0
+bg_hushed:      db 0
+bg_home:        db 0
+bg_cfg:         db 0
+bg_slot:        db 0
+bg_base:        dw 0
+bg_api:         ds VOS_API_COUNT * 3
 
 ; ---------------------------------------------------------------------
 ; sw_run - the program switcher (F6, or PROGRAMS in the VIEW menu): a

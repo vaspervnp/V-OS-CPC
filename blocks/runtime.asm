@@ -4,6 +4,8 @@
 ; Included by the generated program after its header. The program
 ; provides (all generated):
 ;   PROG_MODE, PROG_BG, PROG_WIDTH   mode, background pen, screen width
+;   PROG_RUNS       1: it goes on in the background (VOS_BACKGROUND),
+;                   0: it pauses there
 ;   SCRIPT_COUNT, SPRITE_COUNT
 ;   prog_palette    17 firmware colours
 ;   prog_scripts    per script: dw code, dw stack top, db sprite (#FF:
@@ -13,8 +15,9 @@
 ;                   db bytes, rows, then per row (mask, pixels) pairs
 ;   lists           dw length, dw room, then room words
 ;   rt_stacks, rt_state  room for the scripts' stacks and state
-; SCRIPT_COUNT, SPRITE_COUNT and PROG_BG are immediates at rt_nscripts_n,
-; rt_nsprites_n and rt_bg_n, PROG_MODE at rt_mode_1, PROG_WIDTH (a word)
+; SCRIPT_COUNT, SPRITE_COUNT, PROG_BG and PROG_RUNS are immediates at
+; rt_nscripts_n, rt_nsprites_n, rt_bg_n and rt_runs_1, PROG_MODE at
+; rt_mode_1, PROG_WIDTH (a word)
 ; at rt_width_n: blocks/player.asm sets them when it starts. With
 ; RT_ANY_MODE (the player) images are drawn for mode 0, and the player
 ; writes the mode 1 instructions at rt_m1_n when the program is in mode 1.
@@ -87,21 +90,15 @@ T_RT_STOP       equ VT_FIRST + 1
 ; ---------------------------------------------------------------------
 ; A = 2: it goes on, after another program (VOS_API_VERSION 8): the
 ; mode, palette, menus and buttons again, everything drawn, the scripts
-; where they were. Not with RT_ALONE (the player: it has the whole bank,
-; so it never goes on).
+; where they were. Behind another one it pauses, or with PROG_RUNS goes
+; on: the kernel then quiets what it draws and plays (version 9).
 rt_init:
-        IFDEF RT_ALONE
-        IFDEF RT_UI
-        call rt_ui_reset
-        ENDIF
-        ELSE
         ld (rt_again),a
         IFDEF RT_UI
         cp 2
         call nz,rt_ui_reset
         ld hl,rt_buttons
         call VOS_SET_WIDGETS
-        ENDIF
         ENDIF
         ld hl,rt_texts
         call VOS_TEXTS
@@ -118,12 +115,13 @@ rt_mode_1 equ $ - 1
         call VOS_SET_BAR
         ld a,1
         call VOS_TICKS
+        ld a,PROG_RUNS
+rt_runs_1 equ $ - 1
+        call VOS_BACKGROUND
         call rt_redraw
-        IFNDEF RT_ALONE
         ld a,(rt_again)
         cp 2
         ret z
-        ENDIF
         ld bc,EVT_START * 256       ; every "when started" script
         jp rt_start_all
 

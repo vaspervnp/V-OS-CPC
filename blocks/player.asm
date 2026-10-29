@@ -35,7 +35,7 @@
 
 RT_UI           equ 1               ; windows and buttons (runtime.asm)
 RT_ANY_MODE     equ 1               ; images in mode 1 too (pl_costumes)
-RT_ALONE        equ 1               ; never goes on (runtime.asm, rt_init)
+PROG_RUNS       equ 0               ; set at rt_runs_1 (V_RUNS)
 PROG_MODE       equ 0               ; set at rt_mode_1: the program's
 PROG_WIDTH      equ 192             ; mode, and at rt_width_n (mode 1: 384)
 PROG_BG         equ 0               ; set at rt_bg_n, see pl_init
@@ -49,7 +49,8 @@ TEXT_MAX        equ 32
 TEXT_SIZE       equ 16
 LINE_SIZE       equ 10
 MAX_LINES       equ 200
-V_BG            equ 4                   ; pen 0..15; + V_MODE1: mode 1
+V_BG            equ 4                   ; pen 0..15; + V_MODE1: mode 1;
+                                        ; + V_RUNS: it goes on behind
 V_NSPR          equ 5
 V_SPR           equ 6
 V_TEXTS         equ V_SPR + SPR_MAX * SPR_SIZE
@@ -85,6 +86,7 @@ T_ELSE          equ 4
 CT_SIZE         equ 5               ; db type, dw a, dw b
 
 V_MODE1         equ #80
+V_RUNS          equ #40
 
 prog_sprites    equ #7500           ; SPR_MAX * SP_SIZE
 prog_scripts    equ #7590           ; MAX_SCRIPTS * 7
@@ -107,6 +109,8 @@ prog_palette:   db 0, 26, 1, 2, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16, 0
 
 ; ---------------------------------------------------------------------
 pl_init:
+        cp 2                        ; going on: all is in place
+        jp z,rt_init
         ld hl,vbs_data              ; "VBS", 1? Else no program
         ld de,pl_magic
         ld b,4
@@ -138,6 +142,11 @@ pl_init:
         call pl_patch
         ld a,(vbs_data + V_BG)      ; mode 0 or 1: 192 or 384 pixels
         rlca
+        push af
+        rlca                        ; V_RUNS
+        and 1
+        ld (rt_runs_1),a
+        pop af
         and 1
         ld (rt_mode_1),a
         ld hl,PROG_WIDTH

@@ -12,7 +12,8 @@
 ;
 ; M8b/M8c Studio, English UI. Drive A: VOS.BIN, the view overlays,
 ; GREEK.LNG, DEMO.BIN, MIXED.BIN, STUDIO.BIN, PONG, CATCH, STARCAT,
-; COUNTER, FLAP.BIN, FLAP.VBS, CALC.BIN, CALC.VBS, CLOCK.BIN.
+; COUNTER, FLAP.VBN, FLAP.VBS, CALC.VBN, CALC.VBS, CLOCK.BIN, TICKER.VBN,
+; TICKER.VBS, VBRUN.SYS.
 ; Expected result:
 ;   frame  300  F2           -> Launcher
 ;   frame  420, 470 RIGHT    -> STUDIO chosen
@@ -44,7 +45,7 @@
 ;   frame 2350  click on its first slot -> chosen
 ;   frame 2500  click on it again -> TOUCHING 1
 ;   frame 2650  click on the stage at 20, 40 -> the sprite at 38 66
-;   frame 2750  CONTROL+R    -> NONAME.VBS and NONAME.BIN saved, the
+;   frame 2750  CONTROL+R    -> NONAME.VBS and NONAME.VBN saved, the
 ;                               program runs: the sprite bounces
 ;   frame 3400  CONTROL+Q    -> it stops; Studio starts again with
 ;                               NONAME.VBS open
@@ -244,7 +245,7 @@ test_frame:     dw 0
 ; (line #80: bits = ptr_keys_on; #81: pointer x = bits * 2, in pixels
 ; of the mode the pointer is in; #82: pointer y = bits)
         IF TEST_SCRIPT == 2
-; make test-calc (-DTEST_SCRIPT=2): CALC.BIN, a Studio program
+; make test-calc (-DTEST_SCRIPT=2): CALC.VBN, a Studio program
 ; (blocks/examples/calc.vbt), then Studio with CALC.VBS. Expected:
 ;   frame  300  F2           -> Launcher
 ;   frame  420, 470 DOWN, 510, 535 RIGHT -> CALC chosen (after
@@ -257,8 +258,9 @@ test_frame:     dw 0
 ;   frame 1500  CONTROL+Q    -> the Launcher, CALC still chosen
 ;   frame 1700, 1750 UP, 1900 RETURN -> Studio
 ;   frame 2100  CONTROL+O    -> the file list
-;   frame 2160, 2200 UP, 2400 RETURN -> from the first file to the
-;                               last (CLOCK.BIN), then CALC.VBS: opened
+;   frame 2160-2280 UP x4, 2400 RETURN -> from the first file to the
+;                               last (VBRUN.SYS), then up to CALC.VBS:
+;                               opened
 ;   frame 2600  TAB, 2650 LEFT -> the palette: WINDOWS
 ;   frame 2800  RETURN       -> WINDOW added, the dialog asks its text
 ;   frame 2900, 2950 H, I, 3050 RETURN -> WINDOW "ΗΙ" 120 100
@@ -293,8 +295,11 @@ test_keys:
         dw 1900, 1904 : db 2, %00000100   ; RETURN
         dw 2095, 2110 : db 2, %10000000   ; CONTROL
         dw 2100, 2104 : db 4, %00000100   ; O
-        dw 2160, 2164 : db 0, %00000001   ; UP: the last file (CLOCK.BIN)
-        dw 2200, 2204 : db 0, %00000001   ; UP: CALC.VBS
+        dw 2160, 2164 : db 0, %00000001   ; UP: the last file (VBRUN.SYS)
+        dw 2200, 2204 : db 0, %00000001   ; UP: TICKER.VBS
+        dw 2240, 2244 : db 0, %00000001   ; UP: TICKER.VBN
+        dw 2280, 2284 : db 0, %00000001   ; UP: CLOCK.BIN
+        dw 2320, 2324 : db 0, %00000001   ; UP: CALC.VBS
         dw 2400, 2404 : db 2, %00000100   ; RETURN
         dw 2600, 2604 : db 8, %00010000   ; TAB
         dw 2650, 2654 : db 1, %00000001   ; LEFT
@@ -302,6 +307,59 @@ test_keys:
         dw 2900, 2904 : db 5, %00010000   ; H
         dw 2950, 2954 : db 4, %00001000   ; I
         dw 3050, 3054 : db 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 9
+; make test-behind (-DTEST_SCRIPT=9, 576K): a program in the background.
+; Expected:
+;   frame  300  F2, 400, 440 RIGHT, 480 RETURN -> STUDIO
+;   frame  800  ESC, 850-970 DOWN x5, 1010 RETURN -> STUDIO > IN
+;                               BACKGROUND: "THE PROGRAM PAUSES THERE"
+;   frame 1100  RETURN (YES) -> it goes on there now
+;   frame 1150  ESC, 1200-1320 DOWN x5, 1360 RETURN -> "THE PROGRAM KEEPS
+;                               RUNNING THERE"; 1450 ESC (NO)
+;   frame 1550  F2, 1650, 1680 DOWN, 1710, 1740 RIGHT, 1800 RETURN ->
+;                               TICKER (BEHIND RUN): seconds, a ball
+;   frame 2100  F2           -> the Launcher, clean; TICKER goes on
+;   frame 2200-2290 UP x3, LEFT, 2330 RETURN -> DEMO in front
+;   frame 2700  F6, 2750 DOWN, 2800 RETURN -> TICKER again: it counted
+;                               the time behind, the ball moved on
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  400,  404 : db 0, %00000010   ; RIGHT
+        dw  440,  444 : db 0, %00000010   ; RIGHT
+        dw  480,  484 : db 2, %00000100   ; RETURN
+        dw  800,  804 : db 8, %00000100   ; ESC
+        dw  850,  854 : db 0, %00000100   ; DOWN
+        dw  880,  884 : db 0, %00000100   ; DOWN
+        dw  910,  914 : db 0, %00000100   ; DOWN
+        dw  940,  944 : db 0, %00000100   ; DOWN
+        dw  970,  974 : db 0, %00000100   ; DOWN
+        dw 1010, 1014 : db 2, %00000100   ; RETURN
+        dw 1100, 1104 : db 2, %00000100   ; RETURN
+        dw 1150, 1154 : db 8, %00000100   ; ESC
+        dw 1200, 1204 : db 0, %00000100   ; DOWN
+        dw 1230, 1234 : db 0, %00000100   ; DOWN
+        dw 1260, 1264 : db 0, %00000100   ; DOWN
+        dw 1290, 1294 : db 0, %00000100   ; DOWN
+        dw 1320, 1324 : db 0, %00000100   ; DOWN
+        dw 1360, 1364 : db 2, %00000100   ; RETURN
+        dw 1450, 1454 : db 8, %00000100   ; ESC
+        dw 1550, 1554 : db 1, %01000000   ; F2
+        dw 1650, 1654 : db 0, %00000100   ; DOWN
+        dw 1680, 1684 : db 0, %00000100   ; DOWN
+        dw 1710, 1714 : db 0, %00000010   ; RIGHT
+        dw 1740, 1744 : db 0, %00000010   ; RIGHT
+        dw 1800, 1804 : db 2, %00000100   ; RETURN
+        dw 2100, 2104 : db 1, %01000000   ; F2
+        dw 2200, 2204 : db 0, %00000001   ; UP
+        dw 2230, 2234 : db 0, %00000001   ; UP
+        dw 2260, 2264 : db 0, %00000001   ; UP
+        dw 2290, 2294 : db 1, %00000001   ; LEFT
+        dw 2330, 2334 : db 2, %00000100   ; RETURN
+        dw 2700, 2704 : db 0, %00010000   ; F6
+        dw 2750, 2754 : db 0, %00000100   ; DOWN
+        dw 2800, 2804 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 8
@@ -462,7 +520,7 @@ test_keys:
 ;   frame 1420  click on cell 11,10 -> painted bright blue
 ;   frame 1500  E            -> the stage, the sprite in its costume
 ;   frame 1600  CONTROL+R    -> the name dialog: NONAME
-;   frame 1700  RETURN       -> NONAME.VBS and .BIN saved, it runs:
+;   frame 1700  RETURN       -> NONAME.VBS and .VBN saved, it runs:
 ;                               the sprite in its costume bounces
 ;   frame 2400  CONTROL+Q    -> Studio again, NONAME.VBS opened: the
 ;                               costume is still there
@@ -562,6 +620,7 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

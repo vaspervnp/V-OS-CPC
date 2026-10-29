@@ -1,13 +1,14 @@
 ; =====================================================================
 ; launcher.asm - the Launcher view (B)
 ;
-; Mode 0, 16 colours. The programs on drive A: (.BIN and .BAS files,
-; not V-OS's own) as a 3 x 3 grid of coloured tiles, more on the next
-; pages. The selected tile is white. A program with an icon (VOS_ICON
-; in src/api/vos_api.inc) shows it on its tile: the first time a page
-; is drawn, the first sector of each .BIN on it is read, and the icon
-; kept (ln_icons) while that page is shown. RETURN on a program that is
-; running already (in its slot, kernel/view.asm) takes it up again.
+; Mode 0, 16 colours. The programs on drive A: (.BIN, .VBN and .BAS
+; files, not V-OS's own) as a 3 x 3 grid of coloured tiles, more on the
+; next pages. The selected tile is white. A program with an icon
+; (VOS_ICON in src/api/vos_api.inc) shows it on its tile: the first
+; time a page is drawn, the first sector of each .BIN and .VBN on it is
+; read, and the icon kept (ln_icons) while that page is shown. RETURN
+; on a program that is running already (in its slot, kernel/view.asm)
+; takes it up again.
 ;   cursor keys      move (UP/DOWN a row; past the edge, the next page)
 ;   RETURN/ENTER     start the program (src/api/vos_api.inc)
 ;   ^R read the disc again; mouse: click a tile, again to start it
@@ -206,7 +207,8 @@ ln_draw_tiles:
         ld bc,ln_line
         jp txt_print
 
-; HL -> FS_CAT entry -> Z if it is a program: .BIN or .BAS, not VOS.BIN
+; HL -> FS_CAT entry -> Z if it is a program: .BIN, .VBN or .BAS, not
+; VOS.BIN
 ln_program:
         push hl
         ld de,ln_vos
@@ -217,11 +219,7 @@ ln_program:
         push hl
         ld de,8
         add hl,de
-        push hl
-        ld de,ln_bin
-        ld b,3
-        call .same
-        pop hl
+        call ln_vos_prog
         jr z,.yes
         ld de,ln_bas
         ld b,3
@@ -239,6 +237,22 @@ ln_program:
         inc hl
         inc de
         djnz .same
+        ret
+
+; HL -> extension -> Z if a V-OS program: .BIN, or .VBN (made with
+; blocks: Studio, vbc.py); HL kept
+ln_vos_prog:
+        push hl
+        ld de,ln_bin
+        ld b,3
+        call ln_program.same
+        pop hl
+        ret z
+        push hl
+        ld de,ln_vbn
+        ld b,3
+        call ln_program.same
+        pop hl
         ret
 
 ; A = program number -> A = its page
@@ -423,8 +437,8 @@ ln_icon:
         pop hl
         ret
 
-; HL -> FS_CAT entry: a .BIN with "VA" and "IC" in its first sector ->
-; its icon to ln_icons, state 2; else state 1
+; HL -> FS_CAT entry: a .BIN or .VBN with "VA" and "IC" in its first
+; sector -> its icon to ln_icons, state 2; else state 1
 ln_icon_read:
         ld de,(ln_st_ptr)
         ld a,1
@@ -432,9 +446,7 @@ ln_icon_read:
         push hl
         ld de,8
         add hl,de
-        ld de,ln_bin
-        ld b,3
-        call ln_program.same
+        call ln_vos_prog
         pop hl
         ret nz
         call fs_set_name            ; the directory is still in memory
@@ -751,6 +763,7 @@ ln_menu_file:
 
 ln_vos:         db "VOS     BIN"
 ln_bin:         db "BIN"
+ln_vbn:         db "VBN"
 ln_bas:         db "BAS"
 
 ; ---- state ----------------------------------------------------------

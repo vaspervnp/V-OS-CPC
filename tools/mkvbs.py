@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """mkvbs - a Studio program (.VBS, version 3) from text.
 
-usage: mkvbs.py prog.vbt out.VBS [player.BIN out.BIN]
+usage: mkvbs.py prog.vbt out.VBS [player out.VBN]
 
-With the player (build/VBRUN.BIN) it also writes the program as Studio's
-RUN does: the player, then the VBS record, as one .BIN.
+With the player (build/VBRUN.SYS) it also writes the program as Studio's
+RUN does: the player, then the VBS record, as one .VBN (a V-OS program,
+like a .BIN, of its own type).
 
 The text, one line or block per line ("#" starts a comment, leading
 spaces are ignored):
   BG pen                      the stage's background
   MODE 0 or 1                 the screen mode it runs in (mode 1: 384
                               pixels wide, pens 0..3)
+  BEHIND PAUSE or RUN         behind other programs it pauses (as when
+                              left out) or goes on
   SPRITE x y w h colour [n]   up to 6; n: its costume (1..), else none
   IMAGE                       a costume (1, 2, ... in order), then 16
                               lines of 16 pixels: a pen in hex, "."
@@ -97,7 +100,7 @@ def slot(word, texts):
 
 def compile_vbt(lines):
     ops = op_names()
-    bg, mode, sprites, texts, code, images = 0, 0, [], [], [], []
+    bg, mode, runs, sprites, texts, code, images = 0, 0, 0, [], [], [], []
     rows = None                         # an IMAGE's lines still to come
     for n, line in enumerate(lines, 1):
         line = line.split("#", 1)[0] if '"' not in line else line
@@ -117,6 +120,10 @@ def compile_vbt(lines):
             head = w[0].upper()
             if head == "BG":
                 bg = int(w[1]) & 15
+            elif head == "BEHIND":
+                if w[1:] not in (["PAUSE"], ["RUN"]):
+                    raise Error("BEHIND PAUSE or BEHIND RUN")
+                runs = int(w[1] == "RUN")
             elif head == "MODE":
                 mode = int(w[1])
                 if mode not in (0, 1):
@@ -145,7 +152,7 @@ def compile_vbt(lines):
         raise Error("an IMAGE without its 16 lines")
     if len(code) > MAX_LINES:
         raise Error(f"more than {MAX_LINES} lines")
-    out = bytearray(b"VBS\x03" + bytes([bg | mode << 7, len(sprites)]))
+    out = bytearray(b"VBS\x03" + bytes([bg | runs << 6 | mode << 7, len(sprites)]))
     for x, y, wd, ht, colour, costume in sprites:
         if costume > len(images):
             raise Error(f"no costume {costume}")
