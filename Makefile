@@ -9,6 +9,7 @@
 #                 in Studio (TEST_SCRIPT=2)
 #   make test-costume a costume drawn in Studio, run, opened again
 #   make test-acc    CLOCK as the desk accessory, over the Launcher and Studio
+#   make test-multi  DEMO and PONG side by side, each goes on where it was
 #   make test-lang   English at boot, Greek saved in Setup, then V-OS
 #                 again starts in Greek (TEST_SCRIPT=3)
 #   make test-amsdos  the same script, then AMSDOS in BASIC reads the
@@ -31,7 +32,7 @@ IDSK    ?= iDSK
 LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG
 
-.PHONY: all run shot test-input test-calc test-lang test-costume test-acc test-amsdos test-reboot test-system clean
+.PHONY: all run shot test-input test-calc test-lang test-costume test-acc test-multi test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -64,22 +65,29 @@ $(BUILD)/icon_%.asm: apps/icons/%.txt tools/mkicon.py
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mkicon.py $< $@
 
-$(BUILD)/DEMO.BIN: apps/demo/demo.asm $(BUILD)/icon_demo.asm src/api/vos_api.inc
-	$(RASM) apps/demo/demo.asm -I src -I $(BUILD) -o $(BUILD)/demo > /dev/null
+# A program that may be moved (src/api/vos_api.inc): assembled at #4000
+# and at #4100 (it saves build/<name>_lo.bin and _hi.bin), then
+# tools/mkreloc.py appends the relocation table from the difference.
+# $(1) is the source, $(2) the name.
+define reloc_app
+	$(RASM) $(1) -I src -I $(BUILD) -o $(BUILD)/$(2) > /dev/null
+	$(RASM) $(1) -I src -I $(BUILD) -DVOS_RELOC_PASS=1 -o $(BUILD)/$(2)_hi > /dev/null
+	$(PYTHON) -I tools/mkreloc.py $(BUILD)/$(2)_lo.bin $(BUILD)/$(2)_hi.bin $@
+endef
 
-$(BUILD)/MIXED.BIN: apps/mixed/mixed.asm $(BUILD)/icon_mixed.asm src/api/vos_api.inc
-	$(RASM) apps/mixed/mixed.asm -I src -I $(BUILD) -o $(BUILD)/mixed > /dev/null
+$(BUILD)/DEMO.BIN: apps/demo/demo.asm $(BUILD)/icon_demo.asm src/api/vos_api.inc tools/mkreloc.py
+	$(call reloc_app,apps/demo/demo.asm,demo)
 
-# CLOCK, a desk accessory: built at #4000 and at #4100, and
-# tools/mkreloc.py appends the relocation table from the difference
+$(BUILD)/MIXED.BIN: apps/mixed/mixed.asm $(BUILD)/icon_mixed.asm src/api/vos_api.inc tools/mkreloc.py
+	$(call reloc_app,apps/mixed/mixed.asm,mixed)
+
+# CLOCK, also a desk accessory
 $(BUILD)/clock_texts.asm: apps/clock/texts.txt tools/mktexts.py
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mktexts.py $< $@
 
 $(BUILD)/CLOCK.BIN: apps/clock/clock.asm $(BUILD)/clock_texts.asm $(BUILD)/icon_clock.asm src/api/vos_api.inc tools/mkreloc.py
-	$(RASM) apps/clock/clock.asm -I src -I $(BUILD) -o $(BUILD)/clock > /dev/null
-	$(RASM) apps/clock/clock.asm -I src -I $(BUILD) -DVOS_RELOC_PASS=1 -o $(BUILD)/clock_hi > /dev/null
-	$(PYTHON) -I tools/mkreloc.py $(BUILD)/clock_lo.bin $(BUILD)/clock_hi.bin $@
+	$(call reloc_app,apps/clock/clock.asm,clock)
 
 # Studio: its texts (English and Greek) come from texts.txt, the
 # blocks' texts from blocks.txt (a second table)
@@ -101,7 +109,7 @@ $(BUILD)/STUDIO.BIN: apps/studio/studio.asm $(BUILD)/studio_texts.asm $(BUILD)/s
 
 # Block programs (blocks/): compiled to assembly by vbc.py, with the
 # runtime. The .BIN takes the name inside the .vbp.
-BLOCKS_RT := blocks/vbc.py blocks/runtime.asm src/api/vos_api.inc lang/en/keymap.txt apps/icons/blocks.txt tools/mkicon.py
+BLOCKS_RT := blocks/vbc.py blocks/runtime.asm src/api/vos_api.inc lang/en/keymap.txt apps/icons/blocks.txt tools/mkicon.py tools/mkreloc.py
 
 $(BUILD)/PONG.BIN: blocks/examples/pong.vbp $(BLOCKS_RT)
 	$(PYTHON) -I blocks/vbc.py $< -o $(BUILD) > /dev/null
@@ -265,6 +273,27 @@ test-acc: $(ACC_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(ACC_SHOTS); do \
 	  cp $(ACC_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# Programs side by side (TEST_SCRIPT=6): DEMO and PONG run, each goes
+# on where it was, STUDIO is refused while PONG runs
+MULTI_DSK := $(BUILD)/vos_multi.dsk
+MULTI_SHOTS := 165 250 340 425 800
+$(MULTI_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_multi -DTEST_SCRIPT=6
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-multi: $(MULTI_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(MULTI_SHOTS); do \
+	  cp $(MULTI_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png

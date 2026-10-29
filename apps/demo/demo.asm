@@ -7,7 +7,8 @@
 ; menus. Its texts come in English and Greek (VOS_TEXTS).
 ;
 ; Built on its own, with only the API include (Makefile):
-;   rasm apps/demo/demo.asm -I src -o build/demo
+;   rasm apps/demo/demo.asm -I src -I build -o build/demo
+; and again with -DVOS_RELOC_PASS=1 for its relocation table (Makefile)
 ; =====================================================================
 
         include "api/vos_api.inc"
@@ -216,4 +217,8 @@ pen:            db 8
 rect:           dw 0, 0, SQ, SQ
                 db 8
 demo_end:
-        save "build/DEMO.BIN", VOS_APP_ADDR, demo_end - VOS_APP_ADDR
+        IFDEF VOS_RELOC_PASS            ; Makefile: two builds, one table
+        save "build/demo_hi.bin", VOS_APP_ADDR, demo_end - VOS_APP_ADDR
+        ELSE
+        save "build/demo_lo.bin", VOS_APP_ADDR, demo_end - VOS_APP_ADDR
+        ENDIF

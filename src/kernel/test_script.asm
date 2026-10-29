@@ -304,6 +304,43 @@ test_keys:
         dw 3050, 3054 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 6
+; make test-multi (-DTEST_SCRIPT=6): programs side by side in bank 5.
+; Expected:
+;   frame  300  F2           -> Launcher, DEMO chosen
+;   frame  400  RETURN       -> DEMO runs (in a slot from #5000)
+;   frame  480, 520 SPACE    -> its square changes colour twice
+;   frame  600  F2           -> the Launcher; DEMO stays
+;   frame  700  DOWN, 760 RETURN -> PONG runs beside it
+;   frame  900  F2           -> the Launcher
+;   frame 1000  UP, 1060 RETURN -> DEMO goes on: the same colour
+;   frame 1200  CONTROL+Q    -> DEMO ends, its slot is free
+;   frame 1300  DOWN, 1360 RETURN -> PONG goes on, its score kept
+;   frame 1500  F2, 1600 UP, 1640, 1680 RIGHT, 1720 RETURN -> STUDIO,
+;                               which needs the whole bank: "CLOSE
+;                               ANOTHER PROGRAM FIRST"
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  400,  404 : db 2, %00000100   ; RETURN
+        dw  480,  484 : db 5, %10000000   ; SPACE
+        dw  520,  524 : db 5, %10000000   ; SPACE
+        dw  600,  604 : db 1, %01000000   ; F2
+        dw  700,  704 : db 0, %00000100   ; DOWN
+        dw  760,  764 : db 2, %00000100   ; RETURN
+        dw  900,  904 : db 1, %01000000   ; F2
+        dw 1000, 1004 : db 0, %00000001   ; UP
+        dw 1060, 1064 : db 2, %00000100   ; RETURN
+        dw 1195, 1210 : db 2, %10000000   ; CONTROL
+        dw 1200, 1204 : db 8, %00001000   ; Q
+        dw 1300, 1304 : db 0, %00000100   ; DOWN
+        dw 1360, 1364 : db 2, %00000100   ; RETURN
+        dw 1500, 1504 : db 1, %01000000   ; F2
+        dw 1600, 1604 : db 0, %00000001   ; UP
+        dw 1640, 1644 : db 0, %00000010   ; RIGHT
+        dw 1680, 1684 : db 0, %00000010   ; RIGHT
+        dw 1720, 1724 : db 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 5
 ; make test-acc (-DTEST_SCRIPT=5): CLOCK as the desk accessory.
 ; Expected:
@@ -449,6 +486,7 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

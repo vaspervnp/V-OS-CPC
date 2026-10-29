@@ -11,7 +11,14 @@
 ; Unused video RAM, never displayed: #8000-#801F and #C4E0-#C7FF in
 ; each of the eight 2K blocks (+ line * #800). The kernel keeps tables
 ; and buffers in the eight 800-byte gaps of the #C000 page (who uses
-; what is listed next to GAP0..GAP7 below).
+; what is listed next to GAP0..GAP7 below), and in the 32-byte ones of
+; the #8000 page buffers that are always written before they are read
+; (kernel space is short):
+;   #8000  TXT_EXPAND (16 bytes)
+;   #8800  app_self, app_parent (kernel/view.asm), then acc_ctx
+;   #9000  bank_buf (kernel/lang.asm)
+;   #9800, #A000, #A800, #B000  the program slots (below)
+; The loader clears video RAM, so they start empty.
 
 KERNEL_BASE     equ #0000
 API_TABLE       equ #0100
@@ -50,6 +57,21 @@ BUF_CFG         equ #C4
 BUF_ADDR        equ #4000
 VIEW_BANK_CFG   equ #C5
 VIEW_ADDR       equ #4000
+; Bank 5 holds the view at VIEW_ADDR, up to PROG_ADDR, and above it the
+; programs that have a relocation table, as many as fit, each where
+; kernel/view.asm finds room (slot_alloc). A program without one takes
+; the whole bank from VIEW_ADDR, alone.
+PROG_ADDR       equ #5000
+; The program slots, one in each of four hidden 32-byte gaps: high byte
+; SLOT_FIRST, then + SLOT_STEP. +0 first page (0: free), +1 pages,
+; +2 drive, +3 name (11).
+SLOT_FIRST      equ #98
+SLOT_STEP       equ #08
+SLOT_END        equ #B8
+SLOT_PAGE       equ 0
+SLOT_PAGES      equ 1
+SLOT_DRIVE      equ 2
+SLOT_NAME       equ 3
 RAM_BASE_CFG    equ #C0             ; RAM config: plain 64K
 
 ; Drawable area. The monitor shows 271 lines; the top 6 and the bottom

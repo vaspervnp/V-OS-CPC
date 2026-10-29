@@ -80,10 +80,20 @@ api_run:
         call app_name_set
         jp app_request
 
-; a program ends: no sound, no split, no frame events -> A = 0
+; a program ends: no sound, no split, no frame events, its slot free
+; -> A = 0
 api_end:
         call snd_off
         call split_off
+        ld hl,app_slot
+        ld a,(hl)
+        ld (hl),0
+        ld h,a
+        ld l,SLOT_PAGE
+        or a
+        jr z,.whole
+        ld (hl),0
+.whole:
         xor a
         ld (view_ticks),a
         ret

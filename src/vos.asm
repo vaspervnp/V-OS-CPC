@@ -75,7 +75,7 @@ KERNEL_SIZE     equ kernel_end - kernel_start
         org VIEW_ADDR
         include "shell/desktop.asm"
 desktop_end:
-        assert desktop_end <= VIEW_ADDR + #4000
+        assert desktop_end <= PROG_ADDR
         IFDEF TEST_SCRIPT
         save "DESKTOP.OVL", VIEW_ADDR, desktop_end - VIEW_ADDR, DSK, "build/vos_test.dsk"
         ELSE
@@ -86,7 +86,7 @@ desktop_end:
         org VIEW_ADDR
         include "shell/launcher.asm"
 launcher_end:
-        assert launcher_end <= VIEW_ADDR + #4000
+        assert launcher_end <= PROG_ADDR
         IFDEF TEST_SCRIPT
         save "LAUNCHER.OVL", VIEW_ADDR, launcher_end - VIEW_ADDR, DSK, "build/vos_test.dsk"
         ELSE
@@ -97,7 +97,7 @@ launcher_end:
         org VIEW_ADDR
         include "shell/commander.asm"
 commander_end:
-        assert commander_end <= VIEW_ADDR + #4000
+        assert commander_end <= PROG_ADDR
         IFDEF TEST_SCRIPT
         save "COMMANDR.OVL", VIEW_ADDR, commander_end - VIEW_ADDR, DSK, "build/vos_test.dsk"
         ELSE
@@ -108,7 +108,7 @@ commander_end:
         org VIEW_ADDR
         include "shell/setup.asm"
 setup_end:
-        assert setup_end <= VIEW_ADDR + #4000
+        assert setup_end <= PROG_ADDR
         IFDEF TEST_SCRIPT
         save "SETUP.OVL", VIEW_ADDR, setup_end - VIEW_ADDR, DSK, "build/vos_test.dsk"
         ELSE

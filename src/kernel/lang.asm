@@ -299,7 +299,7 @@ lang_combine:
 lang_magic:     db "VLNG"
 ram_config:     db RAM_BASE_CFG
 ram_home_cfg:   db RAM_BASE_CFG    ; set by view_switch
-bank_buf:       ds 32
+bank_buf        equ #9000           ; 32 bytes (include/memmap.inc)
 lang_loaded:    db 0
 lang_ui:        db 0
 lang_input:     db 0

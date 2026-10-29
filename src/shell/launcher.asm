@@ -6,7 +6,8 @@
 ; pages. The selected tile is white. A program with an icon (VOS_ICON
 ; in src/api/vos_api.inc) shows it on its tile: the first time a page
 ; is drawn, the first sector of each .BIN on it is read, and the icon
-; kept (ln_icons).
+; kept (ln_icons) while that page is shown. RETURN on a program that is
+; running already (in its slot, kernel/view.asm) takes it up again.
 ;   cursor keys      move (UP/DOWN a row; past the edge, the next page)
 ;   RETURN/ENTER     start the program (src/api/vos_api.inc)
 ;   ^R read the disc again; mouse: click a tile, again to start it
@@ -375,6 +376,25 @@ ln_icon:
         ld hl,ln_icon_st
         add hl,de
         ld (ln_st_ptr),hl
+        ld c,a                      ; its place on the page, where its
+.place:                             ; icon is kept
+        sub LN_TILES
+        jr nc,.place
+        add a,LN_TILES
+        ld (ln_place),a
+        ld e,a
+        push hl
+        ld hl,ln_owner              ; another page's there: read it again
+        add hl,de
+        ld a,(hl)
+        cp c
+        pop hl
+        jr z,.own
+        ld a,(hl)
+        cp 2
+        jr nz,.own
+        ld (hl),0
+.own:
         ld a,(hl)
         or a
         pop hl
@@ -384,7 +404,7 @@ ln_icon:
         ld a,(hl)
         cp 2
         jr nz,.done
-        ld a,(ln_i)                 ; source: ln_icons + program * 256
+        ld a,(ln_place)             ; source: ln_icons + place * 256
         add a,ln_icons >> 8
         ld (ln_blit + 7),a
         ld hl,(ln_x)                ; centred, near the top
@@ -436,7 +456,14 @@ ln_icon_read:
         or a
         sbc hl,de
         ret nz
+        ld a,(ln_place)
+        ld e,a
+        ld d,0
+        ld hl,ln_owner
+        add hl,de
         ld a,(ln_i)
+        ld (hl),a
+        ld a,(ln_place)
         add a,ln_icons >> 8
         ld d,a
         ld e,0
@@ -634,12 +661,49 @@ ln_run:
         or a
         ret z
         call ln_remember
+        call ln_slot                ; running already: it goes on
+        jr nz,.load
+        ld (app_wake),a
+.load:
         xor a
         jp app_request
 
+; file_name, on drive A:, in a program slot (include/memmap.inc)?
+; -> Z, A = the slot
+ln_slot:
+        ld a,SLOT_FIRST
+.slot:
+        ld h,a
+        ld l,SLOT_PAGE
+        ld a,(hl)
+        or a
+        jr z,.next
+        ld l,SLOT_DRIVE
+        ld a,(hl)
+        or a
+        jr nz,.next
+        ld de,file_name
+        ld b,11
+.char:
+        inc l
+        ld a,(de)
+        cp (hl)
+        jr nz,.next
+        inc de
+        djnz .char
+        ld a,h
+        ret
+.next:
+        ld a,h
+        add a,SLOT_STEP
+        cp SLOT_END
+        jr nz,.slot
+        or a
+        ret
+
 ; FILE > AS ACCESSORY: the program selected becomes the desk accessory
 ; (src/api/vos_api.inc), if it has a relocation table and is small
-; enough: it is read into bank 4, moved to ACC_ADDR (acc_reloc) and
+; enough: it is read into bank 4, moved to ACC_ADDR (reloc) and
 ; copied to bank 6, then it opens (kernel/view.asm)
 ln_acc:
         ld a,(ln_count)
@@ -658,25 +722,8 @@ ln_acc:
         ld a,c
         cp VOS_API_VERSION + 1
         jr nc,.bad
-        ld hl,(fs_length)           ; its end: dw count, "RL"
-        ld de,BUF_ADDR - 4
-        add hl,de
-        push hl
-        ld de,bank_buf
-        ld bc,4
-        ld a,BUF_CFG
-        call bank_get
-        pop hl
-        ld a,(bank_buf + 2)
-        cp "R"
-        jr nz,.bad
-        ld a,(bank_buf + 3)
-        cp "L"
-        jr nz,.bad
-        ld bc,(bank_buf)            ; the table: 2 bytes an entry
-        or a
-        sbc hl,bc
-        sbc hl,bc
+        call reloc_find
+        jr c,.bad
         push hl
         ld de,BUF_ADDR + ACC_MAX + 1
         or a
@@ -684,9 +731,10 @@ ln_acc:
         pop hl
         jr nc,.bad                  ; more than ACC_MAX
         push hl
-        call acc_reloc
+        ld a,(ACC_ADDR - BUF_ADDR) >> 8
+        call reloc
         pop hl
-        ld bc,-BUF_ADDR             ; the program's bytes
+        ld bc,0 - BUF_ADDR          ; the program's bytes
         add hl,bc
         ld b,h
         ld c,l
@@ -751,7 +799,10 @@ ln_blit:        dw 0, 0             ; VOS_BLIT: x, y, bytes, rows,
                 dw 0
                 db 16
 ln_icon_st:     ds LN_MAX           ; 0 not read, 1 none, 2 in ln_icons
+ln_place:       db 0
+ln_owner:       ds LN_TILES, #FF    ; whose icon is at each place
 
-; the icons, a page each, after the overlay (not in its file)
+; the icons of the page shown, 256 bytes for each place, after the
+; overlay (not in its file), below the programs (PROG_ADDR)
 ln_icons        equ ($ + 255) & #FF00
-        assert ln_icons + LN_MAX * 256 <= VIEW_ADDR + #4000
+        assert ln_icons + LN_TILES * 256 <= PROG_ADDR

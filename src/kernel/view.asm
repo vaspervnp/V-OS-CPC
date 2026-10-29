@@ -75,6 +75,8 @@ view_poll:
 ; A = view: load its overlay and start it
 view_switch:
         ld (vw_n),a
+        ld hl,vw_page               ; views are not moved
+        ld (hl),VIEW_ADDR >> 8
         ld hl,app_back              ; a view: no caller to go back to
         ld (hl),0
         ld l,a                      ; name = view_files + view * 11
@@ -117,6 +119,9 @@ app_run:
         ld a,(hl)
         ld (hl),0
         ld (app_was_child),a
+        ld a,(app_wake)             ; the Launcher: one that is in its
+        or a                        ; slot runs again
+        jr nz,.wake
         ld a,(app_drive)
         call fdc_select
         ld hl,file_name
@@ -125,10 +130,42 @@ app_run:
         ld de,"A" * 256 + "V"       ; "VA", and an API we have
         or a
         sbc hl,de
-        jr nz,.bad
+        jp nz,.bad
         ld a,c
         cp VOS_API_VERSION + 1
-        jr nc,.bad
+        jp nc,.bad
+        call reloc_find             ; a table: a slot of its own
+        jr c,.whole
+        push bc
+        push hl
+        ld de,0 - BUF_ADDR          ; the program, without its table
+        add hl,de
+        ld (fs_length),hl
+        ld de,255
+        add hl,de
+        ld b,h                      ; pages
+        call slot_alloc
+        pop hl
+        pop bc
+        jr c,.full
+        ld (vw_page),a
+        sub VIEW_ADDR >> 8
+        call reloc
+        jr .placed
+.wake:
+        ld h,a                      ; its slot: where it is
+        ld (app_slot),a
+        ld l,SLOT_PAGE
+        ld a,(hl)
+        ld (vw_page),a
+        jr .placed
+.whole:
+        call slot_scan              ; the whole bank: alone
+        jr nz,.full
+        ld (app_slot),a
+        ld a,VIEW_ADDR >> 8
+        ld (vw_page),a
+.placed:
         ld a,(view_cur)
         cp VIEW_APP
         jr z,.return
@@ -151,8 +188,30 @@ app_run:
         ld hl,file_name
         ld bc,11
         ldir
+        ld a,(app_slot)             ; and in its slot
+        or a
+        jr z,.install
+        ld h,a
+        ld l,SLOT_DRIVE
+        ex de,hl
+        ld hl,app_self
+        ld bc,12
+        ldir
+.install:
+        ld hl,app_wake
+        ld a,(hl)
+        ld (hl),0
+        or a
         ld a,VIEW_APP
-        jr view_install
+        jp z,view_install
+        ld (vw_n),a                 ; init gets A = 2: go on as it was
+        call ptr_hide
+        call view_base
+        ld a,2
+        jp view_start
+.full:
+        ld a,FS_ERR_NO_ROOM
+        jp sys_error
 .bad:
         ld a,FS_ERR_NOT_PROGRAM
         jp sys_error
@@ -174,38 +233,23 @@ view_fetch:
         ret
 
 ; A = view: the file in bank 4 becomes the running view, from bank 5
+; at vw_page
 view_install:
         ld (vw_n),a
         call ptr_hide
-        ld hl,(fs_length)           ; 512-byte pieces through fs_buf
-        ld de,511
-        add hl,de
-        ld a,h
-        srl a
-        ld (vw_left),a
-        ld hl,VIEW_ADDR
-        ld (vw_ptr),hl
-.piece:
+        call view_base
         ld a,BUF_CFG
-        call ram_select
-        ld hl,(vw_ptr)
-        ld de,fs_buf
-        ld bc,512
-        ldir
-        ld a,VIEW_BANK_CFG
-        call ram_select
-        ld hl,fs_buf
-        ld de,(vw_ptr)
-        ld bc,512
-        ldir
-        ld (vw_ptr),de
-        ld hl,vw_left
-        dec (hl)
-        jr nz,.piece
+        ld (ab_from),a
         ld a,VIEW_BANK_CFG          ; from now on kernel calls map it back
         ld (ram_home_cfg),a
-        ld hl,VIEW_ADDR
-        ld (cur_base),hl
+        ld (ab_to),a
+        ld hl,BUF_ADDR
+        ld bc,(fs_length)
+        call bank_copy              ; (and maps it)
+        xor a                       ; init: A = 0
+; A = for init: start the view vw_n at cur_base
+view_start:
+        push af
         call acc_reset              ; an accessory that was open is closed
         ld a,(vw_n)
         ld (view_cur),a
@@ -215,7 +259,17 @@ view_install:
         ld (app_texts),hl
         ld hl,ui_no_widgets
         ld (ui_widgets),hl
-        jp OV_INIT
+        pop af
+        ld hl,(cur_base)
+        jp (hl)
+
+; vw_page -> DE = cur_base = its address
+view_base:
+        ld a,(vw_page)
+        ld d,a
+        ld e,0
+        ld (cur_base),de
+        ret
 
 ; ev_cur: F1-F4 outside menus -> carry, a switch is requested
 view_keys:
@@ -314,32 +368,6 @@ cur_call:
 ; ---------------------------------------------------------------------
 ACC_CFG         equ #C6
 
-; HL -> the relocation table of the program in bank 4 (at BUF_ADDR),
-; BC = its count: the program moved to ACC_ADDR (src/shell/launcher.asm
-; loads accessories)
-acc_reloc:
-        push bc
-        ld a,BUF_CFG
-        call ram_select             ; (destroys B)
-        pop bc
-.entry:
-        ld a,b
-        or c
-        jp z,ram_home
-        ld e,(hl)
-        inc hl
-        ld d,(hl)
-        inc hl
-        push hl
-        ld hl,BUF_ADDR
-        add hl,de
-        ld a,(hl)
-        add a,(ACC_ADDR - BUF_ADDR) >> 8
-        ld (hl),a
-        pop hl
-        dec bc
-        jr .entry
-
 ; main loop: open or close it
 acc_toggle:
         xor a
@@ -358,8 +386,10 @@ acc_toggle:
         ld a,1                      ; init, as an accessory
         jp ACC_ADDR
 .close:
-        ld a,VIEW_BANK_CFG          ; the program draws everything
-        ld hl,VIEW_ADDR
+        ld a,(vw_page)              ; the program draws everything
+        ld h,a
+        ld l,0
+        ld a,VIEW_BANK_CFG
         call .home
         ld de,6
         jp cur_call
@@ -437,12 +467,15 @@ app_return:     db VIEW_LAUNCHER    ; the view that started the program
 app_child:      db 0                ; VOS_RUN asked for the next program
 app_was_child:  db 0
 app_back:       db 0                ; on VOS_EXIT, run app_parent
-app_self:       ds 12               ; the program running: drive, name
-app_parent:     ds 12               ; the one that called VOS_RUN
+app_self        equ #8800           ; 12: the program running: drive,
+app_parent      equ #880C           ; name; 12: the one that called VOS_RUN
 cur_base:       dw VIEW_ADDR        ; whose entries cur_call uses
 acc_loaded:     db 0
 acc_open:       db 0
 acc_req:        db 0                ; open or close it in the main loop
-acc_ctx:        ds 7                ; the other side's acc_vars
-vw_left:        db 0
-vw_ptr:         dw 0
+acc_ctx         equ #8818           ; 7: the other side's acc_vars
+vw_page:        db VIEW_ADDR >> 8   ; where view_install puts it
+app_slot:       db 0                ; the program's slot (high byte; 0:
+                                    ; none, it has the whole bank)
+app_wake:       db 0                ; a slot to run again (Launcher)
+rl_pages:       db 0

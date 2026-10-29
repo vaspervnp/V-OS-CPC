@@ -14,23 +14,36 @@ import struct
 import sys
 
 
-def main():
-    if len(sys.argv) != 4:
-        sys.exit(__doc__.split("\n")[2])
-    lo = open(sys.argv[1], "rb").read()
-    hi = open(sys.argv[2], "rb").read()
+class Error(Exception):
+    pass
+
+
+def relocate(lo, hi):
+    """lo, hi: the builds at #4000 and #4100 -> lo with its table"""
     if len(lo) != len(hi):
-        sys.exit(f"mkreloc: {sys.argv[1]} and {sys.argv[2]} differ in length")
+        raise Error("the two builds differ in length")
     offsets = []
     for i, (a, b) in enumerate(zip(lo, hi)):
         if a == b:
             continue
         if (b - a) & 255 != 1:
-            sys.exit(f"mkreloc: byte {i} (#{0x4000 + i:04X}) differs by "
-                     f"{(b - a) & 255}, not by one page")
+            raise Error(f"byte {i} (#{0x4000 + i:04X}) differs by "
+                        f"{(b - a) & 255}, not by one page")
         offsets.append(i)
     table = b"".join(struct.pack("<H", o) for o in offsets)
-    open(sys.argv[3], "wb").write(lo + table + struct.pack("<H", len(offsets)) + b"RL")
+    return lo + table + struct.pack("<H", len(offsets)) + b"RL"
+
+
+def main():
+    if len(sys.argv) != 4:
+        sys.exit(__doc__.split("\n")[2])
+    lo = open(sys.argv[1], "rb").read()
+    hi = open(sys.argv[2], "rb").read()
+    try:
+        out = relocate(lo, hi)
+    except Error as e:
+        sys.exit(f"mkreloc: {sys.argv[1]}: {e}")
+    open(sys.argv[3], "wb").write(out)
 
 
 if __name__ == "__main__":

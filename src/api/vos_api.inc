@@ -2,8 +2,7 @@
 ; vos_api.inc - the V-OS API for programs
 ;
 ; A program is a binary file (AMSDOS header, type 2) assembled for
-; VOS_APP_ADDR. The Launcher loads it into bank 5 (up to 16K, code and
-; data) and it starts with
+; VOS_APP_ADDR. The kernel loads it into bank 5 and it starts with
 ;   +0  jp init     set the mode, palette and menus, draw everything
 ;   +3  jp event    HL -> the event (VOS_EV_SIZE bytes, below)
 ;   +6  jp redraw   draw everything again (the language changed)
@@ -23,11 +22,27 @@
 ; program draws everything again (redraw). It must not use the data
 ; bank. Its texts, buttons and VOS_TICKS are its own.
 ;
+; Several programs (version 8): one with a relocation table (below)
+; runs in bank 5 above PROG_ADDR (#5000), as many as fit in those 12K;
+; a view (Launcher, ...) below it does not end it. Going to a view, it
+; stops getting events; the Launcher's RUN on it takes it up again:
+; init gets A = 2. It sets the mode, palette, menus, buttons and
+; VOS_TICKS again and draws everything, keeping its state (an older
+; program that ignores A starts again). VOS_EXIT ends it. One without
+; a table has the whole bank (up to 16K, code and data), alone: it
+; does not start while another runs ("CLOSE ANOTHER PROGRAM FIRST"),
+; and a view ends it. Programs that may run side by side do not use
+; the data bank: views use bank 4 too.
+;
 ; Relocation table: after the program's bytes, dw offsets (from the
 ; start) of the high bytes of its own addresses, then dw count, "RL".
 ; tools/mkreloc.py makes it from two builds, at #4000 and #4100
 ; (-DVOS_RELOC_PASS=1 sets VOS_APP_ADDR to #4100). The kernel moves a
-; program by whole pages, adding to those bytes.
+; program by whole pages, adding to those bytes, so a program with a
+; table may run from any page of its bank: it must keep its data among
+; its own bytes (labels, ds), not at fixed addresses. A program without
+; one (Studio, VBRUN and what it runs: they use the whole bank) always
+; runs at #4000, alone.
 ;
 ; Calls: CALL VOS_xxx. Arguments in A, BC, DE, HL (IX for VOS_RECT);
 ; results in A or HL, carry set on failure with A = error number
@@ -36,9 +51,10 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 7               ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 8               ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
-                                    ; 7: accessories, relocation
+                                    ; 7: accessories, relocation,
+                                    ; 8: several programs (init A = 2)
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE

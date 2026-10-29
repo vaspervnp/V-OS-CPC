@@ -85,9 +85,23 @@ T_RT_MENU       equ VT_FIRST
 T_RT_STOP       equ VT_FIRST + 1
 
 ; ---------------------------------------------------------------------
+; A = 2: it goes on, after another program (VOS_API_VERSION 8): the
+; mode, palette, menus and buttons again, everything drawn, the scripts
+; where they were. Not with RT_ALONE (the player: it has the whole bank,
+; so it never goes on).
 rt_init:
+        IFDEF RT_ALONE
         IFDEF RT_UI
         call rt_ui_reset
+        ENDIF
+        ELSE
+        ld (rt_again),a
+        IFDEF RT_UI
+        cp 2
+        call nz,rt_ui_reset
+        ld hl,rt_buttons
+        call VOS_SET_WIDGETS
+        ENDIF
         ENDIF
         ld hl,rt_texts
         call VOS_TEXTS
@@ -105,6 +119,11 @@ rt_mode_1 equ $ - 1
         ld a,1
         call VOS_TICKS
         call rt_redraw
+        IFNDEF RT_ALONE
+        ld a,(rt_again)
+        cp 2
+        ret z
+        ENDIF
         ld bc,EVT_START * 256       ; every "when started" script
         jp rt_start_all
 
@@ -1851,6 +1870,7 @@ rt_script_sp:   dw 0
 rt_cur:         db 0
 rt_cur_state:   dw 0
 rt_dirty:       db 0
+rt_again:       db 0                ; init's A
 rt_hx:          dw 0
 rt_hy:          dw 0
 rt_box:         dw 0, 0, 0, 0

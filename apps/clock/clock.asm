@@ -30,8 +30,10 @@ CMD_BACK        equ 1
         db "VA", VOS_API_VERSION
         include "icon_clock.asm"    ; VOS_ICON, from apps/icons/clock.txt
 
-; A = 1: the accessory, 0: the program
+; A = 1: the accessory, 0: the program, 2: the program again (it has
+; nothing to keep)
 init:
+        and 1
         ld (accessory),a
         ld hl,texts
         call VOS_TEXTS

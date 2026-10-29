@@ -4,8 +4,9 @@
 usage: vbc.py program.vbp [-o build] [--asm-only] [--dsk build/vos.dsk]
 
 Writes <o>/<NAME>.ASM, a readable program for the V-OS API (one comment
-per block), assembles it with RASM into <o>/<NAME>.BIN and, with --dsk,
-puts it on that disc image with iDSK. The program runs blocks/runtime.asm:
+per block), assembles it with RASM into <o>/<NAME>.BIN (twice, for its
+relocation table: tools/mkreloc.py) and, with --dsk, puts it on that
+disc image with iDSK. The program runs blocks/runtime.asm:
 scripts are coroutines, sprites are coloured rectangles.
 
 Program (JSON):
@@ -74,6 +75,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 import mkicon  # noqa: E402
+import mkreloc  # noqa: E402
 STACK_SIZE = 128
 SP_SIZE = 24
 MAX_COSTUME = 128
@@ -652,7 +654,11 @@ class Compiler:
                 f"rt_stacks:       ds SCRIPT_COUNT * STACK_SIZE",
                 "prog_end:",
                 "        assert prog_end <= VOS_APP_ADDR + #4000",
-                f'        save "{self.out_bin}", VOS_APP_ADDR, prog_end - VOS_APP_ADDR']
+                "        IFDEF VOS_RELOC_PASS",
+                f'        save "{self.out_bin}.HI", VOS_APP_ADDR, prog_end - VOS_APP_ADDR',
+                "        ELSE",
+                f'        save "{self.out_bin}", VOS_APP_ADDR, prog_end - VOS_APP_ADDR',
+                "        ENDIF"]
         return "\n".join(out) + "\n"
 
 
@@ -680,11 +686,19 @@ def main():
     rasm = shutil.which("rasm")
     if not rasm:
         sys.exit("vbc: rasm not found (use --asm-only)")
-    r = subprocess.run([rasm, asm_path, "-I", os.path.join(ROOT, "src"), "-I", HERE,
-                        "-o", os.path.join(args.out, c.name.lower())],
-                       capture_output=True, text=True)
-    if r.returncode or not os.path.exists(c.out_bin):
-        sys.exit("vbc: rasm failed:\n" + r.stdout + r.stderr)
+    for extra in ([], ["-DVOS_RELOC_PASS=1"]):     # at #4000, at #4100
+        r = subprocess.run([rasm, asm_path, "-I", os.path.join(ROOT, "src"), "-I", HERE,
+                            "-o", os.path.join(args.out, c.name.lower())] + extra,
+                           capture_output=True, text=True)
+        if r.returncode or not os.path.exists(c.out_bin):
+            sys.exit("vbc: rasm failed:\n" + r.stdout + r.stderr)
+    hi_bin = c.out_bin + ".HI"
+    try:
+        out = mkreloc.relocate(open(c.out_bin, "rb").read(), open(hi_bin, "rb").read())
+    except mkreloc.Error as e:
+        sys.exit(f"vbc: {args.program}: {e}")
+    os.remove(hi_bin)
+    open(c.out_bin, "wb").write(out)
     print(f"vbc: {c.out_bin}, {os.path.getsize(c.out_bin)} bytes")
     if args.dsk:
         idsk = shutil.which("iDSK")

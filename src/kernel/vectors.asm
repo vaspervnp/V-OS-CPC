@@ -18,6 +18,8 @@ rst_28: ret
 rst_30: ret
         ds #38 - $, 0
 rst_38: jp int_handler              ; IM 1: 300 Hz Gate Array interrupt
+        include "slots.asm"         ; kernel code in the rest of the page
+        assert $ <= API_TABLE
         ds API_TABLE - $, 0
 
 ; ---- API: header, then the jump table (src/api/vos_api.inc) ---------

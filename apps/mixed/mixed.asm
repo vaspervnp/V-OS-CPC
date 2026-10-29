@@ -9,7 +9,8 @@
 ; SPACE or MIXED > BACK ends it.
 ;
 ; Built on its own, with only the API include (Makefile):
-;   rasm apps/mixed/mixed.asm -I src -o build/mixed
+;   rasm apps/mixed/mixed.asm -I src -I build -o build/mixed
+; and again with -DVOS_RELOC_PASS=1 for its relocation table (Makefile)
 ; =====================================================================
 
         include "api/vos_api.inc"
@@ -293,4 +294,8 @@ status_rect:    dw 0, Y2, 384, 259 - Y2
                 db STATUS_PEN
 xy_text:        db "X=000 Y=000", 0
 mixed_end:
-        save "build/MIXED.BIN", VOS_APP_ADDR, mixed_end - VOS_APP_ADDR
+        IFDEF VOS_RELOC_PASS            ; Makefile: two builds, one table
+        save "build/mixed_hi.bin", VOS_APP_ADDR, mixed_end - VOS_APP_ADDR
+        ELSE
+        save "build/mixed_lo.bin", VOS_APP_ADDR, mixed_end - VOS_APP_ADDR
+        ENDIF

@@ -21,4 +21,11 @@ loader_start:
         ld de,KERNEL_BASE
         ld bc,KERNEL_SIZE
         ldir
+        ; video RAM clear: the screen, and the kernel's buffers and the
+        ; program slots in its hidden gaps (include/memmap.inc)
+        ld hl,#8000
+        ld de,#8001
+        ld bc,#7FFF
+        ld (hl),l
+        ldir
         jp kernel_entry

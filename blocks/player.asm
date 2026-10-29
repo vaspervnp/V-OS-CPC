@@ -35,6 +35,7 @@
 
 RT_UI           equ 1               ; windows and buttons (runtime.asm)
 RT_ANY_MODE     equ 1               ; images in mode 1 too (pl_costumes)
+RT_ALONE        equ 1               ; never goes on (runtime.asm, rt_init)
 PROG_MODE       equ 0               ; set at rt_mode_1: the program's
 PROG_WIDTH      equ 192             ; mode, and at rt_width_n (mode 1: 384)
 PROG_BG         equ 0               ; set at rt_bg_n, see pl_init
