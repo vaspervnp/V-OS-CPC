@@ -85,15 +85,8 @@ api_run:
 api_end:
         call snd_off
         call split_off
-        ld hl,app_slot
-        ld a,(hl)
-        ld (hl),0
-        ld h,a
-        ld l,SLOT_PAGE
-        or a
-        jr z,.whole
-        ld (hl),0
-.whole:
+        ld hl,slot_free             ; (kernel/ext.asm)
+        call ext_call
         xor a
         ld (view_ticks),a
         ret
@@ -109,17 +102,19 @@ api_keep:
         ld hl,app_keep
         ret
 
-        assert BUF_CFG ^ VIEW_BANK_CFG == 1
 ; The data bank (bank 4) at #4000-#7FFF, through fs_buf, 512 bytes a
-; time. HL = source, DE = destination, BC = bytes.
+; time; the program's own bank is vw_cfg. HL = source, DE =
+; destination, BC = bytes.
 api_bank_get:                       ; from the data bank
+        ld a,(vw_cfg)
+        ld (ab_to),a
         ld a,BUF_CFG
-        jr api_bank_copy
-api_bank_put:                       ; to the data bank
-        ld a,VIEW_BANK_CFG
-api_bank_copy:
         ld (ab_from),a
-        xor 1                       ; the other one
+        jr bank_copy
+api_bank_put:                       ; to the data bank
+        ld a,(vw_cfg)
+        ld (ab_from),a
+        ld a,BUF_CFG
         ld (ab_to),a
 ; from bank ab_from to bank ab_to, both at #4000-#7FFF
 bank_copy:
@@ -214,10 +209,14 @@ api_load:
 
 ; A = drive + maybe VOS_DATA -> A = drive, C = the bank's RAM config
 api_drive:
-        ld c,VIEW_BANK_CFG
+        push hl
+        ld hl,vw_cfg                ; the program's bank, or data_cfg
         bit 7,a
-        ret z
-        ld c,BUF_CFG
+        jr z,.bank
+        inc hl
+.bank:
+        ld c,(hl)
+        pop hl
         and #7F
         ret
 

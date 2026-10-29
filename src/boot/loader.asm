@@ -21,6 +21,13 @@ loader_start:
         ld de,KERNEL_BASE
         ld bc,KERNEL_SIZE
         ldir
+        ; the kernel extension into bank 7 (kernel/ext.asm)
+        ld hl,EXT_IMAGE
+        ld de,EXT_ADDR
+        ld bc,EXT_SIZE
+        ld a,LANG_BANK_CFG
+        call bank_put
+        call xb_detect              ; the banks of a RAM expansion
         ; video RAM clear: the screen, and the kernel's buffers and the
         ; program slots in its hidden gaps (include/memmap.inc)
         ld hl,#8000

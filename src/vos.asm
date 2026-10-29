@@ -3,7 +3,9 @@
 ;
 ; Output on build/vos.dsk: VOS.BIN, loaded by AMSDOS at LOADER_ADDR
 ; with RUN"VOS" (the loader stub followed by the kernel image, which is
-; assembled for KERNEL_BASE and copied there at boot), and one overlay
+; assembled for KERNEL_BASE and copied there at boot, and at EXT_IMAGE
+; the kernel extension, which the loader puts in bank 7, then the RAM
+; expansion test it runs), and one overlay
 ; file per view, assembled for VIEW_ADDR in memory spaces of their own
 ; (BANK), which the kernel loads itself (kernel/view.asm).
 ; =====================================================================
@@ -56,18 +58,37 @@ kernel_end:
 
 KERNEL_SIZE     equ kernel_end - kernel_start
 
+; ---- kernel extension: in VOS.BIN at EXT_IMAGE, runs in bank 7 -------
+        org EXT_ADDR, EXT_IMAGE
+ext_start:
+        include "kernel/ext.asm"
+        assert $ <= SLOT_TABLE
+        ds SLOT_TABLE - $, 0
+        ds 256, 0                   ; the slots, free
+ext_end:
+
+; ---- RAM expansion test: in VOS.BIN after the extension, run there --
+        org EXT_IMAGE + EXT_MAX
+        include "boot/expand.asm"
+xb_end:
+
+EXT_SIZE        equ ext_end - ext_start
+
         IFDEF TEST_SCRIPT                     ; the test script takes some of
         assert KERNEL_SIZE <= KERNEL_LIMIT + #100 - KERNEL_BASE ; the stack
         ELSE
         assert KERNEL_SIZE <= KERNEL_LIMIT - KERNEL_BASE
         ENDIF
         assert MSG_COUNT <= VT_FIRST          ; program texts start there
-        assert LOADER_ADDR + kernel_image - loader_start + KERNEL_SIZE <= #A000
+        assert kernel_image + KERNEL_SIZE <= EXT_IMAGE
+        assert EXT_SIZE <= EXT_MAX
+        assert ext_end == EXT_ADDR + EXT_MAX
+        assert xb_end <= #A000              ; below AMSDOS
 
         IFDEF TEST_SCRIPT
-        save "VOS.BIN", loader_start, kernel_image - loader_start + KERNEL_SIZE, DSK, "build/vos_test.dsk"
+        save "VOS.BIN", loader_start, xb_end - loader_start, DSK, "build/vos_test.dsk"
         ELSE
-        save "VOS.BIN", loader_start, kernel_image - loader_start + KERNEL_SIZE, DSK, "build/vos.dsk"
+        save "VOS.BIN", loader_start, xb_end - loader_start, DSK, "build/vos.dsk"
         ENDIF
 
 ; ---- views: overlays at VIEW_ADDR -------------------------------------

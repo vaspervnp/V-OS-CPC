@@ -668,38 +668,11 @@ ln_run:
         xor a
         jp app_request
 
-; file_name, on drive A:, in a program slot (include/memmap.inc)?
+; file_name, on drive A:, in a program slot (kernel/ext.asm)?
 ; -> Z, A = the slot
 ln_slot:
-        ld a,SLOT_FIRST
-.slot:
-        ld h,a
-        ld l,SLOT_PAGE
-        ld a,(hl)
-        or a
-        jr z,.next
-        ld l,SLOT_DRIVE
-        ld a,(hl)
-        or a
-        jr nz,.next
-        ld de,file_name
-        ld b,11
-.char:
-        inc l
-        ld a,(de)
-        cp (hl)
-        jr nz,.next
-        inc de
-        djnz .char
-        ld a,h
-        ret
-.next:
-        ld a,h
-        add a,SLOT_STEP
-        cp SLOT_END
-        jr nz,.slot
-        or a
-        ret
+        ld hl,slot_find
+        jp ext_call
 
 ; FILE > AS ACCESSORY: the program selected becomes the desk accessory
 ; (src/api/vos_api.inc), if it has a relocation table and is small

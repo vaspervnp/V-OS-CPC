@@ -40,7 +40,7 @@ QMARK       ;
 DLG_ABOUT_T ΣΧΕΤΙΚΑ
 DLG_ABOUT   V-OS 0.10|AMSTRAD CPC 6128|ΕΠΙΦΑΝΕΙΑ, ΠΡΟΓΡΑΜΜΑΤΑ|ΚΑΙ COMMANDER
 DLG_KEYS_T  ΠΛΗΚΤΡΑ
-DLG_KEYS    F1-F4 ΟΨΕΙΣ|F5 ΑΞΕΣΟΥΑΡ|ESC ΜΕΝΟΥ|ΒΕΛΗ ΕΠΙΛΟΓΗ|TAB ΜΟΝΑΔΑ|ENTER ΣΤΟΙΧΕΙΑ|^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.|^N ΜΕΤΟΝΟΜΑΣΙΑ|CTRL+SHIFT EN/EL
+DLG_KEYS    F1-F4 ΟΨΕΙΣ|F5 ΑΞΕΣΟΥΑΡ|F6 ΠΡΟΓΡΑΜΜΑΤΑ|ESC ΜΕΝΟΥ|ΒΕΛΗ ΕΠΙΛΟΓΗ|TAB ΜΟΝΑΔΑ|ENTER ΣΤΟΙΧΕΙΑ|^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.|^N ΜΕΤΟΝΟΜΑΣΙΑ|CTRL+SHIFT EN/EL
 DLG_QUIT_T  ΕΞΟΔΟΣ
 DLG_QUIT    ΕΠΑΝΕΚΚΙΝΗΣΗ CPC|ΕΞΟΔΟΣ ΣΤΗ BASIC;
 DLG_FILE_T  ΑΡΧΕΙΟ
@@ -101,3 +101,6 @@ COL_RED     ΚΟΚΚΙΝΟ
 SET_KEYS    ΠΑΝΩ ΚΑΤΩ ΕΠΙΛΟΓΗ  ΑΡΙΣΤ. ΔΕΞΙΑ ΑΛΛΑΓΗ  ^S
 SET_SAVED   ΑΠΟΘΗΚΕΥΤΗΚΑΝ ΣΤΟ A:SETUP.CFG
 ITEM_ACC    ΩΣ ΑΞΕΣΟΥΑΡ
+ITEM_PROGRAMS ΠΡΟΓΡΑΜΜΑΤΑ  F6
+SW_T        ΠΡΟΓΡΑΜΜΑΤΑ
+SW_NONE     ΚΑΝΕΝΑ ΠΡΟΓΡΑΜΜΑ|ΔΕΝ ΤΡΕΧΕΙ

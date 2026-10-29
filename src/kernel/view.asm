@@ -11,6 +11,8 @@
 ; Programs (app_request, src/api/vos_api.inc) run the same way, from
 ; any drive, with "VA" and their API version at +9.
 ; Views share the VIEW and HELP menus and their commands (view_command).
+; F6 (or PROGRAMS in the VIEW menu) lists the programs running and
+; goes on with one (kernel/ext.asm).
 ; F1 to F4 (or a view's VIEW menu, through view_request) switch
 ; views. A new view is loaded into bank 4 first and checked, so a disc
 ; error leaves the running view intact.
@@ -42,6 +44,7 @@ CMD_FORMAT      equ 10
 CMD_SAVE        equ 11
 CMD_RUN         equ 12
 CMD_ACC         equ 13              ; Launcher: as the accessory
+CMD_PROGRAMS    equ 14              ; the program switcher
 CMD_DESKTOP     equ 16              ; CMD_DESKTOP + view number
 CMD_LAUNCHER    equ 17
 CMD_COMMANDER   equ 18
@@ -75,8 +78,8 @@ view_poll:
 ; A = view: load its overlay and start it
 view_switch:
         ld (vw_n),a
-        ld hl,vw_page               ; views are not moved
-        ld (hl),VIEW_ADDR >> 8
+        ld hl,VIEW_BANK_CFG * 256 + (VIEW_ADDR >> 8)
+        ld (vw_page),hl             ; views: bank 5, not moved (vw_cfg)
         ld hl,app_back              ; a view: no caller to go back to
         ld (hl),0
         ld l,a                      ; name = view_files + view * 11
@@ -119,9 +122,10 @@ app_run:
         ld a,(hl)
         ld (hl),0
         ld (app_was_child),a
-        ld a,(app_wake)             ; the Launcher: one that is in its
-        or a                        ; slot runs again
-        jr nz,.wake
+        ld a,(app_wake)             ; one in its slot runs again
+        or a                        ; (Launcher, F6)
+        ld hl,slot_wake
+        jr nz,.placed
         ld a,(app_drive)
         call fdc_select
         ld hl,file_name
@@ -130,42 +134,15 @@ app_run:
         ld de,"A" * 256 + "V"       ; "VA", and an API we have
         or a
         sbc hl,de
-        jp nz,.bad
+        jr nz,.bad
         ld a,c
         cp VOS_API_VERSION + 1
-        jp nc,.bad
-        call reloc_find             ; a table: a slot of its own
-        jr c,.whole
-        push bc
-        push hl
-        ld de,0 - BUF_ADDR          ; the program, without its table
-        add hl,de
-        ld (fs_length),hl
-        ld de,255
-        add hl,de
-        ld b,h                      ; pages
-        call slot_alloc
-        pop hl
-        pop bc
-        jr c,.full
-        ld (vw_page),a
-        sub VIEW_ADDR >> 8
-        call reloc
-        jr .placed
-.wake:
-        ld h,a                      ; its slot: where it is
-        ld (app_slot),a
-        ld l,SLOT_PAGE
-        ld a,(hl)
-        ld (vw_page),a
-        jr .placed
-.whole:
-        call slot_scan              ; the whole bank: alone
-        jr nz,.full
-        ld (app_slot),a
-        ld a,VIEW_ADDR >> 8
-        ld (vw_page),a
+        jr nc,.bad
+        ld hl,app_place             ; where it goes (kernel/ext.asm)
 .placed:
+        call ext_call
+        ld a,FS_ERR_NO_ROOM
+        jp c,sys_error
         ld a,(view_cur)
         cp VIEW_APP
         jr z,.return
@@ -188,16 +165,8 @@ app_run:
         ld hl,file_name
         ld bc,11
         ldir
-        ld a,(app_slot)             ; and in its slot
-        or a
-        jr z,.install
-        ld h,a
-        ld l,SLOT_DRIVE
-        ex de,hl
-        ld hl,app_self
-        ld bc,12
-        ldir
-.install:
+        ld hl,slot_own              ; and in its slot
+        call ext_call
         ld hl,app_wake
         ld a,(hl)
         ld (hl),0
@@ -207,11 +176,11 @@ app_run:
         ld (vw_n),a                 ; init gets A = 2: go on as it was
         call ptr_hide
         call view_base
+        ld a,(vw_cfg)               ; its bank
+        ld (ram_home_cfg),a
+        call ram_select
         ld a,2
         jp view_start
-.full:
-        ld a,FS_ERR_NO_ROOM
-        jp sys_error
 .bad:
         ld a,FS_ERR_NOT_PROGRAM
         jp sys_error
@@ -232,15 +201,15 @@ view_fetch:
         or a
         ret
 
-; A = view: the file in bank 4 becomes the running view, from bank 5
-; at vw_page
+; A = view: the file in bank 4 becomes the running view, from bank
+; vw_cfg at vw_page
 view_install:
         ld (vw_n),a
         call ptr_hide
         call view_base
         ld a,BUF_CFG
         ld (ab_from),a
-        ld a,VIEW_BANK_CFG          ; from now on kernel calls map it back
+        ld a,(vw_cfg)               ; from now on kernel calls map it back
         ld (ram_home_cfg),a
         ld (ab_to),a
         ld hl,BUF_ADDR
@@ -250,6 +219,8 @@ view_install:
 ; A = for init: start the view vw_n at cur_base
 view_start:
         push af
+        call snd_off                ; the last one's sound and mixed
+        call split_off              ; screen stop (one going on sets them)
         call acc_reset              ; an accessory that was open is closed
         ld a,(vw_n)
         ld (view_cur),a
@@ -271,7 +242,9 @@ view_base:
         ld (cur_base),de
         ret
 
-; ev_cur: F1-F4 outside menus -> carry, a switch is requested
+; ev_cur: F1-F6 outside menus -> carry, the key is taken: a switch is
+; requested, the accessory opens or closes, or (F6) the program
+; switcher runs
 view_keys:
         ld a,(ev_cur)
         cp EV_KEY_DOWN
@@ -286,6 +259,12 @@ view_keys:
         scf
         ret
 .not_acc:
+        cp KEY_F6
+        jr nz,.not_sw
+        call view_programs
+        scf
+        ret
+.not_sw:
         ld b,VIEW_DESKTOP
         cp KEY_F1
         jr z,.view
@@ -307,8 +286,30 @@ view_keys:
         or a
         ret
 
+view_programs:
+        ld hl,sw_run
+; HL = a routine of the kernel extension (kernel/ext.asm): run it with
+; bank 7 as the home bank
+ext_call:
+        ld a,(ram_home_cfg)
+        ld (ext_home),a
+        ld a,LANG_BANK_CFG
+        ld (ram_home_cfg),a
+        call ram_select
+        call .go
+        push af                     ; (its A and flags)
+        ld a,(ext_home)
+        ld (ram_home_cfg),a
+        call ram_select
+        pop af
+        ret
+.go:
+        jp (hl)
+
 ; A = a shared command (VIEW and HELP menus, exit): carry it out
 view_command:
+        cp CMD_PROGRAMS
+        jr z,view_programs
         cp CMD_DESKTOP
         jr c,.not_view
         sub CMD_DESKTOP
@@ -386,10 +387,9 @@ acc_toggle:
         ld a,1                      ; init, as an accessory
         jp ACC_ADDR
 .close:
-        ld a,(vw_page)              ; the program draws everything
-        ld h,a
+        ld hl,(vw_page - 1)         ; the program draws everything
         ld l,0
-        ld a,VIEW_BANK_CFG
+        ld a,(vw_cfg)
         call .home
         ld de,6
         jp cur_call
@@ -435,11 +435,12 @@ acc_fresh:      db 0
                 dw api_no_texts, ui_no_widgets, ui_no_widgets  ; (no menus)
 
 menu_view:
-        db MSG_MENU_VIEW, 6
+        db MSG_MENU_VIEW, 7
         db MSG_ITEM_DESKTOP, CMD_DESKTOP, 0, 0
         db MSG_ITEM_LAUNCHER, CMD_LAUNCHER, 0, 0
         db MSG_ITEM_COMMANDER, CMD_COMMANDER, 0, 0
         db MSG_ITEM_SETUP, CMD_SETUP, 0, 0
+        db MSG_ITEM_PROGRAMS, CMD_PROGRAMS, 0, 0
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_LANG, CMD_LANG, "L", 0
 menu_help:
@@ -474,8 +475,11 @@ acc_loaded:     db 0
 acc_open:       db 0
 acc_req:        db 0                ; open or close it in the main loop
 acc_ctx         equ #8818           ; 7: the other side's acc_vars
-vw_page:        db VIEW_ADDR >> 8   ; where view_install puts it
-app_slot:       db 0                ; the program's slot (high byte; 0:
-                                    ; none, it has the whole bank)
-app_wake:       db 0                ; a slot to run again (Launcher)
+vw_page:        db VIEW_ADDR >> 8   ; where view_install puts it,
+vw_cfg:         db VIEW_BANK_CFG    ; in that bank
+data_cfg:       db BUF_CFG          ; the data bank (api_drive)
+app_slot:       db 0                ; the program's slot (kernel/ext.asm;
+                                    ; 0: none, it has all of bank 5)
+app_wake:       db 0                ; a slot to run again (Launcher, F6)
+ext_home:       db 0                ; ext_call
 rl_pages:       db 0

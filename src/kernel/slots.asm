@@ -1,6 +1,6 @@
 ; =====================================================================
-; slots.asm - programs side by side in bank 5 (include/memmap.inc):
-; their relocation (src/api/vos_api.inc) and their slots. In page
+; slots.asm - the relocation of programs (src/api/vos_api.inc), for
+; their slots (kernel/ext.asm) and the accessory (Launcher). In page
 ; zero, between the restart vectors and the API table (vectors.asm).
 ; =====================================================================
 
@@ -54,81 +54,3 @@ reloc:
         pop hl
         dec bc
         jr .entry
-
-; -> Z: no slot in use; D = a free one (0: none)
-slot_scan:
-        ld hl,SLOT_FIRST * 256 + SLOT_PAGE
-        ld de,0                     ; E: slots in use
-.slot:
-        ld a,(hl)
-        or a
-        jr nz,.used
-        ld d,h
-        db #FE                      ; (cp n: skips inc e)
-.used:
-        inc e
-        ld a,h
-        add a,SLOT_STEP
-        ld h,a
-        cp SLOT_END
-        jr nz,.slot
-        ld a,e
-        or a
-        ret
-
-; B = pages: the first room for them above PROG_ADDR and a free slot
-; -> A = the first page, app_slot = the slot (first page and pages
-; set). Carry: no room.
-slot_alloc:
-        push bc
-        call slot_scan
-        pop bc
-        ld a,d
-        or a
-        scf
-        ret z
-        push de
-        ld c,PROG_ADDR >> 8
-.try:
-        ld a,c                      ; C .. C + B: past the bank?
-        add a,b
-        cp #81
-        jr nc,.none
-        ld h,SLOT_FIRST
-.slot:
-        ld l,SLOT_PAGE
-        ld a,(hl)
-        or a
-        jr z,.next
-        ld e,a                      ; E .. D: a program
-        inc l
-        add a,(hl)
-        ld d,a
-        ld a,c
-        cp d
-        jr nc,.next                 ; C at its end or after it
-        add a,b
-        dec a
-        cp e
-        jr c,.next                  ; the last page before it
-        ld c,d                      ; else try after it
-        jr .try
-.next:
-        ld a,h
-        add a,SLOT_STEP
-        ld h,a
-        cp SLOT_END
-        jr nz,.slot
-        pop hl                      ; H = the free slot
-        ld l,SLOT_PAGE
-        ld (hl),c
-        inc l
-        ld (hl),b
-        ld a,h
-        ld (app_slot),a
-        ld a,c
-        ret                         ; (no carry: cp SLOT_END, equal)
-.none:
-        pop de
-        scf
-        ret

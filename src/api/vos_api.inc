@@ -28,11 +28,14 @@
 ; stops getting events; the Launcher's RUN on it takes it up again:
 ; init gets A = 2. It sets the mode, palette, menus, buttons and
 ; VOS_TICKS again and draws everything, keeping its state (an older
-; program that ignores A starts again). VOS_EXIT ends it. One without
-; a table has the whole bank (up to 16K, code and data), alone: it
-; does not start while another runs ("CLOSE ANOTHER PROGRAM FIRST"),
-; and a view ends it. Programs that may run side by side do not use
-; the data bank: views use bank 4 too.
+; program that ignores A starts again). VOS_EXIT ends it. With a RAM
+; expansion (found at boot) programs also go into its banks, from
+; #4000: one without a table then has a bank of its own (up to 16K,
+; code and data) and runs beside the others too. Without one, it has
+; the whole of bank 5, alone: it does not start while another runs
+; ("CLOSE ANOTHER PROGRAM FIRST"), and a view ends it. The data bank
+; (bank 4) is shared: views and other programs use it too, so it keeps
+; its contents only while the program runs (set it again in init).
 ;
 ; Relocation table: after the program's bytes, dw offsets (from the
 ; start) of the high bytes of its own addresses, then dw count, "RL".

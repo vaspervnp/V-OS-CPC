@@ -4,7 +4,8 @@
 ; English is the master: kernel font for 32..127 and kbd_map built in, the
 ; texts in ENGLISH.MSG (bank 7, EN_MSG_ADDR), used when a text is missing.
 ; One pack adds codes 128..255 (font and letter case), a keyboard map
-; with dead keys, and translated UI texts.
+; with dead keys, and translated UI texts. lang_init, which loads them
+; at boot, is in the kernel extension (kernel/ext.asm).
 ;
 ; lang_ui    0 = English texts, 1 = pack texts (lang_msg)
 ; lang_input 0 = English keyboard, 1 = pack keyboard; CONTROL+SHIFT
@@ -24,97 +25,7 @@ LNG_MSGS        equ 16
 LNG_SIZE        equ 18
 LNG_NAME        equ 20
 LANG_COMBOS_MAX equ 32
-LANG_MSG_MAX    equ 127
-
-; ---------------------------------------------------------------------
-; lang_init - load GREEK.LNG from the disc into bank 7 and copy its
-; font, case, keyboard and combo tables into GAP0-GAP2. Without the
-; file (or with a bad one) the system stays English.
-; Destroys: all
-; ---------------------------------------------------------------------
-lang_init:
-        xor a
-        ld (lang_loaded),a
-        ld (lang_ui),a
-        ld (lang_input),a
-        ld (lang_en_ok),a
-        ld hl,lang_en_file          ; the English texts
-        ld de,EN_MSG_ADDR
-        ld c,LANG_BANK_CFG
-        call fs_load
-        jr c,.pack
-        ld a,LANG_BANK_CFG
-        call ram_select
-        ld hl,(EN_MSG_ADDR)
-        call ram_home
-        ld de,"M" * 256 + "V"       ; "VM(SG)"
-        or a
-        sbc hl,de
-        jr nz,.pack
-        ld a,1
-        ld (lang_en_ok),a
-.pack:
-        ld hl,lang_file
-        ld de,LANG_BANK_ADDR
-        ld c,LANG_BANK_CFG
-        call fs_load
-        ret c
-        ld a,LANG_BANK_CFG
-        call ram_select
-        ld hl,LANG_BANK_ADDR        ; magic "VLNG"
-        ld de,lang_magic
-        ld b,4
-.magic:
-        ld a,(de)
-        cp (hl)
-        jr nz,.bad
-        inc hl
-        inc de
-        djnz .magic
-        ld hl,(LANG_BANK_ADDR + LNG_FONT)
-        ld de,lang_font_lo
-        ld bc,64 * 8
-        call .copy
-        ld hl,(LANG_BANK_ADDR + LNG_FONT)
-        ld de,64 * 8
-        add hl,de
-        ld de,lang_font_hi
-        ld bc,64 * 8
-        call .copy
-        ld hl,(LANG_BANK_ADDR + LNG_CASE)
-        ld de,lang_case
-        ld bc,128 * 2
-        call .copy
-        ld hl,(LANG_BANK_ADDR + LNG_KEYMAP)
-        ld de,lang_keymap
-        ld bc,160
-        call .copy
-        ld hl,(LANG_BANK_ADDR + LNG_COMBOS)
-        ld de,lang_combos
-        ld bc,LANG_COMBOS_MAX * 3
-        call .copy
-        xor a
-        ld (lang_combos + LANG_COMBOS_MAX * 3),a
-        ld hl,LANG_BANK_ADDR + 5    ; language code
-        ld de,lang_code
-        ld bc,2
-        ldir
-        ld hl,LANG_BANK_ADDR + LNG_NAME
-        ld de,lang_name
-        ld bc,12
-        ldir
-        ld a,1                      ; English until SETUP.CFG chooses
-        ld (lang_loaded),a          ; the pack's language (cfg_apply)
-.bad:
-        jp ram_home
-; HL = offset in the pack, DE = destination, BC = length
-.copy:
-        push de
-        ld de,LANG_BANK_ADDR
-        add hl,de
-        pop de
-        ldir
-        ret
+LANG_MSG_MAX    equ 159             ; its buffers end by GAP + 704
 
 ; ---------------------------------------------------------------------
 ; ram_select - A = Gate Array RAM configuration (#C0..#C7)
@@ -296,7 +207,6 @@ lang_combine:
         jr .next
 
 ; ---- state ----------------------------------------------------------
-lang_magic:     db "VLNG"
 ram_config:     db RAM_BASE_CFG
 ram_home_cfg:   db RAM_BASE_CFG    ; set by view_switch
 bank_buf        equ #9000           ; 32 bytes (include/memmap.inc)

@@ -17,7 +17,6 @@
 ;   #8000  TXT_EXPAND (16 bytes)
 ;   #8800  app_self, app_parent (kernel/view.asm), then acc_ctx
 ;   #9000  bank_buf (kernel/lang.asm)
-;   #9800, #A000, #A800, #B000  the program slots (below)
 ; The loader clears video RAM, so they start empty.
 
 KERNEL_BASE     equ #0000
@@ -41,7 +40,7 @@ SCREEN_BPL      equ 96              ; bytes per pixel line
 ;   bank 6 (#C6)  what menus and dialogs cover (ui/ui.asm), up to
 ;                 ACC_ADDR; from there the desk accessory (view.asm)
 ;   bank 7 (#C7)  the language pack, the Commander's file lists, the
-;                 English texts
+;                 English texts, the kernel extension (kernel/ext.asm)
 ; Kernel code that maps another bank maps the view's bank back
 ; (ram_home), never plain RAM, so a view can call it from #4000.
 ; The language pack: the kernel loads GREEK.LNG from disc into bank 7
@@ -52,26 +51,32 @@ LANG_BANK_ADDR  equ #4000
 LANG_MAX        equ #2000           ; tools/mklng.py MAX_PACK
 LISTS_CFG       equ #C7             ; Commander lists after the pack
 LISTS_ADDR      equ #6000
-EN_MSG_ADDR     equ #6800           ; ENGLISH.MSG, up to 6K
+EN_MSG_ADDR     equ #6800           ; ENGLISH.MSG, up to 4K
+EXT_ADDR        equ #7800           ; the kernel extension, up to 2K,
+                                    ; the program slots at its end
+EXT_MAX         equ #0800
+EXT_IMAGE       equ #8000           ; where it is in VOS.BIN, as loaded
 BUF_CFG         equ #C4
 BUF_ADDR        equ #4000
 VIEW_BANK_CFG   equ #C5
 VIEW_ADDR       equ #4000
 ; Bank 5 holds the view at VIEW_ADDR, up to PROG_ADDR, and above it the
-; programs that have a relocation table, as many as fit, each where
-; kernel/view.asm finds room (slot_alloc). A program without one takes
-; the whole bank from VIEW_ADDR, alone.
+; programs that have a relocation table, as many as fit. The banks of a
+; RAM expansion (up to XB_MAX, found at boot: boot/expand.asm) take
+; more, from #4000, and programs without a table too, one a bank. Each
+; goes where kernel/ext.asm finds room (slot_alloc). With no room in
+; them, a program without a table takes the whole of bank 5, alone.
 PROG_ADDR       equ #5000
-; The program slots, one in each of four hidden 32-byte gaps: high byte
-; SLOT_FIRST, then + SLOT_STEP. +0 first page (0: free), +1 pages,
-; +2 drive, +3 name (11).
-SLOT_FIRST      equ #98
-SLOT_STEP       equ #08
-SLOT_END        equ #B8
-SLOT_PAGE       equ 0
+XB_MAX          equ 28              ; 7 blocks of 64K, 4 banks each
+; The program slots, in the kernel extension (bank 7): a record of
+; SLOT_SIZE bytes at SLOT_TABLE + id * SLOT_SIZE, id 1..15.
+SLOT_TABLE      equ #7F00
+SLOT_SIZE       equ 16
+SLOT_PAGE       equ 0               ; first page (0: free)
 SLOT_PAGES      equ 1
 SLOT_DRIVE      equ 2
-SLOT_NAME       equ 3
+SLOT_NAME       equ 3               ; 11
+SLOT_CFG        equ 14              ; RAM config of its bank
 RAM_BASE_CFG    equ #C0             ; RAM config: plain 64K
 
 ; Drawable area. The monitor shows 271 lines; the top 6 and the bottom

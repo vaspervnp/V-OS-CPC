@@ -304,6 +304,82 @@ test_keys:
         dw 3050, 3054 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 8
+; make test-expand (-DTEST_SCRIPT=8, 576K: a 512K RAM expansion).
+; Expected:
+;   frame  300  F2, 400, 440 RIGHT, 480 RETURN -> STUDIO, in a bank of
+;                               the expansion
+;   frame  750  F2, 850, 890 LEFT, 930 RETURN -> DEMO, in bank 5
+;   frame 1100  F2, 1200 DOWN, 1260 RETURN -> PONG, in bank 5
+;   frame 1450  F2, 1550, 1590 RIGHT, 1630 DOWN, 1670 RETURN -> CALC,
+;                               another bank of the expansion
+;   frame 1950  F6           -> STUDIO, DEMO, PONG, "> CALC"; STUDIO
+;                               selected
+;   frame 2050  RETURN       -> STUDIO again
+;   frame 2300  F6, 2350 RETURN -> DEMO goes on
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  400,  404 : db 0, %00000010   ; RIGHT
+        dw  440,  444 : db 0, %00000010   ; RIGHT
+        dw  480,  484 : db 2, %00000100   ; RETURN
+        dw  750,  754 : db 1, %01000000   ; F2
+        dw  850,  854 : db 1, %00000001   ; LEFT
+        dw  890,  894 : db 1, %00000001   ; LEFT
+        dw  930,  934 : db 2, %00000100   ; RETURN
+        dw 1100, 1104 : db 1, %01000000   ; F2
+        dw 1200, 1204 : db 0, %00000100   ; DOWN
+        dw 1260, 1264 : db 2, %00000100   ; RETURN
+        dw 1450, 1454 : db 1, %01000000   ; F2
+        dw 1550, 1554 : db 0, %00000010   ; RIGHT
+        dw 1590, 1594 : db 0, %00000010   ; RIGHT
+        dw 1630, 1634 : db 0, %00000100   ; DOWN
+        dw 1670, 1674 : db 2, %00000100   ; RETURN
+        dw 1950, 1954 : db 0, %00010000   ; F6
+        dw 2050, 2054 : db 2, %00000100   ; RETURN
+        dw 2300, 2304 : db 0, %00010000   ; F6
+        dw 2350, 2354 : db 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 7
+; make test-switch (-DTEST_SCRIPT=7): the program switcher (F6).
+; Expected:
+;   frame  250  F6           -> "NO PROGRAM IS RUNNING", 330 RETURN
+;   frame  400  F2, 500 RETURN -> DEMO runs, 580 SPACE: another colour
+;   frame  680  F2, 780 DOWN, 840 RETURN -> PONG runs
+;   frame 1000  F6           -> PROGRAMS: DEMO selected, "> PONG"
+;   frame 1100  RETURN       -> DEMO goes on, the same colour
+;   frame 1250  F6, 1300 F6  -> "> DEMO", PONG then DEMO selected
+;   frame 1450  ESC          -> closed, DEMO goes on
+;   frame 1550  F3           -> the Commander
+;   frame 1700  ESC, 1750 RIGHT, 1800-1920 DOWN x4 -> VIEW, PROGRAMS
+;   frame 2050  RETURN       -> PROGRAMS: DEMO selected, none marked
+;   frame 2250  DOWN, 2350 RETURN -> PONG goes on
+test_keys:
+        dw  250,  254 : db 0, %00010000   ; F6
+        dw  330,  334 : db 2, %00000100   ; RETURN
+        dw  400,  404 : db 1, %01000000   ; F2
+        dw  500,  504 : db 2, %00000100   ; RETURN
+        dw  580,  584 : db 5, %10000000   ; SPACE
+        dw  680,  684 : db 1, %01000000   ; F2
+        dw  780,  784 : db 0, %00000100   ; DOWN
+        dw  840,  844 : db 2, %00000100   ; RETURN
+        dw 1000, 1004 : db 0, %00010000   ; F6
+        dw 1100, 1104 : db 2, %00000100   ; RETURN
+        dw 1250, 1254 : db 0, %00010000   ; F6
+        dw 1300, 1304 : db 0, %00010000   ; F6
+        dw 1450, 1454 : db 8, %00000100   ; ESC
+        dw 1550, 1554 : db 0, %00100000   ; F3
+        dw 1700, 1704 : db 8, %00000100   ; ESC
+        dw 1750, 1754 : db 0, %00000010   ; RIGHT
+        dw 1800, 1804 : db 0, %00000100   ; DOWN
+        dw 1840, 1844 : db 0, %00000100   ; DOWN
+        dw 1880, 1884 : db 0, %00000100   ; DOWN
+        dw 1920, 1924 : db 0, %00000100   ; DOWN
+        dw 2050, 2054 : db 2, %00000100   ; RETURN
+        dw 2250, 2254 : db 0, %00000100   ; DOWN
+        dw 2350, 2354 : db 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 6
 ; make test-multi (-DTEST_SCRIPT=6): programs side by side in bank 5.
 ; Expected:
@@ -486,6 +562,8 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

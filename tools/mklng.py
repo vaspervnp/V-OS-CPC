@@ -41,7 +41,7 @@ DEAD_FIRST = 1
 DEAD_LAST = 7
 
 
-MSG_MAX = 127                       # LANG_MSG_MAX in src/kernel/lang.asm
+MSG_MAX = 159                       # LANG_MSG_MAX in src/kernel/lang.asm
 
 
 def fail(msg):
@@ -268,7 +268,7 @@ def asm_bytes(data, per_line=16):
     return out
 
 
-MAX_ENGLISH = 6144                  # EN_MSG_ADDR .. bank end, memmap.inc
+MAX_ENGLISH = 4096                  # EN_MSG_ADDR .. EXT_ADDR, memmap.inc
 
 
 def build_kernel(src, outdir, msg_file):

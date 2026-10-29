@@ -10,6 +10,8 @@
 #   make test-costume a costume drawn in Studio, run, opened again
 #   make test-acc    CLOCK as the desk accessory, over the Launcher and Studio
 #   make test-multi  DEMO and PONG side by side, each goes on where it was
+#   make test-switch F6: the program switcher, also from the VIEW menu
+#   make test-expand a 512K RAM expansion: STUDIO and CALC beside DEMO, PONG
 #   make test-lang   English at boot, Greek saved in Setup, then V-OS
 #                 again starts in Greek (TEST_SCRIPT=3)
 #   make test-amsdos  the same script, then AMSDOS in BASIC reads the
@@ -32,7 +34,7 @@ IDSK    ?= iDSK
 LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG
 
-.PHONY: all run shot test-input test-calc test-lang test-costume test-acc test-multi test-amsdos test-reboot test-system clean
+.PHONY: all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -273,6 +275,48 @@ test-acc: $(ACC_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(ACC_SHOTS); do \
 	  cp $(ACC_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# A 512K RAM expansion (TEST_SCRIPT=8, Caprice32 with 576K): STUDIO and
+# CALC, which need a whole bank, run beside DEMO and PONG
+EXPAND_DSK := $(BUILD)/vos_expand.dsk
+EXPAND_SHOTS := 200 400 520 560 600 640 700
+$(EXPAND_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_expand -DTEST_SCRIPT=8
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-expand: $(EXPAND_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(EXPAND_SHOTS); do \
+	  cp $(EXPAND_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The program switcher (TEST_SCRIPT=7): F6 with no program, then with
+# DEMO and PONG, and PROGRAMS in the Commander's VIEW menu
+SWITCH_DSK := $(BUILD)/vos_switch.dsk
+SWITCH_SHOTS := 115 420 480 550 795 860 1000
+$(SWITCH_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_switch -DTEST_SCRIPT=7
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-switch: $(SWITCH_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(SWITCH_SHOTS); do \
+	  cp $(SWITCH_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
