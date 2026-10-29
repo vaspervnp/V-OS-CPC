@@ -21,15 +21,17 @@ spaces are ignored):
   OP slot slot slot           a block: its name in apps/studio/blocks.txt
                               without OP_ (START, IF, WINDOW, ...), then
                               its slots in slot order (not as shown)
-Slots: 12 or -3 (a number), A..H (a variable), "text", X, Y, EDGE,
-BUTTON, COSTUME, RND:n, KEY:n, TOUCH:n (values); < = > (comparisons; _ is
-none); STAGE or SPRITE:n (whose script); KEYN:n (WHEN KEY's key).
+Slots: 12 or -3 (a number), A..H or A1..H7 (one of the 64 variables:
+the letter is the number mod 8, the digit the number / 8), "text", X,
+Y, EDGE, BUTTON, COSTUME, RND:n, KEY:n, TOUCH:n (values); < = >
+(comparisons; _ is none); STAGE or SPRITE:n (whose script); KEYN:n
+(WHEN KEY's key).
 """
 import os
 import struct
 import sys
 
-SPR_MAX, TEXT_MAX, TEXT_SIZE, MAX_LINES, COS_MAX = 6, 32, 16, 200, 8
+SPR_MAX, TEXT_MAX, TEXT_SIZE, MAX_LINES, COS_MAX = 6, 32, 16, 240, 8
 K = dict(NUM=1, VAR=2, X=3, Y=4, RND=5, KEY=6, TOUCH=7, EDGE=8, CMP=9,
          SPR=10, KEYN=11, BUTTON=12, TEXT=13, COSTUME=14)
 
@@ -80,8 +82,8 @@ def slot(word, texts):
     w = word.upper()
     if w.lstrip("-").isdigit():
         return K["NUM"], int(w)
-    if len(w) == 1 and "A" <= w <= "H":
-        return K["VAR"], ord(w) - ord("A")
+    if "A" <= w[0] <= "H" and (len(w) == 1 or len(w) == 2 and "1" <= w[1] <= "7"):
+        return K["VAR"], ord(w[0]) - ord("A") + (8 * int(w[1]) if len(w) == 2 else 0)
     if w in ("X", "Y", "EDGE", "BUTTON", "COSTUME"):
         return K[w], 0
     if w in "<=>":

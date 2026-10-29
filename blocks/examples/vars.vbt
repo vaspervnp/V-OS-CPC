@@ -1,0 +1,21 @@
+# VARS: a check of Studio's 64 variables (make test-vars). Each has its
+# own value: A is 1 and A1 5 (variable 8), H7 (63) is 7, B2 (17) is
+# A1 + H7 = 12, C5 (42) counts to 10 in a loop. It shows 1 5 7 12 10.
+MODE 1
+BG 2
+
+START STAGE
+SET A 1
+SET A1 5
+SET H7 7
+SET B2 A1
+CHANGE B2 H7
+SET C5 0
+REPEAT 10
+  CHANGE C5 1
+END
+PRINT A 100 100
+PRINT A1 140 100
+PRINT H7 180 100
+PRINT B2 220 100
+PRINT C5 260 100

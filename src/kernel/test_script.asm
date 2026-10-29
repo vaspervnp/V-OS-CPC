@@ -13,7 +13,7 @@
 ; M8b/M8c Studio, English UI. Drive A: VOS.BIN, the view overlays,
 ; GREEK.LNG, DEMO.BIN, MIXED.BIN, STUDIO.BIN, PONG, CATCH, STARCAT,
 ; COUNTER, FLAP.VBN, FLAP.VBS, CALC.VBN, CALC.VBS, CLOCK.BIN, TICKER.VBN,
-; TICKER.VBS, VBRUN.SYS.
+; TICKER.VBS, VBRUN.SYS, MINES.VBN, MINES.VBS.
 ; Expected result:
 ;   frame  300  F2           -> Launcher
 ;   frame  420, 470 RIGHT    -> STUDIO chosen
@@ -258,8 +258,8 @@ test_frame:     dw 0
 ;   frame 1500  CONTROL+Q    -> the Launcher, CALC still chosen
 ;   frame 1700, 1750 UP, 1900 RETURN -> Studio
 ;   frame 2100  CONTROL+O    -> the file list
-;   frame 2160-2280 UP x4, 2400 RETURN -> from the first file to the
-;                               last (VBRUN.SYS), then up to CALC.VBS:
+;   frame 2160-2340 UP x7, 2400 RETURN -> from the first file to the
+;                               last (MINES.VBS), then up to CALC.VBS:
 ;                               opened
 ;   frame 2600  TAB, 2650 LEFT -> the palette: WINDOWS
 ;   frame 2800  RETURN       -> WINDOW added, the dialog asks its text
@@ -295,11 +295,13 @@ test_keys:
         dw 1900, 1904 : db 2, %00000100   ; RETURN
         dw 2095, 2110 : db 2, %10000000   ; CONTROL
         dw 2100, 2104 : db 4, %00000100   ; O
-        dw 2160, 2164 : db 0, %00000001   ; UP: the last file (VBRUN.SYS)
-        dw 2200, 2204 : db 0, %00000001   ; UP: TICKER.VBS
-        dw 2240, 2244 : db 0, %00000001   ; UP: TICKER.VBN
-        dw 2280, 2284 : db 0, %00000001   ; UP: CLOCK.BIN
-        dw 2320, 2324 : db 0, %00000001   ; UP: CALC.VBS
+        dw 2160, 2164 : db 0, %00000001   ; UP: the last file (MINES.VBS)
+        dw 2190, 2194 : db 0, %00000001   ; UP: MINES.VBN
+        dw 2220, 2224 : db 0, %00000001   ; UP: VBRUN.SYS
+        dw 2250, 2254 : db 0, %00000001   ; UP: TICKER.VBS
+        dw 2280, 2284 : db 0, %00000001   ; UP: TICKER.VBN
+        dw 2310, 2314 : db 0, %00000001   ; UP: CLOCK.BIN
+        dw 2340, 2344 : db 0, %00000001   ; UP: CALC.VBS
         dw 2400, 2404 : db 2, %00000100   ; RETURN
         dw 2600, 2604 : db 8, %00010000   ; TAB
         dw 2650, 2654 : db 1, %00000001   ; LEFT
@@ -307,6 +309,200 @@ test_keys:
         dw 2900, 2904 : db 5, %00010000   ; H
         dw 2950, 2954 : db 4, %00001000   ; I
         dw 3050, 3054 : db 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 13
+; make test-vars (-DTEST_SCRIPT=13): Studio's 64 variables, with
+; VARS.VBS (blocks/examples/vars.vbt) last on the disc. Expected:
+;   frame  300  F2, 400, 440 RIGHT, 480 RETURN -> STUDIO
+;   frame  800  CONTROL+O, 860 UP, 920 RETURN -> VARS.VBS opened: its
+;                               lines name A, A1, H7, B2, C5
+;   frame 1000  DOWN, 1030 RIGHT, 1060, 1090 A -> SET A TO 1 becomes
+;                               SET A1, then SET A2 TO 1
+;   frame 1200  CONTROL+R    -> saved, VARS.VBN written and run: it
+;                               shows 0 5 7 12 10 (A is not set now)
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  400,  404 : db 0, %00000010   ; RIGHT
+        dw  440,  444 : db 0, %00000010   ; RIGHT
+        dw  480,  484 : db 2, %00000100   ; RETURN: STUDIO
+        dw  795,  810 : db 2, %10000000   ; CONTROL
+        dw  800,  804 : db 4, %00000100   ; O
+        dw  860,  864 : db 0, %00000001   ; UP: the last file (VARS.VBS)
+        dw  920,  924 : db 2, %00000100   ; RETURN
+        dw 1000, 1004 : db 0, %00000100   ; DOWN: SET A TO 1
+        dw 1030, 1034 : db 0, %00000010   ; RIGHT: its variable
+        dw 1060, 1064 : db 8, %00100000   ; A: A1
+        dw 1090, 1094 : db 8, %00100000   ; A: A2
+        dw 1195, 1210 : db 2, %10000000   ; CONTROL
+        dw 1200, 1204 : db 6, %00000100   ; R
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 12
+; make test-mines (-DTEST_SCRIPT=12): MINES, a Studio program
+; (blocks/examples/mines.vbt): 8 x 6 cells, 8 mines. Expected:
+;   frame  300  F2, 420-480 DOWN x3, 520, 550 RIGHT -> MINES chosen
+;                               (page 2, after CLOCK and TICKER)
+;   frame  600  RETURN       -> its window: 48 cells and NEW
+;   frame 1200-2130 a click on each cell of rows 0 and 1 in turn (COPY):
+;                               each opens and shows its count, until a
+;                               mine: all eight mines, BOOM!, and no
+;                               more opens
+;   frame 2200  NEW          -> a new game, all cells closed
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  420,  424 : db 0, %00000100   ; DOWN
+        dw  450,  454 : db 0, %00000100   ; DOWN
+        dw  480,  484 : db 0, %00000100   ; DOWN
+        dw  520,  524 : db 0, %00000010   ; RIGHT
+        dw  550,  554 : db 0, %00000010   ; RIGHT
+        dw  600,  604 : db 2, %00000100   ; RETURN: MINES
+        dw 1180, 2260 : db #80, 1         ; COPY is the left button
+        dw 1200, 1260 : db #81, 46        ; cell 0 (92, 93)
+        dw 1200, 1260 : db #82, 93
+        dw 1230, 1234 : db 1, %00000010
+        dw 1260, 1320 : db #81, 60        ; cell 1
+        dw 1260, 1320 : db #82, 93
+        dw 1290, 1294 : db 1, %00000010
+        dw 1320, 1380 : db #81, 74        ; cell 2
+        dw 1320, 1380 : db #82, 93
+        dw 1350, 1354 : db 1, %00000010
+        dw 1380, 1440 : db #81, 88        ; cell 3
+        dw 1380, 1440 : db #82, 93
+        dw 1410, 1414 : db 1, %00000010
+        dw 1440, 1500 : db #81, 102       ; cell 4
+        dw 1440, 1500 : db #82, 93
+        dw 1470, 1474 : db 1, %00000010
+        dw 1500, 1560 : db #81, 116       ; cell 5
+        dw 1500, 1560 : db #82, 93
+        dw 1530, 1534 : db 1, %00000010
+        dw 1560, 1620 : db #81, 130       ; cell 6
+        dw 1560, 1620 : db #82, 93
+        dw 1590, 1594 : db 1, %00000010
+        dw 1620, 1680 : db #81, 144       ; cell 7
+        dw 1620, 1680 : db #82, 93
+        dw 1650, 1654 : db 1, %00000010
+        dw 1680, 1740 : db #81, 46        ; cell 8
+        dw 1680, 1740 : db #82, 111
+        dw 1710, 1714 : db 1, %00000010
+        dw 1740, 1800 : db #81, 60        ; cell 9
+        dw 1740, 1800 : db #82, 111
+        dw 1770, 1774 : db 1, %00000010
+        dw 1800, 1860 : db #81, 74        ; cell 10
+        dw 1800, 1860 : db #82, 111
+        dw 1830, 1834 : db 1, %00000010
+        dw 1860, 1920 : db #81, 88        ; cell 11
+        dw 1860, 1920 : db #82, 111
+        dw 1890, 1894 : db 1, %00000010
+        dw 1920, 1980 : db #81, 102       ; cell 12
+        dw 1920, 1980 : db #82, 111
+        dw 1950, 1954 : db 1, %00000010
+        dw 1980, 2040 : db #81, 116       ; cell 13
+        dw 1980, 2040 : db #82, 111
+        dw 2010, 2014 : db 1, %00000010
+        dw 2040, 2100 : db #81, 130       ; cell 14
+        dw 2040, 2100 : db #82, 111
+        dw 2070, 2074 : db 1, %00000010
+        dw 2100, 2160 : db #81, 144       ; cell 15
+        dw 2100, 2160 : db #82, 111
+        dw 2130, 2134 : db 1, %00000010
+        dw 2200, 2250 : db #81, 54        ; NEW (108, 203)
+        dw 2200, 2250 : db #82, 203
+        dw 2220, 2224 : db 1, %00000010
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 11
+; make test-langs (-DTEST_SCRIPT=11): the language packs. Expected:
+;   frame  300  F4, 400 DOWN -> Setup, LANGUAGE: ENGLISH
+;   frame  450, 600, 750, 900, 1050 RIGHT -> each pack loaded and shown
+;                               in its own name (Greek, FRANCAIS,
+;                               ESPANOL, DEUTSCH, ITALIANO), Setup in
+;                               that language
+;   frame 1200  F1           -> the Desktop in Italian
+;   frame 1350  CONTROL+N    -> RINOMINA; 1450 CONTROL+SHIFT: the
+;                               Italian keyboard (IT); 1500-1650 the
+;                               keys @ ; ] : -> e grave, a grave,
+;                               u grave, o grave; 1800 ESC
+test_keys:
+        dw  300,  304 : db 2, %00010000   ; F4
+        dw  400,  404 : db 0, %00000100   ; DOWN: LANGUAGE
+        dw  450,  454 : db 0, %00000010   ; RIGHT: Greek
+        dw  600,  604 : db 0, %00000010   ; RIGHT: French
+        dw  750,  754 : db 0, %00000010   ; RIGHT: Spanish
+        dw  900,  904 : db 0, %00000010   ; RIGHT: German
+        dw 1050, 1054 : db 0, %00000010   ; RIGHT: Italian
+        dw 1200, 1204 : db 1, %00100000   ; F1
+        dw 1345, 1360 : db 2, %10000000   ; CONTROL
+        dw 1350, 1354 : db 5, %01000000   ; N
+        dw 1445, 1460 : db 2, %10000000   ; CONTROL, then
+        dw 1450, 1454 : db 2, %00100000   ; SHIFT
+        dw 1500, 1504 : db 3, %00000100   ; @
+        dw 1550, 1554 : db 3, %00010000   ; ;
+        dw 1600, 1604 : db 2, %00001000   ; ]
+        dw 1650, 1654 : db 3, %00100000   ; :
+        dw 1800, 1804 : db 8, %00000100   ; ESC
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 10
+; make test-drag (-DTEST_SCRIPT=10): windows dragged by their title bars
+; (COPY held, the cursor keys move the pointer). Expected:
+;   frame  340-420 the Desktop's FILES window: a dashed outline while
+;                  COPY is down, then the window there
+;   frame  500  CONTROL+K    -> the KEYS dialog; 640-720 dragged
+;                               left and down; 800 RETURN closes it
+;   frame  900  F2, 1020-1080 DOWN x3, 1120 CONTROL+A -> CLOCK as the
+;                               accessory over the Launcher; 1240-1320
+;                               dragged right and down: the Launcher
+;                               drawn again, then the clock there
+;   frame 1500  F5 closes it; 1550 UP, 1580, 1610 RIGHT, 1660 RETURN
+;                               -> CALC; 2040-2120 its window dragged
+;                               right and down, with its buttons; 2200
+;                               a click on 1 there: 1 shown
+test_keys:
+        dw  300,  420 : db #80, 1         ; COPY and the cursor keys
+        dw  300,  340 : db #81, 50        ; FILES's title bar (100, 23)
+        dw  300,  340 : db #82, 23
+        dw  340,  420 : db 1, %00000010   ; COPY held
+        dw  350,  380 : db 0, %00000010   ; RIGHT
+        dw  350,  365 : db 0, %00000100   ; DOWN
+        dw  495,  510 : db 2, %10000000   ; CONTROL
+        dw  500,  504 : db 4, %00100000   ; K: the keys dialog
+        dw  600,  740 : db #80, 1
+        dw  600,  640 : db #81, 75        ; its title bar (150, 64)
+        dw  600,  640 : db #82, 64
+        dw  640,  720 : db 1, %00000010   ; COPY held
+        dw  650,  675 : db 1, %00000001   ; LEFT
+        dw  650,  680 : db 0, %00000100   ; DOWN
+        dw  750,  751 : db #80, 0
+        dw  800,  804 : db 2, %00000100   ; RETURN: OK
+        dw  900,  904 : db 1, %01000000   ; F2
+        dw 1020, 1024 : db 0, %00000100   ; DOWN
+        dw 1050, 1054 : db 0, %00000100   ; DOWN
+        dw 1080, 1084 : db 0, %00000100   ; DOWN
+        dw 1115, 1130 : db 2, %10000000   ; CONTROL
+        dw 1120, 1124 : db 8, %00100000   ; A: CLOCK as the accessory
+        dw 1200, 1340 : db #80, 1
+        dw 1200, 1240 : db #81, 20        ; its title bar (40, 20, mode 0)
+        dw 1200, 1240 : db #82, 20
+        dw 1240, 1320 : db 1, %00000010   ; COPY held
+        dw 1250, 1275 : db 0, %00000010   ; RIGHT
+        dw 1250, 1290 : db 0, %00000100   ; DOWN
+        dw 1350, 1351 : db #80, 0
+        dw 1500, 1504 : db 1, %00010000   ; F5
+        dw 1550, 1554 : db 0, %00000001   ; UP
+        dw 1580, 1584 : db 0, %00000010   ; RIGHT
+        dw 1610, 1614 : db 0, %00000010   ; RIGHT
+        dw 1660, 1664 : db 2, %00000100   ; RETURN: CALC
+        dw 2000, 2140 : db #80, 1
+        dw 2000, 2040 : db #81, 75        ; its title bar (150, 76)
+        dw 2000, 2040 : db #82, 76
+        dw 2040, 2120 : db 1, %00000010   ; COPY held
+        dw 2050, 2075 : db 0, %00000010   ; RIGHT
+        dw 2050, 2075 : db 0, %00000100   ; DOWN
+        dw 2150, 2260 : db #80, 1         ; then its button 1, moved
+        dw 2150, 2260 : db #81, 76        ; with it (152, 204): 1 shown
+        dw 2150, 2260 : db #82, 204
+        dw 2200, 2204 : db 1, %00000010   ; COPY
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 9
@@ -620,6 +816,10 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
+        ENDIF
+        ENDIF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

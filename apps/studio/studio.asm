@@ -18,8 +18,10 @@
 ; A program is a list of lines (blocks). "WHEN ..." lines start a
 ; script for a sprite or the stage; FOREVER, REPEAT and IF open a
 ; block that END closes, so the script is indented from the lines
-; alone. Each line has up to three slots (numbers, variables A..H,
-; sprite x, y, random, key held, touching, at an edge, the button
+; alone. Each line has up to three slots (numbers, the 64 variables
+; A..H and A1..H7: typing a letter again on that variable goes on to
+; A1, A2 ... A7 and back to A; sprite x, y, random, key held, touching,
+; at an edge, the button
 ; pressed, comparisons, texts). A text slot names one of the program's
 ; 32 texts: adding WINDOW, BUTTON or TEXT takes a free one and asks for
 ; it; RETURN or a click on the slot changes it.
@@ -111,7 +113,7 @@ TEXT_MAX        equ 32
 TEXT_SIZE       equ 16
 TEXT_CHARS      equ TEXT_SIZE - 2   ; VOS_INPUT needs 2 bytes more
 LINE_SIZE       equ 10
-MAX_LINES       equ 200
+MAX_LINES       equ 240
 V_BG            equ 4
 V_MODE1         equ #80             ; in V_BG
 V_RUNS          equ #40
@@ -129,7 +131,9 @@ NO_PEN          equ #80
 ; slot kinds
 K_NONE          equ 0
 K_NUM           equ 1               ; signed number
-K_VAR           equ 2               ; variable 0..7 (A..H)
+K_VAR           equ 2               ; variable 0..63: A..H, then A1..H7
+                                    ; (n mod 8 the letter, n / 8 the
+                                    ; digit)
 K_X             equ 3               ; the script's sprite
 K_Y             equ 4
 K_RND           equ 5               ; random 1..value
@@ -177,7 +181,8 @@ OP_PRESSED      equ 32
 OP_TEXT         equ 33
 OP_COSTUME      equ 34
 OP_NEXT_COSTUME equ 35
-OP_COUNT        equ 36
+OP_LABEL        equ 36
+OP_COUNT        equ 37
 OP_INFO         equ 13              ; flags, 3 classes, 3 default slots
 
 FOCUS_SCRIPT    equ 0
@@ -2157,12 +2162,26 @@ slot_char:
         ld a,b
         jp set_slot
 .var:
-        ld a,(k_letter)             ; A..H
-        sub "A"
+        ld a,(k_letter)             ; A..H; the same letter again on
+        sub "A"                     ; that variable: A1, A2 ... A7, A
         ret c
         cp 8
         ret nc
         ld e,a
+        ld hl,(sc_ptr)
+        ld a,(hl)
+        cp K_VAR
+        jr nz,.var_set
+        inc hl
+        ld a,(hl)
+        and 7
+        cp e
+        jr nz,.var_set
+        ld a,(hl)
+        add a,8
+        and 63
+        ld e,a
+.var_set:
         ld d,0
         ld a,K_VAR
         jp set_slot
@@ -2302,7 +2321,7 @@ cycle_kind:
         inc hl
         ld a,(hl)
         inc a
-        and 7
+        and 63
         ld (hl),a
         ret
 .not_var:
@@ -3613,8 +3632,18 @@ render_slot:
         jp z,num_str
         cp K_VAR
         jr nz,.not_var
-        ld a,l
+        ld a,l                      ; A..H, then the digit 1..7
+        and 7
         add a,"A"
+        ld (de),a
+        inc de
+        ld a,l
+        rrca
+        rrca
+        rrca
+        and 7
+        ret z
+        add a,"0"
         ld (de),a
         inc de
         ret
@@ -4053,6 +4082,7 @@ ops:
         db                                  K_TEXT, 0, 0, K_NUM, 8, 0, K_NUM, 4, 0    ; TEXT
         db 0,      C_VALUE, 0, 0,           K_NUM, 1, 0, 0, 0, 0, 0, 0, 0             ; COSTUME
         db 0,      0, 0, 0,                 0, 0, 0, 0, 0, 0, 0, 0, 0                 ; NEXT COSTUME
+        db 0,      C_TEXT, C_VALUE, 0,      K_TEXT, 0, 0, K_NUM, 0, 0, 0, 0, 0        ; LABEL
         assert $ - ops == OP_COUNT * OP_INFO
 
 CATS            equ 6
@@ -4063,6 +4093,7 @@ pal_order:      db 0, 1, 2, OP_RECEIVE, OP_BROADCAST    ; events
                 db 17, 18, 19, OP_COSTUME, OP_NEXT_COSTUME, 20, 21  ; looks, sound
                 db 22, 23, OP_SUB, OP_MUL, OP_DIV, OP_MOD   ; variables
                 db OP_WINDOW, OP_BUTTON, OP_PRESSED, OP_TEXT    ; windows
+                db OP_LABEL
         assert $ - pal_order == OP_COUNT
 class_help:     db T_H_LINE, T_H_VALUE, T_H_VAR, T_H_CMP, T_H_SPR, T_H_KEYN
                 db T_H_TEXT

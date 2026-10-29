@@ -60,6 +60,9 @@ view_poll:
         ld a,(acc_req)              ; the accessory opens or closes
         or a
         call nz,acc_toggle
+        ld a,(acc_moved)            ; or moved (VOS_DRAG)
+        or a
+        call nz,acc_move
         ld a,(view_next)
         cp VIEW_NONE
         ret z
@@ -376,24 +379,42 @@ acc_toggle:
         ld a,(acc_loaded)
         or a
         ret z
-        call acc_swap
         ld a,(acc_open)
-        xor 1
-        ld (acc_open),a
-        jr z,.close
-        ld a,ACC_CFG
-        ld hl,ACC_ADDR
-        call .home
+        or a
+        jr nz,acc_close
+        call acc_up
         ld a,1                      ; init, as an accessory
         jp ACC_ADDR
-.close:
+
+; main loop: it moved, what was under it is drawn, then the accessory
+acc_move:
+        xor a
+        ld (acc_moved),a
+        call acc_close
+        call acc_up
+        ld de,6
+        jp cur_call
+
+acc_up:
+        ld a,1
+        ld (acc_open),a
+        call acc_swap
+        ld a,ACC_CFG
+        ld hl,ACC_ADDR
+        jr acc_home
+
+acc_close:
+        xor a
+        ld (acc_open),a
+        call acc_swap
         ld hl,(vw_page - 1)         ; the program draws everything
         ld l,0
         ld a,(vw_cfg)
-        call .home
+        call acc_home
         ld de,6
         jp cur_call
-.home:
+
+acc_home:
         ld (cur_base),hl
         ld (ram_home_cfg),a
         jp ram_select

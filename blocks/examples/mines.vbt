@@ -1,0 +1,280 @@
+# MINES: a mine field of 8 x 6 cells with 8 mines, made of Studio's
+# blocks, in mode 1 (tools/mkvbs.py makes MINES.VBS and MINES.VBN;
+# Studio opens MINES.VBS). A cell is a button (0..47, row by row): a
+# click opens it and its label (LABEL) shows how many mines are next to
+# it, or the mines (stars) and the game ends. Open the 40 safe cells to
+# win. NEW (button 48) starts again.
+#
+# Studio has no lists, so each row of the field is two variables, one
+# bit a cell (column c is bit c + 1, 2 to the c + 1, so that the three
+# columns c - 1 .. c + 1 are the bits c .. c + 2 even at the edges):
+# A1..F1   the mines of rows 0..5
+# A2..F2   the cells open in rows 0..5
+# Two scripts read and write the row A: SEND 3 copies its mines to C and
+# its open cells to D, SEND 4 copies C and D back; each sets A3 to 1
+# when done (the caller waits for it).
+# A, B     row, column
+# C, D     a row's mines and open cells
+# E        2 to the column
+# F        a count
+# G        the button
+# H        working value
+# C3       safe cells open
+# D3       0 while a game is made, 1 while it is played, 2 while a
+#          click is handled (one at a time: they share A..H), -2 while
+#          the mines are shown, -1 when it is over
+
+MODE 1
+BG 2
+
+START STAGE
+BROADCAST 1
+
+# a new game: the window, 48 cells and NEW, then 8 mines
+RECEIVE STAGE 1
+SET D3 0
+WINDOW "MINES" 240 168
+SET H 22
+REPEAT 6
+  SET B 8
+  REPEAT 8
+    BUTTON " " B H
+    CHANGE B 28
+  END
+  CHANGE H 18
+END
+BUTTON " NEW " 8 132
+TEXT "8 MINES" 72 136
+# every row empty
+SET C 0
+SET D 0
+SET A 0
+REPEAT 6
+  SET A3 0
+  BROADCAST 4
+  UNTIL A3 = 1
+  CHANGE A 1
+END
+SET C3 0
+# F mines in random cells, not twice in one
+SET F 0
+REPEAT 40
+  IF F < 8
+    SET A RND:6
+    SUB A 1
+    SET B RND:8
+    SUB B 1
+    SET E 2
+    REPEAT B
+      MUL E 2
+    END
+    SET A3 0
+    BROADCAST 3
+    UNTIL A3 = 1
+    SET H C
+    DIV H E
+    MOD H 2
+    IF H = 0
+      CHANGE C E
+      SET A3 0
+      BROADCAST 4
+      UNTIL A3 = 1
+      CHANGE F 1
+      IF F = 8
+        SET D3 1
+      END
+    END
+  END
+END
+
+# a mine: all of them shown on their cells, the game is over
+RECEIVE STAGE 2
+SET D3 -2
+SET G 0
+SET A 0
+REPEAT 6
+  SET A3 0
+  BROADCAST 3
+  UNTIL A3 = 1
+  SET E 2
+  REPEAT 8
+    SET H C
+    DIV H E
+    MOD H 2
+    IF H = 1
+      LABEL "*" G
+    END
+    MUL E 2
+    CHANGE G 1
+  END
+  CHANGE A 1
+END
+TEXT "BOOM!  " 72 136
+SET D3 -1
+
+# row A -> C (mines), D (open cells)
+RECEIVE STAGE 3
+IF A = 0
+  SET C A1
+  SET D A2
+END
+IF A = 1
+  SET C B1
+  SET D B2
+END
+IF A = 2
+  SET C C1
+  SET D C2
+END
+IF A = 3
+  SET C D1
+  SET D D2
+END
+IF A = 4
+  SET C E1
+  SET D E2
+END
+IF A = 5
+  SET C F1
+  SET D F2
+END
+SET A3 1
+
+# C, D -> row A
+RECEIVE STAGE 4
+IF A = 0
+  SET A1 C
+  SET A2 D
+END
+IF A = 1
+  SET B1 C
+  SET B2 D
+END
+IF A = 2
+  SET C1 C
+  SET C2 D
+END
+IF A = 3
+  SET D1 C
+  SET D2 D
+END
+IF A = 4
+  SET E1 C
+  SET E2 D
+END
+IF A = 5
+  SET F1 C
+  SET F2 D
+END
+SET A3 1
+
+PRESSED STAGE
+# nothing while a game is made or the mines are shown, then NEW; a cell
+# only while nothing else is handled
+IF D3 = 0
+  STOP
+END
+IF D3 = -2
+  STOP
+END
+IF BUTTON = 48
+  BROADCAST 1
+  STOP
+END
+IF D3 < 1
+  STOP
+END
+IF D3 > 1
+  STOP
+END
+SET D3 2
+SET G BUTTON
+# its row, column, E = 2 to the column, H = its bit
+SET A G
+DIV A 8
+SET B G
+MOD B 8
+SET E 1
+REPEAT B
+  MUL E 2
+END
+SET H E
+MUL H 2
+SET A3 0
+BROADCAST 3
+UNTIL A3 = 1
+# open already? Else it is open now
+SET F D
+DIV F H
+MOD F 2
+IF F = 1
+  SET D3 1
+  STOP
+END
+CHANGE D H
+SET A3 0
+BROADCAST 4
+UNTIL A3 = 1
+# a mine?
+SET F C
+DIV F H
+MOD F 2
+IF F = 1
+  BROADCAST 2
+  STOP
+END
+# F: the mines in the rows above, of and below it, three columns each
+# (H: three bits; their count is H - H / 2 - H / 4)
+SET F 0
+SUB A 1
+REPEAT 3
+  IF A > -1
+    IF A < 6
+      SET A3 0
+      BROADCAST 3
+      UNTIL A3 = 1
+      SET H C
+      DIV H E
+      MOD H 8
+      CHANGE F H
+      DIV H 2
+      SUB F H
+      DIV H 2
+      SUB F H
+    END
+  END
+  CHANGE A 1
+END
+IF F = 0
+  LABEL "." G
+END
+IF F = 1
+  LABEL "1" G
+END
+IF F = 2
+  LABEL "2" G
+END
+IF F = 3
+  LABEL "3" G
+END
+IF F = 4
+  LABEL "4" G
+END
+IF F = 5
+  LABEL "5" G
+END
+IF F = 6
+  LABEL "6" G
+END
+IF F = 7
+  LABEL "7" G
+END
+IF F = 8
+  LABEL "8" G
+END
+SET D3 1
+CHANGE C3 1
+IF C3 = 40
+  TEXT "YOU WIN!" 72 136
+  SET D3 -1
+END

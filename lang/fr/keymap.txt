@@ -1,0 +1,53 @@
+# French keyboard: AZERTY, as on the French PC, on the CPC keys. Keys not
+# listed keep the English map (lang/en/keymap.txt). Characters are
+# written in UTF-8 and stored as ISO 8859-1.
+#
+# The digits are on SHIFT. The @ key is the circumflex dead key, and
+# SHIFT+@ the diaeresis (^ and ¨ on the PC).
+
+key 64 &    1       # 1
+key 65 é    2       # 2
+key 57 "    3       # 3
+key 56 '    4       # 4
+key 49 (    5       # 5
+key 48 -    6       # 6
+key 41 è    7       # 7
+key 40 _    8       # 8
+key 33 ç    9       # 9
+key 32 à    0       # 0
+key 25 )    °       # -
+key 24 =    +       # ^
+key 67 a    A       # Q
+key 59 z    Z       # W
+key 26 dead:circumflex dead:diaeresis   # @
+key 17 $    £       # [
+key 69 q    Q       # A
+key 29 m    M       # :
+key 28 ù    %       # ;
+key 19 *    µ       # ]
+key 71 w    W       # Z
+key 38 ,    ?       # M
+key 39 ;    .       # ,
+key 31 :    /       # .
+key 30 !    §       # /
+key 22 <    >       # \
+
+combo circumflex a â
+combo circumflex e ê
+combo circumflex i î
+combo circumflex o ô
+combo circumflex u û
+combo circumflex A Â
+combo circumflex E Ê
+combo circumflex I Î
+combo circumflex O Ô
+combo circumflex U Û
+combo circumflex space ^
+combo diaeresis e ë
+combo diaeresis i ï
+combo diaeresis u ü
+combo diaeresis y ÿ
+combo diaeresis E Ë
+combo diaeresis I Ï
+combo diaeresis U Ü
+combo diaeresis space ¨

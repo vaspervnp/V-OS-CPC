@@ -1,0 +1,5 @@
+# Spanish language pack (SPANISH.LNG)
+code    ES
+name    ESPAÑOL
+charset iso8859_1
+font    ../latin1/font.txt

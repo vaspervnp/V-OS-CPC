@@ -3,7 +3,8 @@
 ;
 ; Mode 1. One row per setting (kernel/setup.asm): view at boot,
 ; language, key repeat delay and speed, AMX mouse and how it is read,
-; desk colour. Changes apply at once.
+; desk colour. Changes apply at once. LANGUAGE goes through English and
+; each language pack, which is loaded from A: at once (st_lang).
 ;   UP/DOWN          choose a setting
 ;   LEFT/RIGHT       change it (also a click on the row)
 ;   RETURN, ^S       save
@@ -15,7 +16,8 @@ ST_Y            equ 30
 ST_W            equ 320
 ST_ROW_H        equ 16
 ST_ROWS_Y       equ ST_Y + 18
-ST_H            equ 18 + CFG_COUNT * ST_ROW_H + 6
+ST_COUNT        equ CFG_PACK        ; rows: the settings before CFG_PACK
+ST_H            equ 18 + ST_COUNT * ST_ROW_H + 6
 ST_VALUE_X      equ ST_X + 184
 ST_STATUS_Y     equ ST_Y + ST_H + 12
 ST_KEYS_Y       equ GFX_H - 10
@@ -88,7 +90,7 @@ st_redraw:
         call st_draw_row
         pop af
         inc a
-        cp CFG_COUNT
+        cp ST_COUNT
         jr c,.row
         ret
 .box:
@@ -227,6 +229,8 @@ st_change:
         ld a,d
         ld (st_step),a
         ld a,(st_sel)
+        cp CFG_LANG
+        jr z,st_lang
         call st_row_ptr
         ld (st_ptr),hl
         call st_option              ; A = option now
@@ -269,6 +273,43 @@ st_change:
 .row:
         ld a,(st_sel)
         jp st_draw_row
+
+; LANGUAGE: English (CFG_LANG 0), then each pack (CFG_PACK, from 0;
+; CFG_LANG 1). A pack is loaded at once; one that is not on A: leaves
+; English.
+st_lang:
+        ld a,(cfg_data + CFG_LANG)  ; A = 0 English, or the pack + 1
+        or a
+        jr z,.step
+        ld a,(cfg_data + CFG_PACK)
+        inc a
+.step:
+        ld hl,st_step
+        add a,(hl)
+        cp #FF                      ; before English: the last pack
+        jr nz,.wrap
+        ld a,LANG_PACKS
+.wrap:
+        cp LANG_PACKS + 1           ; after the last: English
+        jr c,.inside
+        xor a
+.inside:
+        or a
+        jr z,.texts
+        dec a
+        ld (cfg_data + CFG_PACK),a
+        ld a,MSG_SET_LANG           ; "PLEASE WAIT: LANGUAGE"
+        call ui_busy
+        xor a
+        call fdc_select
+        ld hl,lang_init
+        call ext_call
+        call ui_restore
+        ld a,(lang_loaded)          ; 1 if it is there
+.texts:
+        ld (cfg_data + CFG_LANG),a
+        call cfg_apply
+        jp st_redraw
 
 ; A = row to choose
 st_choose:
@@ -331,7 +372,7 @@ st_event:
         jr nz,.ui
         ld a,(st_sel)
         inc a
-        cp CFG_COUNT
+        cp ST_COUNT
         ret nc
         jr st_choose
 .up:
@@ -363,7 +404,7 @@ st_event:
         jr .row
 .found:
         ld a,c
-        cp CFG_COUNT
+        cp ST_COUNT
         ret nc
         ld hl,st_sel
         cp (hl)

@@ -46,6 +46,17 @@
 ; A = 0 with Z set (no key is held). When it comes to the front again,
 ; init with A = 2 draws everything, as it was then.
 ;
+; Windows that move (version 10): on a VE_PTR_DOWN, VOS_DRAG with the
+; window (HL = x, DE = y, BC = width, A = height) takes it, if the
+; click is on its top 10 rows: until the button goes up, a dashed
+; outline follows the pointer; nothing else happens meanwhile. Carry:
+; it moved, HL, DE = where it is now (x a multiple of 8, room for a
+; 4-pixel shadow kept); erase it and draw it there. No carry: the
+; click is the program's, as before. The accessory does not draw: the
+; kernel draws what was under it, then calls its redraw. VOS_FIT moves
+; a window onto the screen the same way (the accessory runs over
+; views of both modes: fit its window before drawing it).
+;
 ; Relocation table: after the program's bytes, dw offsets (from the
 ; start) of the high bytes of its own addresses, then dw count, "RL".
 ; tools/mkreloc.py makes it from two builds, at #4000 and #4100
@@ -63,11 +74,12 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 9               ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 11              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
-                                    ; 9: BACKGROUND
+                                    ; 9: BACKGROUND, 10: DRAG, FIT,
+                                    ; 11: the language of VOS_TEXTS
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -142,7 +154,12 @@ VOS_DATA        equ #80                 ; drive + VOS_DATA: VOS_LOAD and
 ; ---- the background (version 9) -------------------------------------
 VOS_BACKGROUND  equ VOS_API + 39 * 3    ; A = 1: go on in the background,
                                         ; 0: pause there (as at the start)
-VOS_API_COUNT   equ 40
+; ---- windows that move (version 10) ---------------------------------
+VOS_DRAG        equ VOS_API + 40 * 3    ; HL = x, DE = y, BC = w, A = h
+                                        ; -> carry: moved to HL, DE
+VOS_FIT         equ VOS_API + 41 * 3    ; HL = x, DE = y, BC = w, A = h
+                                        ; -> HL, DE on the screen
+VOS_API_COUNT   equ 42
 
 ; The data bank: 16K more for the program (bank 4), seen at the same
 ; addresses #4000-#7FFF but never mapped there: the program copies to
@@ -178,9 +195,10 @@ VOS_ICON        equ 12
 VOS_ICON_SIZE   equ 256
 
 ; Program texts: numbers VT_FIRST and up, in menus, dialogs, VOS_MSG.
-; VOS_TEXTS table: db count, then per text dw English, dw other (the
-; language pack's language; 0 = the English one). Texts end with 0;
-; "|" starts a new line in dialogs.
+; VOS_TEXTS table: db count, db the other language's code ("EL"), then
+; per text dw English, dw other (0 = the English one). The other text
+; is shown when the language pack is in that language (version 11).
+; Texts end with 0; "|" starts a new line in dialogs.
 VT_FIRST        equ #C0
 
 ; ---- events (HL -> type, code, char, mods, dw x, dw y) ---------------

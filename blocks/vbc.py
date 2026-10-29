@@ -601,7 +601,7 @@ class Compiler:
                     "        ret"]
         out += self.code
         if self.ui:
-            out += ["", "rt_texts:        db " + str(2 + len(self.ui_texts)),
+            out += ["", "rt_texts:        db " + str(2 + len(self.ui_texts)) + ', "EL"',
                     "                dw rt_t_menu_en, rt_t_menu_el",
                     "                dw rt_t_stop_en, rt_t_stop_el"]
             out += [f"                dw {label}, 0" for label in self.ui_texts]

@@ -3,9 +3,11 @@
 ;
 ; English is the master: kernel font for 32..127 and kbd_map built in, the
 ; texts in ENGLISH.MSG (bank 7, EN_MSG_ADDR), used when a text is missing.
-; One pack adds codes 128..255 (font and letter case), a keyboard map
+; One pack (GREEK, FRENCH, SPANISH, GERMAN or ITALIAN.LNG: CFG_PACK in
+; SETUP.CFG) adds codes 128..255 (font and letter case), a keyboard map
 ; with dead keys, and translated UI texts. lang_init, which loads them
-; at boot, is in the kernel extension (kernel/ext.asm).
+; at boot and when Setup changes the pack, is in the kernel extension
+; (kernel/ext.asm).
 ;
 ; lang_ui    0 = English texts, 1 = pack texts (lang_msg)
 ; lang_input 0 = English keyboard, 1 = pack keyboard; CONTROL+SHIFT

@@ -1,0 +1,42 @@
+# German keyboard: QWERTZ, as on the German PC, on the CPC keys. Keys not
+# listed keep the English map (lang/en/keymap.txt). Characters are
+# written in UTF-8 and stored as ISO 8859-1.
+#
+# Ü, Ö and Ä are on the @, : and ; keys, ß on -. The ^ key is the acute
+# accent dead key and SHIFT+^ the grave (´ and ` on the PC).
+
+key 57 3    §       # 3
+key 41 7    /       # 7
+key 40 8    (       # 8
+key 33 9    )       # 9
+key 32 0    =       # 0
+key 25 ß    ?       # -
+key 24 dead:acute dead:grave        # ^
+key 43 z    Z       # Y
+key 26 ü    Ü       # @
+key 17 +    *       # [
+key 29 ö    Ö       # :
+key 28 ä    Ä       # ;
+key 19 #    '       # ]
+key 71 y    Y       # Z
+key 39 ,    ;       # ,
+key 31 .    :       # .
+key 30 -    _       # /
+key 22 <    >       # \
+
+combo acute a á
+combo acute e é
+combo acute i í
+combo acute o ó
+combo acute u ú
+combo acute A Á
+combo acute E É
+combo acute space ´
+combo grave a à
+combo grave e è
+combo grave i ì
+combo grave o ò
+combo grave u ù
+combo grave A À
+combo grave E È
+combo grave space `

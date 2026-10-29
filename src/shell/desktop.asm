@@ -15,17 +15,17 @@
 ; An overlay (kernel/view.asm).
 ; =====================================================================
 
-DT_X            equ 8               ; the window
+DT_X            equ 8               ; the window, at first (dt_wx, dt_wy)
 DT_Y            equ 18
 DT_W            equ 304
 DT_H            equ 222
+dt_wx           equ #A000           ; kept between views (memmap.inc)
+dt_wy           equ #A002
+dt_placed       equ #A004
 DT_COLS         equ 4
 DT_ROWS         equ 5
 DT_CELL_W       equ 72
 DT_CELL_H       equ 38
-DT_CELLS_X      equ DT_X + 8
-DT_CELLS_Y      equ DT_Y + 16
-DT_FREE_Y       equ DT_Y + DT_H - 12
 DT_DRIVE_X      equ 328             ; drive icons
 DT_DRIVE_Y      equ 28
 DT_DRIVE_W      equ 48
@@ -39,6 +39,16 @@ DT_KEYS_Y       equ GFX_H - 10
         db "VV", VIEW_DESKTOP
 
 dt_init:
+        ld a,(dt_placed)            ; the window where it was left
+        or a
+        jr nz,.placed
+        inc a
+        ld (dt_placed),a
+        ld hl,DT_X
+        ld (dt_wx),hl
+        ld hl,DT_Y
+        ld (dt_wy),hl
+.placed:
         ld hl,dt_bar
         call ui_set_bar
         ld hl,ui_no_widgets
@@ -196,24 +206,13 @@ dt_load:
 
 dt_draw_window:
         ld a,UIP_BAR
-        ld (ui_fill_pen),a
-        ld hl,DT_X
-        ld de,DT_Y
-        ld bc,DT_W
-        ld a,DT_H
+        call .box
         call ui_rect
         ld a,UIP_FRAME
-        ld (ui_fill_pen),a
-        ld hl,DT_X
-        ld de,DT_Y
-        ld bc,DT_W
-        ld a,DT_H
+        call .box
         call ui_frame
         ld a,UIP_SEL                ; title: "A: DATA  3 FILES"
-        ld (ui_fill_pen),a
-        ld hl,DT_X
-        ld de,DT_Y
-        ld bc,DT_W
+        call .box
         ld a,12
         call ui_rect
         ld de,dt_line
@@ -251,9 +250,8 @@ dt_draw_window:
         ld a,UIP_SELTEXT
         ld c,UIP_SEL
         call ui_colours
-        ld hl,DT_X + 8
-        ld de,DT_Y + 2
-        ld bc,dt_line
+        ld a,2
+        call dt_text_at
         call txt_print
         call dt_draw_cells
         ld a,(dt_err)               ; free space, or the error
@@ -288,10 +286,29 @@ dt_draw_window:
         ld a,UIP_TEXT
         ld c,UIP_BAR
         call ui_colours
-        ld hl,DT_X + 8
-        ld de,DT_FREE_Y
-        ld bc,dt_line
+        ld a,DT_H - 12
+        call dt_text_at
         jp txt_print
+.box:
+        ld (ui_fill_pen),a
+        ld hl,(dt_wx)
+        ld de,(dt_wy)
+        ld bc,DT_W
+        ld a,DT_H
+        ret
+
+; A = y in the window -> HL, DE: dt_line's place there, BC -> dt_line
+dt_text_at:
+        ld hl,(dt_wy)
+        ld e,a
+        ld d,0
+        add hl,de
+        ex de,hl
+        ld hl,(dt_wx)
+        ld bc,8
+        add hl,bc
+        ld bc,dt_line
+        ret
 
 dt_draw_cells:
         xor a
@@ -320,16 +337,16 @@ dt_draw_cell:
         ld de,DT_CELL_W
         push bc
         call dt_mul
+        call dt_cell0
         pop bc
-        ld de,DT_CELLS_X
         add hl,de
         ld (dt_cx),hl
         ld l,c
         ld h,0
         ld de,DT_CELL_H
         call dt_mul
-        ld de,DT_CELLS_Y
-        add hl,de
+        call dt_cell0
+        add hl,bc
         ld (dt_cy),hl
         ld a,UIP_BAR                ; clear the cell
         ld (ui_fill_pen),a
@@ -488,6 +505,21 @@ dt_play:
         djnz .column
         ret
 
+; -> DE = x, BC = y of the first cell. Keeps HL
+dt_cell0:
+        push hl
+        ld hl,(dt_wx)
+        ld de,8
+        add hl,de
+        ex de,hl
+        ld hl,(dt_wy)
+        ld bc,16
+        add hl,bc
+        ld b,h
+        ld c,l
+        pop hl
+        ret
+
 ; dt_top so that the selection is on the screen -> carry if it moved
 dt_scroll:
         ld a,(dt_sel)               ; row of the selection
@@ -634,11 +666,38 @@ dt_event:
         or a
         sbc hl,de
         jr c,.ui
+        ld hl,(dt_wx)               ; its title bar drags the window
+        ld de,(dt_wy)
+        ld bc,DT_W
+        ld a,DT_H
+        call ui_drag
+        jr nc,.in
+        ld (dt_wx),hl
+        ld (dt_wy),de
+        jp dt_redraw
+.in:
+        ld hl,(ev_cur + 4)          ; in the window?
+        ld de,(dt_wx)
+        or a
+        sbc hl,de
+        jr c,.drive
+        ld de,DT_W
+        sbc hl,de
+        jr nc,.drive
+        ld hl,(ev_cur + 6)
+        ld de,(dt_wy)
+        or a
+        sbc hl,de
+        jr c,.drive
+        ld de,DT_H
+        sbc hl,de
+        jr c,.window
+.drive:
         ld hl,(ev_cur + 4)          ; a drive icon?
         ld de,DT_DRIVE_X
         or a
         sbc hl,de
-        jr c,.window
+        ret c
         ld hl,(ev_cur + 6)
         ld de,DT_DRIVE_Y
         or a
@@ -659,7 +718,7 @@ dt_event:
         jr dt_open_drive_a
 .window:
         ld hl,(ev_cur + 4)          ; a cell?
-        ld de,DT_CELLS_X
+        call dt_cell0
         or a
         sbc hl,de
         ret c
@@ -679,7 +738,9 @@ dt_event:
         ret nc
         ld (dt_k),a
         ld hl,(ev_cur + 6)
-        ld de,DT_CELLS_Y
+        call dt_cell0
+        ld d,b
+        ld e,c
         or a
         sbc hl,de
         ret c

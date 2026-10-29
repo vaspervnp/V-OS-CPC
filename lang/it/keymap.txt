@@ -1,0 +1,21 @@
+# Italian keyboard: the Italian PC layout on the CPC keys. Keys not
+# listed keep the English map (lang/en/keymap.txt). Characters are
+# written in UTF-8 and stored as ISO 8859-1. No dead keys: the accented
+# letters have keys of their own, as on the PC.
+
+key 57 3    £       # 3
+key 41 7    /       # 7
+key 40 8    (       # 8
+key 33 9    )       # 9
+key 32 0    =       # 0
+key 25 '    ?       # -
+key 24 ì    ^       # ^
+key 26 è    é       # @
+key 17 +    *       # [
+key 29 ò    ç       # :
+key 28 à    °       # ;
+key 19 ù    §       # ]
+key 39 ,    ;       # ,
+key 31 .    :       # .
+key 30 -    _       # /
+key 22 <    >       # \

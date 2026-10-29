@@ -18,9 +18,10 @@ kernel_entry:
         ei
         call fdc_init
         call snd_init
-        ld hl,lang_init             ; GREEK.LNG from the disc
+        call cfg_load               ; SETUP.CFG, if there is one, then
+        ld hl,lang_init             ; the pack it names from the disc
         call ext_call
-        call cfg_load               ; SETUP.CFG, if there is one
+        call cfg_apply
         ld a,1                      ; a plain desk until the view is up
         call ui_set_mode
         ld hl,palette_mode1

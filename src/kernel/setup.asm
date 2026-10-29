@@ -1,20 +1,22 @@
 ; =====================================================================
 ; setup.asm - settings kept in A:SETUP.CFG
 ;
-; File: "VCFG", version 1, then CFG_COUNT bytes in the order below.
+; File: "VCFG", version 2, then CFG_COUNT bytes in the order below
+; (a version 1 file is not read: the defaults).
 ; cfg_load (boot) reads it, if there is one, and applies it; the Setup
 ; view (shell/setup.asm) changes cfg_data, calls cfg_apply to see the
 ; change at once, and cfg_save to keep it.
 ; =====================================================================
 
 CFG_VIEW        equ 0               ; view at boot
-CFG_LANG        equ 1               ; 0 English, 1 the pack's language
+CFG_LANG        equ 1               ; texts: 0 English, 1 the pack's
 CFG_DELAY       equ 2               ; key repeat: frames before the first
 CFG_RATE        equ 3               ; frames between repeats
 CFG_AMX         equ 4               ; AMX mouse on
 CFG_AMX_LEVELS  equ 5               ; AMX: count levels, not edges
 CFG_DESK        equ 6               ; ink of the mode 1 desk
-CFG_COUNT       equ 7
+CFG_PACK        equ 7               ; the pack: LANG_PACKS (kernel/ext.asm)
+CFG_COUNT       equ 8
 CFG_SIZE        equ 5 + CFG_COUNT
 
 cfg_load:
@@ -96,6 +98,7 @@ cfg_save:
         jp fs_save
 
 cfg_file:       db "SETUP   CFG"
-cfg_magic:      db "VCFG", 1
-cfg_data:       db VIEW_DESKTOP, 0, 25, 3, 1, 0, 1  ; English at first
+cfg_magic:      db "VCFG", 2
+cfg_data:       db VIEW_DESKTOP, 0, 25, 3, 1, 0, 1, 0  ; English, and the
+                                                    ; Greek pack, at first
 cfg_head:       ds CFG_SIZE

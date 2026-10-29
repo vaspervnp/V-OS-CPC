@@ -5,7 +5,8 @@
 ; As a program (Launcher, RUN): mode 1, the time in the middle of the
 ; screen, a menu of its own and the shared ones. As the accessory
 ; (Launcher: FILE > AS ACCESSORY, then F5): a small window over what is
-; on the screen, in whatever mode is selected; F5 or ESC closes it.
+; on the screen, in whatever mode is selected; F5 or ESC closes it, its
+; title bar drags it (VOS_DRAG).
 ; The time comes from VOS_FRAMES (50 a second, 24 bits: almost four
 ; days).
 ;
@@ -16,9 +17,7 @@
 
         include "api/vos_api.inc"
 
-WX              equ 8               ; the accessory's window
-WY              equ 16
-WW              equ 96              ; 12 characters (8 pixels in either
+WW              equ 96              ; the accessory's window (wx, wy)              ; 12 characters (8 pixels in either
 WH              equ 34              ; mode)
 TIME_Y          equ 120             ; the program's screen (mode 1)
 CMD_BACK        equ 1
@@ -60,14 +59,22 @@ redraw:
         ld a,(accessory)
         or a
         jr z,.program
-        ld hl,WX                    ; a window: a white title bar
-        ld de,WY
+        ld hl,(wx)                  ; on the screen of this mode
+        ld de,(wy)
         ld bc,WW
+        ld a,WH
+        call VOS_FIT
+        ld (wx),hl
+        ld (wy),de
+        ld bc,WW                    ; a window: a white title bar
         ld a,WH
         ld ix,1
         call box
-        ld hl,WX + 1                ; and a body of pen 0
-        ld de,WY + 10
+        ld hl,(wx)                  ; and a body of pen 0
+        inc hl
+        ld de,(wy)
+        ld a,10
+        call add_de
         ld bc,WW - 2
         ld a,WH - 11
         ld ix,0
@@ -76,8 +83,11 @@ redraw:
         ld c,1
         call VOS_COLOURS
         ld a,T_CLOCK
-        ld hl,WX + 4
-        ld de,WY + 1
+        ld hl,(wx)
+        ld de,4
+        add hl,de
+        ld de,(wy)
+        inc de
         call print_msg
         jr time
 .program:
@@ -129,11 +139,17 @@ time:
         ld c,0
         call VOS_COLOURS
         ld bc,clock_text
-        ld hl,WX + 16
-        ld de,WY + 18
         ld a,(accessory)
         or a
-        jp nz,VOS_PRINT
+        jr z,.program
+        ld hl,(wx)
+        ld de,16
+        add hl,de
+        ld de,(wy)
+        ld a,18
+        call add_de
+        jp VOS_PRINT
+.program:
         ld hl,160
         ld de,TIME_Y
         jp VOS_PRINT
@@ -171,6 +187,14 @@ div24:
         djnz .bit
         ret
 
+; DE + A
+add_de:
+        add a,e
+        ld e,a
+        ret nc
+        inc d
+        ret
+
 ; HL = x, DE = y, BC = w, A = h, IX = pen: a filled rectangle
 box:
         ld (rect),hl
@@ -200,7 +224,7 @@ event:
         jp z,time
         ld a,(accessory)
         or a
-        jr nz,.key
+        jr nz,.acc
         push hl
         call VOS_UI_EVENT           ; menus and shortcuts first
         pop hl
@@ -210,8 +234,8 @@ event:
         call VOS_MENU_OPEN
         pop hl
         ret nz
-.key:
         ld a,(hl)
+.keys:
         cp VE_KEY_DOWN
         ret nz
         inc hl
@@ -219,6 +243,21 @@ event:
         cp VK_ESC
         ret nz
         jp VOS_EXIT
+
+; the accessory: its title bar drags it (the kernel draws it again)
+.acc:
+        ld a,(hl)
+        cp VE_PTR_DOWN
+        jr nz,.keys
+        ld hl,(wx)
+        ld de,(wy)
+        ld bc,WW
+        ld a,WH
+        call VOS_DRAG
+        ret nc
+        ld (wx),hl
+        ld (wy),de
+        ret
 
 ; A = command
 command:
@@ -240,6 +279,8 @@ menu:           db T_CLOCK, 1
 
 accessory:      db 0
 last:           db 0                ; the seconds drawn (low byte)
+wx:             dw 8                ; the accessory's window
+wy:             dw 16
 clock_text:     db "00:00:00", 0
 rect:           dw 0, 0, 0, 0
                 db 0

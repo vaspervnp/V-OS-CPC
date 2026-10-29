@@ -1,0 +1,5 @@
+# German language pack (GERMAN.LNG)
+code    DE
+name    DEUTSCH
+charset iso8859_1
+font    ../latin1/font.txt

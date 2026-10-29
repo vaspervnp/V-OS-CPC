@@ -62,6 +62,7 @@ KERNEL_SIZE     equ kernel_end - kernel_start
         org EXT_ADDR, EXT_IMAGE
 ext_start:
         include "kernel/ext.asm"
+        include "kernel/files_ext.asm"
         assert $ <= SLOT_TABLE
         ds SLOT_TABLE - $, 0
         ds 256, 0                   ; the slots, free

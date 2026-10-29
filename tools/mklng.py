@@ -10,7 +10,9 @@
                                as in .LNG files (offsets from the start)
 
   mklng.py pack lang/el build/GREEK.LNG --master lang/en
-      A language pack file (.LNG), format below.
+      A language pack file (.LNG), format below. lang/<xx>/pack.txt
+      gives code, name and charset, and may name a shared font
+      ("font ../latin1/font.txt"; default font.txt).
 
 .LNG format (little endian, offsets from the start of the file):
    0  "VLNG"            magic
@@ -211,7 +213,7 @@ def build_pack(src, dst, master):
     ascii_cs = Charset("ascii")
     base = read_keymap(os.path.join(master, "keymap.txt"), ascii_cs)
     normal, shift, combos = read_keymap(os.path.join(src, "keymap.txt"), charset, base[:2])
-    glyphs = read_font(os.path.join(src, "font.txt"))
+    glyphs = read_font(os.path.join(src, info.get("font", "font.txt")))
     ids = list(read_messages(os.path.join(master, "messages.txt")))
     msgs = read_messages(os.path.join(src, "messages.txt"))
     for ident in msgs:
@@ -268,7 +270,7 @@ def asm_bytes(data, per_line=16):
     return out
 
 
-MAX_ENGLISH = 4096                  # EN_MSG_ADDR .. EXT_ADDR, memmap.inc
+MAX_ENGLISH = 2048                  # EN_MSG_ADDR .. EXT_ADDR, memmap.inc
 
 
 def build_kernel(src, outdir, msg_file):

@@ -3,7 +3,7 @@
 
 usage: mktexts.py texts.txt out.asm [label]
 
-Lines: NAME | English | the pack's language (Greek), "#" starts a
+Lines: NAME | English | Greek (the table says "EL"), "#" starts a
 comment. A "|" between spaces parts the columns; one inside a text
 (no spaces around it) starts a line in a dialog. Writes T_NAME equ VT_FIRST + n for each, and the table
 "texts:" (or "label:") for VOS_TEXTS, Greek in ISO 8859-7. An empty
@@ -41,7 +41,7 @@ def main():
     out = [f"; made by tools/mktexts.py from {sys.argv[1]}: do not edit", ""]
     for i, (name, _, _) in enumerate(rows):
         out.append(f"T_{name:<14} equ VT_FIRST + {i}")
-    out += ["", f"{label}:  db {len(rows)}"]
+    out += ["", f'{label}:  db {len(rows)}, "EL"']
     for i, (name, _, el) in enumerate(rows):
         out.append(f"        dw {pre}e_{i}, {pre + 'g_' + str(i) if el else 0}")
     for i, (name, en, el) in enumerate(rows):

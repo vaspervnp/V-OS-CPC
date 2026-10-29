@@ -44,6 +44,8 @@ api_jumps:
         jp api_bank_get
         jp api_bank_put
         jp api_background           ; 39
+        jp api_drag                 ; 40
+        jp ui_fit
         assert $ == VOS_API + VOS_API_COUNT * 3
         assert VM_OK == MSG_BTN_OK && VM_YES == MSG_BTN_YES && VM_NO == MSG_BTN_NO
 
@@ -108,6 +110,15 @@ api_background:
         ld e,a
         ld hl,slot_bg               ; (kernel/ext.asm)
         jp ext_call
+
+; VOS_DRAG (ui/ui.asm, ui_drag): an accessory that moved is drawn
+; again by the main loop (kernel/view.asm)
+api_drag:
+        call ui_drag
+        ret nc
+        ld a,(acc_open)
+        ld (acc_moved),a
+        ret
 
 ; in the background the calls not for a program there come here
 ; (kernel/ext.asm, bg_hush): nothing, A = 0, Z, no carry
@@ -180,19 +191,28 @@ api_frames:
         ld a,(int_frames_hi)
         ret
 
-; -> A: a 16-bit linear congruential generator, high byte
+; -> A: a 16-bit xorshift (7, 9, 8), the frame counter mixed into the
+; seed first so that the time of the calls counts too
 api_random:
         ld hl,(api_seed)
-        ld d,h
-        ld e,l
-        add hl,hl
-        add hl,hl
-        add hl,de                   ; * 5
-        ld de,(int_frames)
-        add hl,de
-        inc hl
-        ld (api_seed),hl
+        ld a,(int_frames)
+        xor l
+        ld l,a
         ld a,h
+        rra
+        ld a,l
+        rra
+        xor h
+        ld h,a
+        ld a,l
+        rra
+        ld a,h
+        rra
+        xor l
+        ld l,a
+        xor h
+        ld h,a
+        ld (api_seed),hl
         ret
 
 api_menu_view:
@@ -297,12 +317,17 @@ api_menu_open:
         inc a                       ; UI_NONE = #FF
         ret
 
-; A = VT_FIRST.. -> HL = the program's text in the UI language
+; A = VT_FIRST.. -> HL = the program's text in the UI language: the
+; second column if its language is the pack's, else English
 api_text:
         sub VT_FIRST
         ld hl,(app_texts)
         cp (hl)
         jr nc,.none
+        inc hl
+        ld c,(hl)                   ; BC = the second column's language
+        inc hl
+        ld b,(hl)
         inc hl
         add a,a
         add a,a
@@ -316,6 +341,11 @@ api_text:
         ld a,(lang_ui)
         or a
         jr z,.english
+        push hl
+        ld hl,(lang_code)
+        sbc hl,bc                   ; (no carry: or a)
+        pop hl
+        jr nz,.english
         ld a,(hl)                   ; the other one, if there is one
         inc hl
         ld h,(hl)

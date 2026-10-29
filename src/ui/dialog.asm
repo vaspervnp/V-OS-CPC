@@ -11,6 +11,7 @@
 ; runs its own event loop until a button is chosen: TAB, SHIFT+TAB,
 ; LEFT and RIGHT move the focus; RETURN, ENTER or SPACE choose it; a
 ; click on a button chooses that button. "|" in the text starts a line.
+; Its title bar drags it (ui_move).
 ; Close any open menu first: both use the same save-under buffer.
 ; =====================================================================
 
@@ -246,6 +247,12 @@ dlg_event:
         xor a
         ret
 .click:
+        call ui_move                ; by its title bar
+        jr nc,.hit
+        call dlg_draw
+        call ui_draw_widgets
+        jr .none
+.hit:
         ld hl,(ev_cur + 4)
         ld de,(ev_cur + 6)
         call ui_widget_hit

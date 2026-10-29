@@ -7,7 +7,7 @@
 ; Returns carry if cancelled.
 ;
 ; Typed characters are added at the end, DEL removes the last one,
-; RETURN or ENTER accept, ESC cancels. The pack keyboard works here as
+; RETURN or ENTER accept, ESC cancels. Its title bar drags it. The pack keyboard works here as
 ; anywhere, so Greek can be typed; checking the text is the caller's.
 ; =====================================================================
 
@@ -49,27 +49,7 @@ input_run:
         ld (uw_h),a
         call ui_centre
         call ui_save_window
-        ld a,(in_title)
-        call ui_window
-        ld a,UIP_TEXT
-        ld c,UIP_BAR
-        call ui_colours
-        ld a,MSG_INPUT_HINT
-        call lang_msg
-        ld b,h
-        ld c,l
-        ld hl,(uw_x)
-        ld de,16
-        add hl,de
-        ld de,(uw_y)
-        ld a,12 + 6 + 12 + 6
-        add a,e
-        ld e,a
-        jr nc,.hint_y
-        inc d
-.hint_y:
-        call txt_print
-        call in_draw
+        call in_window
 
 .loop:
         call wait_frame
@@ -92,6 +72,30 @@ input_run:
         cp 2
         ccf                         ; carry if cancelled
         ret
+
+; the window: frame, title bar, hint and the field
+in_window:
+        ld a,(in_title)
+        call ui_window
+        ld a,UIP_TEXT
+        ld c,UIP_BAR
+        call ui_colours
+        ld a,MSG_INPUT_HINT
+        call lang_msg
+        ld b,h
+        ld c,l
+        ld hl,(uw_x)
+        ld de,16
+        add hl,de
+        ld de,(uw_y)
+        ld a,12 + 6 + 12 + 6
+        add a,e
+        ld e,a
+        jr nc,.y
+        inc d
+.y:
+        call txt_print
+        ; fall through
 
 ; the field: the text and a cursor, on the desk colours
 in_draw:
@@ -166,6 +170,12 @@ in_length:
 ; ev_cur -> A = 0 nothing, 1 accepted, 2 cancelled
 in_event:
         ld a,(ev_cur)
+        cp EV_PTR_DOWN
+        jr nz,.not_ptr
+        call ui_move                ; by its title bar
+        call c,in_window
+        jr .none
+.not_ptr:
         cp EV_LANG
         jr nz,.not_lang
         call ui_draw_indicator

@@ -17,6 +17,10 @@
 ;   #8000  TXT_EXPAND (16 bytes)
 ;   #8800  app_self, app_parent (kernel/view.asm), then acc_ctx
 ;   #9000  bank_buf (kernel/lang.asm)
+;   #9800  moving windows: dr_x ... acc_moved, then bg_id ... bg_base
+;          (kernel/ext.asm)
+;   #A000  where the Desktop's window is (shell/desktop.asm)
+;   #A800  the program switcher's sw_ and sa_ (kernel/ext.asm)
 ; The loader clears video RAM, so they start empty.
 
 KERNEL_BASE     equ #0000
@@ -51,10 +55,10 @@ LANG_BANK_ADDR  equ #4000
 LANG_MAX        equ #2000           ; tools/mklng.py MAX_PACK
 LISTS_CFG       equ #C7             ; Commander lists after the pack
 LISTS_ADDR      equ #6000
-EN_MSG_ADDR     equ #6800           ; ENGLISH.MSG, up to 4K
-EXT_ADDR        equ #7800           ; the kernel extension, up to 2K,
+EN_MSG_ADDR     equ #6800           ; ENGLISH.MSG, up to 2K (mklng.py)
+EXT_ADDR        equ #7000           ; the kernel extension, up to 4K,
                                     ; the program slots at its end
-EXT_MAX         equ #0800
+EXT_MAX         equ #1000
 EXT_IMAGE       equ #8000           ; where it is in VOS.BIN, as loaded
 BUF_CFG         equ #C4
 BUF_ADDR        equ #4000
@@ -88,7 +92,7 @@ GFX_H           equ 259
 
 ; ---- video RAM gaps (800 bytes each) ---------------------------------
 GAP_SIZE        equ 800
-GAP0            equ #C4E0           ; pack font 128..191, lang_msg_buf
+GAP0            equ #C4E0           ; pack font 128..191, lang_msg_buf, bg_api
 GAP1            equ #CCE0           ; pack font 192..255, dlg_text
 GAP2            equ #D4E0           ; pack case, keymap, combos; fs block list
 GAP3            equ #DCE0           ; disc sector buffer, free block map

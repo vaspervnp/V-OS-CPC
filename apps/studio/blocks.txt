@@ -38,3 +38,4 @@ OP_PRESSED  | WHEN BUTTON ~0        | ΟΤΑΝ ΚΟΥΜΠΙ ~0
 OP_TEXT     | TEXT ~0 AT ~1 ~2      | ΚΕΙΜΕΝΟ ~0 ΣΤΟ ~1 ~2
 OP_COSTUME  | COSTUME ~0            | ΚΟΣΤΟΥΜΙ ~0
 OP_NEXT_COSTUME | NEXT COSTUME      | ΕΠΟΜΕΝΟ ΚΟΣΤΟΥΜΙ
+OP_LABEL    | LABEL ~1 TO ~0        | ΕΤΙΚΕΤΑ ~1 ΣΕ ~0

@@ -188,7 +188,7 @@ menu:           db T_MENU, 3
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
 
-texts:          db 5
+texts:          db 5, "EL"
                 dw t_menu_en, t_menu_el
                 dw t_colour_en, t_colour_el
                 dw t_back_en, t_back_el

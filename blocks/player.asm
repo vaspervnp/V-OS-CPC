@@ -13,7 +13,10 @@
 ;
 ;   #4000  the player and the runtime, then the VBS record
 ;          the compiled scripts, up to CODE_LIMIT
-;   #7500  sprites, the script table and state, variables, counters
+;          the REPEATs' counters (REPEATS words)
+;   #7480  the 64 variables (A..H, A1..H7: n mod 8 the letter, n / 8
+;          the digit)
+;   #7500  sprites, the script table and state
 ;   #7800  the scripts' stacks (MAX_SCRIPTS x 128)
 ;
 ; WHEN I RECEIVE n starts on SEND n (a number; SEND takes any value).
@@ -48,7 +51,7 @@ SPR_SIZE        equ 8
 TEXT_MAX        equ 32
 TEXT_SIZE       equ 16
 LINE_SIZE       equ 10
-MAX_LINES       equ 200
+MAX_LINES       equ 240
 V_BG            equ 4                   ; pen 0..15; + V_MODE1: mode 1;
                                         ; + V_RUNS: it goes on behind
 V_NSPR          equ 5
@@ -72,7 +75,7 @@ K_COSTUME       equ 14
 OP_HATS         equ 3               ; WHEN START, KEY, CLICKED = EVT_*
 OP_RECEIVE      equ 24              ; WHEN I RECEIVE: EVT_RECEIVE
 OP_PRESSED      equ 32              ; WHEN BUTTON: EVT_BUTTON
-OP_COUNT        equ 36
+OP_COUNT        equ 37
 COS_MAX         equ 8               ; costumes after the lines: db count,
 COS_SIZE        equ 258             ; then db 0, 0, 16 x 16 pens (bit 7:
                                     ; none); pl_costumes makes them images
@@ -91,10 +94,12 @@ V_RUNS          equ #40
 prog_sprites    equ #7500           ; SPR_MAX * SP_SIZE
 prog_scripts    equ #7590           ; MAX_SCRIPTS * 7
 rt_state        equ #7600           ; MAX_SCRIPTS * ST_SIZE
-pl_vars         equ #7650           ; A..H
-pl_counters     equ #7660           ; a word for each REPEAT line
+VARS            equ 64
+pl_vars         equ prog_sprites - VARS * 2
+REPEATS         equ 64              ; REPEATs in a program, each with a
+pl_counters     equ pl_vars - REPEATS * 2 ; word, set as the loop starts
 rt_stacks       equ #7800
-CODE_LIMIT      equ prog_sprites - 64   ; a line's code is shorter
+CODE_LIMIT      equ pl_counters - 64 ; a line's code is shorter
 
         org VOS_APP_ADDR
         jp pl_init
@@ -177,9 +182,14 @@ pl_init:
         call pl_patch
         call pl_costumes
         call pl_sprites
-        ld hl,rt_state              ; script state, variables and
-        ld de,rt_state + 1          ; counters 0
+        ld hl,rt_state              ; script state 0
+        ld de,rt_state + 1
         ld bc,rt_stacks - rt_state - 1
+        ld (hl),0
+        ldir
+        ld hl,pl_vars               ; and the variables
+        ld de,pl_vars + 1
+        ld bc,VARS * 2 - 1
         ld (hl),0
         ldir
         call pl_compile
@@ -260,6 +270,7 @@ pl_compile:
         ld (pl_open),a
         ld (pl_depth),a
         ld (pl_lineno),a
+        ld (pl_nrep),a
         ld bc,(vbs_data + V_NLINES)
         ld ix,vbs_data + V_LINES
         ld hl,(pl_cos_end)          ; the code after the costumes
@@ -441,7 +452,8 @@ pl_ops:
         dw 0, op_broadcast          ; WHEN I RECEIVE (pl_hat), SEND
         dw op_sub, op_mul, op_div, op_mod
         dw op_window, op_button, 0, op_write    ; WHEN BUTTON: pl_hat
-        dw op_costume, op_next_costume
+        dw op_costume, op_next_costume, op_label
+        assert $ - pl_ops == OP_COUNT * 2     ; as in apps/studio/studio.asm
 
 op_forever:
         ld a,T_LOOP
@@ -449,6 +461,8 @@ op_forever:
         jp ct_push
 
 op_repeat:
+        ld hl,pl_nrep               ; its own counter (the 65th shares
+        inc (hl)                    ; the first one's)
         xor a                       ; counter = times
         call pl_value
         call pl_counter
@@ -721,6 +735,11 @@ op_window:                          ; WINDOW text w h
 op_button:                          ; BUTTON text AT x y
         ld hl,rt_button
         jr op_placed
+op_label:                           ; LABEL button TO text: HL = the
+        ld a,1                      ; button, A = the text
+        call pl_value
+        ld hl,rt_label
+        jr op_texted
 op_write:                           ; TEXT text AT x y
         ld hl,rt_write
 op_placed:
@@ -990,13 +1009,13 @@ pl_slot:
         ld d,(hl)
         ret
 
-; slot 0's variable -> DE; DE = variable 0..7 -> DE = its address
+; slot 0's variable -> DE; DE = variable 0..63 -> DE = its address
 pl_var0:
         xor a
         call pl_slot
 pl_var:
         ld a,e
-        and 7
+        and VARS - 1
         add a,a
         ld e,a
         ld d,0
@@ -1020,9 +1039,10 @@ pl_own_prop:
         or a
         ret
 
-; -> DE = this line's REPEAT counter
+; -> DE = this REPEAT's counter (pl_nrep)
 pl_counter:
-        ld a,(pl_lineno)
+        ld a,(pl_nrep)
+        and REPEATS - 1
         ld e,a
         ld d,0
         ex de,hl
@@ -1147,7 +1167,7 @@ rt_text_ptr:
         ret
 
 ; ---- data -----------------------------------------------------------
-rt_texts:       db 2 + TEXT_MAX     ; the runtime's, then the program's
+rt_texts:       db 2 + TEXT_MAX, "EL" ; the runtime's, then the program's
                 dw rt_t_menu_en, rt_t_menu_el
                 dw rt_t_stop_en, rt_t_stop_el
         REPEAT TEXT_MAX, n
@@ -1168,6 +1188,7 @@ pl_own_rec:     dw 0
 pl_param:       db 0
 pl_event:       db 0
 pl_lineno:      db 0
+pl_nrep:        db 0                ; REPEATs so far
 pl_out:         dw 0
 pl_depth:       db 0
 pl_ctrl:        ds MAX_DEPTH * CT_SIZE

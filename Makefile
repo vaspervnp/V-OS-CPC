@@ -13,6 +13,12 @@
 #   make test-switch F6: the program switcher, also from the VIEW menu
 #   make test-expand a 512K RAM expansion: STUDIO and CALC beside DEMO, PONG
 #   make test-behind TICKER goes on in the background; Studio's IN BACKGROUND
+#   make test-drag   windows dragged by their title bars: FILES, a dialog,
+#                 the CLOCK accessory, CALC's window (TEST_SCRIPT=10)
+#   make test-langs  Setup's LANGUAGE through Greek, French, Spanish, German
+#                 and Italian; the Desktop and keyboard in Italian
+#   make test-mines  MINES, a Studio program: cells opened until a mine
+#   make test-vars   Studio's 64 variables: VARS.VBS opened and run
 #   make test-lang   English at boot, Greek saved in Setup, then V-OS
 #                 again starts in Greek (TEST_SCRIPT=3)
 #   make test-amsdos  the same script, then AMSDOS in BASIC reads the
@@ -33,9 +39,10 @@ IDSK    ?= iDSK
 # files are committed (like src/gfx/font_ascii.asm); packs are build
 # products added to the disk.
 LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
-PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG
+PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
+           $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-amsdos test-reboot test-system clean
+.PHONY: all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -49,6 +56,21 @@ $(BUILD)/GREEK.LNG: $(wildcard lang/el/*.txt) lang/en/messages.txt lang/en/keyma
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mklng.py pack lang/el $@ --master lang/en
 
+# French, Spanish, German and Italian share lang/latin1/font.txt
+LATIN_PACK = $(wildcard lang/$(1)/*.txt) lang/latin1/font.txt lang/en/messages.txt lang/en/keymap.txt tools/mklng.py
+$(BUILD)/FRENCH.LNG: $(call LATIN_PACK,fr)
+	@mkdir -p $(BUILD)
+	$(PYTHON) -I tools/mklng.py pack lang/fr $@ --master lang/en
+$(BUILD)/SPANISH.LNG: $(call LATIN_PACK,es)
+	@mkdir -p $(BUILD)
+	$(PYTHON) -I tools/mklng.py pack lang/es $@ --master lang/en
+$(BUILD)/GERMAN.LNG: $(call LATIN_PACK,de)
+	@mkdir -p $(BUILD)
+	$(PYTHON) -I tools/mklng.py pack lang/de $@ --master lang/en
+$(BUILD)/ITALIAN.LNG: $(call LATIN_PACK,it)
+	@mkdir -p $(BUILD)
+	$(PYTHON) -I tools/mklng.py pack lang/it $@ --master lang/en
+
 # The kernel loads packs into bank 7 itself (fs_load), so the header
 # addresses only document it.
 define add_packs
@@ -60,7 +82,7 @@ endef
 APPS    := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/STUDIO.BIN $(BUILD)/PONG.VBN $(BUILD)/CATCH.VBN $(BUILD)/STARCAT.VBN \
            $(BUILD)/COUNTER.VBN $(BUILD)/FLAP.VBN $(BUILD)/FLAP.VBS \
            $(BUILD)/CALC.VBN $(BUILD)/CALC.VBS $(BUILD)/CLOCK.BIN $(BUILD)/TICKER.VBN \
-           $(BUILD)/TICKER.VBS $(BUILD)/VBRUN.SYS
+           $(BUILD)/TICKER.VBS $(BUILD)/VBRUN.SYS $(BUILD)/MINES.VBN $(BUILD)/MINES.VBS
 APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
 
 # Icons for the Launcher (VOS_ICON): text in apps/icons, made into
@@ -141,6 +163,8 @@ $(BUILD)/FLAP.VBN $(BUILD)/FLAP.VBS &: blocks/examples/flap.vbt tools/mkvbs.py a
 	$(PYTHON) -I tools/mkvbs.py $< $(BUILD)/FLAP.VBS $(BUILD)/VBRUN.SYS $(BUILD)/FLAP.VBN
 $(BUILD)/TICKER.VBN $(BUILD)/TICKER.VBS &: blocks/examples/ticker.vbt tools/mkvbs.py apps/studio/blocks.txt $(BUILD)/VBRUN.SYS
 	$(PYTHON) -I tools/mkvbs.py $< $(BUILD)/TICKER.VBS $(BUILD)/VBRUN.SYS $(BUILD)/TICKER.VBN
+$(BUILD)/MINES.VBN $(BUILD)/MINES.VBS &: blocks/examples/mines.vbt tools/mkvbs.py apps/studio/blocks.txt $(BUILD)/VBRUN.SYS
+	$(PYTHON) -I tools/mkvbs.py $< $(BUILD)/MINES.VBS $(BUILD)/VBRUN.SYS $(BUILD)/MINES.VBN
 
 define add_apps
 	for p in $(2); do $(IDSK) $(1) -i $$p -t 1 -c 4000 -e 4000 > /dev/null; done
@@ -328,6 +352,91 @@ test-behind: $(BEHIND_DSK) $(TEST_DSK_B)
 	for d in $(BEHIND_SHOTS); do \
 	  cp $(BEHIND_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
 	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# Windows that move (TEST_SCRIPT=10): the Desktop's window, a dialog,
+# the accessory, a block program's window, by their title bars
+DRAG_DSK := $(BUILD)/vos_drag.dsk
+DRAG_SHOTS := 145 160 222 236 405 575 590 630
+$(DRAG_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_drag -DTEST_SCRIPT=10
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-drag: $(DRAG_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(DRAG_SHOTS); do \
+	  cp $(DRAG_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The language packs (TEST_SCRIPT=11): Setup's LANGUAGE through each
+# pack, the Desktop and the keyboard in Italian
+LANGS_DSK := $(BUILD)/vos_langs.dsk
+LANGS_SHOTS := 185 225 265 305 345 390 500
+$(LANGS_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_langs -DTEST_SCRIPT=11
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-langs: $(LANGS_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(LANGS_SHOTS); do \
+	  cp $(LANGS_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# MINES (TEST_SCRIPT=12): a Studio program, cells clicked
+MINES_DSK := $(BUILD)/vos_mines.dsk
+MINES_SHOTS := 330 400 470 540 600 660
+$(MINES_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_mines -DTEST_SCRIPT=12
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-mines: $(MINES_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(MINES_SHOTS); do \
+	  cp $(MINES_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# Studio's 64 variables (TEST_SCRIPT=13): VARS.VBS, on the test disc
+# only, opened in Studio and run
+$(BUILD)/VARS.VBN $(BUILD)/VARS.VBS &: blocks/examples/vars.vbt tools/mkvbs.py apps/studio/blocks.txt $(BUILD)/VBRUN.SYS
+	$(PYTHON) -I tools/mkvbs.py $< $(BUILD)/VARS.VBS $(BUILD)/VBRUN.SYS $(BUILD)/VARS.VBN
+VARS_DSK := $(BUILD)/vos_vars.dsk
+VARS_SHOTS := 335 350 470
+$(VARS_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/VARS.VBS
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_vars -DTEST_SCRIPT=13
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS) $(BUILD)/VARS.VBS)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-vars: $(VARS_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(VARS_SHOTS); do \
+	  cp $(VARS_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
 

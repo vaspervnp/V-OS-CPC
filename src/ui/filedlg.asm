@@ -6,7 +6,8 @@
 ;
 ; Up to FP_MAX_ROWS files are shown (FP_SPLIT_ROWS with a mixed screen); the list scrolls with the selection.
 ; UP/DOWN move, RETURN/ENTER/SPACE choose, ESC cancels, a click on a
-; file chooses it. The last line shows the free space on the disc.
+; file chooses it, its title bar drags it. The last line shows the free
+; space on the disc.
 ; Rows read "NAME    .EXT  nnnK". Uses the save-under buffer, like
 ; menus and dialogs.
 ; =====================================================================
@@ -46,16 +47,8 @@ file_pick:
         ld hl,FP_CHARS * 8
         ld (fp_w),hl
         call ui_centre
-        ld hl,(fp_y)
-        ld de,16                    ; first row
-        add hl,de
-        ld (fp_rows_y),hl
-
         call ui_save_window
-        ld a,(fp_title)
-        call ui_window
-        call fp_draw_rows
-        call fp_draw_free
+        call fp_window
 
 .loop:
         call wait_frame
@@ -79,6 +72,17 @@ file_pick:
         ccf                         ; carry if cancelled
         ld a,(fp_sel)
         ret
+
+; the window: frame, title bar, the rows and the free space
+fp_window:
+        ld hl,(fp_y)
+        ld de,16                    ; first row
+        add hl,de
+        ld (fp_rows_y),hl
+        ld a,(fp_title)
+        call ui_window
+        call fp_draw_rows
+        jp fp_draw_free
 
 ; all visible rows
 fp_draw_rows:
@@ -208,6 +212,11 @@ fp_event:
         xor a
         ret
 .click:
+        call ui_move                ; by its title bar
+        jr nc,.inside
+        call fp_window
+        jr .none
+.inside:
         ld hl,(ev_cur + 4)          ; inside the box?
         ld de,(fp_x)
         or a

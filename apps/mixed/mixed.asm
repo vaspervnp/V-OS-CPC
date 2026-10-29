@@ -263,7 +263,7 @@ bar:            db 3
 menu:           db T_MENU, 1
                 db T_BACK, CMD_BACK, "Q", 0
 
-texts:          db 4
+texts:          db 4, "EL"
                 dw t_menu_en, t_menu_el
                 dw t_back_en, t_back_el
                 dw t_mode0_en, t_mode0_el

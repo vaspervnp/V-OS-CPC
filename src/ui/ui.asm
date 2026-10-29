@@ -456,6 +456,35 @@ ui_window:
         ld a,(uw_h)
         ret
 
+; ---------------------------------------------------------------------
+; Moving windows (kernel/ext.asm, drag_run)
+; ui_drag  HL = x, DE = y, BC = width, A = height, ev_cur a click: on
+;          the top 10 rows the window is dragged as an outline ->
+;          carry: it moved, HL, DE = where it is now
+; ui_fit   the same window -> HL, DE: on the screen
+; ui_move  ui_drag with the uw_ window (dialogs) -> carry: it moved,
+;          what it covered is back, what it covers now is saved; draw
+;          it again
+; Destroy: all except IX
+; ---------------------------------------------------------------------
+ui_fit:
+        ld (dr_h),a
+        xor a
+        jr ui_drag_go
+ui_drag:
+        ld (dr_h),a
+        ld a,1
+ui_drag_go:
+        ld (dr_drag),a
+        ld (dr_x),hl
+        ld (dr_w),bc
+        ld hl,drag_run              ; (DE goes through, HL and DE come
+        jp ext_call                 ; back)
+
+ui_move:
+        ld hl,drag_window
+        jp ext_call
+
 ; ui_busy - A = MSG_*: a small "please wait" window with that text,
 ; while the disc works. ui_restore takes it away.
 ui_busy:
@@ -1185,14 +1214,14 @@ ui_draw_widgets:
 
 ; A = widget -> HL -> its 8 bytes.  Destroys: DE
 ui_widget_ptr:
-        ld hl,(ui_widgets)
-        inc hl
-        add a,a
-        add a,a
-        add a,a
-        ld e,a
-        ld d,0
+        ld l,a                      ; (in 16 bits: up to 255 widgets)
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,(ui_widgets)
         add hl,de
+        inc hl
         ret
 
 ; A = widget: draw the button, focused or not

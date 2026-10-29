@@ -1,0 +1,53 @@
+# Spanish keyboard: the Spanish PC layout on the CPC keys. Keys not
+# listed keep the English map (lang/en/keymap.txt). Characters are
+# written in UTF-8 and stored as ISO 8859-1.
+#
+# Ñ is on the : key. The ; key is the acute accent dead key and SHIFT+;
+# the diaeresis; the @ key is the grave accent and SHIFT+@ the
+# circumflex (the PC has them on the same places, beside Ñ and P).
+
+key 57 3    ·       # 3
+key 41 7    /       # 7
+key 40 8    (       # 8
+key 33 9    )       # 9
+key 32 0    =       # 0
+key 25 '    ?       # -
+key 24 ¡    ¿       # ^
+key 26 dead:grave dead:circumflex   # @
+key 17 +    *       # [
+key 29 ñ    Ñ       # :
+key 28 dead:acute dead:diaeresis    # ;
+key 19 ç    Ç       # ]
+key 39 ,    ;       # ,
+key 31 .    :       # .
+key 30 -    _       # /
+key 22 <    >       # \
+
+combo acute a á
+combo acute e é
+combo acute i í
+combo acute o ó
+combo acute u ú
+combo acute A Á
+combo acute E É
+combo acute I Í
+combo acute O Ó
+combo acute U Ú
+combo acute space ´
+combo diaeresis u ü
+combo diaeresis i ï
+combo diaeresis U Ü
+combo diaeresis I Ï
+combo diaeresis space ¨
+combo grave a à
+combo grave e è
+combo grave i ì
+combo grave o ò
+combo grave u ù
+combo grave space `
+combo circumflex a â
+combo circumflex e ê
+combo circumflex i î
+combo circumflex o ô
+combo circumflex u û
+combo circumflex space ^

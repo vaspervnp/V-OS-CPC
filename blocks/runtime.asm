@@ -22,11 +22,13 @@
 ; RT_ANY_MODE (the player) images are drawn for mode 0, and the player
 ; writes the mode 1 instructions at rt_m1_n when the program is in mode 1.
 ; With RT_UI defined the runtime also has windows and buttons
-; (rt_window, rt_button, rt_write; scripts call them with rt_on_main),
-; the value of the last button pressed (rt_button_n) and EVT_BUTTON;
+; (rt_window, rt_button, rt_label, rt_write; scripts call them with
+; rt_on_main), the value of the last button pressed (rt_button_n) and
+; EVT_BUTTON;
 ; PRINT and the like place things from the window's inside (rt_ox,
-; rt_oy). The program then provides rt_texts (its texts from
-; T_RT_TEXT0) and rt_text_ptr (A = text -> HL -> it).
+; rt_oy). Its title bar drags it, with its buttons (rt_win_drag). The
+; program then provides rt_texts (its texts from T_RT_TEXT0) and
+; rt_text_ptr (A = text -> HL -> it).
 ;
 ; Scripts are coroutines: each has its own stack and gives the processor
 ; back (rt_yield) at the end of every loop pass and in waits. On each
@@ -79,7 +81,7 @@ RT_PPB          equ 4
 
 RT_CMD_STOP     equ 1
 RT_CMD_BUTTON   equ 32              ; and up: the buttons (RT_UI)
-RT_MAX_BUTTONS  equ 16
+RT_MAX_BUTTONS  equ 64
 RT_BUTTON_H     equ 14              ; as the kernel draws them
 WIN_PEN         equ 1               ; windows: white, with a black
 WIN_INK         equ 0               ; frame, title bar and shadow
@@ -168,6 +170,12 @@ rt_event:
         jr z,.key
         cp VE_PTR_DOWN
         ret nz
+        IFDEF RT_UI
+        push hl
+        call rt_win_drag
+        pop hl
+        ret c
+        ENDIF
         inc hl                      ; a click: the sprite on top, or
         inc hl                      ; the stage
         inc hl
@@ -199,6 +207,15 @@ rt_event:
 
 rt_frame:
         call rt_run_scripts
+        IFDEF RT_UI
+        ld hl,rt_ui_dirty           ; buttons made or labelled: drawn
+        ld a,(hl)                   ; once, at the end of the first
+        or a                        ; frame that adds none
+        jr z,.drawn
+        dec (hl)
+        call z,VOS_DRAW_WIDGETS
+.drawn:
+        ENDIF
         jp rt_draw_sprites
 
 ; ---------------------------------------------------------------------
@@ -1753,6 +1770,67 @@ rt_win_draw:
         ld bc,rt_wtext
         jp VOS_PRINT
 
+; a click on the window's title bar drags it (VOS_DRAG) -> carry if
+; it moved: its inside and its buttons go with it, and everything is
+; drawn again
+rt_win_drag:
+        ld a,(rt_win)
+        or a
+        ret z
+        ld hl,(rt_wx)
+        ld de,(rt_wy)
+        call rt_win_size
+        ld a,c
+        ld c,b
+        ld b,0
+        call VOS_DRAG
+        ret nc
+        ld bc,(rt_wy)               ; DE = how far down
+        ld (rt_wy),de
+        ex de,hl
+        or a
+        sbc hl,bc
+        push hl
+        ld hl,(rt_wx)               ; BC = how far right
+        ld (rt_wx),de
+        ex de,hl
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        pop de
+        ld hl,(rt_ox)
+        add hl,bc
+        ld (rt_ox),hl
+        ld hl,(rt_oy)
+        add hl,de
+        ld (rt_oy),hl
+        ld ix,rt_buttons + 1        ; widgets: dw x, y, then 4 bytes
+        ld a,(rt_buttons)
+        inc a
+        jr .first
+.button:
+        ld l,(ix + 0)
+        ld h,(ix + 1)
+        add hl,bc
+        ld (ix + 0),l
+        ld (ix + 1),h
+        ld l,(ix + 2)
+        ld h,(ix + 3)
+        add hl,de
+        ld (ix + 2),l
+        ld (ix + 3),h
+        push de
+        ld de,8
+        add ix,de
+        pop de
+.first:
+        dec a
+        jr nz,.button
+        call rt_redraw
+        scf
+        ret
+
 ; -> B, C = the window's width and height
 rt_win_size:
         ld a,(rt_ww)
@@ -1835,7 +1913,36 @@ rt_button:
         ld (hl),0
         ld hl,rt_buttons
         inc (hl)
-        jp VOS_DRAW_WIDGETS
+        jr rt_ui_later
+
+; A = text, HL = button (0, 1, ... as made): it shows that text now, at
+; the same size (LABEL), and stays so when the buttons are drawn again
+rt_label:
+        ld b,a
+        ld a,h
+        or a
+        ret nz
+        ld a,(rt_buttons)
+        cp l
+        ret c
+        ret z
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,rt_buttons + 1 + 5    ; its text
+        add hl,de
+        ld a,b
+        and 31
+        add a,T_RT_TEXT0
+        ld (hl),a
+        ; fall through
+
+; the buttons are drawn by rt_frame, once, when a frame adds none: a
+; loop of BUTTONs (one a frame) draws them all once, at its end
+rt_ui_later:
+        ld a,2
+        ld (rt_ui_dirty),a
+        ret
 
 ; A = text, (rt_px), (rt_py) = where: write it
 rt_write:
@@ -1854,7 +1961,7 @@ rt_bar:         db 3
 rt_menu:        db T_RT_MENU, 1
                 db T_RT_STOP, RT_CMD_STOP, "Q", 0
         IFNDEF RT_UI
-rt_texts:       db 2
+rt_texts:       db 2, "EL"
                 dw rt_t_menu_en, rt_t_menu_el
                 dw rt_t_stop_en, rt_t_stop_el
         ENDIF
@@ -1900,6 +2007,7 @@ rt_oy:          dw 0
 rt_button_n:    dw 0                ; the last button pressed
 rt_btext:       db 0
 rt_bchars:      db 0
+rt_ui_dirty:    db 0                ; draw the buttons (rt_frame)
 rt_buttons:     db 0                ; VOS_SET_WIDGETS
                 ds RT_MAX_BUTTONS * 8
 rt_ui_width:    dw PROG_WIDTH       ; (the player sets it)

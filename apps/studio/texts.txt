@@ -41,7 +41,7 @@ W_COSTUME   | COSTUME               | ΚΟΣΤΟΥΜΙ
 # the status line: what the keys do here
 H_LINE      | RETURN: ADD BLOCK  CLR: DELETE  TAB: PALETTE  | RETURN: ΝΕΟ ΜΠΛΟΚ  CLR: ΣΒΗΣΙΜΟ  TAB: ΠΑΛΕΤΑ
 H_VALUE     | 0-9 - A-H X Y R:RND K:KEY T:TOUCH Z:EDGE P U | 0-9 - A-H X Y R:ΤΥΧ K:ΠΛΗΚΤΡΟ T Z:ΑΚΡΗ P U
-H_VAR       | A-H: VARIABLE         | A-H: ΜΕΤΑΒΛΗΤΗ
+H_VAR       | A-H: VARIABLE, AGAIN: A1-A7 | A-H: ΜΕΤΑΒΛΗΤΗ, ΞΑΝΑ: A1-A7
 H_CMP       | < = >  SPACE: NONE    | < = >  SPACE: ΚΑΝΕΝΑ
 H_SPR       | 0: STAGE  1-6: SPRITE | 0: ΣΚΗΝΗ  1-6: ΑΝΤΙΚΕΙΜΕΝΟ
 H_KEYN      | RETURN, THEN PRESS THE KEY | RETURN ΚΑΙ ΜΕΤΑ ΤΟ ΠΛΗΚΤΡΟ
