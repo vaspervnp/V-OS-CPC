@@ -4,6 +4,16 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M40 (paragraphs and faster scrolling in MARKDOWN; version 0.11):**
+- **Paragraphs:** in MARKDOWN's page and READER, lines that follow each other make one paragraph, as Markdown means them, and wrap together. Two spaces at the end of a line break it there. A list item's next lines go on in the item, and `>` lines in the quote. A blank line, a heading, a list item, a quote, a line or a code block start something new.
+- **Faster scrolling:** the page used to be read from the text's start on every scroll. Now it keeps up to 64 checkpoints (where a text line starts, every 8 page lines or so, with the code-block state and the link count) and starts from the last one above the screen. A new text forgets them (`pv_new`).
+- **Version:** V-OS is 0.11. From now on each milestone adds 0.01. `VOS_VERSION` is in `src/version.inc`, and the About dialog takes it from there (`{VERSION}` in the texts, like `{DATE}`).
+- **Test fixed:** `test-markdown` had not shown the page for some milestones. Its shots came after the RETURN that goes back to the text. The keys are now further apart (RIGHT 1600, RETURN 2200) and the shots are at 430 and 530.
+- **Tested:**
+  - Python Z80 harness with READER's build: a 2.9K text with every element, at each of its 157 scroll positions, scrolled down, up and to random places with the checkpoints. Every screen is the same as a render from the text's start. Paragraphs, an item's second line, a quote's two lines and a two-space break come out right.
+  - Caprice32: `test-markdown` (the README page on both screens, the two first lines joined), `test-reader` (ABOUT.MD's three lines are one paragraph), `test-about` (V-OS 0.11 BETA), `test-sysinfo` (0.11).
+- **Not measured:** how much faster scrolling is on a real CPC. The harness's cycle counts were not reliable.
+
 **M39 (a Markdown reader for the web):**
 - **READER:** a new program (`myapps/reader`, 11K, on its own disc `reader.dsk` with `INDEX.MD` and `ABOUT.MD`). It shows `.MD` pages from the disc or from the web (the M4 board, HTTP, up to 6K) as MARKDOWN's preview does. TAB selects the next link, shown inverted, and the page scrolls to it; RETURN follows it; DEL goes back (4 pages are kept). OPEN A FILE, OPEN AN ADDRESS (^U), OTHER DRIVE.
 - **Links:** a relative link opens next to the page: on the same drive for a disc page, on the same site and folder for a web page; `/x.md` from the top of the site; `http://…` anywhere. `https://` gives "ONLY HTTP ADDRESSES CAN BE OPENED", and the web without an M4 board gives "THE WEB NEEDS AN M4 BOARD".
@@ -11,9 +21,9 @@ What each milestone added, the bugs found on the way, and what was tested and wh
 - **SYSINFO:** it also shows the memory (128K on a 6128, 64K more for each block of a RAM expansion) and how much of it is free for programs, from the new `VX_MEM` (API 18), in the kernel extension.
 - **Bug found** (in the Python harness): an absolute `http://` link from a web page gave an empty address, because the address had moved while its `http://` was cut off.
 - **Tested:**
-  - Caprice32 (`make test-reader`): `INDEX.MD` shows, TAB inverts "About READER", RETURN opens `ABOUT.MD`, DEL shows LOADING… and goes back to `INDEX.MD`, and the `https://` link gives the message. `test-sysinfo`: API 18, MEMORY 128K, FREE MEMORY 10K (bank 5's 12K less SYSINFO).
+  - Caprice32 (`make test-reader`): `INDEX.MD` shows, TAB inverts "About READER", RETURN opens `ABOUT.MD`, DEL shows LOADING… and goes back to `INDEX.MD`, and the `https://` link gives the message. `test-sysinfo`: API 18, MEMORY 128K, FREE MEMORY 10K (bank 5's 12K less SYSINFO); with 576K, MEMORY 576K and FREE MEMORY 458K.
   - Python Z80 harness with the M4 emulated: the links resolve right (disc relative, web relative, `/top.md`, `http://`, `https://`), and a web page comes with `C_HTTPGETMEM` and three `C_COPYBUF`, with TAB turned into a space and the text the same.
-- **Not tested:** a real web page through an M4 (see M38); `VX_MEM` with a RAM expansion.
+- **Not tested:** a real web page through an M4 (see M38).
 
 **M38 (the internet with the M4 board):**
 - **WEBGET:** a new program (`myapps/webget`, 2.5K, on `vos.dsk`). GET A FILE (^G) asks for an HTTP address and a name (taken from the end of the address), the M4 board downloads the file, and WEBGET saves it on the drive it shows. Up to 16K, the size of the data bank. It also shows the network status, or "NO M4 BOARD".

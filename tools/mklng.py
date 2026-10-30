@@ -48,6 +48,16 @@ MSG_MAX = 151                       # LANG_MSG_MAX in src/kernel/lang.asm
 # "{DATE}" in a text: the day of the build (VOS_DATE, else today)
 BUILD_DATE = os.environ.get("VOS_DATE") or __import__("time").strftime("%d.%m.%Y")
 
+# "{VERSION}" in a text: VOS_VERSION of src/version.inc (#0011 -> 0.11)
+def _version():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "version.inc")
+    with open(path) as f:
+        m = re.search(r"^VOS_VERSION\s+equ\s+#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})", f.read(), re.M)
+    if not m:
+        sys.exit("mklng: no VOS_VERSION in src/version.inc")
+    return f"{int(m.group(1))}.{m.group(2)}"
+VERSION = _version()
+
 
 def fail(msg):
     sys.exit(f"mklng: {msg}")
@@ -143,7 +153,7 @@ def read_messages(path):
         if not m:
             fail(f"{path}:{n}: <ID> <text>")
         ident, body = m.group(1), m.group(2).rstrip()
-        body = body.replace("{DATE}", BUILD_DATE)
+        body = body.replace("{DATE}", BUILD_DATE).replace("{VERSION}", VERSION)
         if not re.fullmatch(r"[A-Z][A-Z0-9_]*", ident):
             fail(f"{path}:{n}: ID must be upper case")
         if ident in msgs:

@@ -38,7 +38,7 @@ COPIED      ΑΝΤΙΓΡΑΦΗΚΕ ΣΤΟ
 DELETE_Q    ΔΙΑΓΡΑΦΗ
 QMARK       ;
 DLG_ABOUT_T ΣΧΕΤΙΚΑ
-DLG_ABOUT   V-OS 0.1 BETA|ΚΑΤΑΣΚΕΥΗ {DATE}|AMSTRAD CPC 6128|REVIVE8BIT, 2026|ΑΡΧΙΤΕΚΤΟΝΑΣ: VASPER
+DLG_ABOUT   V-OS {VERSION} BETA|ΚΑΤΑΣΚΕΥΗ {DATE}|AMSTRAD CPC 6128|REVIVE8BIT, 2026|ΑΡΧΙΤΕΚΤΟΝΑΣ: VASPER
 DLG_KEYS_T  ΠΛΗΚΤΡΑ
 DLG_KEYS    F1-F4 ΟΨΕΙΣ|F5 ΑΞΕΣΟΥΑΡ|F6 ΠΡΟΓΡΑΜΜΑΤΑ|ESC ΜΕΝΟΥ|ΒΕΛΗ ΕΠΙΛΟΓΗ|TAB ΜΟΝΑΔΑ|ENTER ΑΝΟΙΓΜΑ|^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.|^N ΜΕΤΟΝΟΜΑΣΙΑ|CTRL+SHIFT EN/EL
 DLG_QUIT_T  ΕΞΟΔΟΣ

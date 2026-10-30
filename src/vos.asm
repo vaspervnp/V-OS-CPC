@@ -15,7 +15,7 @@
         include "lang/msg_ids.inc"
         include "api/vos_api.inc"
 
-VOS_VERSION     equ #0010           ; 0.1 beta (BCD 0.10)
+        include "version.inc"
 
 ; ---- loader, runs at LOADER_ADDR ------------------------------------
         org LOADER_ADDR

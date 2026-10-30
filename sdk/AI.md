@@ -116,7 +116,7 @@ Every change to V-OS updates `README.md`, `docs/REQUIREMENTS.md`, the manual in 
 | `myapps/paint` | mode 0 pixels, `VOS_BLIT`, pointer drawing with `VOS_PTR_KEYS`, flood fill, layers |
 | `myapps/vrouves` | a game: sprites, stage files on its own disc, 25 Hz logic, save file, high scores |
 | `myapps/markdown` | a parser that keeps its place, text styles, word wrap, a page drawn in runs |
-| `myapps/reader` | MARKDOWN's page shared through `include` (`page.asm`, `page_data.asm`, `PV_LINKS`), links with TAB, pages from the web with `VX_M4` |
+| `myapps/reader` | MARKDOWN's page shared through `include` (`page.asm`, `page_data.asm`, `PV_LINKS`; call `pv_new` for a new text), paragraphs, scroll checkpoints, links with TAB, pages from the web with `VX_M4` |
 | `myapps/music` | direct AY output, a third-party player, relocating loaded data, background playing |
 | `apps/clock` | a desk accessory |
 | `apps/mixed` | the mixed mode 0 / mode 1 screen (`VOS_SPLIT`) |

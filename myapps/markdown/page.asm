@@ -7,8 +7,12 @@
 ; text, tend, at_eol, same, row_y, line (COLS + 1 bytes), COLS, ROWS,
 ; BG, INK, CUR_PEN. Markdown: # ## ### headings, **bold** __bold__,
 ; *italic* _italic_, `code`, ``` blocks, - * + and 1. lists, > quotes,
-; --- lines, [links](url) underlined, \ before a mark. Each line of the
-; text starts a page line; long ones wrap at a space.
+; --- lines, [links](url) underlined, \ before a mark. Lines that follow
+; each other make one paragraph (two spaces at the end break it), as do a
+; list item's and a quote's; long page lines wrap at a space.
+; Scrolling: pv_render starts from the last checkpoint above pv_top
+; (ck_tab: where a text line starts, every CK_STEP page lines or so), not
+; from the text's start. pv_new forgets them: call it for a new text.
 ; With PV_LINKS (READER): the links are counted (pv_li), the one numbered
 ; pv_sel is drawn inverted, and those on the screen go into lk_tab (db
 ; number, row; dw -> address; db its length). pv_only = a row: only that
@@ -27,25 +31,24 @@ ST_ITALIC       equ 2
 ST_CODE         equ 4
 ST_LINK         equ 8
 LK_MAX          equ 16              ; links kept from one screen
+CK_MAX          equ 64              ; checkpoints (ck_tab)
+CK_STEP         equ 8               ; page lines between them, at least
 
 ; the page's lines pv_top.. on the screen: the text from its start,
 ; line by line, until the screen is full (then pv_more = 1)
 pv_render:
         ld (pv_sp),sp               ; pv_emit stops here when full
-        ld hl,0
-        ld (pv_y),hl
         xor a
         ld (pv_more),a
-        ld (pv_fence),a
         IFDEF PV_LINKS
-        ld (pv_li),a
         ld (lk_n),a
         ENDIF
-        ld hl,text
+        call ck_find
 .line:
         ld de,(tend)
         call same
         jr z,.end
+        call ck_add
         call pv_line
         jr .line
 .end:
@@ -80,6 +83,7 @@ pv_render:
 ; HL -> a line of the text: its line(s) on the page -> HL -> the next
 pv_line:
         xor a
+        ld (pv_join),a
         ld (pv_ind),a
         ld (pv_n),a
         ld (pv_st),a
@@ -131,6 +135,8 @@ pv_line:
 .mark:
         ld a,(pv_n)
         ld (pv_ind),a
+        ld a,1                      ; a paragraph, unless it is not
+        ld (pv_join),a
         ld a,(hl)
         cp "#"
         jr z,.head
@@ -157,6 +163,8 @@ pv_line:
         call pv_is_rule
         jp nz,pv_inline
 .ruled:
+        xor a
+        ld (pv_join),a
         ld b,COLS                   ; ---: a line across
         ld a,(pv_n)
         ld c,a
@@ -193,6 +201,8 @@ pv_line:
         jp pv_inline
 .heading:
         pop af
+        xor a                       ; a heading is one line
+        ld (pv_join),a
         inc hl
         ld a,b
         ld c,A_H1
@@ -207,6 +217,8 @@ pv_line:
         ld (pv_base),a
         jp pv_inline
 .quote:                             ; > : a bar, the text in italic
+        ld a,2                      ; it goes on with ">"
+        ld (pv_join),a
         inc hl
         call at_eol
         jr z,.bar
@@ -416,8 +428,22 @@ pv_inline:
         inc hl
         jp pv_inline
 
-; the end of a line: the last page line out, HL past the LF
+; the end of a line: on with the next one in a paragraph, or the last
+; page line out and HL past the LF
 pv_done:
+        ld a,(pv_join)
+        or a
+        jr z,.out
+        call pv_next
+        jr c,.out
+        ld a,(pv_last)              ; a space between the two
+        cp " "
+        jp z,pv_inline
+        call pv_attr
+        ld a," "
+        call pv_put
+        jp pv_inline
+.out:
         push hl
         call pv_emit
         pop hl
@@ -432,6 +458,256 @@ pv_skip:
         call same
         ret z
         inc hl
+        ret
+
+; HL at the end of a paragraph's line: NC and HL -> the text that goes
+; on in it from the next line. Carry and HL kept: the next line is empty
+; or starts something else, or this one ends in two spaces (a break).
+pv_next:
+        push hl
+        call .look
+        jr c,.no
+        pop af
+        or a
+        ret
+.no:
+        pop hl
+        scf
+        ret
+.look:
+        ld de,(tend)
+        call same
+        scf
+        ret z
+        dec hl                      ; two spaces before the end?
+        ld a,(hl)
+        dec hl
+        cp " "
+        jr nz,.soft
+        ld a,(hl)
+        cp " "
+        scf
+        ret z
+.soft:
+        inc hl                      ; the next line
+        inc hl
+        inc hl
+.spaces:
+        call at_eol
+        scf
+        ret z
+        ld a,(hl)
+        cp " "
+        jr nz,.first
+        inc hl
+        jr .spaces
+.first:
+        ld a,(pv_join)
+        cp 2
+        jr nz,pv_starts
+        ld a,(hl)                   ; a quote goes on after "> "
+        cp ">"
+        scf
+        ret nz
+        inc hl
+        call at_eol
+        scf
+        ret z
+        ld a,(hl)
+        cp " "
+        jr nz,pv_starts
+        inc hl
+        call at_eol
+        scf
+        ret z
+        ; fall through
+
+; HL -> the first character of a line: carry if it starts a heading, a
+; quote, a list item, a line or a code block. HL kept.
+pv_starts:
+        ld a,(hl)
+        cp "#"
+        jr z,.yes
+        cp ">"
+        jr z,.yes
+        cp "`"
+        jr z,.fence
+        cp "-"
+        jr z,.item
+        cp "*"
+        jr z,.item
+        cp "+"
+        jr z,.item
+        cp "_"
+        jr z,.rule
+        cp "0"
+        jr c,.no
+        cp "9" + 1
+        jr c,.number
+.no:
+        or a
+        ret
+.yes:
+        scf
+        ret
+.fence:
+        push hl
+        inc hl
+        ld a,(hl)
+        cp "`"
+        jr nz,.fenced
+        inc hl
+        ld a,(hl)
+        cp "`"
+.fenced:
+        pop hl
+        jr z,.yes
+        jr .no
+.item:
+        push hl
+        inc hl
+        ld a,(hl)
+        cp " "
+        pop hl
+        jr z,.yes
+.rule:
+        call pv_is_rule
+        jr z,.yes
+        jr .no
+.number:
+        push hl
+.digit:
+        inc hl
+        ld a,(hl)
+        cp "0"
+        jr c,.dot
+        cp "9" + 1
+        jr c,.digit
+.dot:
+        cp "."
+        jr z,.dotted
+        cp ")"
+        jr nz,.not
+.dotted:
+        inc hl
+        ld a,(hl)
+        cp " "
+.not:
+        pop hl
+        jr z,.yes
+        jr .no
+
+; a new text: no checkpoints
+pv_new:
+        xor a
+        ld (ck_n),a
+        ret
+
+; the last checkpoint at or above pv_top -> HL -> its text line, and
+; pv_y, pv_fence (and pv_li) as they were there
+ck_find:
+        ld a,(ck_n)
+        or a
+        jr nz,.search
+        ld hl,text                  ; the first: the text's start
+        ld (ck_tab),hl
+        ld hl,0
+        ld (ck_tab + 2),hl
+        ld (ck_tab + 4),hl
+        ld hl,CK_STEP
+        ld (ck_next),hl
+        inc a
+        ld (ck_n),a
+.search:
+        ld b,a
+        ld hl,ck_tab
+        ld (ck_best),hl
+.next:
+        push hl
+        inc hl
+        inc hl
+        ld e,(hl)
+        inc hl
+        ld d,(hl)
+        ld hl,(pv_top)
+        or a
+        sbc hl,de
+        pop hl
+        jr c,.found                 ; below pv_top
+        ld (ck_best),hl
+        ld de,6
+        add hl,de
+        djnz .next
+.found:
+        ld hl,(ck_best)
+        ld e,(hl)
+        inc hl
+        ld d,(hl)
+        inc hl
+        push de
+        ld e,(hl)
+        inc hl
+        ld d,(hl)
+        inc hl
+        ld (pv_y),de
+        ld a,(hl)
+        inc hl
+        ld (pv_fence),a
+        IFDEF PV_LINKS
+        ld a,(hl)
+        ld (pv_li),a
+        ENDIF
+        pop hl
+        ret
+
+; HL -> a text line about to be made: a checkpoint, if CK_STEP page
+; lines went by since the last one. HL kept.
+ck_add:
+        ld a,(ck_n)
+        cp CK_MAX
+        ret nc
+        push hl
+        ld hl,(pv_y)
+        ld de,(ck_next)
+        or a
+        sbc hl,de
+        jr c,.not
+        ld l,a                      ; ck_tab + 6 * ck_n
+        ld h,0
+        add hl,hl
+        ld d,h
+        ld e,l
+        add hl,hl
+        add hl,de
+        ld de,ck_tab
+        add hl,de
+        pop de
+        push de
+        ld (hl),e
+        inc hl
+        ld (hl),d
+        inc hl
+        ld de,(pv_y)
+        ld (hl),e
+        inc hl
+        ld (hl),d
+        inc hl
+        ld a,(pv_fence)
+        ld (hl),a
+        inc hl
+        IFDEF PV_LINKS
+        ld a,(pv_li)
+        ELSE
+        xor a
+        ENDIF
+        ld (hl),a
+        ld hl,ck_n
+        inc (hl)
+        ld hl,CK_STEP
+        add hl,de
+        ld (ck_next),hl
+.not:
+        pop hl
         ret
 
 ; HL -> -, * or _ : Z if the line is 3 or more of it (and spaces)

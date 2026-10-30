@@ -69,15 +69,15 @@ $(BUILD)/date.txt: FORCE
 	@d=$$(date +%d.%m.%Y); [ "$$(cat $@ 2>/dev/null)" = "$$d" ] || echo $$d > $@
 FORCE:
 
-$(LANG_KERNEL) $(BUILD)/ENGLISH.MSG &: lang/en/keymap.txt lang/en/messages.txt tools/mklng.py $(BUILD)/date.txt
+$(LANG_KERNEL) $(BUILD)/ENGLISH.MSG &: lang/en/keymap.txt lang/en/messages.txt tools/mklng.py src/version.inc $(BUILD)/date.txt
 	$(PYTHON) -I tools/mklng.py kernel lang/en src/lang $(BUILD)/ENGLISH.MSG
 
-$(BUILD)/GREEK.LNG: $(wildcard lang/el/*.txt) lang/en/messages.txt lang/en/keymap.txt tools/mklng.py $(BUILD)/date.txt
+$(BUILD)/GREEK.LNG: $(wildcard lang/el/*.txt) lang/en/messages.txt lang/en/keymap.txt tools/mklng.py src/version.inc $(BUILD)/date.txt
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mklng.py pack lang/el $@ --master lang/en
 
 # French, Spanish, German and Italian share lang/latin1/font.txt
-LATIN_PACK = $(wildcard lang/$(1)/*.txt) lang/latin1/font.txt lang/en/messages.txt lang/en/keymap.txt tools/mklng.py $(BUILD)/date.txt
+LATIN_PACK = $(wildcard lang/$(1)/*.txt) lang/latin1/font.txt lang/en/messages.txt lang/en/keymap.txt tools/mklng.py src/version.inc $(BUILD)/date.txt
 $(BUILD)/FRENCH.LNG: $(call LATIN_PACK,fr)
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mklng.py pack lang/fr $@ --master lang/en
@@ -696,9 +696,11 @@ test-clip: $(CLIP_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN
 	done
 	ls $(BUILD)/shots/*/*.png
 
-# SYSINFO and VOS_EXT (TEST_SCRIPT=23): SYSINFO.BIN added last on A:
+# SYSINFO and VOS_EXT (TEST_SCRIPT=23): SYSINFO.BIN added last on A:.
+# make test-sysinfo SYSINFO_RAM=576: with a 512K expansion
 SYSINFO_DSK := $(BUILD)/vos_sysinfo.dsk
 SYSINFO_SHOTS := 290 330 360 440
+SYSINFO_RAM := 128
 $(SYSINFO_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
@@ -713,7 +715,7 @@ test-sysinfo: $(SYSINFO_DSK) $(BUILD)/markdown.dsk $(BUILD)/SYSINFO.BIN
 	for d in $(SYSINFO_SHOTS); do \
 	  cp $(SYSINFO_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/markdown.dsk $(BUILD)/vos_run_b.dsk; \
 	  iDSK $(BUILD)/vos_run.dsk -i $(BUILD)/SYSINFO.BIN -t 1 -c 4000 -e 4000 > /dev/null; \
-	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=$(SYSINFO_RAM) VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
 
@@ -743,7 +745,7 @@ test-open: $(OPEN_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN
 
 # MARKDOWN (TEST_SCRIPT=21): myapps/markdown from build/markdown.dsk in B:
 MARKDOWN_DSK := $(BUILD)/vos_markdown.dsk
-MARKDOWN_SHOTS := 300 340 380 420 460
+MARKDOWN_SHOTS := 300 380 430 530 700
 $(MARKDOWN_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)

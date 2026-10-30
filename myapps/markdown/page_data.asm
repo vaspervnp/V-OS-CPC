@@ -4,6 +4,11 @@ pv_y:           dw 0                ; the page line being made
 pv_more:        db 0                ; 1: more lines below the screen
 pv_sp:          dw 0
 pv_fence:       db 0                ; 1: in a ``` code block
+pv_join:        db 0                ; the line: 1 a paragraph, 2 a quote
+ck_n:           db 0                ; checkpoints: in ck_tab
+ck_next:        dw 0                ; the page line for the next one
+ck_best:        dw 0
+ck_tab:         ds CK_MAX * 6       ; dw text, dw pv_y, db fence, db li
 pv_n:           db 0                ; characters in the page line
 pv_ind:         db 0                ; its indent
 pv_st:          db 0                ; ST_*: styles open

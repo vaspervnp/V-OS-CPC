@@ -343,6 +343,7 @@ load_place:
         ldir
         ld hl,0
         ld (pv_top),hl
+        call pv_new
         ld a,#FF
         ld (pv_sel),a
         jp redraw

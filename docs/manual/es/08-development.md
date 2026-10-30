@@ -101,7 +101,7 @@ Las pruebas ejecutan V-OS en Caprice32 sin ventana y hacen capturas de pantalla 
 | `test-music` | MUSIC desde `music.dsk` en B:: una canción suena y sigue detrás del Launcher |
 | `test-markdown` | MARKDOWN desde `markdown.dsk` en B:: abre `README.MD`, la página con ^P, una pantalla más abajo, vuelta al texto |
 | `test-open` | abrir según el tipo en el Commander: `README.MD` en MARKDOWN desde B:, un `.TXT` en NOTEPAD desde A: |
-| `test-sysinfo` | SYSINFO desde el Commander: versión, API, K libres en A: y B:, ^R, ^Q |
+| `test-sysinfo` | SYSINFO desde el Commander: versión, API, memoria, K libres en A: y B:, ^R, ^Q. Con `SYSINFO_RAM=576`, con una ampliación de 512K |
 | `test-clip` | el portapapeles: seleccionar con SHIFT, ^C y ^V en NOTEPAD, ^A, ^X, ^V, y luego ^V en MARKDOWN |
 | `test-webget` | a mano, en el CPCEMU de `make linux` (tarjeta M4; hacen falta una pantalla e internet): WEBGET descarga `example.com/index.html`. Cierre CPCEMU con F12 cuando aparezca SAVED, y se busca `INDEX.HTM` en el disquete |
 | `test-reader` | READER desde `reader.dsk` en B: abre `INDEX.MD`, TAB elige un enlace, RETURN abre `ABOUT.MD`, DEL vuelve, y un enlace `https://` da un mensaje |

@@ -1420,6 +1420,7 @@ pv_toggle:
         ld (pv_mode),a
         ld hl,0
         ld (pv_top),hl
+        call pv_new
         jp redraw
 
 ; the page on the screen, with its hint and status line

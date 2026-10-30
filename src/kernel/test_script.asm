@@ -452,9 +452,11 @@ test_keys:
 ;   frame  750  CONTROL+O    -> the .MD files of B: (README.MD)
 ;   frame  850  RETURN       -> README.MD in the editor, with its marks
 ;   frame 1000  CONTROL+P    -> the page: headings, bold, italic, code,
-;                               lists, a quote, a line, a code block
-;   frame 1150  RIGHT        -> the page a screen on
-;   frame 1300  RETURN       -> the text again
+;                               lists, a quote, a line, a code block;
+;                               lines that follow each other joined
+;   frame 1600  RIGHT        -> the page a screen on
+;   frame 2200  RETURN       -> the text again
+; (wide gaps: the shots, counted in typed keys, cannot aim closely)
 test_keys:
         dw  300,  304 : db 1, %01000000   ; F2
         dw  450,  454 : db 8, %00010000   ; TAB: drive B:
@@ -464,8 +466,8 @@ test_keys:
         dw  850,  854 : db 2, %00000100   ; RETURN: README.MD
         dw  995, 1010 : db 2, %10000000   ; CONTROL
         dw 1000, 1004 : db 3, %00001000   ; P
-        dw 1150, 1154 : db 0, %00000010   ; RIGHT
-        dw 1300, 1304 : db 2, %00000100   ; RETURN: the text
+        dw 1600, 1604 : db 0, %00000010   ; RIGHT
+        dw 2200, 2204 : db 2, %00000100   ; RETURN: the text
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 20

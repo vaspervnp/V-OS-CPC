@@ -101,7 +101,7 @@
 | `test-music` | MUSIC από τη `music.dsk` στο B:: ένα τραγούδι παίζει και συνεχίζει πίσω από τον Launcher |
 | `test-markdown` | MARKDOWN από τη `markdown.dsk` στο B:: ανοίγει το `README.MD`, η σελίδα με ^P, μια οθόνη κάτω, πίσω στο κείμενο |
 | `test-open` | άνοιγμα ανά τύπο στον Commander: το `README.MD` στο MARKDOWN από το B:, ένα `.TXT` στο NOTEPAD από το A: |
-| `test-sysinfo` | το SYSINFO από τον Commander: έκδοση, API, ελεύθερα K στο A: και στο B:, ^R, ^Q |
+| `test-sysinfo` | το SYSINFO από τον Commander: έκδοση, API, μνήμη, ελεύθερα K στο A: και στο B:, ^R, ^Q. Με `SYSINFO_RAM=576` με επέκταση 512K |
 | `test-clip` | το πρόχειρο: επιλογή με SHIFT, ^C και ^V στο NOTEPAD, ^A, ^X, ^V, και μετά ^V στο MARKDOWN |
 | `test-webget` | με το χέρι, στον CPCEMU του `make linux` (κάρτα M4, χρειάζεται οθόνη και internet): το WEBGET κατεβάζει το `example.com/index.html`. Κλείσε τον CPCEMU με F12 όταν φανεί το ΣΩΘΗΚΕ, και ψάχνει το `INDEX.HTM` στη δισκέτα |
 | `test-reader` | το READER από το `reader.dsk` στο B: ανοίγει το `INDEX.MD`, το TAB διαλέγει σύνδεσμο, το RETURN ανοίγει το `ABOUT.MD`, το DEL γυρίζει πίσω, και ένας σύνδεσμος `https://` βγάζει μήνυμα |
