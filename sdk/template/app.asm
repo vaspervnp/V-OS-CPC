@@ -23,9 +23,9 @@ TOP             equ 48              ; where it may go
 BOTTOM          equ 240
 STEP            equ 4
 
-CMD_ABOUT       equ 1               ; menu items and buttons: commands
-CMD_BACK        equ 2
-CMD_BEEP        equ 3
+CMD_ABOUT       equ VC_APP + 1      ; menu items and buttons: commands,
+CMD_BACK        equ VC_APP + 2      ; from VC_APP (VIEW and HELP send 6-19)
+CMD_BEEP        equ VC_APP + 3
 
         org VOS_APP_ADDR
         jp init

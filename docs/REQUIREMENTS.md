@@ -387,6 +387,12 @@ Header με:
 - **Δοκιμή:** το `make test-multi`. Το DEMO τρέχει και αλλάζει χρώμα. Με F2 ο Launcher, και τρέχει το PONG. Ξανά στον Launcher, το DEMO συνεχίζει με το ίδιο χρώμα και κλείνει με ^Q. Το PONG συνεχίζει. Το STUDIO δεν ξεκινά και βγαίνει το σφάλμα 13.
 - **Λάθος που βρέθηκε:** το μήνυμα σε μία γραμμή (27 χαρακτήρες) έκανε τον διάλογο φαρδύτερο από την οθόνη σε mode 0. Δεν φαινόταν, και ο βρόχος του περίμενε κουμπί. Βρέθηκε με dump της στοίβας και των μεταβλητών του διαλόγου (`TEST_DUMP`, `TEST_DUMP_AT`).
 
+**Υλοποίηση M34 (MARKDOWN, στυλ κειμένου):**
+- **Kernel:** το `txt_set_colours` κρατά τα bits 4–6 του A στο `txt_style` και την πένα στο `txt_fg`. Το `txt_row` δίνει κάθε σειρά του γράμματος με το στυλ, και το καλούν οι βρόχοι του `txt_char` και για τα δύο modes (`txt_rows` 8 = η πάνω σειρά).
+- **API 13:** `VOS_BOLD` #10, `VOS_ITALIC` #20, `VOS_UNDERLINE` #40, `VC_APP` 32.
+- **MARKDOWN:** το `pv_render` διαβάζει το κείμενο από την αρχή και φτιάχνει τις γραμμές της σελίδας (`pv_ch`, `pv_at`: χαρακτήρας και πένα, φόντο, στυλ). Όσες είναι πάνω από το `pv_top` δεν σχεδιάζονται, και η πρώτη κάτω από την οθόνη σταματά τα πάντα με το `pv_sp` (`pv_more` = 1). Το `pv_draw` σχεδιάζει κάθε κομμάτι με τα ίδια χαρακτηριστικά με ένα `VOS_COLOURS` και ένα `VOS_PRINT`, και τα κενά του τέλους με ένα `VOS_RECT`.
+- **`test-markdown` (TEST_SCRIPT=21):** F2, TAB, RETURN, ^O, RETURN (`README.MD`), ^P, RIGHT, RETURN.
+
 **Υλοποίηση M33 (δεύτερη μονάδα, σκορ, NOTEPAD, PAINT, MUSIC, ABOUT):**
 - **Launcher:** `ln_drive` (από το `sys_drive`), `ln_other` (TAB, `CMD_DRIVE` 15), `ln_prefix` για το `A: `/`B: ` στη γραμμή της σελίδας. Τα `fdc_select`, `file_select`, `app_request` και το accessory παίρνουν το `ln_drive`. Το `slot_find` συγκρίνει τον οδηγό με το `sys_drive`.
 - **API 12:**
@@ -841,6 +847,7 @@ Header με:
 33. **M31 — VROUVES:** το LET'S GO FOR VROUVES του CPC, πίστα 1, απλοποιημένο, γραμμένο με το SDK (`myapps/vrouves`). Επιπλέον `.asm` και αρχεία `disc/` στα προγράμματα του SDK, `make test-vrouves` (§7.3). *Έγινε.*
 34. **M32 — VROUVES, 7 πίστες:** όλες οι πίστες του πρωτοτύπου με τους αμυντικούς και τη δυσκολία τους, σε δική του δισκέτα (`build/vrouves.dsk`). `owndisc/` στο SDK, `VOS_SELF` στο API, `make test-vrouves` από το B: (§7.3). *Έγινε.*
 35. **M33 — Δεύτερη μονάδα, σκορ, NOTEPAD, PAINT, MUSIC, ABOUT:** TAB στον Launcher για το B:, σκορ και αποθήκευση στο VROUVES, κειμενογράφος, ζωγραφική με επίπεδα, player του Arkos Tracker, ο διάλογος ABOUT με έκδοση και ημερομηνία, `VOS_CAT_EXT` και `VOS_PTR_KEYS` στο API 12, `make windows` με CPCEMU και `make linux`, `sdk/AI.md` (§7.3). *Έγινε.*
+36. **M34 — MARKDOWN και στυλ κειμένου:** έντονα, πλάγια και υπογραμμισμένα από τη γραμματοσειρά με το `VOS_COLOURS` (API 13), ο κειμενογράφος MARKDOWN με σελίδα προεπισκόπησης σε δική του δισκέτα, `VC_APP` για τις εντολές των προγραμμάτων, `make test-markdown` (§7.3). *Έγινε.*
 
 ---
 

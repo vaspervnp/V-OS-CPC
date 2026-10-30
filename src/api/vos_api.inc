@@ -74,14 +74,14 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 12              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 13              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
                                     ; 9: BACKGROUND, 10: DRAG, FIT,
                                     ; 11: the language of VOS_TEXTS,
                                     ; 12: VOS_CAT_EXT, VOS_SELF,
-                                    ; VOS_PTR_KEYS
+                                    ; VOS_PTR_KEYS, 13: text styles
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -109,6 +109,10 @@ VOS_CLS         equ VOS_API + 8 * 3     ; A = pen
 VOS_PLOT        equ VOS_API + 9 * 3     ; HL = x, DE = y, A = pen
 VOS_RECT        equ VOS_API + 10 * 3    ; IX -> dw x, y, w, h; db pen
 VOS_COLOURS     equ VOS_API + 11 * 3    ; A = text pen, C = background pen
+                                        ; A bits 4-6: VOS_BOLD, VOS_ITALIC, VOS_UNDERLINE
+VOS_BOLD        equ #10                 ; VOS_COLOURS A = pen + styles
+VOS_ITALIC      equ #20                 ; (version 13): slanted
+VOS_UNDERLINE   equ #40                 ; the bottom row of the cell
 VOS_PRINT       equ VOS_API + 12 * 3    ; HL = x, DE = y, BC -> text, 0
 VOS_CHAR        equ VOS_API + 13 * 3    ; HL = x, DE = y, A = character
 ; ---- texts and UI ---------------------------------------------------
@@ -245,6 +249,8 @@ VC_DESKTOP      equ 16
 VC_LAUNCHER     equ 17
 VC_COMMANDER    equ 18
 VC_SETUP        equ 19
+VC_APP          equ 32              ; a program's own commands: VC_APP + n
+                                    ; (the VIEW and HELP menus send 6-19)
 
 ; menu separators, and system texts a program may use (in dialogs, as
 ; buttons, or with VOS_MSG)

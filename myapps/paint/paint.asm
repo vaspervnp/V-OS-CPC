@@ -58,15 +58,15 @@ T_BOX_          equ 3
 T_FILL_         equ 4
 TOOLS           equ 5
 
-CMD_NEW         equ 1
-CMD_NEW_L       equ 2
-CMD_OPEN        equ 3
-CMD_OPEN_L      equ 4
-CMD_SAVE        equ 5
-CMD_SAVE_AS     equ 6
-CMD_DRIVE       equ 7
-CMD_ABOUT       equ 8
-CMD_BACK        equ 9
+CMD_NEW         equ VC_APP + 1
+CMD_NEW_L       equ VC_APP + 2
+CMD_OPEN        equ VC_APP + 3
+CMD_OPEN_L      equ VC_APP + 4
+CMD_SAVE        equ VC_APP + 5
+CMD_SAVE_AS     equ VC_APP + 6
+CMD_DRIVE       equ VC_APP + 7
+CMD_ABOUT       equ VC_APP + 8
+CMD_BACK        equ VC_APP + 9
 
         org VOS_APP_ADDR
         jp init

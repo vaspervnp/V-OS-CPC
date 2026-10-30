@@ -121,7 +121,7 @@ command: ...
 - **Icona:** 16 righe di 16 caratteri in `icon.txt`. Ogni carattere è una penna in esadecimale (modo 0, palette del Launcher) o `.` per trasparente.
 - **Nomi di file** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 byte, `"NAME    EXT"`. Unità 0 = A:, 1 = B:.
 
-## L'API (versione 12)
+## L'API (versione 13)
 
 | Chiamata | Ingresso → uscita | Cosa fa |
 |---|---|---|
@@ -129,14 +129,14 @@ command: ...
 | `VOS_TICKS` | A = 1 / 0 (+ `VOS_PTR_KEYS`) | `VE_FRAME` 50 volte al secondo, o nessuno. Con `VOS_PTR_KEYS` (2) le frecce e COPY muovono anche il puntatore e fanno clic |
 | `VOS_FRAMES` | → HL (e A bit 16–23) | frame dall'avvio |
 | `VOS_RANDOM` | → A | 0–255 |
-| `VOS_COMMAND` | A = comando | i comandi comuni di VISTA e AIUTO |
+| `VOS_COMMAND` | A = comando | i comandi comuni di VISTA e AIUTO (6–19). Numera i tuoi comandi da `VC_APP` (32) in su, altrimenti una voce di VISTA o AIUTO esegue uno dei tuoi |
 | `VOS_ERROR` | A = errore | dialogo di errore |
 | `VOS_MODE` | A = 0 / 1 | modo 0 (192×259, 16 penne) o 1 (384×259, 4 penne) |
 | `VOS_PALETTE` | HL → 17 colori | |
 | `VOS_CLS` | A = penna | cancella lo schermo |
 | `VOS_PLOT` | HL = x, DE = y, A = penna | un pixel |
 | `VOS_RECT` | IX → rettangolo | rettangolo pieno |
-| `VOS_COLOURS` | A = penna del testo, C = sfondo | per `VOS_PRINT` e `VOS_CHAR` |
+| `VOS_COLOURS` | A = penna del testo (+ `VOS_BOLD`, `VOS_ITALIC`, `VOS_UNDERLINE`), C = sfondo | per `VOS_PRINT` e `VOS_CHAR`. Gli stili nascono dallo stesso font, per ogni lingua |
 | `VOS_PRINT` | HL = x, DE = y, BC → testo, 0 | |
 | `VOS_CHAR` | HL = x, DE = y, A = carattere | |
 | `VOS_MSG` | A = testo → HL | l'indirizzo di un testo (`T_*` o uno di sistema) |

@@ -1,0 +1,21 @@
+# MARKDOWN's texts: NAME | English | Greek (tools/mktexts.py). "|" with
+# no spaces around it starts a new line in a dialog.
+MENU        | MARKDOWN              | MARKDOWN
+NEW         | NEW                   | ΝΕΟ
+OPEN        | OPEN...               | ΑΝΟΙΓΜΑ...
+SAVE        | SAVE                  | ΑΠΟΘΗΚΕΥΣΗ
+SAVE_AS     | SAVE AS...            | ΑΠΟΘΗΚΕΥΣΗ ΩΣ...
+PREVIEW     | PREVIEW               | ΠΡΟΕΠΙΣΚΟΠΗΣΗ
+DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+ABOUT_TEXT  | MARKDOWN|.MD FILES UP TO 6K|^P SHOWS THE PAGE|FOR V-OS, FROM THE SDK | MARKDOWN|ΑΡΧΕΙΑ .MD ΩΣ 6K|^P ΔΕΙΧΝΕΙ ΤΗ ΣΕΛΙΔΑ|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+OPEN_T      | OPEN                  | ΑΝΟΙΓΜΑ
+NAME_T      | FILE NAME             | ΟΝΟΜΑ ΑΡΧΕΙΟΥ
+DISCARD     | THE CHANGES ARE|NOT SAVED. GO ON? | ΟΙ ΑΛΛΑΓΕΣ ΔΕΝ|ΣΩΘΗΚΑΝ. ΣΥΝΕΧΕΙΑ;
+TOO_BIG     | THE FILE IS|TOO BIG (6K AT MOST) | ΤΟ ΑΡΧΕΙΟ ΕΙΝΑΙ|ΠΟΛΥ ΜΕΓΑΛΟ (ΩΣ 6K)
+LINE        | LINE                  | ΓΡΑΜΜΗ
+COL         | COL                   | ΣΤΗΛΗ
+PV_STATUS   | PREVIEW               | ΠΡΟΕΠΙΣΚΟΠΗΣΗ
+HINT        | ^O OPEN  ^S SAVE  ^P PREVIEW  ESC MENU  ^Q BACK | ^O ΑΝΟΙΓΜΑ  ^S ΣΩΣΙΜΟ  ^P ΣΕΛΙΔΑ  ^Q ΕΠΙΣΤΡ.
+PV_HINT     | ARROWS: SCROLL   RETURN OR ^P: EDIT | ΒΕΛΑΚΙΑ: ΚΥΛΙΣΗ   RETURN Ή ^P: ΓΡΑΦΗ

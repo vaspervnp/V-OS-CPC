@@ -42,6 +42,7 @@ Rules that are easy to break:
 - **Never loop waiting for input or time.** `event` handles one event and returns. For time, `VOS_TICKS` A = 1 gives `VE_FRAME` 50 times a second; keep state in variables.
 - **Do not draw while a menu is open** (`VOS_MENU_OPEN` → NZ), also in `VE_FRAME`. Dialogs (`VOS_DIALOG`, `VOS_INPUT`, `VOS_FILE_PICK`) run their own loop and return.
 - **On `init` with A = 2** set mode, palette, bar, widgets and `VOS_TICKS` again and redraw from your state. Do not reset the state.
+- **Number your commands from `VC_APP` (32) up** (`CMD_NEW equ VC_APP + 1`). The VIEW and HELP menus send 6–19 to your `command`; a command of yours with one of those numbers runs when the user picks SWITCH LANGUAGE, KEYS or ABOUT V-OS. (NOTEPAD, PAINT and VROUVES had this bug.)
 - **Exit** with `VOS_EXIT` (e.g. from a BACK item with shortcut `"Q"`).
 - **Registers:** every call may change all registers except IX. If you use IX or IY yourself, save them around code that the kernel interrupts or calls (`push ix` / `pop ix`). Arguments: A, BC, DE, HL; IX for `VOS_RECT` and `VOS_BLIT`. Errors: carry set, A = error number, show it with `VOS_ERROR`.
 - **Event `char`** is the character in the keyboard's language (lowercase letters by default); `code` is the key number (`VK_*`, row·8 + bit). Check `code` for arrows, DEL (`VK_DEL`), CLR (16), RETURN; check `char` for letters. In tests and harnesses a letter's `code` is non-zero; `VK_UP` is 0.
@@ -66,11 +67,12 @@ Rules that are easy to break:
 - File names: 11 bytes `"NAME    EXT"`; drive 0 = A:, 1 = B:.
 - Icon: `icon.txt`, 16 rows of 16 hex pens (Launcher palette) or `.`.
 
-## 5. API version 12 additions
+## 5. API versions 12 and 13
 
 - `VOS_SELF` (an address, `#8800`): `db drive, 11-byte name` of the running program. Read it in `init` (A = 0) to load your files from your own drive.
 - `VOS_CATALOG` with `A = drive + VOS_CAT_EXT` and `HL -> "EXT"`: the catalog keeps only that extension; `VOS_FILE_PICK` then lists only those files.
 - `VOS_TICKS` with `A + VOS_PTR_KEYS`: the cursor keys and COPY also drive the pointer (for drawing programs without a mouse). Without it a program's cursor keys are its own.
+- `VOS_COLOURS` with `A = pen + VOS_BOLD / VOS_ITALIC / VOS_UNDERLINE` (version 13): styled text from the normal font, in every language. A run of one style is one `VOS_COLOURS` and one `VOS_PRINT`; clear long empty areas with `VOS_RECT`, which is much faster than printing spaces (`myapps/markdown`).
 - `VOS_BACKGROUND` A = 1: you keep getting `VE_FRAME` behind other views and programs; every other call does nothing there (`MUSIC` uses this to keep playing).
 
 The full table of calls is in `sdk/README.en.md` and `src/api/vos_api.inc`.
@@ -108,6 +110,7 @@ Every change to V-OS updates `README.md`, `docs/REQUIREMENTS.md`, the manual in 
 | `myapps/notepad` | text editing, cursor, files through the data bank, `VOS_CAT_EXT`, `VOS_INPUT` |
 | `myapps/paint` | mode 0 pixels, `VOS_BLIT`, pointer drawing with `VOS_PTR_KEYS`, flood fill, layers |
 | `myapps/vrouves` | a game: sprites, stage files on its own disc, 25 Hz logic, save file, high scores |
+| `myapps/markdown` | a parser that keeps its place, text styles, word wrap, a page drawn in runs |
 | `myapps/music` | direct AY output, a third-party player, relocating loaded data, background playing |
 | `apps/clock` | a desk accessory |
 | `apps/mixed` | the mixed mode 0 / mode 1 screen (`VOS_SPLIT`) |

@@ -121,7 +121,7 @@ command: ...
 - **Icône :** 16 lignes de 16 caractères dans `icon.txt`. Chaque caractère est une encre en hexadécimal (mode 0, palette du Lanceur) ou `.` pour transparent.
 - **Noms de fichiers** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`) : 11 octets, `"NAME    EXT"`. Lecteur 0 = A:, 1 = B:.
 
-## L'API (version 12)
+## L'API (version 13)
 
 | Appel | Entrée → sortie | Ce qu'il fait |
 |---|---|---|
@@ -129,14 +129,14 @@ command: ...
 | `VOS_TICKS` | A = 1 / 0 (+ `VOS_PTR_KEYS`) | `VE_FRAME` 50 fois par seconde, ou aucun. Avec `VOS_PTR_KEYS` (2), les flèches et COPY déplacent aussi le pointeur et cliquent |
 | `VOS_FRAMES` | → HL (et A bits 16–23) | trames depuis le démarrage |
 | `VOS_RANDOM` | → A | 0–255 |
-| `VOS_COMMAND` | A = commande | les commandes communes d'AFFICHAGE et AIDE |
+| `VOS_COMMAND` | A = commande | les commandes communes d'AFFICHAGE et AIDE (6–19). Numérotez vos propres commandes à partir de `VC_APP` (32), sinon un élément d'AFFICHAGE ou d'AIDE lance l'une des vôtres |
 | `VOS_ERROR` | A = erreur | dialogue d'erreur |
 | `VOS_MODE` | A = 0 / 1 | mode 0 (192×259, 16 encres) ou 1 (384×259, 4 encres) |
 | `VOS_PALETTE` | HL → 17 couleurs | |
 | `VOS_CLS` | A = encre | efface l'écran |
 | `VOS_PLOT` | HL = x, DE = y, A = encre | un pixel |
 | `VOS_RECT` | IX → rectangle | rectangle plein |
-| `VOS_COLOURS` | A = encre du texte, C = fond | pour `VOS_PRINT` et `VOS_CHAR` |
+| `VOS_COLOURS` | A = encre du texte (+ `VOS_BOLD`, `VOS_ITALIC`, `VOS_UNDERLINE`), C = fond | pour `VOS_PRINT` et `VOS_CHAR`. Les styles sont faits à partir de la même police, pour toutes les langues |
 | `VOS_PRINT` | HL = x, DE = y, BC → texte, 0 | |
 | `VOS_CHAR` | HL = x, DE = y, A = caractère | |
 | `VOS_MSG` | A = texte → HL | l'adresse d'un texte (`T_*` ou un texte du système) |

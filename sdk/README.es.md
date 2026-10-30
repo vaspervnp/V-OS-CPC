@@ -121,7 +121,7 @@ command: ...
 - **Icono:** 16 líneas de 16 caracteres en `icon.txt`. Cada carácter es una tinta en hexadecimal (modo 0, paleta de Programas) o `.` para transparente.
 - **Nombres de archivo** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 bytes, `"NAME    EXT"`. Unidad 0 = A:, 1 = B:.
 
-## La API (versión 12)
+## La API (versión 13)
 
 | Llamada | Entrada → salida | Qué hace |
 |---|---|---|
@@ -129,14 +129,14 @@ command: ...
 | `VOS_TICKS` | A = 1 / 0 (+ `VOS_PTR_KEYS`) | `VE_FRAME` 50 veces por segundo, o ninguno. Con `VOS_PTR_KEYS` (2) las flechas y COPY también mueven el puntero y hacen clic |
 | `VOS_FRAMES` | → HL (y A bits 16–23) | fotogramas desde el arranque |
 | `VOS_RANDOM` | → A | 0–255 |
-| `VOS_COMMAND` | A = orden | las órdenes comunes de VER y AYUDA |
+| `VOS_COMMAND` | A = orden | las órdenes comunes de VER y AYUDA (6–19). Numere sus propias órdenes desde `VC_APP` (32), o un elemento de VER o AYUDA ejecuta una de las suyas |
 | `VOS_ERROR` | A = error | diálogo de error |
 | `VOS_MODE` | A = 0 / 1 | modo 0 (192×259, 16 tintas) o 1 (384×259, 4 tintas) |
 | `VOS_PALETTE` | HL → 17 colores | |
 | `VOS_CLS` | A = tinta | borra la pantalla |
 | `VOS_PLOT` | HL = x, DE = y, A = tinta | un píxel |
 | `VOS_RECT` | IX → rectángulo | rectángulo relleno |
-| `VOS_COLOURS` | A = tinta del texto, C = fondo | para `VOS_PRINT` y `VOS_CHAR` |
+| `VOS_COLOURS` | A = tinta del texto (+ `VOS_BOLD`, `VOS_ITALIC`, `VOS_UNDERLINE`), C = fondo | para `VOS_PRINT` y `VOS_CHAR`. Los estilos salen de la misma fuente, para todos los idiomas |
 | `VOS_PRINT` | HL = x, DE = y, BC → texto, 0 | |
 | `VOS_CHAR` | HL = x, DE = y, A = carácter | |
 | `VOS_MSG` | A = texto → HL | la dirección de un texto (`T_*` o uno del sistema) |

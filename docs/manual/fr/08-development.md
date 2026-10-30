@@ -99,6 +99,7 @@ Les tests lancent V-OS dans Caprice32 sans fenêtre et prennent des captures d'�
 | `test-paint` | PAINT : ligne, rectangle, remplissage, les menus, puis les calques (en cacher un) |
 | `test-about` | AIDE > À PROPOS DE V-OS |
 | `test-music` | MUSIC depuis `music.dsk` en B: : un morceau joue, et continue derrière le Lanceur |
+| `test-markdown` | MARKDOWN depuis `markdown.dsk` en B: : `README.MD` ouvert, la page avec ^P, un écran plus bas, retour au texte |
 | `test-amsdos`, `test-reboot`, `test-system` | les fichiers V-OS en BASIC, redémarrage, disquette SYSTEM |
 
 **Nouveau script :**

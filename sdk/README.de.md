@@ -121,7 +121,7 @@ command: ...
 - **Symbol:** 16 Zeilen mit 16 Zeichen in `icon.txt`. Jedes Zeichen ist ein Stift in Hex (Modus 0, Palette der Ansicht Programme) oder `.` für transparent.
 - **Dateinamen** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 Bytes, `"NAME    EXT"`. Laufwerk 0 = A:, 1 = B:.
 
-## Die API (Version 12)
+## Die API (Version 13)
 
 | Aufruf | Eingabe → Ausgabe | Was er tut |
 |---|---|---|
@@ -129,14 +129,14 @@ command: ...
 | `VOS_TICKS` | A = 1 / 0 (+ `VOS_PTR_KEYS`) | `VE_FRAME` 50-mal pro Sekunde, oder keines. Mit `VOS_PTR_KEYS` (2) bewegen die Pfeile und COPY auch den Zeiger und klicken |
 | `VOS_FRAMES` | → HL (und A Bits 16–23) | Frames seit dem Start |
 | `VOS_RANDOM` | → A | 0–255 |
-| `VOS_COMMAND` | A = Befehl | die gemeinsamen Befehle von VIEW und HELP |
+| `VOS_COMMAND` | A = Befehl | die gemeinsamen Befehle von VIEW und HELP (6–19). Nummeriere deine eigenen Befehle ab `VC_APP` (32), sonst startet ein Eintrag von VIEW oder HELP einen deiner Befehle |
 | `VOS_ERROR` | A = Fehler | Fehlerdialog |
 | `VOS_MODE` | A = 0 / 1 | Modus 0 (192×259, 16 Stifte) oder 1 (384×259, 4 Stifte) |
 | `VOS_PALETTE` | HL → 17 Farben | |
 | `VOS_CLS` | A = Stift | löscht den Bildschirm |
 | `VOS_PLOT` | HL = x, DE = y, A = Stift | ein Pixel |
 | `VOS_RECT` | IX → Rechteck | gefülltes Rechteck |
-| `VOS_COLOURS` | A = Textstift, C = Hintergrund | für `VOS_PRINT` und `VOS_CHAR` |
+| `VOS_COLOURS` | A = Textstift (+ `VOS_BOLD`, `VOS_ITALIC`, `VOS_UNDERLINE`), C = Hintergrund | für `VOS_PRINT` und `VOS_CHAR`. Die Stile entstehen aus derselben Schrift, für jede Sprache |
 | `VOS_PRINT` | HL = x, DE = y, BC → Text, 0 | |
 | `VOS_CHAR` | HL = x, DE = y, A = Zeichen | |
 | `VOS_MSG` | A = Text → HL | die Adresse eines Textes (`T_*` oder eines Systemtextes) |

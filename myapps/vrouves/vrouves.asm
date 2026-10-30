@@ -116,13 +116,13 @@ HUD_BAR         equ 32
 HUD_SCORE       equ 64
 HUD_ALL         equ 127
 
-CMD_NEW         equ 1
-CMD_NEXT        equ 2
-CMD_PAUSE       equ 3
-CMD_ABOUT       equ 4
-CMD_BACK        equ 5
-CMD_CONT        equ 6
-CMD_SCORES      equ 7
+CMD_NEW         equ VC_APP + 1
+CMD_NEXT        equ VC_APP + 2
+CMD_PAUSE       equ VC_APP + 3
+CMD_ABOUT       equ VC_APP + 4
+CMD_BACK        equ VC_APP + 5
+CMD_CONT        equ VC_APP + 6
+CMD_SCORES      equ VC_APP + 7
 SAVE_SIZE       equ 1 + 5 * 10      ; stage reached; 5 x name (8), score
 
 KEY_1           equ 64              ; key numbers (lang/en/keymap.txt)

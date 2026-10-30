@@ -26,12 +26,12 @@ BAR_X           equ 120             ; the volume bars
 BAR_Y           equ 160
 BAR_H           equ 60
 
-CMD_OPEN        equ 1
-CMD_PLAY        equ 2
-CMD_STOP        equ 3
-CMD_DRIVE       equ 4
-CMD_ABOUT       equ 5
-CMD_BACK        equ 6
+CMD_OPEN        equ VC_APP + 1
+CMD_PLAY        equ VC_APP + 2
+CMD_STOP        equ VC_APP + 3
+CMD_DRIVE       equ VC_APP + 4
+CMD_ABOUT       equ VC_APP + 5
+CMD_BACK        equ VC_APP + 6
 
         org VOS_APP_ADDR
         jp init

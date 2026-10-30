@@ -121,7 +121,7 @@ command: ...
 - **Icon:** 16 lines of 16 characters in `icon.txt`. Each character is a pen in hex (mode 0, Launcher palette) or `.` for transparent.
 - **File names** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 bytes, `"NAME    EXT"`. Drive 0 = A:, 1 = B:.
 
-## The API (version 12)
+## The API (version 13)
 
 | Call | Input → output | What it does |
 |---|---|---|
@@ -129,14 +129,14 @@ command: ...
 | `VOS_TICKS` | A = 1 / 0 (+ `VOS_PTR_KEYS`) | `VE_FRAME` 50 times a second, or none. With `VOS_PTR_KEYS` (2) the arrows and COPY also move the pointer and click |
 | `VOS_FRAMES` | → HL (and A bits 16–23) | frames since startup |
 | `VOS_RANDOM` | → A | 0–255 |
-| `VOS_COMMAND` | A = command | the shared commands of VIEW and HELP |
+| `VOS_COMMAND` | A = command | the shared commands of VIEW and HELP (6–19). Number your own commands from `VC_APP` (32) up, or a VIEW or HELP item runs one of yours |
 | `VOS_ERROR` | A = error | error dialog |
 | `VOS_MODE` | A = 0 / 1 | mode 0 (192×259, 16 pens) or 1 (384×259, 4 pens) |
 | `VOS_PALETTE` | HL → 17 colors | |
 | `VOS_CLS` | A = pen | clears the screen |
 | `VOS_PLOT` | HL = x, DE = y, A = pen | one pixel |
 | `VOS_RECT` | IX → rectangle | filled rectangle |
-| `VOS_COLOURS` | A = text pen, C = background | for `VOS_PRINT` and `VOS_CHAR` |
+| `VOS_COLOURS` | A = text pen (+ `VOS_BOLD`, `VOS_ITALIC`, `VOS_UNDERLINE`), C = background | for `VOS_PRINT` and `VOS_CHAR`. The styles are made from the same font, for every language |
 | `VOS_PRINT` | HL = x, DE = y, BC → text, 0 | |
 | `VOS_CHAR` | HL = x, DE = y, A = character | |
 | `VOS_MSG` | A = text → HL | the address of a text (`T_*` or a system one) |

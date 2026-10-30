@@ -28,13 +28,13 @@ TEXT_MAX        equ 4096
 DATA            equ #4000           ; the file, in the data bank
 KEY_CLR         equ 16
 
-CMD_NEW         equ 1               ; menu items: commands
-CMD_OPEN        equ 2
-CMD_SAVE        equ 3
-CMD_SAVE_AS     equ 4
-CMD_DRIVE       equ 5
-CMD_ABOUT       equ 6
-CMD_BACK        equ 7
+CMD_NEW         equ VC_APP + 1               ; menu items: commands
+CMD_OPEN        equ VC_APP + 2
+CMD_SAVE        equ VC_APP + 3
+CMD_SAVE_AS     equ VC_APP + 4
+CMD_DRIVE       equ VC_APP + 5
+CMD_ABOUT       equ VC_APP + 6
+CMD_BACK        equ VC_APP + 7
 
         org VOS_APP_ADDR
         jp init

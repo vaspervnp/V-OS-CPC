@@ -390,12 +390,22 @@ gfx_cls:
         ret
 
 ; ---------------------------------------------------------------------
-; txt_set_colours - A = foreground pen, C = background pen
+; txt_set_colours - A = foreground pen (bits 0-3) and style (bit 4
+; bold, bit 5 italic, bit 6 underline), C = background pen
 ; Builds txt_expand: for each 4-bit (mode 1) or 2-bit (mode 0) group of
 ; font pixels, the screen byte that draws it.
 ; Destroys: all
 ; ---------------------------------------------------------------------
 txt_set_colours:
+        ld b,a
+        rrca
+        rrca
+        rrca
+        rrca
+        and 7
+        ld (txt_style),a
+        ld a,b
+        and 15
         ld (txt_fg),a
         ld a,c
         ld (txt_bg),a
@@ -491,9 +501,7 @@ txt_char:
         add hl,de
         ex de,hl                    ; DE = screen
         ld h,txt_expand >> 8        ; txt_expand is page aligned
-        ld a,(bc)
-        inc bc
-        ld (txt_bits),a
+        call txt_row
         rrca
         rrca
         rrca
@@ -523,9 +531,7 @@ txt_char:
         add hl,de
         ex de,hl
         ld h,txt_expand >> 8
-        ld a,(bc)
-        inc bc
-        ld (txt_bits),a
+        call txt_row
         rlca                        ; bits 7-6
         rlca
         and 3
@@ -560,6 +566,59 @@ txt_char:
         dec a
         jr nz,.row0
         pop ix
+        ret
+
+; ---------------------------------------------------------------------
+; txt_row - the next glyph row from (BC), BC + 1, in the style of
+; txt_style -> A and txt_bits. Bold: the row ORed with itself one pixel
+; to the right; italic: the top four rows one pixel right, the bottom
+; two one pixel left; underline: the last row filled.
+; Destroys: AF
+; ---------------------------------------------------------------------
+txt_row:
+        ld a,(bc)
+        inc bc
+        ld (txt_bits),a
+        ld a,(txt_style)
+        or a
+        ld a,(txt_bits)
+        ret z
+        push bc
+        ld c,a
+        ld a,(txt_style)
+        ld b,a
+        ld a,c
+        bit 0,b
+        jr z,.roman
+        srl c
+        or c
+.roman:
+        bit 1,b
+        jr z,.upright
+        ld c,a
+        ld a,(txt_rows)             ; 8 = the top row
+        cp 5
+        jr c,.lower
+        srl c
+        jr .slanted
+.lower:
+        cp 3
+        jr nc,.slanted
+        sla c
+.slanted:
+        ld a,c
+.upright:
+        bit 2,b
+        jr z,.plain
+        ld c,a
+        ld a,(txt_rows)
+        dec a
+        ld a,c
+        jr nz,.plain
+        ld a,#FF
+.plain:
+        ld (txt_bits),a
+        pop bc
         ret
 
 ; ---------------------------------------------------------------------
@@ -687,6 +746,7 @@ txt_bg_byte: db 0
 txt_col:    dw 0
 txt_rows:   db 0
 txt_bits:   db 0
+txt_style:  db 0                    ; bit 0 bold, 1 italic, 2 underline
 
 gfx_lines_all: ds SCREEN_H * 2
 gfx_lines   equ gfx_lines_all + GFX_TOP * 2  ; drawable line 0

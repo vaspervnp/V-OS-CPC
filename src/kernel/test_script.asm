@@ -312,6 +312,30 @@ test_keys:
         dw 3050, 3054 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 21
+; make test-markdown (-DTEST_SCRIPT=21): MARKDOWN (myapps/markdown)
+; from its own disc, build/markdown.dsk, in drive B:. Expected:
+;   frame  300  F2, 450 TAB  -> the Launcher, drive B: MARKDOWN
+;   frame  600  RETURN       -> MARKDOWN, an empty text
+;   frame  750  CONTROL+O    -> the .MD files of B: (README.MD)
+;   frame  850  RETURN       -> README.MD in the editor, with its marks
+;   frame 1000  CONTROL+P    -> the page: headings, bold, italic, code,
+;                               lists, a quote, a line, a code block
+;   frame 1150  RIGHT        -> the page a screen on
+;   frame 1300  RETURN       -> the text again
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  450,  454 : db 8, %00010000   ; TAB: drive B:
+        dw  600,  604 : db 2, %00000100   ; RETURN: MARKDOWN
+        dw  745,  760 : db 2, %10000000   ; CONTROL
+        dw  750,  754 : db 4, %00000100   ; O
+        dw  850,  854 : db 2, %00000100   ; RETURN: README.MD
+        dw  995, 1010 : db 2, %10000000   ; CONTROL
+        dw 1000, 1004 : db 3, %00001000   ; P
+        dw 1150, 1154 : db 0, %00000010   ; RIGHT
+        dw 1300, 1304 : db 2, %00000100   ; RETURN: the text
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 20
 ; make test-music (-DTEST_SCRIPT=20): MUSIC (myapps/music) from its own
 ; disc, build/music.dsk, in drive B:. Expected:
@@ -1089,6 +1113,7 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF
