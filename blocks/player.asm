@@ -30,7 +30,7 @@
 ; WINDOW title w h draws a window in the middle of the stage; BUTTON,
 ; TEXT and PRINT then place things from its inside top left (without
 ; one, from the screen's). Buttons are the kernel's (VOS_SET_WIDGETS),
-; numbered from 0 in the order they appear, at most 16 for a window;
+; numbered from 0 in the order they appear, at most 64 (RT_MAX_BUTTONS);
 ; pressing one starts WHEN BUTTON, and the value BUTTON gives its
 ; number. A new window takes the last one and its buttons away.
 ; Lines before the first WHEN, and the lines of a script whose sprite

@@ -1,0 +1,66 @@
+# 3. Programs
+
+## Starting and ending
+
+A program starts in one of these ways:
+
+- from the Launcher: select it and press RETURN, or click twice
+- from the Desktop or the Commander: FILE > RUN
+- from another program, such as Studio, which runs whatever you make
+
+Each program has its own menu next to the common VIEW and HELP. It ends from its menu (usually BACK or STOP, CONTROL+Q) and returns to the view it was started from.
+
+## Several programs at once
+
+V-OS programs are of two kinds:
+
+- **Small, with a relocation table:** DEMO, MIXED and CLOCK, the web editor examples (PONG, CATCH, STARCAT, COUNTER), and whatever the [SDK](../../../sdk/README.en.md) makes. They share 12K of memory, and as many as fit run together.
+- **Programs that need all the memory:** STUDIO and whatever Studio makes (CALC, MINES, FLAP, TICKER and your own). Without a memory expansion they run on their own. If one is already running, you get "CLOSE ANOTHER PROGRAM FIRST".
+
+When you go to a view (F1–F4) while a program is running:
+
+- A small program stays in memory. You pick it up again from the Launcher (RETURN on it) or with F6, and it resumes exactly where it was.
+- A program that has all the memory ends, unless there is a memory expansion.
+
+**F6** (VIEW > PROGRAMS) shows the list of running programs. You choose one with the arrows and RETURN. If none is running, you get "NO PROGRAM IS RUNNING".
+
+**With a memory expansion** (e.g. 512K, which V-OS finds by itself at start-up), every program that needs all the memory gets its own bank. So STUDIO, CALC, DEMO and PONG can all run together.
+
+## In the background
+
+A program behind another one, or behind a view, normally **freezes** and resumes when it comes back to the front.
+
+Some programs ask to **keep running** in the background too, e.g. TICKER, which counts time. While there they do not draw or play sound. When they come back to the front, they have also counted the time they were away.
+
+In Studio you choose this for your program with STUDIO > IN BACKGROUND.
+
+## The desk accessory (ACCESSORY)
+
+A small program, such as CLOCK, can open in a window **on top of anything**: a view or a program.
+
+1. In the Launcher, select CLOCK and choose FILE > AS ACCESSORY (^A).
+2. From then on, **F5** opens and closes it, wherever you are. ESC also closes it.
+
+While it is open, it gets the keys and clicks. Its window can be dragged by its title. When it closes, whatever was underneath is redrawn.
+
+## The programs on the disc
+
+| Program | What it is |
+|---|---|
+| **STUDIO** | the block editor: you make programs on the CPC ([chapter 5](05-studio.md)) |
+| **DEMO** | the first V-OS program: a square that moves by itself. The arrows steer it and SPACE changes its color |
+| **MIXED** | the "mixed screen": a band with 16 colors (mode 0) between mode 1 bands. A click shows the coordinates |
+| **CLOCK** | the time since V-OS started. It also runs as a desk accessory |
+| **CALC** | a calculator in a window with buttons, made in Studio (there is also `CALC.VBS`) |
+| **MINES** | an 8×6 minesweeper with 8 mines, made in Studio. A click opens a cell, and NEW starts a new game |
+| **BRICKS** | brick breaking: a paddle with ←/→, 32 bricks, 3 lives, levels with an ever faster ball. At GAME OVER, SPACE for a new game |
+| **PONG** | a ball and a paddle with the arrows, score and lives |
+| **CATCH** | catch the falling stars |
+| **STARCAT** | a cat with costumes that walks, a star, a melody from a list |
+| **COUNTER** | a counter with +1, −1 and 0 buttons, in mode 1 |
+| **FLAP** | a bird that flaps its wings (costumes), and a star that changes costume every second |
+| **TICKER** | counts seconds and keeps going in the background |
+
+- Block programs are `.VBN` files. They have a PROGRAM > STOP menu (CONTROL+Q).
+- Those that also have a `.VBS` (CALC, MINES, FLAP, TICKER) open in Studio so you can look at them or change them.
+- `VBRUN.SYS` is not a program: it is the "player" that Studio needs.

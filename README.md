@@ -2,6 +2,8 @@
 
 Γραφικό λειτουργικό σύστημα για τον Amstrad CPC 6128, γραμμένο σε Z80 assembly.
 
+- **Τεκμηρίωση** (χρήση, Studio, SDK, ανάπτυξη): [docs/manual/](docs/manual/00-index.md), και ως PDF στο [docs/V-OS.pdf](docs/V-OS.pdf) (`make docs`)
+- **Manual** in English, Français, Español, Deutsch, Italiano: [docs/manual/en/](docs/manual/en/00-index.md), [fr](docs/manual/fr/00-index.md), [es](docs/manual/es/00-index.md), [de](docs/manual/de/00-index.md), [it](docs/manual/it/00-index.md); PDFs: `docs/V-OS-<en|fr|es|de|it>.pdf`
 - Τι απαιτείται και τι έχει αποφασιστεί: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)
 - Πρότυπα interface: [docs/interface-templates.html](docs/interface-templates.html)
 
@@ -31,6 +33,7 @@ make test-amsdos # το ίδιο σενάριο, μετά η AMSDOS στη BASIC
 make test-reboot # το ίδιο, μετά RUN"VOS" ξανά με το SETUP.CFG που αποθηκεύτηκε
 make test-system # το σενάριο με το A: σε μορφή SYSTEM
 make test-sdk    # το πρότυπο του SDK ως TEMPLATE: ανοίγει από τον Launcher, κουτί, μενού, ABOUT, BACK
+make docs        # τα PDF του manual: docs/V-OS.pdf (ελληνικά) και docs/V-OS-en/fr/es/de/it.pdf
 ```
 
 Δικά σου προγράμματα σε assembly, με το API του V-OS (οδηγός και λίστα κλήσεων: [sdk/README.md](sdk/README.md)):
@@ -65,7 +68,7 @@ src/include/         θύρες υλικού, χάρτης μνήμης
 src/lang/            παραγόμενα: αριθμοί μηνυμάτων, αγγλικά κείμενα και πληκτρολόγιο
 lang/                πηγές γλωσσών: en (βασική: ENGLISH.MSG και το πληκτρολόγιο του kernel), el (GREEK.LNG), fr, es, de, it (FRENCH, SPANISH, GERMAN, ITALIAN.LNG), latin1 (το κοινό font τους)
 tools/               scripts: screenshot στον Caprice32, mkfont.py, mklng.py, mktexts.py, mkicon.py
-docs/                απαιτήσεις, πρότυπα
+docs/                manual/ (η τεκμηρίωση, ανά κεφάλαιο), V-OS.pdf, απαιτήσεις, πρότυπα
 sdk/                 το SDK για προγράμματα σε assembly: οδηγός, API, template/ (πρότυπο προγράμματος)
 myapps/              τα δικά σου προγράμματα (make new-app), που μπαίνουν στη build/vos.dsk
 ```

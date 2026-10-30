@@ -32,6 +32,10 @@
 #   make app NAME=hello       it as build/HELLO.BIN, on build/vos.dsk
 #   make test-sdk    the template built as HELLO, run from the Launcher:
 #                 the box moved, BEEP, its menu and ABOUT dialog
+#   make docs      the manual as PDFs: docs/V-OS.pdf (Greek, from
+#                 docs/manual/*.md and sdk/README.md) and docs/V-OS-<code>.pdf
+#                 for en fr es de it (docs/manual/<code>/, sdk/README.<code>.md)
+#                 (tools/mkdocs.py: python markdown, pymupdf)
 #   make clean
 
 RASM    ?= rasm
@@ -49,7 +53,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: new-app app test-sdk all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: docs new-app app test-sdk all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -204,6 +208,17 @@ $(BUILD)/$(call upper,$(2)).BIN: $(1)/$(2).asm $(1)/texts.txt $(1)/icon.txt src/
 	$(PYTHON) -I tools/mkreloc.py $(BUILD)/myapp_$(2)/lo.bin $(BUILD)/myapp_$(2)/hi.bin $$@
 endef
 $(foreach a,$(MYAPPS),$(eval $(call myapp_rule,myapps/$(a),$(a))))
+
+# The manual as a PDF (python's user packages: no -I)
+DOC_LANGS := en fr es de it
+docs: docs/V-OS.pdf $(foreach l,$(DOC_LANGS),docs/V-OS-$(l).pdf)
+docs/V-OS.pdf: $(sort $(wildcard docs/manual/*.md)) sdk/README.md tools/mkdocs.py
+	$(PYTHON) tools/mkdocs.py $@
+define doc_rule
+docs/V-OS-$(1).pdf: $(sort $(wildcard docs/manual/$(1)/*.md)) sdk/README.$(1).md tools/mkdocs.py
+	$(PYTHON) tools/mkdocs.py $$@ $(1)
+endef
+$(foreach l,$(DOC_LANGS),$(eval $(call doc_rule,$(l))))
 
 new-app:
 	@echo "$(NAME)" | grep -Eq '^[a-z][a-z0-9]{0,7}$$' || { echo "make new-app NAME=name: 1-8 lower-case letters or digits, a letter first"; exit 1; }
