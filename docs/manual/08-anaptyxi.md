@@ -102,6 +102,7 @@
 | `test-markdown` | MARKDOWN από τη `markdown.dsk` στο B:: ανοίγει το `README.MD`, η σελίδα με ^P, μια οθόνη κάτω, πίσω στο κείμενο |
 | `test-open` | άνοιγμα ανά τύπο στον Commander: το `README.MD` στο MARKDOWN από το B:, ένα `.TXT` στο NOTEPAD από το A: |
 | `test-sysinfo` | το SYSINFO από τον Commander: έκδοση, API, ελεύθερα K στο A: και στο B:, ^R, ^Q |
+| `test-clip` | το πρόχειρο: επιλογή με SHIFT, ^C και ^V στο NOTEPAD, ^A, ^X, ^V, και μετά ^V στο MARKDOWN |
 | `test-amsdos`, `test-reboot`, `test-system` | τα αρχεία του V-OS στη BASIC, επανεκκίνηση, δισκέτα SYSTEM |
 
 **Νέο σενάριο:**

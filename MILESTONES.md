@@ -4,6 +4,14 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M37 (the clipboard):**
+- **What changed:** NOTEPAD and MARKDOWN have an EDIT menu: COPY ^C, CUT ^X, PASTE ^V and SELECT ALL ^A. SHIFT with the arrows selects, and the selection is shown inverted. Typing, RETURN, DEL or CLR replace or delete the selection; an arrow without SHIFT or a click ends it.
+- **Shared:** the clipboard is in the kernel, so text copied in one program can be pasted in another. It keeps up to 1K, in the free end of the kernel extension (bank 7, `#7B00–#7EFF`), which costs nothing in `VOS.BIN`.
+- **API 16:** `VX_CLIP_PUT` (HL = text, BC = bytes) and `VX_CLIP_GET` (DE = where, BC = room; HL = the clipboard's size, BC = 0 for only the size), through `VOS_EXT`. They copy between the program's bank and bank 7 in pieces, with `bank_copy`. `VMOD_SHIFT` and `VMOD_CONTROL` describe the mods byte of key events.
+- **Bug found:** after a file was opened in its program (M35), the view selected the program's file and not the file on its return. Now the kernel puts the file's name back.
+- **Tested:** in Caprice32 with `make test-clip`: NOTEPAD with `HELLO.TXT`, SHIFT+RIGHT ×6 selects "HELLO ", ^C, DOWN, ^V pastes it, ^A selects all, ^X empties the text, ^V brings it back; ^Q, the Commander is on `HELLO.TXT` again, `README.MD` opens in MARKDOWN, and ^V puts the two lines before its first line. `test-open`, `test-notepad` and `test-markdown` again.
+- **Not tested:** a paste bigger than the room left, and the clipboard with more than 1K.
+
 **M36 (VOS_EXT, room for more calls):**
 - **What changed:** the API's jump table gets one last call, `VOS_EXT` (API 15). A program puts a call number (`VX_*`) in A and the arguments in BC, DE and HL. An unknown number returns carry. New calls no longer need a place in the table.
 - **Where the calls live:** `xa_table` in the kernel (`src/kernel/api.asm`) has the address of each one. A call in the main kernel gets HL as it was. A call in the kernel extension (bank 7, where there is about 1.6K free) runs through `ext_call` and finds HL in `xa_hl`; it cannot see the program's memory there. The dispatcher took 51 bytes of the main kernel.

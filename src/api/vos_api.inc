@@ -74,7 +74,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 15              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 16              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -82,7 +82,8 @@ VOS_API_VERSION equ 15              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 11: the language of VOS_TEXTS,
                                     ; 12: VOS_CAT_EXT, VOS_SELF,
                                     ; VOS_PTR_KEYS, 13: text styles,
-                                    ; 14: VOS_OPEN, 15: VOS_EXT
+                                    ; 14: VOS_OPEN, 15: VOS_EXT,
+                                    ; 16: the clipboard
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -188,7 +189,13 @@ VX_VERSION      equ 0                   ; -> A = API version, HL = V-OS
                                         ; version (BCD: #0010 is 0.10)
 VX_FREE         equ 1                   ; C = drive -> A = free K on it;
                                         ; carry and A = error
-VX_COUNT        equ 2
+VX_CLIP_PUT     equ 2                   ; (16) HL = text, BC = bytes ->
+                                        ; the clipboard (1K at most); HL =
+                                        ; bytes kept
+VX_CLIP_GET     equ 3                   ; (16) DE = where, BC = room -> as
+                                        ; much as fits; HL = clipboard size
+                                        ; (BC = 0: only the size)
+VX_COUNT        equ 4
 
 ; The data bank: 16K more for the program (bank 4), seen at the same
 ; addresses #4000-#7FFF but never mapped there: the program copies to
@@ -240,6 +247,8 @@ VE_PTR_DOWN     equ 5
 VE_PTR_UP       equ 6
 VE_LANG         equ 7               ; the keyboard language changed
 VE_FRAME        equ 8               ; with VOS_TICKS on
+VMOD_SHIFT      equ %00000001       ; mods: SHIFT, CONTROL held
+VMOD_CONTROL    equ %00000010
 
 ; key numbers (the CPC keyboard matrix: line * 8 + bit)
 VK_UP           equ 0

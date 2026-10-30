@@ -134,7 +134,7 @@ app_run:
         call fdc_select
         ld hl,file_name
         call view_fetch
-        jr c,app_fail
+        jp c,app_fail
         ld de,"A" * 256 + "V"       ; "VA", and an API we have
         or a
         sbc hl,de
@@ -169,6 +169,14 @@ app_run:
         ld hl,file_name
         ld bc,11
         ldir
+        ld a,(app_open)             ; opened for a file: that file is
+        or a                        ; the one the view selects again
+        jr z,.own
+        ld hl,app_open + 2
+        ld de,file_name
+        ld bc,11
+        ldir
+.own:
         ld hl,slot_own              ; and in its slot
         call ext_call
         ld hl,app_wake

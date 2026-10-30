@@ -35,6 +35,10 @@ CMD_SAVE_AS     equ VC_APP + 4
 CMD_DRIVE       equ VC_APP + 5
 CMD_ABOUT       equ VC_APP + 6
 CMD_BACK        equ VC_APP + 7
+CMD_COPY        equ VC_APP + 8       ; the EDIT menu
+CMD_CUT         equ VC_APP + 9
+CMD_PASTE       equ VC_APP + 10
+CMD_ALL         equ VC_APP + 11
 
         org VOS_APP_ADDR
         jp init
@@ -53,9 +57,9 @@ init:
         ld hl,palette
         call VOS_PALETTE
         call VOS_MENU_VIEW
-        ld (bar + 3),hl
-        call VOS_MENU_HELP
         ld (bar + 5),hl
+        call VOS_MENU_HELP
+        ld (bar + 7),hl
         ld hl,bar
         call VOS_SET_BAR
         pop af
@@ -108,6 +112,7 @@ new_doc:
         xor a
         ld (left),a
         ld (modified),a
+        ld (sel_on),a
         ld hl,noname
         ld de,fname
         ld bc,11
@@ -134,9 +139,11 @@ event:
         ret nz
 .key:
         inc hl
-        ld a,(hl)                   ; the key, and its character
+        ld a,(hl)                   ; the key, its character, the mods
         inc hl
         ld c,(hl)
+        inc hl
+        ld b,(hl)
         ld hl,action
         ; fall through
 
@@ -173,20 +180,23 @@ edit:
 jp_hl:
         jp (hl)
 
-; A = key, C = its character
+; A = key, C = its character, B = mods. SHIFT and an arrow: the
+; selection from where the cursor was; typing, RETURN, DEL and CLR take
+; the selection out first (DEL and CLR: only that)
 action:
+        ld e,a
         cp VK_LEFT
-        jr z,go_left
+        jr z,.arrow
         cp VK_RIGHT
-        jr z,go_right
+        jr z,.arrow
         cp VK_UP
-        jr z,go_up
+        jr z,.arrow
         cp VK_DOWN
-        jr z,go_down
+        jr z,.arrow
         cp VK_DEL
-        jp z,backspace
+        jr z,.del
         cp KEY_CLR
-        jp z,delete
+        jr z,.clr
         cp VK_RETURN
         jr z,.line
         cp VK_ENTER
@@ -194,15 +204,55 @@ action:
         ld a,c
         cp 32
         ret c
+        push af
+        call sel_delete
+        pop af
         call insert
         ret c
+        ld a,(redo)
+        or a
+        ret nz
         ld a,1                      ; its line again
         ld (redo),a
         ret
 .line:
+        call sel_delete
         ld a,10
         call insert
         jp redo_all
+.del:
+        call sel_delete
+        jp z,backspace
+        ret
+.clr:
+        call sel_delete
+        jp z,delete
+        ret
+.arrow:
+        ld a,b
+        and VMOD_SHIFT
+        jr z,.plain
+        ld a,(sel_on)
+        or a
+        jr nz,.held
+        ld hl,(cur)
+        ld (sel),hl
+        inc a
+        ld (sel_on),a
+.held:
+        call redo_all
+        jr .go
+.plain:
+        call sel_off
+.go:
+        ld a,e
+        cp VK_LEFT
+        jr z,go_left
+        cp VK_RIGHT
+        jr z,go_right
+        cp VK_UP
+        jr z,go_up
+        jr go_down
 
 go_left:
         ld hl,(cur)
@@ -396,6 +446,7 @@ click:
         ld hl,.go
         jp edit
 .go:
+        call sel_off
         ld hl,(top)
         ld a,(click_r)
         or a
@@ -421,6 +472,18 @@ click:
 
 ; A = command (the menu)
 command:
+        cp CMD_COPY
+        ld hl,do_copy
+        jp z,edit
+        cp CMD_CUT
+        ld hl,do_cut
+        jp z,edit
+        cp CMD_PASTE
+        ld hl,do_paste
+        jp z,edit
+        cp CMD_ALL
+        ld hl,do_all
+        jp z,edit
         cp CMD_NEW
         jr nz,.not_new
         call discard_ok
@@ -462,6 +525,163 @@ discard_ok:
         call VOS_DIALOG
         or a                        ; YES is button 0
         ret
+
+; ---------------------------------------------------------------------
+; the selection and the clipboard (VOS_EXT, API 16)
+; ---------------------------------------------------------------------
+; -> Z if there is no selection (or an empty one); else HL -> its start,
+; DE -> after it
+sel_range:
+        ld a,(sel_on)
+        or a
+        ret z
+        ld hl,(sel)
+        ld de,(cur)
+        call same
+        jr z,.none
+        push hl
+        or a
+        sbc hl,de
+        pop hl
+        jr c,.ordered
+        ex de,hl
+.ordered:
+        or 1
+        ret
+.none:
+        xor a
+        ld (sel_on),a
+        ret
+
+; no selection any more (all drawn again if there was one)
+sel_off:
+        ld a,(sel_on)
+        or a
+        ret z
+        xor a
+        ld (sel_on),a
+        jp redo_all
+
+; the selection out of the text, the cursor at its start -> NZ; Z if
+; there was none
+sel_delete:
+        call sel_range
+        ret z
+        ld (cur),hl
+        push hl
+        push de
+        ld hl,(tend)                ; the bytes after it
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        pop hl
+        pop de
+        ld a,b
+        or c
+        jr z,.moved
+        ldir
+.moved:
+        ld (tend),de
+        xor a
+        ld (sel_on),a
+        inc a
+        ld (modified),a
+        call redo_all
+        or a
+        ret
+
+; ^C: the selection into the clipboard
+do_copy:
+        call sel_range
+        ret z
+        push hl
+        ex de,hl
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        pop hl
+        ld a,VX_CLIP_PUT
+        jp VOS_EXT
+
+; ^X: into the clipboard, then out of the text
+do_cut:
+        call do_copy
+        jp sel_delete
+
+; ^V: the clipboard in at the cursor (instead of the selection), as
+; much as there is room for
+do_paste:
+        call sel_delete
+        ld a,VX_CLIP_GET
+        ld bc,0
+        call VOS_EXT                ; HL = its size
+        ld a,h
+        or l
+        ret z
+        ex de,hl
+        ld hl,text + TEXT_MAX       ; the room left
+        push de
+        ld de,(tend)
+        or a
+        sbc hl,de
+        pop bc
+        push hl
+        or a
+        sbc hl,bc
+        pop hl
+        jr nc,.fits
+        ld b,h
+        ld c,l
+.fits:
+        ld a,b
+        or c
+        ret z
+        ld (paste_n),bc
+        ld hl,(tend)                ; the rest that many places on
+        ld de,(cur)
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        ld hl,(tend)
+        dec hl
+        push hl
+        ld de,(paste_n)
+        add hl,de
+        ex de,hl
+        pop hl
+        ld a,b
+        or c
+        jr z,.gap
+        lddr
+.gap:
+        ld hl,(tend)
+        ld de,(paste_n)
+        add hl,de
+        ld (tend),hl
+        ld de,(cur)
+        ld bc,(paste_n)
+        ld a,VX_CLIP_GET
+        call VOS_EXT
+        ld hl,(cur)
+        ld de,(paste_n)
+        add hl,de
+        ld (cur),hl
+        ld a,1
+        ld (modified),a
+        jp redo_all
+
+; ^A: all of the text
+do_all:
+        ld hl,text
+        ld (sel),hl
+        ld hl,(tend)
+        ld (cur),hl
+        ld a,1
+        ld (sel_on),a
+        jp redo_all
 
 ; ---------------------------------------------------------------------
 ; files
@@ -547,6 +767,7 @@ load_file:                          ; name_tmp on fdrive
         xor a
         ld (left),a
         ld (modified),a
+        ld (sel_on),a
         ld hl,name_tmp
         ld de,fname
         ld bc,11
@@ -891,28 +1112,89 @@ draw_row:
         dec c
         jr .skip
 .copy:
+        ld (row_p),hl               ; the row's first character
+.char:
         call at_eol
         jr z,.pad
         ld a,(hl)
         ld (de),a
         inc hl
         inc de
-        djnz .copy
+        djnz .char
         jr .print
 .pad:
+        ld a,COLS                   ; the characters of the row
+        sub b
+        ld (row_k),a
+.space:
         ld a," "
         ld (de),a
         inc de
-        djnz .pad
+        djnz .space
+        jr .printed
 .print:
+        ld a,COLS
+        ld (row_k),a
+.printed:
         xor a
         ld (de),a
         call colours
         pop af
         call row_y
+        ld (row_y0),de
         ld hl,0
         ld bc,line
+        call VOS_PRINT
+        call sel_range              ; the selected part, inverted
+        ret z
+        push de
+        call .col
+        ld (row_i0),a
+        pop hl
+        call .col
+        ld hl,row_i0
+        sub (hl)
+        ret z
+        ret c
+        add a,(hl)                  ; its end: a zero there
+        ld e,a
+        ld d,0
+        ld hl,line
+        add hl,de
+        ld (hl),0
+        ld a,BG
+        ld c,INK
+        call VOS_COLOURS
+        ld a,(row_i0)
+        ld e,a
+        ld d,0
+        ld hl,line
+        add hl,de
+        ld b,h
+        ld c,l
+        ex de,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,(row_y0)
         jp VOS_PRINT
+; HL -> in the text -> A = its column in the row, 0 to row_k
+.col:
+        ld de,(row_p)
+        or a
+        sbc hl,de
+        jr nc,.after
+        xor a
+        ret
+.after:
+        ld a,h
+        or a
+        ld a,(row_k)
+        ret nz
+        cp l
+        ret c
+        ld a,l
+        ret
 
 ; A = row -> DE = its y
 row_y:
@@ -1094,8 +1376,8 @@ print_label:
 palette:        db 0, 26, 1, 24, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16
                 db 1
 
-bar:            db 3
-                dw menu, 0, 0
+bar:            db 4
+                dw menu, edit_menu, 0, 0
 menu:           db T_MENU, 8
                 db T_NEW, CMD_NEW, "N", 0
                 db T_OPEN, CMD_OPEN, "O", 0
@@ -1105,6 +1387,12 @@ menu:           db T_MENU, 8
                 db T_ABOUT, CMD_ABOUT, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
+edit_menu:      db T_EDIT, 5
+                db T_COPY, CMD_COPY, "C", 0
+                db T_CUT, CMD_CUT, "X", 0
+                db T_PASTE, CMD_PASTE, "V", 0
+                db VOS_SEPARATOR, 0, 0, 0
+                db T_ALL, CMD_ALL, "A", 0
 dlg_about:      db T_MENU, T_ABOUT_TEXT, 1, VM_OK
 dlg_discard:    db T_MENU, T_DISCARD, 2, VM_YES, VM_NO
 dlg_big:        db T_MENU, T_TOO_BIG, 1, VM_OK
@@ -1120,6 +1408,13 @@ name_in:        ds 10               ; VOS_INPUT: 8 + 2
 modified:       db 0
 redo:           db 0                ; after an edit: 1 its line, 2 all
 cur:            dw 0                ; -> the cursor, in text
+sel:            dw 0                ; -> the other end of the selection
+sel_on:         db 0                ; 1: there is a selection
+paste_n:        dw 0
+row_p:          dw 0                ; draw_row: its first character,
+row_k:          db 0                ; how many it shows, its y and
+row_y0:         dw 0                ; where the selection starts
+row_i0:         db 0
 tend:           dw 0                ; -> after the text
 top:            dw 0                ; -> the first line on the screen
 left:           db 0                ; the first column on the screen

@@ -16,3 +16,8 @@ TOO_BIG     | THE FILE IS|TOO BIG (4K AT MOST) | ΤΟ ΑΡΧΕΙΟ ΕΙΝΑΙ|Π
 LINE        | LINE                  | ΓΡΑΜΜΗ
 COL         | COL                   | ΣΤΗΛΗ
 HINT        | ^N NEW  ^O OPEN  ^S SAVE  ESC MENU  ^Q BACK | ^N ΝΕΟ  ^O ΑΝΟΙΓΜΑ  ^S ΣΩΣΙΜΟ  ESC ΜΕΝΟΥ
+EDIT        | EDIT                  | ΕΠΕΞΕΡΓΑΣΙΑ
+COPY        | COPY                  | ΑΝΤΙΓΡΑΦΗ
+CUT         | CUT                   | ΑΠΟΚΟΠΗ
+PASTE       | PASTE                 | ΕΠΙΚΟΛΛΗΣΗ
+ALL         | SELECT ALL            | ΕΠΙΛΟΓΗ ΟΛΩΝ

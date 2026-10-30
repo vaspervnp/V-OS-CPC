@@ -63,7 +63,7 @@ KERNEL_SIZE     equ kernel_end - kernel_start
 ext_start:
         include "kernel/ext.asm"
         include "kernel/files_ext.asm"
-        assert $ <= SLOT_TABLE
+        assert $ <= CLIP_ADDR       ; the clipboard after the code
         ds SLOT_TABLE - $, 0
         ds 256, 0                   ; the slots, free
 ext_end:

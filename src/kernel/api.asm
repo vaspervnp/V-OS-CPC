@@ -80,7 +80,7 @@ api_ext:
         scf
         ret
 
-xa_table:       dw xa_version, xa_free
+xa_table:       dw xa_version, xa_free, xa_clip_put, xa_clip_get
         assert $ - xa_table == VX_COUNT * 2
 xa_hl:          dw 0
 
@@ -90,6 +90,48 @@ xa_version:
         ld a,VOS_API_VERSION
         or a
         ret
+
+; VX_CLIP_PUT: HL = text, BC = bytes (at most CLIP_MAX kept) -> the
+; clipboard, at CLIP_ADDR in bank 7; HL = bytes kept
+xa_clip_put:
+        push hl
+        ld hl,CLIP_MAX
+        or a
+        sbc hl,bc
+        jr nc,.fits
+        ld bc,CLIP_MAX
+.fits:
+        ld (clip_len),bc
+        ld a,(vw_cfg)
+        ld (ab_from),a
+        ld a,LANG_BANK_CFG
+        ld (ab_to),a
+        pop hl
+        ld de,CLIP_ADDR
+        call bank_copy
+        ld hl,(clip_len)
+        ret
+
+; VX_CLIP_GET: DE = where, BC = room -> as much of the clipboard as fits
+; there; HL = its size (BC = 0: only the size)
+xa_clip_get:
+        ld hl,(clip_len)
+        push hl
+        or a
+        sbc hl,bc
+        jr nc,.room                 ; bigger than the room: the room
+        pop bc
+        push bc
+.room:
+        ld a,LANG_BANK_CFG
+        ld (ab_from),a
+        ld a,(vw_cfg)
+        ld (ab_to),a
+        ld hl,CLIP_ADDR
+        call bank_copy
+        pop hl
+        ret
+clip_len:       dw 0
 
 api_exit:
         ld a,(acc_open)             ; an accessory: it closes, after

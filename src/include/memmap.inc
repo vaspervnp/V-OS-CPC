@@ -60,6 +60,9 @@ EN_MSG_ADDR     equ #6800           ; ENGLISH.MSG, up to 2K (mklng.py)
 EXT_ADDR        equ #7000           ; the kernel extension, up to 4K,
                                     ; the program slots at its end
 EXT_MAX         equ #1000
+CLIP_MAX        equ 1024            ; the clipboard (VX_CLIP_PUT, GET), at
+CLIP_ADDR       equ #7F00 - CLIP_MAX ; the end of the extension, before
+                                    ; the slots (SLOT_TABLE)
 EXT_IMAGE       equ #8000           ; where it is in VOS.BIN, as loaded
 BUF_CFG         equ #C4
 BUF_ADDR        equ #4000

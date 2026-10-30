@@ -312,6 +312,56 @@ test_keys:
         dw 3050, 3054 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 24
+; make test-clip (-DTEST_SCRIPT=24): the clipboard. A: the test disc
+; with NOTEPAD.BIN, B: markdown.dsk with HELLO.TXT (as test-open).
+; Expected:
+;   frame  300  F3, 400 TAB, 450 500 DOWN, 600 RETURN -> NOTEPAD with
+;                               HELLO.TXT
+;   frame  800  SHIFT held, RIGHT x6 -> "HELLO " selected (inverted)
+;   frame 1050  CONTROL+C    -> copied
+;   frame 1100  DOWN         -> no selection, the second line
+;   frame 1150  CONTROL+V    -> "HELLO " at the start of line 2
+;   frame 1300  CONTROL+A    -> all selected
+;   frame 1400  CONTROL+X    -> an empty text
+;   frame 1500  CONTROL+V    -> the two lines back
+;   frame 1600  CONTROL+Q, 1700 RETURN (YES) -> the Commander, on
+;                               HELLO.TXT again
+;   frame 1800  UP, 1850 RETURN -> MARKDOWN with README.MD
+;   frame 2050  CONTROL+V    -> the two lines before its first line
+test_keys:
+        dw  300,  304 : db 0, %00100000   ; F3
+        dw  400,  404 : db 8, %00010000   ; TAB: the B: panel
+        dw  450,  454 : db 0, %00000100   ; DOWN
+        dw  500,  504 : db 0, %00000100   ; DOWN: HELLO.TXT
+        dw  600,  604 : db 2, %00000100   ; RETURN: NOTEPAD
+        dw  800, 1000 : db 2, %00100000   ; SHIFT, held
+        dw  820,  824 : db 0, %00000010   ; RIGHT
+        dw  840,  844 : db 0, %00000010
+        dw  860,  864 : db 0, %00000010
+        dw  880,  884 : db 0, %00000010
+        dw  900,  904 : db 0, %00000010
+        dw  920,  924 : db 0, %00000010
+        dw 1045, 1060 : db 2, %10000000   ; CONTROL
+        dw 1050, 1054 : db 7, %01000000   ; C
+        dw 1100, 1104 : db 0, %00000100   ; DOWN
+        dw 1145, 1160 : db 2, %10000000   ; CONTROL
+        dw 1150, 1154 : db 6, %10000000   ; V
+        dw 1295, 1310 : db 2, %10000000   ; CONTROL
+        dw 1300, 1304 : db 8, %00100000   ; A
+        dw 1395, 1410 : db 2, %10000000   ; CONTROL
+        dw 1400, 1404 : db 7, %10000000   ; X
+        dw 1495, 1510 : db 2, %10000000   ; CONTROL
+        dw 1500, 1504 : db 6, %10000000   ; V
+        dw 1595, 1610 : db 2, %10000000   ; CONTROL
+        dw 1600, 1604 : db 8, %00001000   ; Q
+        dw 1700, 1704 : db 2, %00000100   ; RETURN: YES, leave it
+        dw 1800, 1804 : db 0, %00000001   ; UP: README.MD
+        dw 1850, 1854 : db 2, %00000100   ; RETURN: MARKDOWN
+        dw 2045, 2060 : db 2, %10000000   ; CONTROL
+        dw 2050, 2054 : db 6, %10000000   ; V
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 23
 ; make test-sysinfo (-DTEST_SCRIPT=23): SYSINFO (myapps/sysinfo) and
 ; VOS_EXT. A: the test disc with SYSINFO.BIN last, B: markdown.dsk.
@@ -1154,6 +1204,7 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

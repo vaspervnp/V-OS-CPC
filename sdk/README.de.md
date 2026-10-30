@@ -122,7 +122,7 @@ command: ...
 - **Symbol:** 16 Zeilen mit 16 Zeichen in `icon.txt`. Jedes Zeichen ist ein Stift in Hex (Modus 0, Palette der Ansicht Programme) oder `.` für transparent.
 - **Dateinamen** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 Bytes, `"NAME    EXT"`. Laufwerk 0 = A:, 1 = B:.
 
-## Die API (Version 15)
+## Die API (Version 16)
 
 | Aufruf | Eingabe → Ausgabe | Was er tut |
 |---|---|---|
@@ -164,7 +164,7 @@ command: ...
 | `VOS_BACKGROUND` | A = 1 / 0 | läuft weiter oder friert ein, wenn es hinter einem anderen liegt |
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → Carry: neue HL, DE | ein Fenster an seinem Titel verschieben |
 | `VOS_FIT` | dasselbe → HL, DE | holt ein Fenster in den Bildschirm hinein |
-| `VOS_EXT` | A = ein `VX_*`-Aufruf, BC, DE, HL wie er es will → A, HL, C, DE, Carry | die Aufrufe nach der Tabelle (Version 15): `VX_VERSION` → A = API, HL = V-OS-Version (BCD). `VX_FREE` C = Laufwerk → A = freie K. Unbekannt: Carry |
+| `VOS_EXT` | A = ein `VX_*`-Aufruf, BC, DE, HL wie er es will → A, HL, C, DE, Carry | die Aufrufe nach der Tabelle (Version 15): `VX_VERSION` → A = API, HL = V-OS-Version (BCD). `VX_FREE` C = Laufwerk → A = freie K. Unbekannt: Carry `VX_CLIP_PUT` HL = Text, BC = Bytes → die Zwischenablage (bis 1K). `VX_CLIP_GET` DE = wohin, BC = Platz → HL = Größe (Version 16). |
 
 Alle Details, z. B. zum Hintergrund, zum Zubehörprogramm und zu `VOS_SPLIT`, stehen in `src/api/vos_api.inc`. Beispiele findest du in `apps/demo/demo.asm` (Modus 0, Bewegung), `apps/clock/clock.asm` (Zubehör) und `apps/mixed/mixed.asm` (gemischter Bildschirm). Ein ganzes Spiel mit Sprites, einem Level aus einer Datei und Ton ist `myapps/vrouves/`.
 

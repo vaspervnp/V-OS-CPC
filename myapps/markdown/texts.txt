@@ -19,3 +19,8 @@ COL         | COL                   | ΣΤΗΛΗ
 PV_STATUS   | PREVIEW               | ΠΡΟΕΠΙΣΚΟΠΗΣΗ
 HINT        | ^O OPEN  ^S SAVE  ^P PREVIEW  ESC MENU  ^Q BACK | ^O ΑΝΟΙΓΜΑ  ^S ΣΩΣΙΜΟ  ^P ΣΕΛΙΔΑ  ^Q ΕΠΙΣΤΡ.
 PV_HINT     | ARROWS: SCROLL   RETURN OR ^P: EDIT | ΒΕΛΑΚΙΑ: ΚΥΛΙΣΗ   RETURN Ή ^P: ΓΡΑΦΗ
+EDIT        | EDIT                  | ΕΠΕΞΕΡΓΑΣΙΑ
+COPY        | COPY                  | ΑΝΤΙΓΡΑΦΗ
+CUT         | CUT                   | ΑΠΟΚΟΠΗ
+PASTE       | PASTE                 | ΕΠΙΚΟΛΛΗΣΗ
+ALL         | SELECT ALL            | ΕΠΙΛΟΓΗ ΟΛΩΝ

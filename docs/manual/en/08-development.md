@@ -102,6 +102,7 @@ The tests run V-OS in Caprice32 without a window and take screenshots in `build/
 | `test-markdown` | MARKDOWN from `markdown.dsk` in B:: `README.MD` opened, the page with ^P, a screen down, back to the text |
 | `test-open` | opening by type in the Commander: `README.MD` in MARKDOWN from B:, a `.TXT` in NOTEPAD from A: |
 | `test-sysinfo` | SYSINFO from the Commander: version, API, free K on A: and B:, ^R, ^Q |
+| `test-clip` | the clipboard: selecting with SHIFT, ^C and ^V in NOTEPAD, ^A, ^X, ^V, then ^V in MARKDOWN |
 | `test-amsdos`, `test-reboot`, `test-system` | V-OS files in BASIC, reboot, SYSTEM disk |
 
 **New script:**
