@@ -11,14 +11,21 @@
 ; of them: COSTUME n (from 1; 0 changes nothing), NEXT COSTUME, and the
 ; value COSTUME (0: a rectangle).
 ;
-;   #4000  the player and the runtime, then the VBS record
-;          the compiled scripts, up to CODE_LIMIT
+;   #4000  the player and the runtime, then the VBS record: its head,
+;          texts and costumes (moved down over the lines, which the
+;          compiler reads from the data bank), then the compiled
+;          scripts, up to CODE_LIMIT
 ;          the REPEATs' counters (REPEATS words)
-;   #7480  the 64 variables (A..H, A1..H7: n mod 8 the letter, n / 8
-;          the digit)
 ;   #7500  sprites, the script table and state
+;   #7650  the 128 variables (A..H, A1..H15: n mod 8 the letter, n / 8
+;          the number), cleared with the state
+;   #7750  SAVE VARS and LOAD VARS: the file's name and a buffer
 ;   #7800  the scripts' stacks (MAX_SCRIPTS x 128)
 ;
+; SAVE VARS group TO text writes the variables, all 128 or the 8 of a
+; group (A..H, A1..H1, ... A15..H15), to the file the text names (.TXT
+; when it has no type) as text, a line each: "A1=-5". LOAD VARS group
+; FROM text sets those of the group that the file names (pl_save_vars).
 ; WHEN I RECEIVE n starts on SEND n (a number; SEND takes any value).
 ; WINDOW title w h draws a window in the middle of the stage; BUTTON,
 ; TEXT and PRINT then place things from its inside top left (without
@@ -71,11 +78,12 @@ K_EDGE          equ 8
 K_CMP           equ 9
 K_BUTTON        equ 12
 K_COSTUME       equ 14
+K_GROUP         equ 15              ; 0..15: A..H, A1..H1 ...; 16: all
 
 OP_HATS         equ 3               ; WHEN START, KEY, CLICKED = EVT_*
 OP_RECEIVE      equ 24              ; WHEN I RECEIVE: EVT_RECEIVE
 OP_PRESSED      equ 32              ; WHEN BUTTON: EVT_BUTTON
-OP_COUNT        equ 37
+OP_COUNT        equ 39
 COS_MAX         equ 8               ; costumes after the lines: db count,
 COS_SIZE        equ 258             ; then db 0, 0, 16 x 16 pens (bit 7:
                                     ; none); pl_costumes makes them images
@@ -94,10 +102,10 @@ V_RUNS          equ #40
 prog_sprites    equ #7500           ; SPR_MAX * SP_SIZE
 prog_scripts    equ #7590           ; MAX_SCRIPTS * 7
 rt_state        equ #7600           ; MAX_SCRIPTS * ST_SIZE
-VARS            equ 64
-pl_vars         equ prog_sprites - VARS * 2
+VARS            equ 128
+pl_vars         equ rt_state + MAX_SCRIPTS * ST_SIZE
 REPEATS         equ 64              ; REPEATs in a program, each with a
-pl_counters     equ pl_vars - REPEATS * 2 ; word, set as the loop starts
+pl_counters     equ prog_sprites - REPEATS * 2 ; word, set as the loop starts
 rt_stacks       equ #7800
 CODE_LIMIT      equ pl_counters - 64 ; a line's code is shorter
 
@@ -185,12 +193,7 @@ pl_init:
         ld hl,rt_state              ; script state 0
         ld de,rt_state + 1
         ld bc,rt_stacks - rt_state - 1
-        ld (hl),0
-        ldir
-        ld hl,pl_vars               ; and the variables
-        ld de,pl_vars + 1
-        ld bc,VARS * 2 - 1
-        ld (hl),0
+        ld (hl),0                   ; and the variables
         ldir
         call pl_compile
         ld a,(pl_nscripts)
@@ -264,6 +267,10 @@ pl_sprites:
 ; ---------------------------------------------------------------------
 ; the compiler: VBS lines (IX -> line) -> code at (pl_out)
 ; ---------------------------------------------------------------------
+; The lines are read one at a time from the file's copy in the data
+; bank (the kernel loads a program there first, at the same addresses:
+; VOS_APP_ADDR = #4000), so the code may go over them; pl_costumes has
+; moved the costumes down to where the lines start.
 pl_compile:
         xor a
         ld (pl_nscripts),a
@@ -272,7 +279,8 @@ pl_compile:
         ld (pl_lineno),a
         ld (pl_nrep),a
         ld bc,(vbs_data + V_NLINES)
-        ld ix,vbs_data + V_LINES
+        ld hl,vbs_data + V_LINES
+        ld (pl_src),hl
         ld hl,(pl_cos_end)          ; the code after the costumes
         ld (pl_out),hl
         ld a,c
@@ -286,6 +294,16 @@ pl_compile:
         or a
         sbc hl,de
         jr nc,.full
+        ld hl,(pl_src)              ; the line -> pl_line
+        push hl
+        ld de,pl_line
+        ld bc,LINE_SIZE
+        call VOS_BANK_GET
+        pop hl
+        ld de,LINE_SIZE
+        add hl,de
+        ld (pl_src),hl
+        ld ix,pl_line
         ld a,(ix + 0)
         cp OP_COUNT
         jr nc,.next
@@ -303,8 +321,6 @@ pl_compile:
         or a
         call nz,.run
 .next:
-        ld de,LINE_SIZE
-        add ix,de
         ld hl,pl_lineno
         inc (hl)
         pop bc
@@ -453,6 +469,7 @@ pl_ops:
         dw op_sub, op_mul, op_div, op_mod
         dw op_window, op_button, 0, op_write    ; WHEN BUTTON: pl_hat
         dw op_costume, op_next_costume, op_label
+        dw op_save_vars, op_load_vars
         assert $ - pl_ops == OP_COUNT * 2     ; as in apps/studio/studio.asm
 
 op_forever:
@@ -776,6 +793,29 @@ pl_at:
         ld de,rt_py
         ld a,#22
         jp e_op_w
+
+op_save_vars:                       ; SAVE VARS group TO text: ld hl,
+        ld hl,pl_save_vars          ; group, ld a,text, ld de,routine,
+        jr op_vars                  ; call rt_on_main
+op_load_vars:
+        ld hl,pl_load_vars
+op_vars:
+        push hl
+        ld a,1
+        call pl_slot
+        ld a,b
+        cp K_GROUP
+        jr nz,.all
+        ld a,e
+        cp 16
+        jr c,.group
+.all:
+        ld de,16
+.group:
+        ld a,#21
+        call e_op_w
+        pop hl
+        jr op_texted
 
 op_note:                            ; NOTE note FOR frames: and wait
         ld a,1
@@ -1166,6 +1206,336 @@ rt_text_ptr:
         add hl,de
         ret
 
+; ---------------------------------------------------------------------
+; SAVE VARS and LOAD VARS (on the main stack: the disc, the data bank)
+; ---------------------------------------------------------------------
+; The file is text, a line a variable: its name, "=", its value
+; ("A=12", "C3=-5"). It is made and read in the data bank, at PV_BANK.
+; LOAD VARS sets the variables of the group its lines name and leaves
+; the others as they are; other lines are left out, and so is a file
+; that is not there.
+PV_BANK         equ #4000
+PV_CHUNK        equ 32                  ; read from the bank at a time
+
+; A = text (the file's name), HL = group (16: all)
+pl_save_vars:
+        call pv_file
+        ld hl,PV_BANK
+        ld (pv_ptr),hl
+        xor a
+.var:
+        ld (pv_n),a
+        call pv_in_group
+        jr nz,.next
+        ld a,(pv_n)
+        ld de,pv_line
+        call pv_name_text
+        ld a,"="
+        ld (de),a
+        inc de
+        ld a,(pv_n)
+        call pv_var_ptr
+        ld a,(hl)
+        inc hl
+        ld h,(hl)
+        ld l,a
+        call rt_number_text
+        ex de,hl
+        ld (hl),13
+        inc hl
+        ld (hl),10
+        inc hl
+        ld de,pv_line
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        push bc
+        ex de,hl
+        ld de,(pv_ptr)
+        call VOS_BANK_PUT
+        pop bc
+        ld hl,(pv_ptr)
+        add hl,bc
+        ld (pv_ptr),hl
+.next:
+        ld a,(pv_n)
+        inc a
+        cp VARS
+        jr c,.var
+        ld hl,(pv_ptr)
+        ld de,PV_BANK
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        ld a,VOS_DATA
+        ld hl,pv_fcb
+        jp VOS_SAVE
+
+; A = text, HL = group (16: all)
+pl_load_vars:
+        call pv_file
+        ld a,VOS_DATA
+        ld hl,pv_fcb
+        ld de,PV_BANK
+        call VOS_LOAD
+        ret c
+        ld (pv_left),bc
+        ld hl,PV_BANK
+        ld (pv_ptr),hl
+        xor a
+        ld (pv_have),a
+.find:                                  ; a name: A..H, then 1..15
+        call pv_next
+        or a
+        ret z
+        and #DF                         ; a..h too
+        sub "A"
+        cp 8
+        jr nc,.find
+        ld (pv_n),a
+        call pv_next
+        call pv_number
+        ld a,h
+        or a
+        jr nz,.skip
+        ld a,l
+        cp 16
+        jr nc,.skip
+        add a,a
+        add a,a
+        add a,a
+        ld hl,pv_n
+        add a,(hl)
+        ld (hl),a
+        ld a,(pv_ch)
+.equals:                                ; spaces, "="
+        cp " "
+        jr z,.more
+        cp "="
+        jr nz,.value
+.more:
+        call pv_next
+        jr .equals
+.value:
+        cp "-"
+        push af
+        call z,pv_next
+        sub "0"
+        cp 10
+        jr nc,.not_number
+        ld a,(pv_ch)
+        call pv_number
+        pop af
+        call z,rt_neg
+        push hl
+        ld a,(pv_n)
+        call pv_in_group
+        jr nz,.not_set
+        ld a,(pv_n)
+        call pv_var_ptr
+        pop de
+        ld (hl),e
+        inc hl
+        ld (hl),d
+        jr .skip
+.not_number:
+.not_set:
+        pop af
+.skip:                                  ; the rest of the line
+        ld a,(pv_ch)
+        or a
+        ret z
+        cp 10
+        jr z,.find
+        cp 13
+        jr z,.find
+        call pv_next
+        jr .skip
+
+; A = character, then pv_next: digits -> HL (A = the next character)
+pv_number:
+        ld hl,0
+.digit:
+        sub "0"
+        cp 10
+        ld a,(pv_ch)
+        ret nc
+        push hl
+        add hl,hl
+        add hl,hl
+        pop de
+        add hl,de
+        add hl,hl
+        sub "0"
+        ld e,a
+        ld d,0
+        add hl,de
+        push hl
+        call pv_next
+        pop hl
+        jr .digit
+
+; the file's next character -> A, (pv_ch); 0 at its end
+pv_next:
+        ld hl,(pv_left)
+        ld a,h
+        or l
+        jr z,.put
+        dec hl
+        ld (pv_left),hl
+        ld a,(pv_have)
+        or a
+        jr nz,.have
+        ld hl,(pv_ptr)
+        ld de,pv_buf
+        ld bc,PV_CHUNK
+        call VOS_BANK_GET
+        ld hl,(pv_ptr)
+        ld bc,PV_CHUNK
+        add hl,bc
+        ld (pv_ptr),hl
+        ld a,PV_CHUNK
+.have:
+        dec a
+        ld (pv_have),a
+        cpl
+        add a,PV_CHUNK                  ; PV_CHUNK - 1 - left: its place
+        ld e,a
+        ld d,0
+        ld hl,pv_buf
+        add hl,de
+        ld a,(hl)
+.put:
+        ld (pv_ch),a
+        ret
+
+; A = text, HL = group -> pv_group, pv_fcb: its name, 8 + 3 capitals
+; (".TXT" when it has none)
+pv_file:
+        ld b,a
+        ld a,h
+        or a
+        ld a,16
+        jr nz,.group
+        ld a,l
+        cp 16
+        jr c,.group
+        ld a,16
+.group:
+        ld (pv_group),a
+        ld hl,pv_fcb
+        ld c,11
+.space:
+        ld (hl)," "
+        inc hl
+        dec c
+        jr nz,.space
+        ld a,b
+        call rt_text_ptr
+        ld de,pv_fcb
+        ld b,8
+        call .part
+        ld de,pv_fcb + 8
+        ld a,(hl)
+        cp "."
+        ld b,3
+        jr z,.type
+        ex de,hl
+        ld (hl),"T"
+        inc hl
+        ld (hl),"X"
+        inc hl
+        ld (hl),"T"
+        ret
+.type:
+        inc hl
+.part:                                  ; up to B characters before "."
+        ld a,(hl)
+        or a
+        ret z
+        cp "."
+        ret z
+        inc hl
+        cp " "
+        jr z,.part
+        cp "a"
+        jr c,.put
+        cp "z" + 1
+        jr nc,.put
+        sub #20
+.put:
+        ld (de),a
+        inc de
+        djnz .part
+        ret
+
+; A = variable -> Z if it is in pv_group
+pv_in_group:
+        ld c,a
+        ld a,(pv_group)
+        cp 16
+        ret z
+        ld b,a
+        ld a,c
+        rrca
+        rrca
+        rrca
+        and 15
+        cp b
+        ret
+
+; A = variable -> HL -> it (keeps DE)
+pv_var_ptr:
+        push de
+        add a,a
+        ld l,a
+        ld h,0
+        ld de,pl_vars
+        add hl,de
+        pop de
+        ret
+
+; A = variable, DE -> room: its name there -> DE after it
+pv_name_text:
+        ld c,a
+        and 7
+        add a,"A"
+        ld (de),a
+        inc de
+        ld a,c
+        rrca
+        rrca
+        rrca
+        and 15
+        ret z
+        cp 10
+        jr c,.digit
+        sub 10
+        ld c,a
+        ld a,"1"
+        ld (de),a
+        inc de
+        ld a,c
+.digit:
+        add a,"0"
+        ld (de),a
+        inc de
+        ret
+
+; their data, after the variables (below the stacks)
+pv_fcb          equ pl_vars + VARS * 2  ; 12
+pv_group        equ pv_fcb + 12
+pv_n            equ pv_group + 1
+pv_ch           equ pv_n + 1
+pv_have         equ pv_ch + 1
+pv_ptr          equ pv_have + 1         ; dw
+pv_left         equ pv_ptr + 2          ; dw
+pv_line         equ pv_left + 2         ; "A15=-32768", 13, 10
+pv_buf          equ pv_line + 12
+pv_end          equ pv_buf + PV_CHUNK
+
 ; ---- data -----------------------------------------------------------
 rt_texts:       db 2 + TEXT_MAX, "EL" ; the runtime's, then the program's
                 dw rt_t_menu_en, rt_t_menu_el
@@ -1190,6 +1560,8 @@ pl_event:       db 0
 pl_lineno:      db 0
 pl_nrep:        db 0                ; REPEATs so far
 pl_out:         dw 0
+pl_src:         dw 0                ; the next line, in the data bank
+pl_line:        ds LINE_SIZE
 pl_depth:       db 0
 pl_ctrl:        ds MAX_DEPTH * CT_SIZE
 
@@ -1237,6 +1609,26 @@ pl_costumes:
         xor a
 .count:
         ld (pl_ctab),a
+        ld (hl),a                   ; down to where the lines start (the
+        push af                     ; compiler reads them from the data
+        ld b,a                      ; bank): db count, COS_SIZE each
+        push hl
+        ld hl,1
+        ld de,COS_SIZE
+        or a
+        jr z,.sized
+.size:
+        add hl,de
+        djnz .size
+.sized:
+        ld b,h
+        ld c,l
+        pop hl
+        ld de,vbs_data + V_LINES
+        push de
+        ldir
+        pop hl
+        pop af
         inc hl
         ld de,pl_ctab + 1
         or a
@@ -1358,5 +1750,9 @@ pl_m1_sites:    dw rt_m1_and_1 : db #FC
 
 ; Studio appends the program here
 vbs_data:
-        assert vbs_data + V_LINES + MAX_LINES * LINE_SIZE + 1 + COS_MAX * COS_SIZE <= CODE_LIMIT - 2048
+        assert pv_end <= rt_stacks
+        assert VOS_APP_ADDR == #4000    ; where the kernel loads it, in the data bank too
+        ; the longest program, 240 lines and 8 costumes, has 4000 bytes
+        ; for its code (the lines take none: the code goes over them)
+        assert vbs_data + V_LINES + 1 + COS_MAX * COS_SIZE <= CODE_LIMIT - 4000
         save "build/VBRUN.BIN", VOS_APP_ADDR, vbs_data - VOS_APP_ADDR

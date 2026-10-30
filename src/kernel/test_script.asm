@@ -258,8 +258,8 @@ test_frame:     dw 0
 ;   frame 1500  CONTROL+Q    -> the Launcher, CALC still chosen
 ;   frame 1700, 1750 UP, 1900 RETURN -> Studio
 ;   frame 2100  CONTROL+O    -> the file list
-;   frame 2160-2340 UP x7, 2400 RETURN -> from the first file to the
-;                               last (MINES.VBS), then up to CALC.VBS:
+;   frame 2150-2346 UP x8, 2400 RETURN -> from the first file to the
+;                               last (BRICKS.VBN), then up to CALC.VBS:
 ;                               opened
 ;   frame 2600  TAB, 2650 LEFT -> the palette: WINDOWS
 ;   frame 2800  RETURN       -> WINDOW added, the dialog asks its text
@@ -295,13 +295,14 @@ test_keys:
         dw 1900, 1904 : db 2, %00000100   ; RETURN
         dw 2095, 2110 : db 2, %10000000   ; CONTROL
         dw 2100, 2104 : db 4, %00000100   ; O
-        dw 2160, 2164 : db 0, %00000001   ; UP: the last file (MINES.VBS)
-        dw 2190, 2194 : db 0, %00000001   ; UP: MINES.VBN
-        dw 2220, 2224 : db 0, %00000001   ; UP: VBRUN.SYS
-        dw 2250, 2254 : db 0, %00000001   ; UP: TICKER.VBS
-        dw 2280, 2284 : db 0, %00000001   ; UP: TICKER.VBN
-        dw 2310, 2314 : db 0, %00000001   ; UP: CLOCK.BIN
-        dw 2340, 2344 : db 0, %00000001   ; UP: CALC.VBS
+        dw 2150, 2154 : db 0, %00000001   ; UP: the last file (BRICKS.VBN)
+        dw 2178, 2182 : db 0, %00000001   ; UP: MINES.VBS
+        dw 2206, 2210 : db 0, %00000001   ; UP: MINES.VBN
+        dw 2234, 2238 : db 0, %00000001   ; UP: VBRUN.SYS
+        dw 2262, 2266 : db 0, %00000001   ; UP: TICKER.VBS
+        dw 2290, 2294 : db 0, %00000001   ; UP: TICKER.VBN
+        dw 2318, 2322 : db 0, %00000001   ; UP: CLOCK.BIN
+        dw 2346, 2350 : db 0, %00000001   ; UP: CALC.VBS
         dw 2400, 2404 : db 2, %00000100   ; RETURN
         dw 2600, 2604 : db 8, %00010000   ; TAB
         dw 2650, 2654 : db 1, %00000001   ; LEFT
@@ -311,16 +312,45 @@ test_keys:
         dw 3050, 3054 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 14
+; make test-bricks (-DTEST_SCRIPT=14): BRICKS, a block game
+; (blocks/examples/bricks.vbp). Expected:
+;   frame  300  F2, 420-480 DOWN x3, 520-580 RIGHT x3 -> BRICKS chosen
+;                               (page 2, after CLOCK, TICKER and MINES)
+;   frame  630  RETURN       -> 32 bricks in four colours, the bat, and
+;                               the ball served from it after 40 frames
+;   frame  900-1000 RIGHT held, 1200-1300 LEFT held -> the bat moves
+;   later       bricks hit disappear and SCORE grows; LIVES goes down
+;               when the ball is missed, and at 0 GAME OVER
+;   frame 3600  SPACE        -> a new game: all bricks, SCORE 0, LIVES 3
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  420,  424 : db 0, %00000100   ; DOWN
+        dw  450,  454 : db 0, %00000100   ; DOWN
+        dw  480,  484 : db 0, %00000100   ; DOWN
+        dw  520,  524 : db 0, %00000010   ; RIGHT
+        dw  550,  554 : db 0, %00000010   ; RIGHT
+        dw  580,  584 : db 0, %00000010   ; RIGHT
+        dw  630,  634 : db 2, %00000100   ; RETURN: BRICKS
+        dw  900, 1000 : db 0, %00000010   ; RIGHT held
+        dw 1200, 1300 : db 1, %00000001   ; LEFT held
+        dw 3600, 3604 : db 5, %10000000   ; SPACE: a new game
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 13
-; make test-vars (-DTEST_SCRIPT=13): Studio's 64 variables, with
+; make test-vars (-DTEST_SCRIPT=13): Studio's 128 variables, with
 ; VARS.VBS (blocks/examples/vars.vbt) last on the disc. Expected:
 ;   frame  300  F2, 400, 440 RIGHT, 480 RETURN -> STUDIO
 ;   frame  800  CONTROL+O, 860 UP, 920 RETURN -> VARS.VBS opened: its
-;                               lines name A, A1, H7, B2, C5
+;                               lines name A, A1, H15, B2, C12
 ;   frame 1000  DOWN, 1030 RIGHT, 1060, 1090 A -> SET A TO 1 becomes
 ;                               SET A1, then SET A2 TO 1
-;   frame 1200  CONTROL+R    -> saved, VARS.VBN written and run: it
-;                               shows 0 5 7 12 10 (A is not set now)
+;   frame 1130-1350 DOWN x23 -> LOAD VARS A-H FROM "row1"
+;   frame 1380, 1410 RIGHT x2, 1440 A -> LOAD VARS A1-H1 FROM "row1"
+;   frame 1600  CONTROL+R    -> saved, VARS.VBN written and run: it
+;                               shows 0 5 7 12 10 (A is not set now),
+;                               then after SAVE VARS and LOAD VARS
+;                               0 9 7 12 10
 test_keys:
         dw  300,  304 : db 1, %01000000   ; F2
         dw  400,  404 : db 0, %00000010   ; RIGHT
@@ -334,8 +364,34 @@ test_keys:
         dw 1030, 1034 : db 0, %00000010   ; RIGHT: its variable
         dw 1060, 1064 : db 8, %00100000   ; A: A1
         dw 1090, 1094 : db 8, %00100000   ; A: A2
-        dw 1195, 1210 : db 2, %10000000   ; CONTROL
-        dw 1200, 1204 : db 6, %00000100   ; R
+        dw 1130, 1134 : db 0, %00000100   ; DOWN
+        dw 1140, 1144 : db 0, %00000100   ; DOWN
+        dw 1150, 1154 : db 0, %00000100   ; DOWN
+        dw 1160, 1164 : db 0, %00000100   ; DOWN
+        dw 1170, 1174 : db 0, %00000100   ; DOWN
+        dw 1180, 1184 : db 0, %00000100   ; DOWN
+        dw 1190, 1194 : db 0, %00000100   ; DOWN
+        dw 1200, 1204 : db 0, %00000100   ; DOWN
+        dw 1210, 1214 : db 0, %00000100   ; DOWN
+        dw 1220, 1224 : db 0, %00000100   ; DOWN
+        dw 1230, 1234 : db 0, %00000100   ; DOWN
+        dw 1240, 1244 : db 0, %00000100   ; DOWN
+        dw 1250, 1254 : db 0, %00000100   ; DOWN
+        dw 1260, 1264 : db 0, %00000100   ; DOWN
+        dw 1270, 1274 : db 0, %00000100   ; DOWN
+        dw 1280, 1284 : db 0, %00000100   ; DOWN
+        dw 1290, 1294 : db 0, %00000100   ; DOWN
+        dw 1300, 1304 : db 0, %00000100   ; DOWN
+        dw 1310, 1314 : db 0, %00000100   ; DOWN
+        dw 1320, 1324 : db 0, %00000100   ; DOWN
+        dw 1330, 1334 : db 0, %00000100   ; DOWN
+        dw 1340, 1344 : db 0, %00000100   ; DOWN
+        dw 1350, 1354 : db 0, %00000100   ; DOWN
+        dw 1380, 1384 : db 0, %00000010   ; RIGHT, RIGHT: the group of
+        dw 1410, 1414 : db 0, %00000010   ; LOAD VARS A-H FROM "row1"
+        dw 1440, 1444 : db 8, %00100000   ; A: A1-H1
+        dw 1595, 1610 : db 2, %10000000   ; CONTROL
+        dw 1600, 1604 : db 6, %00000100   ; R
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 12
@@ -816,6 +872,7 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

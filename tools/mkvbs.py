@@ -21,11 +21,12 @@ spaces are ignored):
   OP slot slot slot           a block: its name in apps/studio/blocks.txt
                               without OP_ (START, IF, WINDOW, ...), then
                               its slots in slot order (not as shown)
-Slots: 12 or -3 (a number), A..H or A1..H7 (one of the 64 variables:
-the letter is the number mod 8, the digit the number / 8), "text", X,
+Slots: 12 or -3 (a number), A..H or A1..H15 (one of the 128 variables:
+the letter is the number mod 8, the digits the number / 8), "text", X,
 Y, EDGE, BUTTON, COSTUME, RND:n, KEY:n, TOUCH:n (values); < = >
 (comparisons; _ is none); STAGE or SPRITE:n (whose script); KEYN:n
-(WHEN KEY's key).
+(WHEN KEY's key); ALL, A-H or A1-H1..A15-H15 (SAVE_VARS and LOAD_VARS:
+all the variables or those 8).
 """
 import os
 import struct
@@ -33,7 +34,7 @@ import sys
 
 SPR_MAX, TEXT_MAX, TEXT_SIZE, MAX_LINES, COS_MAX = 6, 32, 16, 240, 8
 K = dict(NUM=1, VAR=2, X=3, Y=4, RND=5, KEY=6, TOUCH=7, EDGE=8, CMP=9,
-         SPR=10, KEYN=11, BUTTON=12, TEXT=13, COSTUME=14)
+         SPR=10, KEYN=11, BUTTON=12, TEXT=13, COSTUME=14, GROUP=15)
 
 
 class Error(Exception):
@@ -82,8 +83,15 @@ def slot(word, texts):
     w = word.upper()
     if w.lstrip("-").isdigit():
         return K["NUM"], int(w)
-    if "A" <= w[0] <= "H" and (len(w) == 1 or len(w) == 2 and "1" <= w[1] <= "7"):
-        return K["VAR"], ord(w[0]) - ord("A") + (8 * int(w[1]) if len(w) == 2 else 0)
+    if "A" <= w[0] <= "H" and (len(w) == 1 or w[1:].isdigit() and 1 <= int(w[1:]) <= 15
+                               and w[1] != "0"):
+        return K["VAR"], ord(w[0]) - ord("A") + (8 * int(w[1:]) if len(w) > 1 else 0)
+    if w == "ALL":
+        return K["GROUP"], 16
+    a, dash, h = w.partition("-")
+    if dash and a[:1] == "A" and h[:1] == "H" and a[1:] == h[1:] and (
+            a[1:] == "" or a[1:].isdigit() and a[1] != "0" and int(a[1:]) <= 15):
+        return K["GROUP"], int(a[1:] or 0)
     if w in ("X", "Y", "EDGE", "BUTTON", "COSTUME"):
         return K[w], 0
     if w in "<=>":

@@ -1493,6 +1493,27 @@ rt_bg_3 equ $ - 1
 ; HL = number, then (rt_px), (rt_py): print it in decimal
 rt_print_number:
         ld de,rt_number
+        call rt_number_text
+        ex de,hl                    ; spaces after it, over a longer
+.pad:                               ; number printed there before
+        ld de,rt_number + 6
+        push hl
+        or a
+        sbc hl,de
+        pop hl
+        jr nc,.end
+        ld (hl)," "
+        inc hl
+        jr .pad
+.end:
+        ld (hl),0
+        ld hl,(rt_px)
+        ld de,(rt_py)
+        ld bc,rt_number
+        jp rt_print
+
+; HL = number, DE -> room: it in decimal there -> DE after it
+rt_number_text:
         bit 7,h
         jr z,.positive
         ld a,"-"
@@ -1538,23 +1559,7 @@ rt_print_number:
         inc ix
         jr .ten
 .done:
-        ex de,hl                    ; spaces after it, over a longer
-.pad:                               ; number printed there before
-        ld de,rt_number + 6
-        push hl
-        or a
-        sbc hl,de
-        pop hl
-        jr nc,.end
-        ld (hl)," "
-        inc hl
-        jr .pad
-.end:
-        ld (hl),0
-        ld hl,(rt_px)
-        ld de,(rt_py)
-        ld bc,rt_number
-        jp rt_print
+        ret
 
         IFDEF RT_UI
 ; ---------------------------------------------------------------------

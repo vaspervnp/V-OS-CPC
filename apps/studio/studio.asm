@@ -123,15 +123,16 @@ V_TEXTS         equ V_SPR + SPR_MAX * SPR_SIZE
 V_NLINES        equ V_TEXTS + TEXT_MAX * TEXT_SIZE
 V_LINES         equ V_NLINES + 2
 V1_NLINES       equ V_TEXTS             ; version 1
-VBS_ROOM        equ 5 * 1024        ; files of up to 5K are read
 COS_MAX         equ 8
 COS_SIZE        equ 258
+VBS_ROOM        equ V_LINES + MAX_LINES * LINE_SIZE + 1 + COS_MAX * COS_SIZE
+VBS_FILE_K      equ 5                   ; files of up to 5K are read
 NO_PEN          equ #80
 
 ; slot kinds
 K_NONE          equ 0
 K_NUM           equ 1               ; signed number
-K_VAR           equ 2               ; variable 0..63: A..H, then A1..H7
+K_VAR           equ 2               ; variable 0..127: A..H, then A1..H15
                                     ; (n mod 8 the letter, n / 8 the
                                     ; digit)
 K_X             equ 3               ; the script's sprite
@@ -146,6 +147,8 @@ K_KEYN          equ 11              ; a key (WHEN KEY)
 K_BUTTON        equ 12              ; the last button pressed (0..)
 K_TEXT          equ 13              ; text 0..TEXT_MAX-1
 K_COSTUME       equ 14              ; the script's sprite's costume
+K_GROUP         equ 15              ; 8 variables: 0 A..H, 1 A1..H1 ...;
+                                    ; 16 all of them (SAVE / LOAD VARS)
 ; what a slot may hold
 C_NONE          equ 0
 C_VALUE         equ 1               ; K_NUM..K_EDGE
@@ -154,6 +157,7 @@ C_CMP           equ 3               ; K_CMP or K_NONE
 C_SPR           equ 4
 C_KEYN          equ 5
 C_TEXT          equ 6
+C_GROUP         equ 7               ; K_GROUP
 ; block flags
 F_HAT           equ 1               ; starts a script
 F_OPEN          equ 2               ; opens a block, END closes it
@@ -182,7 +186,9 @@ OP_TEXT         equ 33
 OP_COSTUME      equ 34
 OP_NEXT_COSTUME equ 35
 OP_LABEL        equ 36
-OP_COUNT        equ 37
+OP_SAVE_VARS    equ 37
+OP_LOAD_VARS    equ 38
+OP_COUNT        equ 39
 OP_INFO         equ 13              ; flags, 3 classes, 3 default slots
 
 FOCUS_SCRIPT    equ 0
@@ -218,9 +224,15 @@ ERR_NOT_FOUND   equ 7
         jp event
         jp redraw
         db "VA", VOS_API_VERSION
+scratch:                                ; (the variables after the texts)
         include "icon_studio.asm"       ; VOS_ICON, from apps/icons/studio.txt
 
 init:
+        ld hl,scratch
+        ld de,scratch + 1
+        ld bc,SCRATCH_SIZE - 1
+        ld (hl),0
+        ldir
         ld hl,texts
         call VOS_TEXTS
         xor a
@@ -1438,7 +1450,7 @@ do_open:
         djnz .ext
         inc hl
         ld a,(hl)                   ; size in K
-        cp VBS_ROOM / 1024 + 1
+        cp VBS_FILE_K + 1
         jr nc,.bad
         ld hl,(cat_list)
         call load_prog
@@ -2100,6 +2112,25 @@ slot_char:
         ld a,K_SPR
         jp set_slot
 .not_spr:
+        cp C_GROUP
+        jr nz,.not_group
+        ld a,(k_code)               ; SPACE: all; A..H: the next 8
+        cp VK_SPACE
+        ld de,16
+        jr z,.group
+        ld a,(k_letter)
+        sub "A"
+        ret c
+        cp 8
+        ret nc
+        ld hl,(sc_ptr)
+        call group_next
+        ld a,R_LINE
+        jp parts
+.group:
+        ld a,K_GROUP
+        jp set_slot
+.not_group:
         cp C_VAR
         jr z,.var
         cp C_VALUE
@@ -2163,7 +2194,7 @@ slot_char:
         jp set_slot
 .var:
         ld a,(k_letter)             ; A..H; the same letter again on
-        sub "A"                     ; that variable: A1, A2 ... A7, A
+        sub "A"                     ; that variable: A1, A2 ... A15, A
         ret c
         cp 8
         ret nc
@@ -2179,7 +2210,7 @@ slot_char:
         jr nz,.var_set
         ld a,(hl)
         add a,8
-        and 63
+        and 127
         ld e,a
 .var_set:
         ld d,0
@@ -2301,6 +2332,26 @@ slot_backspace:
         ld a,(sd_kind)
         jr set_slot_typed
 
+; HL -> a group slot: the next group (ALL, A-H, A1-H1 ... A15-H15)
+group_next:
+        ld a,(hl)
+        ld (hl),K_GROUP
+        inc hl
+        cp K_GROUP
+        ld a,(hl)
+        jr z,.next
+        ld a,16
+.next:
+        inc a
+        cp 17
+        jr c,.set
+        xor a
+.set:
+        ld (hl),a
+        inc hl
+        ld (hl),0
+        ret
+
 ; the next kind for a click on the chosen slot
 cycle_kind:
         call slot_class
@@ -2316,12 +2367,14 @@ cycle_kind:
 .not_key:
         cp C_TEXT
         jp z,edit_text
+        cp C_GROUP
+        jr z,group_next
         cp C_VAR
         jr nz,.not_var
         inc hl
         ld a,(hl)
         inc a
-        and 63
+        and 127
         ld (hl),a
         ret
 .not_var:
@@ -3630,9 +3683,30 @@ render_slot:
         ld a,(rs_kind)
         cp K_NUM
         jp z,num_str
+        cp K_GROUP
+        jr nz,.not_group
+        ld a,l                      ; ALL, or A..H, A1..H1 ...
+        cp 16
+        ld c,T_W_ALL
+        jp nc,.word
+        add a,a
+        add a,a
+        add a,a
+        push af
+        ld l,a
+        call .var_name
+        ld a,"-"
+        ld (de),a
+        inc de
+        pop af
+        add a,7
+        ld l,a
+        jr .var_name
+.not_group:
         cp K_VAR
         jr nz,.not_var
-        ld a,l                      ; A..H, then the digit 1..7
+.var_name:
+        ld a,l                      ; A..H, then the number 1..15
         and 7
         add a,"A"
         ld (de),a
@@ -3641,8 +3715,17 @@ render_slot:
         rrca
         rrca
         rrca
-        and 7
+        and 15
         ret z
+        cp 10
+        jr c,.digit
+        sub 10
+        push af
+        ld a,"1"
+        ld (de),a
+        inc de
+        pop af
+.digit:
         add a,"0"
         ld (de),a
         inc de
@@ -4083,20 +4166,23 @@ ops:
         db 0,      C_VALUE, 0, 0,           K_NUM, 1, 0, 0, 0, 0, 0, 0, 0             ; COSTUME
         db 0,      0, 0, 0,                 0, 0, 0, 0, 0, 0, 0, 0, 0                 ; NEXT COSTUME
         db 0,      C_TEXT, C_VALUE, 0,      K_TEXT, 0, 0, K_NUM, 0, 0, 0, 0, 0        ; LABEL
+        db 0,      C_TEXT, C_GROUP, 0,      K_TEXT, 0, 0, K_GROUP, 16, 0, 0, 0, 0     ; SAVE VARS
+        db 0,      C_TEXT, C_GROUP, 0,      K_TEXT, 0, 0, K_GROUP, 16, 0, 0, 0, 0     ; LOAD VARS
         assert $ - ops == OP_COUNT * OP_INFO
 
 CATS            equ 6
-cat_first:      db 0, 5, 13, 19, 26, 32, OP_COUNT  ; in pal_order
+cat_first:      db 0, 5, 13, 19, 26, 34, OP_COUNT  ; in pal_order
 pal_order:      db 0, 1, 2, OP_RECEIVE, OP_BROADCAST    ; events
                 db 3, 4, 5, 6, 7, 8, 9, 10              ; control
                 db 11, 12, 13, 14, 15, 16               ; motion
                 db 17, 18, 19, OP_COSTUME, OP_NEXT_COSTUME, 20, 21  ; looks, sound
                 db 22, 23, OP_SUB, OP_MUL, OP_DIV, OP_MOD   ; variables
+                db OP_SAVE_VARS, OP_LOAD_VARS
                 db OP_WINDOW, OP_BUTTON, OP_PRESSED, OP_TEXT    ; windows
                 db OP_LABEL
         assert $ - pal_order == OP_COUNT
 class_help:     db T_H_LINE, T_H_VALUE, T_H_VAR, T_H_CMP, T_H_SPR, T_H_KEYN
-                db T_H_TEXT
+                db T_H_TEXT, T_H_GROUP
 first_values:   db 0, 0, 0, 0, 10, VK_SPACE, 1, 0   ; K_NUM .. K_EDGE
                 db 0, 0, 0, 0, 0, 0                 ; .. K_COSTUME
 cmp_chars:      db "<=>"
@@ -4165,61 +4251,63 @@ name_buf:       ds 11
 fcb:            ds 11
 cat_list:       dw 0
 
-k_code:         db 0
-k_char:         db 0
-k_letter:       db 0
-k_parts:        db 0
-click_x:            dw 0
-click_y:            dw 0
-k_row:          db 0
-k_col:          db 0
-rf_parts:       db 0
-ib_op:          db 0
-ib_at:          db 0
-ib_text:        db 0
-lp_count:       dw 0
-ac_low:         db 0
-dl_op:          db 0
-dl_at:          db 0
-dl_end:         db 0
-dl_else:        db 0
-dl_row:         db 0
-dl_y:           db 0
-dl_bg:          db 0
-dl_col:         db 0
-sc_class:       db 0
-sc_ptr:         dw 0
-sd_digit:       db 0
-sd_kind:        db 0
-sd_sign:        db 0
-dp_x:           db 0
-dp_y:           db 0
-dp_h:           db 0
-dp_row:         db 0
-dp_ink:         db 0
-dp_y16:         dw 0
-ds_line:        db 0
-ds_old:         db 0
-ds_old_top:     db 0
-lv_cur:         db 0
-lv_base:        db 0
-lv_line:        db 0
-rl_line:        db 0
-rl_ptr:         dw 0
-rl_out:         dw 0
-rs_slot:        db 0
-rs_kind:        db 0
-rs_value:       dw 0
-slot_col:       ds 3
-slot_len:       ds 3
-ns_out:         dw 0
-ns_started:     db 0
-ns_digit:       db 0
-fill_pen:       db 0
-rc:             dw 0, 0, 0, 0
-                db 0
-lbuf:           ds 96
-tbuf:           ds 40
+; scratch: where the icon was (only the Launcher reads it, from the
+; disc), zeroed by init
+k_code          equ scratch + 0
+k_char          equ scratch + 1
+k_letter        equ scratch + 2
+k_parts         equ scratch + 3
+click_x         equ scratch + 4
+click_y         equ scratch + 6
+k_row           equ scratch + 8
+k_col           equ scratch + 9
+rf_parts        equ scratch + 10
+ib_op           equ scratch + 11
+ib_at           equ scratch + 12
+ib_text         equ scratch + 13
+lp_count        equ scratch + 14
+ac_low          equ scratch + 16
+dl_op           equ scratch + 17
+dl_at           equ scratch + 18
+dl_end          equ scratch + 19
+dl_else         equ scratch + 20
+dl_row          equ scratch + 21
+dl_y            equ scratch + 22
+dl_bg           equ scratch + 23
+dl_col          equ scratch + 24
+sc_class        equ scratch + 25
+sc_ptr          equ scratch + 26
+sd_digit        equ scratch + 28
+sd_kind         equ scratch + 29
+sd_sign         equ scratch + 30
+dp_x            equ scratch + 31
+dp_y            equ scratch + 32
+dp_h            equ scratch + 33
+dp_row          equ scratch + 34
+dp_ink          equ scratch + 35
+dp_y16          equ scratch + 36
+ds_line         equ scratch + 38
+ds_old          equ scratch + 39
+ds_old_top      equ scratch + 40
+lv_cur          equ scratch + 41
+lv_base         equ scratch + 42
+lv_line         equ scratch + 43
+rl_line         equ scratch + 44
+rl_ptr          equ scratch + 45
+rl_out          equ scratch + 47
+rs_slot         equ scratch + 49
+rs_kind         equ scratch + 50
+rs_value        equ scratch + 51
+slot_col        equ scratch + 53
+slot_len        equ scratch + 56
+ns_out          equ scratch + 59
+ns_started      equ scratch + 61
+ns_digit        equ scratch + 62
+fill_pen        equ scratch + 63
+rc              equ scratch + 64
+lbuf            equ scratch + 73
+tbuf            equ scratch + 169
+SCRATCH_SIZE    equ 209
 ; the program (not in the file). RUN loads the player (VBRUN.SYS,
 ; blocks/player.asm) into the data bank and saves it with the program
 ; after it as one .VBN, which compiles the program when it starts.
@@ -4228,5 +4316,6 @@ costumes        equ vbs + V_LINES + MAX_LINES * LINE_SIZE
 LOAD_AT         equ VOS_APP_ADDR    ; OPEN, in the data bank
 studio_end:
         assert studio_end <= VOS_APP_ADDR + #4000
+        assert SCRATCH_SIZE <= 2 + VOS_ICON_SIZE
         assert costumes + 1 + COS_MAX * COS_SIZE <= vbs + VBS_ROOM
         save "build/STUDIO.BIN", VOS_APP_ADDR, vbs - VOS_APP_ADDR

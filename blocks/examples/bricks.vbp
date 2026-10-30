@@ -1,0 +1,1972 @@
+{
+ "format": "vbp",
+ "version": 1,
+ "name": "BRICKS",
+ "mode": 0,
+ "background": 0,
+ "sprites": [
+  {
+   "name": "ball",
+   "x": 94,
+   "y": 200,
+   "w": 4,
+   "h": 4,
+   "colour": 1,
+   "visible": false
+  },
+  {
+   "name": "bat",
+   "x": 80,
+   "y": 236,
+   "w": 32,
+   "h": 6,
+   "colour": 4
+  },
+  {
+   "name": "b00",
+   "x": 1,
+   "y": 40,
+   "w": 22,
+   "h": 8,
+   "colour": 10,
+   "visible": false
+  },
+  {
+   "name": "b01",
+   "x": 25,
+   "y": 40,
+   "w": 22,
+   "h": 8,
+   "colour": 10,
+   "visible": false
+  },
+  {
+   "name": "b02",
+   "x": 49,
+   "y": 40,
+   "w": 22,
+   "h": 8,
+   "colour": 10,
+   "visible": false
+  },
+  {
+   "name": "b03",
+   "x": 73,
+   "y": 40,
+   "w": 22,
+   "h": 8,
+   "colour": 10,
+   "visible": false
+  },
+  {
+   "name": "b04",
+   "x": 97,
+   "y": 40,
+   "w": 22,
+   "h": 8,
+   "colour": 10,
+   "visible": false
+  },
+  {
+   "name": "b05",
+   "x": 121,
+   "y": 40,
+   "w": 22,
+   "h": 8,
+   "colour": 10,
+   "visible": false
+  },
+  {
+   "name": "b06",
+   "x": 145,
+   "y": 40,
+   "w": 22,
+   "h": 8,
+   "colour": 10,
+   "visible": false
+  },
+  {
+   "name": "b07",
+   "x": 169,
+   "y": 40,
+   "w": 22,
+   "h": 8,
+   "colour": 10,
+   "visible": false
+  },
+  {
+   "name": "b10",
+   "x": 1,
+   "y": 52,
+   "w": 22,
+   "h": 8,
+   "colour": 9,
+   "visible": false
+  },
+  {
+   "name": "b11",
+   "x": 25,
+   "y": 52,
+   "w": 22,
+   "h": 8,
+   "colour": 9,
+   "visible": false
+  },
+  {
+   "name": "b12",
+   "x": 49,
+   "y": 52,
+   "w": 22,
+   "h": 8,
+   "colour": 9,
+   "visible": false
+  },
+  {
+   "name": "b13",
+   "x": 73,
+   "y": 52,
+   "w": 22,
+   "h": 8,
+   "colour": 9,
+   "visible": false
+  },
+  {
+   "name": "b14",
+   "x": 97,
+   "y": 52,
+   "w": 22,
+   "h": 8,
+   "colour": 9,
+   "visible": false
+  },
+  {
+   "name": "b15",
+   "x": 121,
+   "y": 52,
+   "w": 22,
+   "h": 8,
+   "colour": 9,
+   "visible": false
+  },
+  {
+   "name": "b16",
+   "x": 145,
+   "y": 52,
+   "w": 22,
+   "h": 8,
+   "colour": 9,
+   "visible": false
+  },
+  {
+   "name": "b17",
+   "x": 169,
+   "y": 52,
+   "w": 22,
+   "h": 8,
+   "colour": 9,
+   "visible": false
+  },
+  {
+   "name": "b20",
+   "x": 1,
+   "y": 64,
+   "w": 22,
+   "h": 8,
+   "colour": 8,
+   "visible": false
+  },
+  {
+   "name": "b21",
+   "x": 25,
+   "y": 64,
+   "w": 22,
+   "h": 8,
+   "colour": 8,
+   "visible": false
+  },
+  {
+   "name": "b22",
+   "x": 49,
+   "y": 64,
+   "w": 22,
+   "h": 8,
+   "colour": 8,
+   "visible": false
+  },
+  {
+   "name": "b23",
+   "x": 73,
+   "y": 64,
+   "w": 22,
+   "h": 8,
+   "colour": 8,
+   "visible": false
+  },
+  {
+   "name": "b24",
+   "x": 97,
+   "y": 64,
+   "w": 22,
+   "h": 8,
+   "colour": 8,
+   "visible": false
+  },
+  {
+   "name": "b25",
+   "x": 121,
+   "y": 64,
+   "w": 22,
+   "h": 8,
+   "colour": 8,
+   "visible": false
+  },
+  {
+   "name": "b26",
+   "x": 145,
+   "y": 64,
+   "w": 22,
+   "h": 8,
+   "colour": 8,
+   "visible": false
+  },
+  {
+   "name": "b27",
+   "x": 169,
+   "y": 64,
+   "w": 22,
+   "h": 8,
+   "colour": 8,
+   "visible": false
+  },
+  {
+   "name": "b30",
+   "x": 1,
+   "y": 76,
+   "w": 22,
+   "h": 8,
+   "colour": 6,
+   "visible": false
+  },
+  {
+   "name": "b31",
+   "x": 25,
+   "y": 76,
+   "w": 22,
+   "h": 8,
+   "colour": 6,
+   "visible": false
+  },
+  {
+   "name": "b32",
+   "x": 49,
+   "y": 76,
+   "w": 22,
+   "h": 8,
+   "colour": 6,
+   "visible": false
+  },
+  {
+   "name": "b33",
+   "x": 73,
+   "y": 76,
+   "w": 22,
+   "h": 8,
+   "colour": 6,
+   "visible": false
+  },
+  {
+   "name": "b34",
+   "x": 97,
+   "y": 76,
+   "w": 22,
+   "h": 8,
+   "colour": 6,
+   "visible": false
+  },
+  {
+   "name": "b35",
+   "x": 121,
+   "y": 76,
+   "w": 22,
+   "h": 8,
+   "colour": 6,
+   "visible": false
+  },
+  {
+   "name": "b36",
+   "x": 145,
+   "y": 76,
+   "w": 22,
+   "h": 8,
+   "colour": 6,
+   "visible": false
+  },
+  {
+   "name": "b37",
+   "x": 169,
+   "y": 76,
+   "w": 22,
+   "h": 8,
+   "colour": 6,
+   "visible": false
+  }
+ ],
+ "variables": {
+  "score": 0,
+  "lives": 3,
+  "level": 0,
+  "left": 32,
+  "serve": 0
+ },
+ "scripts": [
+  {
+   "when": {
+    "event": "start"
+   },
+   "do": [
+    {
+     "block": "print",
+     "text": "SCORE",
+     "x": 4,
+     "y": 16
+    },
+    {
+     "block": "print",
+     "text": "LIVES",
+     "x": 116,
+     "y": 16
+    },
+    {
+     "block": "broadcast",
+     "message": "new"
+    }
+   ]
+  },
+  {
+   "when": {
+    "event": "receive",
+    "message": "new"
+   },
+   "do": [
+    {
+     "block": "set",
+     "var": "score",
+     "to": 0
+    },
+    {
+     "block": "set",
+     "var": "lives",
+     "to": 3
+    },
+    {
+     "block": "set",
+     "var": "level",
+     "to": 0
+    },
+    {
+     "block": "print",
+     "text": "         ",
+     "x": 60,
+     "y": 140
+    },
+    {
+     "block": "print",
+     "text": "            ",
+     "x": 48,
+     "y": 156
+    },
+    {
+     "block": "broadcast",
+     "message": "level"
+    }
+   ]
+  },
+  {
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "set",
+     "var": "left",
+     "to": 32
+    },
+    {
+     "block": "change",
+     "var": "level",
+     "by": 1
+    },
+    {
+     "block": "broadcast",
+     "message": "show"
+    }
+   ]
+  },
+  {
+   "when": {
+    "event": "receive",
+    "message": "show"
+   },
+   "do": [
+    {
+     "block": "print",
+     "value": {
+      "var": "score"
+     },
+     "x": 60,
+     "y": 16
+    },
+    {
+     "block": "print",
+     "text": "  ",
+     "x": 176,
+     "y": 16
+    },
+    {
+     "block": "print",
+     "value": {
+      "var": "lives"
+     },
+     "x": 176,
+     "y": 16
+    }
+   ]
+  },
+  {
+   "when": {
+    "event": "key",
+    "key": "space"
+   },
+   "do": [
+    {
+     "block": "if",
+     "cond": {
+      "op": "=",
+      "a": {
+       "var": "lives"
+      },
+      "b": 0
+     },
+     "then": [
+      {
+       "block": "broadcast",
+       "message": "new"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "sprite": "ball",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "set",
+     "var": "serve",
+     "to": 1
+    },
+    {
+     "block": "forever",
+     "do": [
+      {
+       "block": "if",
+       "cond": {
+        "op": "=",
+        "a": {
+         "var": "serve"
+        },
+        "b": 1
+       },
+       "then": [
+        {
+         "block": "hide"
+        },
+        {
+         "block": "go_to",
+         "x": {
+          "op": "+",
+          "a": {
+           "prop": "x",
+           "of": "bat"
+          },
+          "b": 14
+         },
+         "y": 228
+        },
+        {
+         "block": "wait",
+         "frames": 40
+        },
+        {
+         "block": "go_to",
+         "x": {
+          "op": "+",
+          "a": {
+           "prop": "x",
+           "of": "bat"
+          },
+          "b": 14
+         },
+         "y": 228
+        },
+        {
+         "block": "set_velocity",
+         "vx": {
+          "random": [
+           -2,
+           2
+          ]
+         },
+         "vy": {
+          "op": "-",
+          "a": 0,
+          "b": {
+           "op": "+",
+           "a": 2,
+           "b": {
+            "var": "level"
+           }
+          }
+         }
+        },
+        {
+         "block": "if",
+         "cond": {
+          "op": "=",
+          "a": {
+           "prop": "vx"
+          },
+          "b": 0
+         },
+         "then": [
+          {
+           "block": "set_velocity",
+           "vx": 1,
+           "vy": {
+            "prop": "vy"
+           }
+          }
+         ]
+        },
+        {
+         "block": "if",
+         "cond": {
+          "op": "<",
+          "a": {
+           "prop": "vy"
+          },
+          "b": -5
+         },
+         "then": [
+          {
+           "block": "set_velocity",
+           "vx": {
+            "prop": "vx"
+           },
+           "vy": -5
+          }
+         ]
+        },
+        {
+         "block": "show"
+        },
+        {
+         "block": "set",
+         "var": "serve",
+         "to": 0
+        }
+       ]
+      },
+      {
+       "block": "move"
+      },
+      {
+       "block": "bounce"
+      },
+      {
+       "block": "if",
+       "cond": {
+        "op": "and",
+        "a": {
+         "touching": "bat"
+        },
+        "b": {
+         "op": ">",
+         "a": {
+          "prop": "vy"
+         },
+         "b": 0
+        }
+       },
+       "then": [
+        {
+         "block": "set_velocity",
+         "vx": {
+          "op": "/",
+          "a": {
+           "op": "-",
+           "a": {
+            "prop": "x"
+           },
+           "b": {
+            "op": "+",
+            "a": {
+             "prop": "x",
+             "of": "bat"
+            },
+            "b": 14
+           }
+          },
+          "b": 4
+         },
+         "vy": {
+          "op": "-",
+          "a": 0,
+          "b": {
+           "prop": "vy"
+          }
+         }
+        },
+        {
+         "block": "if",
+         "cond": {
+          "op": "=",
+          "a": {
+           "prop": "vx"
+          },
+          "b": 0
+         },
+         "then": [
+          {
+           "block": "set_velocity",
+           "vx": 1,
+           "vy": {
+            "prop": "vy"
+           }
+          }
+         ]
+        },
+        {
+         "block": "start_note",
+         "note": 72,
+         "frames": 2,
+         "channel": 0
+        }
+       ]
+      },
+      {
+       "block": "if",
+       "cond": {
+        "op": ">",
+        "a": {
+         "prop": "y"
+        },
+        "b": 244
+       },
+       "then": [
+        {
+         "block": "hide"
+        },
+        {
+         "block": "change",
+         "var": "lives",
+         "by": -1
+        },
+        {
+         "block": "broadcast",
+         "message": "show"
+        },
+        {
+         "block": "noise",
+         "pitch": 20,
+         "frames": 10,
+         "channel": 1
+        },
+        {
+         "block": "if",
+         "cond": {
+          "op": "=",
+          "a": {
+           "var": "lives"
+          },
+          "b": 0
+         },
+         "then": [
+          {
+           "block": "print",
+           "text": "GAME OVER",
+           "x": 60,
+           "y": 140
+          },
+          {
+           "block": "print",
+           "text": "SPACE: AGAIN",
+           "x": 48,
+           "y": 156
+          },
+          {
+           "block": "stop"
+          }
+         ]
+        },
+        {
+         "block": "set",
+         "var": "serve",
+         "to": 1
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "sprite": "ball",
+   "when": {
+    "event": "receive",
+    "message": "hit"
+   },
+   "do": [
+    {
+     "block": "set_velocity",
+     "vx": {
+      "prop": "vx"
+     },
+     "vy": {
+      "op": "-",
+      "a": 0,
+      "b": {
+       "prop": "vy"
+      }
+     }
+    },
+    {
+     "block": "broadcast",
+     "message": "show"
+    },
+    {
+     "block": "start_note",
+     "note": 84,
+     "frames": 2,
+     "channel": 2
+    },
+    {
+     "block": "if",
+     "cond": {
+      "op": "=",
+      "a": {
+       "var": "left"
+      },
+      "b": 0
+     },
+     "then": [
+      {
+       "block": "hide"
+      },
+      {
+       "block": "wait",
+       "frames": 50
+      },
+      {
+       "block": "broadcast",
+       "message": "level"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "sprite": "bat",
+   "when": {
+    "event": "start"
+   },
+   "do": [
+    {
+     "block": "forever",
+     "do": [
+      {
+       "block": "if",
+       "cond": {
+        "key_held": "left"
+       },
+       "then": [
+        {
+         "block": "change_x",
+         "by": -4
+        }
+       ]
+      },
+      {
+       "block": "if",
+       "cond": {
+        "key_held": "right"
+       },
+       "then": [
+        {
+         "block": "change_x",
+         "by": 4
+        }
+       ]
+      },
+      {
+       "block": "if",
+       "cond": {
+        "op": "<",
+        "a": {
+         "prop": "x"
+        },
+        "b": 0
+       },
+       "then": [
+        {
+         "block": "set_x",
+         "to": 0
+        }
+       ]
+      },
+      {
+       "block": "if",
+       "cond": {
+        "op": ">",
+        "a": {
+         "prop": "x"
+        },
+        "b": 160
+       },
+       "then": [
+        {
+         "block": "set_x",
+         "to": 160
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "sprite": "b00",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 4
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b01",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 4
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b02",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 4
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b03",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 4
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b04",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 4
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b05",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 4
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b06",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 4
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b07",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 4
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b10",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 3
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b11",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 3
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b12",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 3
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b13",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 3
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b14",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 3
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b15",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 3
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b16",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 3
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b17",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 3
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b20",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 2
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b21",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 2
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b22",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 2
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b23",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 2
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b24",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 2
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b25",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 2
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b26",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 2
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b27",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 2
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b30",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 1
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b31",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 1
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b32",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 1
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b33",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 1
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b34",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 1
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b35",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 1
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b36",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 1
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  },
+  {
+   "sprite": "b37",
+   "when": {
+    "event": "receive",
+    "message": "level"
+   },
+   "do": [
+    {
+     "block": "show"
+    },
+    {
+     "block": "wait_until",
+     "cond": {
+      "touching": "ball"
+     }
+    },
+    {
+     "block": "hide"
+    },
+    {
+     "block": "change",
+     "var": "score",
+     "by": 1
+    },
+    {
+     "block": "change",
+     "var": "left",
+     "by": -1
+    },
+    {
+     "block": "broadcast",
+     "message": "hit"
+    }
+   ]
+  }
+ ]
+}
