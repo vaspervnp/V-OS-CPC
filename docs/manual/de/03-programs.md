@@ -54,6 +54,7 @@ Solange es offen ist, bekommt es die Tasten und Klicks. Sein Fenster lässt sich
 | **CALC** | ein Taschenrechner in einem Fenster mit Schaltflächen, erstellt in Studio (es gibt auch `CALC.VBS`) |
 | **MINES** | ein Minesweeper mit 8×6 Feldern und 8 Minen, erstellt in Studio. Ein Klick deckt ein Feld auf, und NEW startet ein neues Spiel |
 | **BRICKS** | Mauerbrechen: ein Schläger mit ←/→, 32 Steine, 3 Leben, Level mit einem immer schnelleren Ball. Bei GAME OVER startet SPACE ein neues Spiel |
+| **VROUVES** | Tower Defence, nach dem CPC-Spiel LET'S GO FOR VROUVES: Level 1, das Kafenio, 10 Wellen. Die Pfeile bewegen den Cursor, 1–6 wählt einen Verteidiger, SPACE baut, S verkauft, N holt die nächste Welle, P pausiert. Mit dem SDK geschrieben (`myapps/vrouves`) |
 | **PONG** | ein Ball und ein Schläger mit den Pfeilen, Punkte und Leben |
 | **CATCH** | fange die fallenden Sterne |
 | **STARCAT** | eine Katze mit Kostümen, die läuft, ein Stern, eine Melodie aus einer Liste |

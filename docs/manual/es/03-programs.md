@@ -54,6 +54,7 @@ Mientras está abierto, recibe las teclas y los clics. Su ventana se puede arras
 | **CALC** | una calculadora en una ventana con botones, hecha en Studio (también existe `CALC.VBS`) |
 | **MINES** | un buscaminas de 8×6 con 8 minas, hecho en Studio. Un clic abre una casilla, y NEW empieza una partida nueva |
 | **BRICKS** | romper ladrillos: una pala con ←/→, 32 ladrillos, 3 vidas, niveles con una pelota cada vez más rápida. En GAME OVER, SPACE para una partida nueva |
+| **VROUVES** | tower defence, del juego de CPC LET'S GO FOR VROUVES: pantalla 1, el Kafenio, 10 oleadas. Las flechas mueven el cursor, 1–6 elige un defensor, SPACE construye, S vende, N trae la oleada siguiente, P hace pausa. Escrito con el SDK (`myapps/vrouves`) |
 | **PONG** | una pelota y una pala con las flechas, puntuación y vidas |
 | **CATCH** | atrapar las estrellas que caen |
 | **STARCAT** | un gato con disfraces que camina, una estrella, una melodía a partir de una lista |

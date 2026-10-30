@@ -54,6 +54,7 @@ While it is open, it gets the keys and clicks. Its window can be dragged by its 
 | **CALC** | a calculator in a window with buttons, made in Studio (there is also `CALC.VBS`) |
 | **MINES** | an 8×6 minesweeper with 8 mines, made in Studio. A click opens a cell, and NEW starts a new game |
 | **BRICKS** | brick breaking: a paddle with ←/→, 32 bricks, 3 lives, levels with an ever faster ball. At GAME OVER, SPACE for a new game |
+| **VROUVES** | tower defence, from the CPC game LET'S GO FOR VROUVES: stage 1, the Kafenio, 10 waves. Arrows move the cursor, 1–6 picks a defender, SPACE builds, S sells, N calls the next wave, P pauses. Written with the SDK (`myapps/vrouves`) |
 | **PONG** | a ball and a paddle with the arrows, score and lives |
 | **CATCH** | catch the falling stars |
 | **STARCAT** | a cat with costumes that walks, a star, a melody from a list |

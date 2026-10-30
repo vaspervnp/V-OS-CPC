@@ -91,6 +91,7 @@ Die Tests starten V-OS in Caprice32 ohne Fenster und machen Screenshots in `buil
 | `test-mines`, `test-bricks` | die Spiele |
 | `test-vars` | die 128 Variablen, SAVE/LOAD VARS |
 | `test-sdk` | die SDK-Vorlage |
+| `test-vrouves` | VROUVES: Bauen, Welle 1, das Geld |
 | `test-amsdos`, `test-reboot`, `test-system` | V-OS-Dateien in BASIC, Neustart, SYSTEM-Diskette |
 
 **Neues Skript:**

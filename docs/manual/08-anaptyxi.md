@@ -91,6 +91,7 @@
 | `test-mines`, `test-bricks` | τα παιχνίδια |
 | `test-vars` | οι 128 μεταβλητές, SAVE/LOAD VARS |
 | `test-sdk` | το πρότυπο του SDK |
+| `test-vrouves` | το VROUVES: χτίσιμο, το κύμα 1, τα λεφτά |
 | `test-amsdos`, `test-reboot`, `test-system` | τα αρχεία του V-OS στη BASIC, επανεκκίνηση, δισκέτα SYSTEM |
 
 **Νέο σενάριο:**

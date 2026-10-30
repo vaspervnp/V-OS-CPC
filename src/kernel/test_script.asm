@@ -312,6 +312,34 @@ test_keys:
         dw 3050, 3054 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 16
+; make test-vrouves (-DTEST_SCRIPT=16): VROUVES (myapps/vrouves), last
+; on the disc with its stage VROUV1.DAT. Expected:
+;   frame  300  F2, 420-480 DOWN x3, 520-610 RIGHT x4 -> VROUVES chosen
+;                               (page 2, after CLOCK ... BRICKS)
+;   frame  660  RETURN       -> the Kafenio stage: the road, the walls
+;                               and trees, the Kafenio; the HUD
+;   frame  800  SPACE        -> a Cretan on the cursor's cell (10, 6)
+;   frame  850  UP, 880 4, 910 SPACE -> Psssst on (10, 5)
+;   frame  960  N            -> wave 1: guards come down the road
+;   later       the defenders fire, the guards fall, FUNDS grows
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  420,  424 : db 0, %00000100   ; DOWN
+        dw  450,  454 : db 0, %00000100   ; DOWN
+        dw  480,  484 : db 0, %00000100   ; DOWN
+        dw  520,  524 : db 0, %00000010   ; RIGHT
+        dw  550,  554 : db 0, %00000010   ; RIGHT
+        dw  580,  584 : db 0, %00000010   ; RIGHT
+        dw  610,  614 : db 0, %00000010   ; RIGHT
+        dw  660,  664 : db 2, %00000100   ; RETURN: VROUVES
+        dw  800,  804 : db 5, %10000000   ; SPACE: a Cretan
+        dw  850,  854 : db 0, %00000001   ; UP
+        dw  880,  884 : db 7, %00000001   ; 4: Psssst
+        dw  910,  914 : db 5, %10000000   ; SPACE
+        dw  960,  964 : db 5, %01000000   ; N: the first wave
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 15
 ; make test-sdk (-DTEST_SCRIPT=15): the SDK's template (sdk/template)
 ; built as TEMPLATE.BIN, last on the disc. Expected:
@@ -906,6 +934,7 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

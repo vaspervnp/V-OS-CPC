@@ -31,6 +31,12 @@ This opens the disk in Caprice32. HELLO is in the Launcher, on the last page.
 - You need RASM, Python 3 and iDSK, as for all of V-OS.
 - In Caprice32 you run the program yourself, from the Launcher.
 
+A bigger program:
+
+- Put more `.asm` files in its folder (e.g. `art.asm` with sprites) and bring them in with `include "art.asm"`. The build finds them, and rebuilds the program when they change.
+- Whatever you put in the subfolder `disc/` (e.g. `disc/LEVEL1.DAT`) goes onto the disk as it is, for `VOS_LOAD`.
+- A program with a relocation table (like those of the SDK) can be up to 12K. For the rest, load files into the data bank.
+
 ## How a program works
 
 A program is a `.BIN`, built for `VOS_APP_ADDR` (`#4000`). It starts like this:
@@ -157,7 +163,7 @@ command: ...
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → carry: new HL, DE | dragging a window by its title |
 | `VOS_FIT` | same → HL, DE | brings a window inside the screen |
 
-Full details, e.g. on the background, the accessory and `VOS_SPLIT`, are in `src/api/vos_api.inc`. For examples, see `apps/demo/demo.asm` (mode 0, motion), `apps/clock/clock.asm` (accessory) and `apps/mixed/mixed.asm` (mixed screen).
+Full details, e.g. on the background, the accessory and `VOS_SPLIT`, are in `src/api/vos_api.inc`. For examples, see `apps/demo/demo.asm` (mode 0, motion), `apps/clock/clock.asm` (accessory) and `apps/mixed/mixed.asm` (mixed screen). A whole game with sprites, a stage from a file and sound is `myapps/vrouves/`.
 
 ## Testing
 

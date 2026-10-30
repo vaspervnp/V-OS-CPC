@@ -91,6 +91,7 @@ I test eseguono V-OS in Caprice32 senza finestra e catturano schermate in `build
 | `test-mines`, `test-bricks` | i giochi |
 | `test-vars` | le 128 variabili, SAVE/LOAD VARS |
 | `test-sdk` | il modello dell'SDK |
+| `test-vrouves` | VROUVES: costruzione, l'ondata 1, i soldi |
 | `test-amsdos`, `test-reboot`, `test-system` | file di V-OS in BASIC, riavvio, dischetto SYSTEM |
 
 **Nuovo script:**

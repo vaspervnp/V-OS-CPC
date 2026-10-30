@@ -1,0 +1,26 @@
+# VROUVES' texts: NAME | English | Greek (tools/mktexts.py). "|" with no
+# spaces around it starts a new line in a dialog. Mode 0: 24 columns.
+MENU        | VROUVES               | ΒΡΟΥΒΕΣ
+NEW         | NEW GAME              | ΝΕΟ ΠΑΙΧΝΙΔΙ
+NEXT        | NEXT WAVE             | ΕΠΟΜΕΝΟ ΚΥΜΑ
+PAUSE       | PAUSE                 | ΠΑΥΣΗ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+ABOUT_TEXT  | LET'S GO FOR VROUVES!|STAGE 1: THE KAFENIO|FOR V-OS, FROM THE CPC|GAME | ΠΑΜΕ ΓΙΑ ΒΡΟΥΒΕΣ!|ΠΙΣΤΑ 1: ΤΟ ΚΑΦΕΝΕΙΟ|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ|ΠΑΙΧΝΙΔΙ ΤΟΥ CPC
+FUNDS       | FUNDS                 | ΛΕΦΤΑ
+WAVE        | WAVE                  | ΚΥΜΑ
+GREENS      | VROUVES               | ΒΡΟΥΒΕΣ
+NEXT_IN     | NEXT IN               | ΣΕ
+FOES        | FOES                  | ΕΧΘΡΟΙ
+PAUSED      | PAUSED                | ΠΑΥΣΗ
+D1          | CRETAN                | ΚΡΗΤΙΚΟΣ
+D2          | YIAYIA                | ΓΙΑΓΙΑ
+D3          | BRIDE                 | ΝΥΦΗ
+D4          | PSSSST                | ΨΣΣΣΤ
+D5          | CAULDRON              | ΚΑΖΑΝΙ
+D6          | BAKER                 | ΦΟΥΡΝΑΡΗΣ
+HINT        | 1-6 SPACE S:SELL N P  | 1-6 SPACE S:ΠΩΛΗΣΗ N P
+WIN_T       | VICTORY               | ΝΙΚΗ
+WIN         | KAFENIO SAVED!|THE VROUVES ARE SAFE | ΤΟ ΚΑΦΕΝΕΙΟ ΣΩΘΗΚΕ!|ΟΙ ΒΡΟΥΒΕΣ ΣΩΘΗΚΑΝ
+LOSE_T      | DEFEAT                | ΗΤΤΑ
+LOSE        | THE KAFENIO|HAS FALLEN! | ΤΟ ΚΑΦΕΝΕΙΟ|ΕΠΕΣΕ!

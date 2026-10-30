@@ -30,6 +30,7 @@
 #   make new-app NAME=hello   a program of your own in myapps/hello,
 #                 from sdk/template (sdk/README.md)
 #   make app NAME=hello       it as build/HELLO.BIN, on build/vos.dsk
+#   make test-vrouves VROUVES (myapps/vrouves): defenders built, a wave
 #   make test-sdk    the template built as HELLO, run from the Launcher:
 #                 the box moved, BEEP, its menu and ABOUT dialog
 #   make docs      the manual as PDFs: docs/V-OS.pdf (Greek, from
@@ -53,7 +54,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: docs new-app app test-sdk all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -98,13 +99,16 @@ APPS    := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/STUDIO.BIN $(BUILD)/PON
 APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
 
 # Your own programs (sdk/README.md): each folder myapps/name holds
-# name.asm, texts.txt and icon.txt, and becomes build/NAME.BIN, with a
-# relocation table, on build/vos.dsk (not on the test discs).
+# name.asm, texts.txt and icon.txt (and may include more .asm of its
+# own), and becomes build/NAME.BIN, with a relocation table, on
+# build/vos.dsk (not on the test discs), with the files of its disc/
+# folder as they are (its data files).
 #   make new-app NAME=hello   myapps/hello, from sdk/template
 #   make app NAME=hello       build/HELLO.BIN and build/vos.dsk
 upper = $(shell echo $(1) | tr a-z A-Z)
 MYAPPS := $(notdir $(wildcard myapps/*))
 MYAPP_BINS := $(foreach a,$(MYAPPS),$(BUILD)/$(call upper,$(a)).BIN)
+MYAPP_DISC := $(wildcard myapps/*/disc/*)   # their data files, as they are
 
 # Icons for the Launcher (VOS_ICON): text in apps/icons, made into
 # assembly by tools/mkicon.py
@@ -199,12 +203,12 @@ $(BUILD)/MINES.VBN $(BUILD)/MINES.VBS &: blocks/examples/mines.vbt tools/mkvbs.p
 # texts and icon go to $(BUILD)/myapp_$(2), where the source includes
 # them from
 define myapp_rule
-$(BUILD)/$(call upper,$(2)).BIN: $(1)/$(2).asm $(1)/texts.txt $(1)/icon.txt src/api/vos_api.inc tools/mkreloc.py tools/mktexts.py tools/mkicon.py
+$(BUILD)/$(call upper,$(2)).BIN: $(1)/$(2).asm $(wildcard $(1)/*.asm) $(1)/texts.txt $(1)/icon.txt src/api/vos_api.inc tools/mkreloc.py tools/mktexts.py tools/mkicon.py
 	@mkdir -p $(BUILD)/myapp_$(2)
 	$(PYTHON) -I tools/mktexts.py $(1)/texts.txt $(BUILD)/myapp_$(2)/app_texts.asm
 	$(PYTHON) -I tools/mkicon.py $(1)/icon.txt $(BUILD)/myapp_$(2)/app_icon.asm
-	@$(RASM) $(1)/$(2).asm -I src -I $(BUILD)/myapp_$(2) -o $(BUILD)/myapp_$(2)/lo > $(BUILD)/myapp_$(2)/rasm.log || { cat $(BUILD)/myapp_$(2)/rasm.log; exit 1; }
-	@$(RASM) $(1)/$(2).asm -I src -I $(BUILD)/myapp_$(2) -DVOS_RELOC_PASS=1 -o $(BUILD)/myapp_$(2)/hi > $(BUILD)/myapp_$(2)/rasm.log || { cat $(BUILD)/myapp_$(2)/rasm.log; exit 1; }
+	@$(RASM) $(1)/$(2).asm -I src -I $(BUILD)/myapp_$(2) -I $(1) -o $(BUILD)/myapp_$(2)/lo > $(BUILD)/myapp_$(2)/rasm.log || { cat $(BUILD)/myapp_$(2)/rasm.log; exit 1; }
+	@$(RASM) $(1)/$(2).asm -I src -I $(BUILD)/myapp_$(2) -I $(1) -DVOS_RELOC_PASS=1 -o $(BUILD)/myapp_$(2)/hi > $(BUILD)/myapp_$(2)/rasm.log || { cat $(BUILD)/myapp_$(2)/rasm.log; exit 1; }
 	$(PYTHON) -I tools/mkreloc.py $(BUILD)/myapp_$(2)/lo.bin $(BUILD)/myapp_$(2)/hi.bin $$@
 endef
 $(foreach a,$(MYAPPS),$(eval $(call myapp_rule,myapps/$(a),$(a))))
@@ -238,12 +242,12 @@ define add_apps
 	for p in $(2); do $(IDSK) $(1) -i $$p -t 1 -c 4000 -e 4000 > /dev/null; done
 endef
 
-$(DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(MYAPP_BINS)
+$(DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(MYAPP_BINS) $(MYAPP_DISC)
 	@mkdir -p $(BUILD)
 	@rm -f $(DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos -s -sl
 	$(call add_packs,$(DSK))
-	$(call add_apps,$(DSK),$(APPS) $(MYAPP_BINS))
+	$(call add_apps,$(DSK),$(APPS) $(MYAPP_BINS) $(MYAPP_DISC))
 	$(PYTHON) -I tools/dsk_ext.py $(DSK)
 
 run: $(DSK)
@@ -529,6 +533,27 @@ test-sdk: $(SDK_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(SDK_SHOTS); do \
 	  cp $(SDK_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# VROUVES (TEST_SCRIPT=16): myapps/vrouves, last on the test disc with
+# its stage
+VROUVES_DSK := $(BUILD)/vos_vrouves.dsk
+VROUVES_SHOTS := 250 300 330 360 400 450
+$(VROUVES_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/VROUVES.BIN myapps/vrouves/disc/VROUV1.DAT
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_vrouves -DTEST_SCRIPT=16
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS) $(BUILD)/VROUVES.BIN myapps/vrouves/disc/VROUV1.DAT)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-vrouves: $(VROUVES_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(VROUVES_SHOTS); do \
+	  cp $(VROUVES_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
