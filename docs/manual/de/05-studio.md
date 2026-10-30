@@ -166,7 +166,9 @@ In der Spalte „Block“ erscheinen die Felder wie im Skript.
 | NEXT COSTUME | das nächste, und nach dem letzten wieder das erste |
 | SHOW, HIDE | |
 | PRINT *value* AT *x* *y* | gibt eine Zahl aus |
+| STYLE *n* | der Stil der folgenden PRINT und TEXT: 1 fett, 2 kursiv, 4 unterstrichen, addiert (7: alle), 0 normal |
 | NOTE *n* FOR *frames* | spielt eine Note (MIDI-Nummer: 60 = C, 69 = A 440 Hz) und wartet, bis sie zu Ende ist |
+| MUSIC *"Name"* | spielt das Lied *Name*`.MUS` von der Diskette des Programms, hinter ihm, mit dem Programm MUSIC (auf A: oder B:). Es läuft nach dem Ende des Programms weiter, bis zu MUSICs STOP (F6). Es braucht eine Speichererweiterung; ohne sie: „ERST EIN ANDERES PROGRAMM SCHLIESSEN“. Ein Name, den es nicht gibt (oder leer), hält die Musik an |
 
 ### VARIABLES
 

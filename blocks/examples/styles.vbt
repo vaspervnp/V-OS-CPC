@@ -1,0 +1,20 @@
+# STYLES: the STYLE block (M41). Mode 1; each line is printed in another
+# style: 0 plain, 1 bold, 2 italic, 4 underline, and added together.
+# make test-styles runs it (tools/mkvbs.py makes STYLES.VBN).
+MODE 1
+BG 0
+
+START STAGE
+TEXT "PLAIN" 8 20
+STYLE 1
+TEXT "BOLD" 8 36
+STYLE 2
+TEXT "ITALIC" 8 52
+STYLE 4
+TEXT "UNDERLINE" 8 68
+STYLE 7
+TEXT "ALL THREE" 8 84
+STYLE 3
+PRINT A 8 100
+STYLE 0
+TEXT "PLAIN AGAIN" 8 116

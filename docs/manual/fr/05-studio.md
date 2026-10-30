@@ -166,7 +166,9 @@ Dans la colonne « Bloc », les cases apparaissent comme dans le script.
 | NEXT COSTUME | le suivant, et après le dernier, de nouveau le premier |
 | SHOW, HIDE | |
 | PRINT *valeur* AT *x* *y* | affiche un nombre |
+| STYLE *n* | le style des PRINT et TEXT qui suivent : 1 gras, 2 italique, 4 souligné, additionnés (7 : tous), 0 normal |
 | NOTE *n* FOR *trames* | joue une note (numéro MIDI : 60 = do, 69 = la 440 Hz) et attend qu'elle se termine |
+| MUSIC *"nom"* | joue la chanson *nom*`.MUS` de la disquette du programme, derrière lui, avec le programme MUSIC (sur A: ou B:). Elle continue après la fin du programme, jusqu'au STOP de MUSIC (F6). Il faut une extension mémoire ; sans elle : « FERMEZ D'ABORD UN AUTRE PROGRAMME ». Un nom absent (ou vide) arrête la musique |
 
 ### VARIABLES
 

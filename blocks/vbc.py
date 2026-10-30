@@ -31,7 +31,10 @@ if {cond, then, else}, wait {frames}, wait_until {cond}, stop, stop_all,
 set {var, to}, change {var, by}, broadcast {message},
 go_to {x, y}, set_x {to}, set_y {to}, change_x {by}, change_y {by},
 set_velocity {vx, vy}, move, bounce, set_colour {to}, set_size {w, h},
-show, hide, print {text or value, x, y}, text_colour {to}, clear,
+show, hide, print {text or value, x, y}, text_colour {to},
+text_style {to: 1 bold + 2 italic + 4 underline, 0 plain}, clear,
+music {song: NAME of a .MUS on the program's disc, played behind it
+by MUSIC; "" or one not there stops it},
 switch_costume {to: name, or a value: its number}, next_costume,
 play_note {note, frames, channel} (waits), start_note {note, frames,
 channel} (does not wait), noise {pitch 0..31, frames, channel},
@@ -450,6 +453,11 @@ class Compiler:
         elif b == "text_colour":
             self.expr(st["to"], own)
             self.emit("ld a,l", "ld (rt_ink),a")
+        elif b == "text_style":
+            self.expr(st["to"], own)
+            self.emit("ld a,l", "ld (rt_style),a")
+        elif b == "music":
+            self.emit(f"ld hl,{self.string(str(st.get('song', '')))}", "call rt_music_hl")
         elif b == "clear":
             self.emit("call rt_clear")
         elif b == "switch_costume":

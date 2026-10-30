@@ -221,18 +221,9 @@ fx_open:
         ld hl,file_name
         ld bc,11
         ldir
-        pop hl
-        ld de,file_name
-        ld bc,11
-        ldir
+        pop de
         ld a,(fi_drive)             ; where the program is
-        call fx_has
-        jp nc,app_request
-        xor a
-        call fx_has
-        jp nc,app_request
-        ld a,1
-        call fx_has
+        call fx_prog
         jp nc,app_request
         xor a                       ; nowhere: the file selected again
         ld (app_open),a
@@ -276,6 +267,23 @@ fx_type:
         or 1
         ret
 
+; DE -> a program's name (ft_open), A = the drive to look on first ->
+; file_name = it; no carry: A = the drive it is on (that one, A: or B:)
+fx_prog:
+        push af
+        ex de,hl
+        ld de,file_name
+        ld bc,11
+        ldir
+        pop af
+        call fx_has
+        ret nc
+        xor a
+        call fx_has
+        ret nc
+        inc a
+        ; fall through
+
 ; A = drive -> no carry if file_name is on it; A kept
 fx_has:
         push af
@@ -293,6 +301,79 @@ ft_open:        db "TXT", "NOTEPAD BIN"
                 db "LYR", "PAINT   BIN"
                 db "MUS", "MUSIC   BIN"
                 db 0
+
+; ---------------------------------------------------------------------
+; VX_BEHIND (kernel/view.asm: behind_run). bh_begin: the program in
+; front saved at bh_save; file_name, app_drive, app_self = the program
+; of app_open's file, by its type (ft_open), from the file's drive, A:
+; or B:. Z: it runs already, its slot is the kernel's program. Carry:
+; A = error. (bh_end, in kernel/ext2.asm, puts the one in front back.)
+; ---------------------------------------------------------------------
+bh_begin:
+        ld hl,vw_page               ; vw_page, vw_cfg, data_cfg, app_slot
+        ld de,bh_save
+        ld bc,4
+        ldir
+        ld hl,(cur_base)
+        ex de,hl
+        ld (hl),e
+        inc hl
+        ld (hl),d
+        inc hl
+        ld a,(app_drive)
+        ld (hl),a
+        inc hl
+        ex de,hl
+        ld hl,file_name
+        ld bc,11
+        ldir
+        ld hl,app_self
+        ld c,12
+        ldir
+        ld a,(view_cur)             ; a program alone in bank 5 in front:
+        cp VIEW_APP                 ; no room beside it
+        jr nz,.type
+        ld a,(app_slot)
+        or a
+        jr z,.no_room
+.type:
+        ld hl,app_open + 2
+        ld de,file_name
+        ld bc,11
+        ldir
+        ld de,ft_open
+        ld b,3 + 11
+        call fx_type
+        jr nz,.no_app
+        ld a,(app_open + 1)         ; its program
+        call fx_prog
+        jr c,.no_app
+        ld (app_drive),a
+        ld hl,app_self              ; who it is (slot_own)
+        ld (hl),a
+        inc hl
+        ex de,hl
+        ld hl,file_name
+        ld bc,11
+        ldir
+        call slot_find_a
+        jr z,.runs
+        or a                        ; NZ, no carry: a new one
+        ret
+.runs:
+        ld (app_wake),a
+        call slot_wake
+        xor a
+        ld (app_wake),a
+        ret
+.no_room:
+        ld a,FS_ERR_NO_ROOM
+        scf
+        ret
+.no_app:
+        ld a,FS_ERR_NO_APP
+        scf
+        ret
 
 ; ---------------------------------------------------------------------
 ; VOS_EXT calls that live here (kernel/api.asm: api_ext)

@@ -64,4 +64,5 @@ Les fichiers `*.vbt` sont des programmes Studio sous forme de texte, pour `tools
 | Variables | 128, A–H15 | avec des noms |
 | Listes, bruit, taille des sprites | non | oui |
 | SAVE/LOAD VARS | oui | non |
+| Style du texte, musique `.MUS` | oui | oui |
 | Le programme | demande toute la mémoire | petit, tourne à côté d'autres |

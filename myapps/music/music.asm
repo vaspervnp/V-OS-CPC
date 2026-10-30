@@ -10,7 +10,8 @@
 ; one frame each VE_FRAME, with the interrupts off (it borrows the
 ; stack, and the keyboard reads the AY too). It goes on in the
 ; background (VOS_BACKGROUND) behind views and other programs; three
-; bars show the channels' volumes.
+; bars show the channels' volumes. Studio's MUSIC block starts it
+; behind a program (VX_BEHIND, init A = 3) with a song.
 ;   make app NAME=music       build/MUSIC.BIN, on build/music.dsk with
 ;                             the songs of owndisc/ (make songs)
 ; =====================================================================
@@ -40,8 +41,20 @@ CMD_BACK        equ VC_APP + 6
         db "VA", VOS_API_VERSION
         include "app_icon.asm"      ; VOS_ICON, from icon.txt
 
-; A = 0: a new start; 2: back to the front, the song as it was
+; A = 0: a new start; 2: back to the front, the song as it was; 3:
+; started behind another program (VX_BEHIND: Studio's MUSIC block) for
+; VOS_OPEN's song, which plays there, with nothing drawn or asked
 init:
+        cp 3
+        jr nz,.front
+        ld a,1
+        ld (quiet),a
+        call VOS_BACKGROUND
+        call open_arg
+        xor a
+        ld (quiet),a
+        ret
+.front:
         push af
         ld hl,texts
         call VOS_TEXTS
@@ -78,6 +91,24 @@ open_arg:
         or a
         ret z
         ld (hl),0
+        ld a,(playing)              ; that song playing already: on
+        or a
+        jr z,.new
+        ld a,(fdrive)
+        inc hl
+        cp (hl)
+        jr nz,.new
+        ld de,sname
+        ld b,8
+.same:
+        inc hl
+        ld a,(de)
+        cp (hl)
+        jr nz,.new
+        inc de
+        djnz .same
+        ret
+.new:
         call stop_song
         ld a,(VOS_OPEN + 1)
         ld (fdrive),a
@@ -109,8 +140,11 @@ redraw:
         ld (shown + 2),a
         ; fall through
 
-; the song's name, drive and state
+; the song's name, drive and state (not behind: VX_BEHIND)
 draw_state:
+        ld a,(quiet)
+        or a
+        ret nz
         ld de,lbuf
         ld a,(fdrive)
         add a,"A"
@@ -376,7 +410,7 @@ load_file:                          ; name_tmp on fdrive
         ld hl,name_tmp
         ld de,DATA
         call VOS_LOAD
-        jp c,VOS_ERROR
+        jp c,error
         ld hl,DATA                  ; the header
         ld de,hdr
         ld bc,8
@@ -439,9 +473,21 @@ load_file:                          ; name_tmp on fdrive
         ld (loaded),a
         jp play_song
 .bad:
+        ld a,(quiet)
+        or a
+        ret nz
         ld hl,dlg_not_song
         call VOS_DIALOG
         jp draw_state
+
+; A = error: shown, but not behind (VX_BEHIND)
+error:
+        ld c,a
+        ld a,(quiet)
+        or a
+        ret nz
+        ld a,c
+        jp VOS_ERROR
 
 ; A = text, HL = x, DE = y, C = width: it, then spaces to the width
 print_lab:
@@ -511,6 +557,7 @@ ext_mus:        db "MUS"
         include "app_texts.asm"     ; texts, from texts.txt
 
 fdrive:         db 0
+quiet:          db 0                ; 1: started behind (init A = 3)
 loaded:         db 0
 playing:        db 0
 shown:          db 0, 0, 0          ; the bars' heights drawn

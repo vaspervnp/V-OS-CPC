@@ -231,8 +231,12 @@ slot_free:
         ld (hl),0
         ret
 
-; file_name, on sys_drive, running? (Launcher) -> Z, A = its slot
+; file_name, on sys_drive (slot_find_a: on drive A), running?
+; (Launcher, bh_begin) -> Z, A = its slot
 slot_find:
+        ld a,(sys_drive)
+slot_find_a:
+        ld c,a
         ld hl,SLOT_TABLE + SLOT_SIZE
 .rec:
         ld a,(hl)
@@ -241,7 +245,7 @@ slot_find:
         push hl
         inc l
         inc l
-        ld a,(sys_drive)
+        ld a,c
         cp (hl)
         jr nz,.no
         ld de,file_name

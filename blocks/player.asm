@@ -45,6 +45,7 @@
 
 RT_UI           equ 1               ; windows and buttons (runtime.asm)
 RT_ANY_MODE     equ 1               ; images in mode 1 too (pl_costumes)
+RT_NO_LISTS     equ 1               ; no lists in Studio (runtime.asm)
 PROG_RUNS       equ 0               ; set at rt_runs_1 (V_RUNS)
 PROG_MODE       equ 0               ; set at rt_mode_1: the program's
 PROG_WIDTH      equ 192             ; mode, and at rt_width_n (mode 1: 384)
@@ -83,7 +84,7 @@ K_GROUP         equ 15              ; 0..15: A..H, A1..H1 ...; 16: all
 OP_HATS         equ 3               ; WHEN START, KEY, CLICKED = EVT_*
 OP_RECEIVE      equ 24              ; WHEN I RECEIVE: EVT_RECEIVE
 OP_PRESSED      equ 32              ; WHEN BUTTON: EVT_BUTTON
-OP_COUNT        equ 39
+OP_COUNT        equ 41
 COS_MAX         equ 8               ; costumes after the lines: db count,
 COS_SIZE        equ 258             ; then db 0, 0, 16 x 16 pens (bit 7:
                                     ; none); pl_costumes makes them images
@@ -469,7 +470,7 @@ pl_ops:
         dw op_sub, op_mul, op_div, op_mod
         dw op_window, op_button, 0, op_write    ; WHEN BUTTON: pl_hat
         dw op_costume, op_next_costume, op_label
-        dw op_save_vars, op_load_vars
+        dw op_save_vars, op_load_vars, op_style, op_music
         assert $ - pl_ops == OP_COUNT * 2     ; as in apps/studio/studio.asm
 
 op_forever:
@@ -681,13 +682,26 @@ op_colour:
         call pl_own_prop
         ret c
         push de
-        xor a
+op_to_byte:                         ; (the byte's address pushed) slot
+        xor a                       ; 0: ld a,l : ld (it),a
         call pl_value
         ld a,#7D                    ; ld a,l
         call e_byte
         pop de
         ld a,#32
         jp e_op_w
+
+op_style:                           ; STYLE n: 1 bold, 2 italic, 4 under-
+        ld de,rt_style              ; line, added
+        push de
+        jr op_to_byte
+
+op_music:                           ; MUSIC text: ld a,text : call rt_music
+        xor a
+        call pl_slot
+        call e_ld_a
+        ld de,rt_music
+        jp e_call
 
 op_show:
         ld c,1
@@ -698,10 +712,10 @@ op_visible:
         ld de,SP_VISIBLE
         call pl_own_prop
         ret c
-        ld a,#3E                    ; ld a,n
-        call e_byte
-        ld a,c
-        call e_byte
+        push de
+        ld e,c
+        call e_ld_a
+        pop de
         ld a,#32
         jp e_op_w
 
@@ -767,10 +781,7 @@ op_texted:                          ; HL = routine: ld a,text, ld de,HL,
         push hl                     ; call rt_on_main
         xor a
         call pl_slot
-        ld a,#3E
-        call e_byte
-        ld a,e
-        call e_byte
+        call e_ld_a
         pop de
         ld a,#11
         call e_op_w
@@ -955,10 +966,7 @@ pl_value:
         ld de,rt_random
         jp e_call
 .key:
-        ld a,#3E
-        call e_byte
-        ld a,e
-        call e_byte
+        call e_ld_a
         ld de,rt_key_held
         jp e_call
 .touch:
@@ -1164,6 +1172,11 @@ e_word:                             ; DE
 
 e_op_w:                             ; A = opcode, DE = its word
         call e_byte
+        jr e_word
+
+e_ld_a:                             ; ld a,E
+        ld d,e
+        ld e,#3E
         jr e_word
 
 e_call:

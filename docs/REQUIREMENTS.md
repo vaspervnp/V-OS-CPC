@@ -387,6 +387,13 @@ Header με:
 - **Δοκιμή:** το `make test-multi`. Το DEMO τρέχει και αλλάζει χρώμα. Με F2 ο Launcher, και τρέχει το PONG. Ξανά στον Launcher, το DEMO συνεχίζει με το ίδιο χρώμα και κλείνει με ^Q. Το PONG συνεχίζει. Το STUDIO δεν ξεκινά και βγαίνει το σφάλμα 13.
 - **Λάθος που βρέθηκε:** το μήνυμα σε μία γραμμή (27 χαρακτήρες) έκανε τον διάλογο φαρδύτερο από την οθόνη σε mode 0. Δεν φαινόταν, και ο βρόχος του περίμενε κουμπί. Βρέθηκε με dump της στοίβας και των μεταβλητών του διαλόγου (`TEST_DUMP`, `TEST_DUMP_AT`).
 
+**Υλοποίηση M41 (ΣΤΥΛ, ΜΟΥΣΙΚΗ, δεύτερη επέκταση):**
+- **Blocks:** `OP_STYLE` 39 και `OP_MUSIC` 40 (`OP_COUNT` 41), στο τέλος του `blocks.txt` για να μένουν σωστά τα παλιά `.VBS`. Στο Studio `OP_INFO` 10: σημαίες, 3 κλάσεις, 3 προεπιλογές (είδος, τιμή)· το `insert_block` γράφει το πάνω byte 0. Ο player: `op_style` (κοινός κώδικας με το `op_colour`: `ld a,l : ld (rt_style),a`), `op_music` (`ld a,κείμενο : call rt_music`), `e_ld_a`. Το runtime: το `rt_print` προσθέτει το `rt_style` × 16 (`VOS_BOLD`…) στο μελάνι· το `rt_music` φτιάχνει `drive, "ONOMA   MUS"` στο `rt_song` και καλεί το `VX_BEHIND` μόνο όταν αλλάξει. Με `RT_NO_LISTS` (ο player) οι λίστες λείπουν.
+- **`VX_BEHIND` (API 19):** το `xa_behind` (kernel) γράφει το αρχείο στο `app_open` και `bh_req` = 1. Ο κύριος βρόχος: `ext2_call behind_run`, και `sys_error` σε carry. Το `behind_run` (`ext2.asm`): `bh_begin` (`files_ext.asm`: το μπροστινό πρόγραμμα στο `bh_save` #B800 — `vw_page`…`app_slot`, `cur_base`, `app_drive`, `file_name`, `app_self` — και `ft_open`/`fx_prog` για το πρόγραμμα, `slot_find_a`, `slot_wake` αν τρέχει)· αλλιώς `view_fetch`, `app_place`, `bank_copy`, `slot_own`. Μετά `bh_init` (kernel: η bank του, `init` με A = 3, ξανά η bank 1) και `bh_end` (όλα πίσω, `app_open` = 0). Ένα πρόγραμμα μόνο του στη bank 5 μπροστά: `FS_ERR_NO_ROOM`.
+- **Δεύτερη επέκταση:** `EXT2_CFG` = #C0, `EXT2_ADDR` = #4100· στο `VOS.BIN` μετά το `expand.asm`, ως το #A000. Ο loader την αντιγράφει μετά τον kernel (που ήταν από κάτω). `ext2_call` όπως το `ext_call` με δικό του `ext2_home`. Ο loader κάνει και το `gfx_init`, την παλέτα και το `crtc.asm`.
+- **Δοκιμές:** το `test_script.asm` είναι στη δεύτερη επέκταση· το `test_inject` (kernel) τη βάζει στο #4000 από το interrupt και ξαναβάζει το `ram_config`. Εγγραφή: `dw πρώτο καρέ : db καρέ (1..255), γραμμή, bits`.
+- **`test-styles`, `test-music-block` (TEST_SCRIPT 23 και 27).**
+
 **Υλοποίηση M40 (παράγραφοι, κύλιση, έκδοση):**
 - **Παράγραφοι (`page.asm`):** το `pv_join` (1 παράγραφος, 2 παράθεση) μπαίνει στο `.mark` του `pv_line` και σβήνει σε επικεφαλίδα και γραμμή. Στο `pv_done`, το `pv_next` κοιτά την επόμενη γραμμή: όχι στο τέλος του κειμένου, μετά από δύο κενά, σε κενή γραμμή, ή όταν το `pv_starts` βρει `#`, `>`, ```` ``` ````, `- `/`* `/`+ `, αριθμό με `.` ή `)`, ή γραμμή. Αλλιώς ένα κενό και συνέχεια στο `pv_inline`, με τα ίδια στυλ ανοιχτά.
 - **Σημεία (`ck_tab`):** `CK_MAX` 64 εγγραφές των 6 bytes (κείμενο, `pv_y`, `pv_fence`, `pv_li`). Το `ck_add` γράφει μία πριν από ένα `pv_line` όταν `pv_y` ≥ `ck_next` (`pv_y` + `CK_STEP` 8 της προηγούμενης). Το `ck_find` ξεκινά το `pv_render` από την τελευταία με `pv_y` ≤ `pv_top`. Το `pv_new` (MARKDOWN στο ^P, READER σε νέα σελίδα) τις σβήνει.
@@ -891,7 +898,7 @@ Header με:
 40. **M38 — Δίκτυο με την κάρτα M4:** λήψη αρχείου με HTTP στη δισκέτα: το πρόγραμμα WEBGET, `VX_M4` (API 17), `make test-webget` με το χέρι στον CPCEMU (§7.3). *Έγινε· η πραγματική λήψη δεν ελέγχθηκε.*
 41. **M39 — Αναγνώστης Markdown από το δίκτυο:** σελίδες `.MD` από τη δισκέτα ή το web με την προεπισκόπηση του MARKDOWN, σύνδεσμοι με TAB/RETURN/DEL: το πρόγραμμα READER, και η μνήμη στο SYSINFO (`VX_MEM`, API 18), `make test-reader` (§7.3). *Έγινε· μια πραγματική σελίδα από M4 δεν ελέγχθηκε.*
 42. **M40 — MARKDOWN:** γραμμές ενωμένες σε παραγράφους, γρηγορότερη κύλιση με σημεία (`ck_tab`), και στο READER. Η έκδοση 0.11, +0.01 σε κάθε milestone (§7.3). *Έγινε.*
-43. **M41 — Studio:** block για κείμενο με στυλ, block που παίζει τραγούδι `.MUS` στο παρασκήνιο. *Σχεδιάζεται.*
+43. **M41 — Studio:** τα blocks ΣΤΥΛ (κείμενο με στυλ) και ΜΟΥΣΙΚΗ (τραγούδι `.MUS` στο παρασκήνιο, με το MUSIC μέσω του `VX_BEHIND`, API 19), η δεύτερη επέκταση του kernel στη bank 1, `make test-styles`, `make test-music-block` (§7.3). Έκδοση 0.12. *Έγινε.*
 44. **M42 — PAINT:** εξαγωγή εικόνας ως `.SCR` του CPC. *Σχεδιάζεται.*
 
 ---

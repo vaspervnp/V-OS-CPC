@@ -64,4 +64,5 @@ I file `*.vbt` sono programmi di Studio in forma di testo, per `tools/mkvbs.py`.
 | Variabili | 128, A–H15 | con nomi |
 | Liste, rumore, dimensione degli sprite | no | sì |
 | SAVE/LOAD VARS | sì | no |
+| Stile del testo, musica `.MUS` | sì | sì |
 | Il programma | ha bisogno di tutta la memoria | piccolo, gira accanto ad altri |

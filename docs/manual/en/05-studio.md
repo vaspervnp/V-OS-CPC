@@ -166,7 +166,9 @@ In the "Block" column, the slots appear as in the script.
 | NEXT COSTUME | the next one, and after the last one the first again |
 | SHOW, HIDE | |
 | PRINT *value* AT *x* *y* | prints a number |
+| STYLE *n* | the style of the PRINT and TEXT that follow: 1 bold, 2 italic, 4 underline, added together (7: all), 0 plain |
 | NOTE *n* FOR *frames* | plays a note (MIDI number: 60 = C, 69 = A 440 Hz) and waits for it to finish |
+| MUSIC *"name"* | plays the song *name*`.MUS` from the program's disc, behind it, with the MUSIC program (on A: or B:). It goes on after the program ends, until MUSIC's STOP (F6). It needs a memory expansion; without one: "CLOSE ANOTHER PROGRAM FIRST". A name that is not there (or empty) stops the music |
 
 ### VARIABLES
 

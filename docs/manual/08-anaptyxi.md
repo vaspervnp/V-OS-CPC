@@ -105,6 +105,8 @@
 | `test-clip` | το πρόχειρο: επιλογή με SHIFT, ^C και ^V στο NOTEPAD, ^A, ^X, ^V, και μετά ^V στο MARKDOWN |
 | `test-webget` | με το χέρι, στον CPCEMU του `make linux` (κάρτα M4, χρειάζεται οθόνη και internet): το WEBGET κατεβάζει το `example.com/index.html`. Κλείσε τον CPCEMU με F12 όταν φανεί το ΣΩΘΗΚΕ, και ψάχνει το `INDEX.HTM` στη δισκέτα |
 | `test-reader` | το READER από το `reader.dsk` στο B: ανοίγει το `INDEX.MD`, το TAB διαλέγει σύνδεσμο, το RETURN ανοίγει το `ABOUT.MD`, το DEL γυρίζει πίσω, και ένας σύνδεσμος `https://` βγάζει μήνυμα |
+| `test-styles` | το STYLES.VBN (`blocks/examples/styles.vbt`) από τον Commander: απλά, έντονα, πλάγια, υπογραμμισμένα και όλα μαζί, με το block ΣΤΥΛ |
+| `test-music-block` | με 576K: το TUNE.VBN (`blocks/examples/tune.vbt`) ξεκινά το MUSIC (από το B:) πίσω του με το AGANAMEM.MUS· το F6 δείχνει «> TUNE» και MUSIC, και το RETURN φέρνει μπροστά το MUSIC: A:AGANAMEM, ΠΑΙΖΕΙ. Με `MBLOCK_RAM=128`: «ΚΛΕΙΣΤΕ ΠΡΩΤΑ ΑΛΛΟ ΠΡΟΓΡΑΜΜΑ» |
 | `test-amsdos`, `test-reboot`, `test-system` | τα αρχεία του V-OS στη BASIC, επανεκκίνηση, δισκέτα SYSTEM |
 
 **Νέο σενάριο:**

@@ -15,7 +15,7 @@ The last two menus are the same in all views and in programs:
 | PROGRAMS (running) | F6 | | |
 | SWITCH LANGUAGE | ^L | | |
 
-HELP > ABOUT V-OS shows the version (0.11 beta; each milestone adds 0.01), the date of the build, the maker (Revive8bit, 2026) and the architect (Vasper).
+HELP > ABOUT V-OS shows the version (0.12 beta; each milestone adds 0.01), the date of the build, the maker (Revive8bit, 2026) and the architect (Vasper).
 
 ## Desktop, F1
 

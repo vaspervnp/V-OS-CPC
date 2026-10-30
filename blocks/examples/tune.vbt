@@ -1,0 +1,12 @@
+# TUNE: the MUSIC block (M41). It plays AGANAMEM.MUS (on the program's
+# disc) behind it, with MUSIC (on A: or B:): with a RAM expansion there
+# is room for both. make test-music-block runs it, with 576K.
+MODE 1
+BG 0
+
+START STAGE
+STYLE 1
+TEXT "MUSIC BEHIND" 8 20
+STYLE 0
+MUSIC "AGANAMEM"
+TEXT "F6: PROGRAMS" 8 40

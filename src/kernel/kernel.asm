@@ -9,12 +9,9 @@
 ; =====================================================================
 
 kernel_entry:
-        di
-        ld sp,STACK_TOP
+        di                          ; (the loader set up the screen:
+        ld sp,STACK_TOP             ; gfx_init, a black palette)
         im 1
-        call gfx_init
-        ld hl,palette_black         ; nothing to see while the disc loads
-        call ga_set_palette
         ei
         call fdc_init
         call snd_init
@@ -42,6 +39,11 @@ kernel_entry:
         call .event
         jr .events
 .idle:
+        ld a,(bh_req)               ; a program to start behind
+        or a                        ; (VX_BEHIND)
+        ld hl,behind_run
+        call nz,ext2_call
+        call c,sys_error
         ld a,(view_ticks)           ; frame events for animation
         or a
         jr z,.no_ticks
@@ -74,7 +76,6 @@ bg_frame:
         ld hl,bg_next
         jr .next
 
-palette_black:  ds 17, 0
 palette_mode1:                      ; Desktop / Commander palette
         db 1, 26, 0, 11
         db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0

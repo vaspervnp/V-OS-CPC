@@ -1096,8 +1096,10 @@ rt_set_volume:
         ret
 
 ; ---------------------------------------------------------------------
-; lists (DE -> list: dw length, room, then the items)
+; lists (DE -> list: dw length, room, then the items): vbc.py's; not
+; in the player (RT_NO_LISTS), as Studio has no list blocks
 ; ---------------------------------------------------------------------
+        IFNDEF RT_NO_LISTS
 
 ; HL = index from 1 -> HL -> the item; carry if there is no such item
 rt_list_at:
@@ -1316,6 +1318,7 @@ rt_list_contains:
         inc hl
         dec de
         jr .item
+        ENDIF
 
 ; ---------------------------------------------------------------------
 ; numbers (16-bit signed)
@@ -1476,12 +1479,20 @@ rt_key_held:
         jp nz,rt_true
         jp rt_false
 
-; HL = x, DE = y, BC -> text: print it in the text colours
+; HL = x, DE = y, BC -> text: print it in the text colours and style
 rt_print:
         push hl
         push de
         push bc
+        ld a,(rt_style)             ; 1 bold, 2 italic, 4 underline:
+        and 7                       ; VOS_BOLD, VOS_ITALIC, VOS_UNDERLINE
+        add a,a
+        add a,a
+        add a,a
+        add a,a
+        ld c,a
         ld a,(rt_ink)
+        or c
         ld c,PROG_BG
 rt_bg_3 equ $ - 1
         call VOS_COLOURS
@@ -1489,6 +1500,47 @@ rt_bg_3 equ $ - 1
         pop de
         pop hl
         jp VOS_PRINT
+
+; MUSIC: A = text (RT_UI), or HL -> a name (rt_music_hl): NAME.MUS on
+; the program's drive, played behind it by MUSIC (VX_BEHIND), but only
+; when the name changes; a song that is not there: silence
+        IFDEF RT_UI
+rt_music:
+        call rt_text_ptr
+        ENDIF
+rt_music_hl:
+        ld de,rt_song + 1
+        ld bc,8 * 256               ; B = 8 characters, C = 1: another song
+.name:
+        ld a,(hl)
+        or a
+        jr z,.pad
+        call .put
+        inc hl
+        djnz .name
+        jr .send
+.pad:
+        ld a," "
+        call .put
+        djnz .pad
+.send:
+        dec c
+        ret nz
+        ld a,(VOS_SELF)
+        ld (rt_song),a
+        ld de,rt_song
+        ld a,VX_BEHIND
+        jp VOS_EXT
+.put:
+        ex de,hl
+        cp (hl)
+        jr z,.same
+        ld (hl),a
+        ld c,1
+.same:
+        inc hl
+        ex de,hl
+        ret
 
 ; HL = number, then (rt_px), (rt_py): print it in decimal
 rt_print_number:
@@ -1986,6 +2038,8 @@ rt_hy:          dw 0
 rt_box:         dw 0, 0, 0, 0
                 db 0
 rt_ink:         db 1
+rt_style:       db 0                ; STYLE (text_style)
+rt_song:        db 0, "        MUS"   ; MUSIC: drive, name
 rt_px:          dw 0
 rt_py:          dw 0
 rt_t:           dw 0

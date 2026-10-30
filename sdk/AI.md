@@ -67,7 +67,7 @@ Rules that are easy to break:
 - File names: 11 bytes `"NAME    EXT"`; drive 0 = A:, 1 = B:.
 - Icon: `icon.txt`, 16 rows of 16 hex pens (Launcher palette) or `.`.
 
-## 5. API versions 12 to 18
+## 5. API versions 12 to 19
 
 - `VOS_SELF` (an address, `#8800`): `db drive, 11-byte name` of the running program. Read it in `init` (A = 0) to load your files from your own drive.
 - `VOS_CATALOG` with `A = drive + VOS_CAT_EXT` and `HL -> "EXT"`: the catalog keeps only that extension; `VOS_FILE_PICK` then lists only those files.
@@ -77,6 +77,8 @@ Rules that are easy to break:
 - `VOS_EXT` (version 15): the jump table is closed; new calls go through `VOS_EXT` with A = a `VX_*` number (`VX_VERSION`, `VX_FREE`, …) and the arguments in BC, DE, HL. Check `VOS_API_VERSION` ≥ 15 first. In the kernel, a call is a `dw` in `xa_table` (`src/kernel/api.asm`); one that lives in the extension (bank 7, `files_ext.asm`) cannot see the program's memory and takes HL from `xa_hl`. `myapps/sysinfo` uses both kinds.
 - The M4 board (version 17): `VX_M4` sends a command packet (HL: db size, dw command, data; size counts the command and the data, including a string's 0) and copies BC bytes of the response to DE (db size, dw command, then the data from +3). The commands are in spinpoint.org/cpc/m4info.txt; HTTP only. The kernel finds the M4 ROM and maps it at `#C000` only while copying, with interrupts off. See `myapps/webget` (C_NETSTAT, C_HTTPGETMEM, C_COPYBUF). Caprice32 has no M4: test the logic in the Python harness, the real thing in CPCEMU.
 - `VX_MEM` (version 18): HL = the RAM in K (128, and 64 for each block of a RAM expansion), DE = the K still free for programs in bank 5 and the expansion banks. `myapps/sysinfo` shows both.
+- `VX_BEHIND` (version 19): DE -> `db drive, 11-byte name` of a file; soon after (in the main loop) the kernel starts the file's program, by type as the Desktop opens it, behind the caller, or finds it running. Its `init` gets A = 3 with the file in `VOS_OPEN`: draw nothing, ask nothing, take the file, call `VOS_BACKGROUND` with A = 1 (`myapps/music`). It goes through the data bank (what the caller kept there is lost) and needs room beside the caller (a RAM expansion, for most). Studio's MUSIC block uses it (`rt_music` in `blocks/runtime.asm`).
+- Kernel room: the kernel (#0000-#3DFF) and bank 7's extension are full. New kernel code that does not run a program's code goes in `src/kernel/ext2.asm`, in base RAM bank 1 at `EXT2_ADDR` (free after boot), called with `ext2_call`; it may call kernel routines that map banks and come back with `ram_home`. The test scripts live there too (`test_inject` maps it from the interrupt).
 - The clipboard (version 16): `VX_CLIP_PUT` (HL = text, BC = bytes, 1K kept) and `VX_CLIP_GET` (DE = where, BC = room; BC = 0 gives the size in HL). Text uses LF between lines, as NOTEPAD and MARKDOWN keep it. Selection, cut and paste: `sel_range`, `sel_delete`, `do_paste` in `myapps/notepad`. Key events carry the mods at +3: `VMOD_SHIFT`, `VMOD_CONTROL`.
 - `VOS_BACKGROUND` A = 1: you keep getting `VE_FRAME` behind other views and programs; every other call does nothing there (`MUSIC` uses this to keep playing).
 

@@ -22,6 +22,10 @@
 ;   #A000  where the Desktop's window is (shell/desktop.asm)
 ;   #A800  the program switcher's sw_ and sa_ (kernel/ext.asm)
 ;   #B000  app_open: the file a program is opened for (kernel/view.asm)
+;   #B800  bh_save: the program in front while one starts behind it
+;          (kernel/files_ext.asm: bh_begin)
+; After boot base RAM bank 1 (#4000-#7FFF with RAM config #C0) holds
+; only the loader and, from EXT2_ADDR, the second extension.
 ; The loader clears video RAM, so they start empty.
 
 KERNEL_BASE     equ #0000
@@ -65,6 +69,9 @@ CLIP_ADDR       equ #7F00 - CLIP_MAX ; the end of the extension, before
                                     ; the slots (SLOT_TABLE)
 EXT_IMAGE       equ #8000           ; where it is in VOS.BIN, as loaded
 BUF_CFG         equ #C4
+bh_save         equ #B800           ; 30 bytes: VX_BEHIND's (see above)
+EXT2_CFG        equ RAM_BASE_CFG    ; the second extension (kernel/ext2.asm):
+EXT2_ADDR       equ #4100           ; base RAM bank 1, after the loader
 BUF_ADDR        equ #4000
 VIEW_BANK_CFG   equ #C5
 VIEW_ADDR       equ #4000

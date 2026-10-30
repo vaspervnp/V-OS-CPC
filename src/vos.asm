@@ -38,10 +38,30 @@ kernel_start:
         include "kernel/lang.asm"
         include "lang/lang_en.asm"
         IFDEF TEST_SCRIPT
-        include "kernel/test_script.asm"
+; the test script (kernel/test_script.asm) is in the second extension:
+; from the interrupt, with its bank there meanwhile; ram_config says
+; which to put back. (A script stack of a block program may be in
+; #4000-#7FFF then: the pushes go to that bank's free end.)
+test_inject:
+        ld hl,test_inject_x
+        IFDEF TEST_TRACE
+        jr test_x
+test_ring:
+        ld hl,test_ring_x
+        ENDIF
+test_x:
+        ld a,EXT2_CFG
+        ld b,GA_PORT >> 8
+        out (c),a
+        call .go
+        ld a,(ram_config)
+        ld b,GA_PORT >> 8
+        out (c),a
+        ret
+.go:
+        jp (hl)
         ENDIF
         include "drivers/ga.asm"
-        include "drivers/crtc.asm"
         include "drivers/kbd.asm"
         include "drivers/mouse.asm"
         include "drivers/fdc.asm"
@@ -73,6 +93,18 @@ ext_end:
         include "boot/expand.asm"
 xb_end:
 
+; ---- second extension: in VOS.BIN after the RAM test, runs in base RAM
+; bank 1 at EXT2_ADDR; the loader copies it there ----------------------
+ext2_image:
+        org EXT2_ADDR, ext2_image
+ext2_start:
+        include "kernel/ext2.asm"
+        IFDEF TEST_SCRIPT
+        include "kernel/test_script.asm"
+        ENDIF
+ext2_end:
+EXT2_SIZE       equ ext2_end - ext2_start
+
 EXT_SIZE        equ ext_end - ext_start
 
         IFDEF TEST_SCRIPT                     ; the test script takes some of
@@ -86,12 +118,13 @@ EXT_SIZE        equ ext_end - ext_start
         assert kernel_image + KERNEL_SIZE <= EXT_IMAGE
         assert EXT_SIZE <= EXT_MAX
         assert ext_end == EXT_ADDR + EXT_MAX
-        assert xb_end <= #A000              ; below AMSDOS
+        assert ext2_image + EXT2_SIZE <= #A000  ; below AMSDOS
+        assert loader_end <= EXT2_ADDR
 
         IFDEF TEST_SCRIPT
-        save "VOS.BIN", loader_start, xb_end - loader_start, DSK, "build/vos_test.dsk"
+        save "VOS.BIN", loader_start, ext2_image + EXT2_SIZE - loader_start, DSK, "build/vos_test.dsk"
         ELSE
-        save "VOS.BIN", loader_start, xb_end - loader_start, DSK, "build/vos.dsk"
+        save "VOS.BIN", loader_start, ext2_image + EXT2_SIZE - loader_start, DSK, "build/vos.dsk"
         ENDIF
 
 ; ---- views: overlays at VIEW_ADDR -------------------------------------

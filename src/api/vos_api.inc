@@ -45,6 +45,13 @@
 ; VOS_RANDOM, VOS_KEEP and VOS_BACKGROUND does nothing and returns
 ; A = 0 with Z set (no key is held). When it comes to the front again,
 ; init with A = 2 draws everything, as it was then.
+; Started behind another program (VX_BEHIND, version 19), init gets
+; A = 3 and VOS_OPEN says the file: it must draw nothing and ask
+; nothing, only take the file and call VOS_BACKGROUND (A = 1). If it
+; runs already, it gets A = 3 again with the new file. The data bank
+; is the front program's: VX_BEHIND loads the program through it, so
+; what the caller kept there is lost. MUSIC knows A = 3 (myapps/music);
+; with a RAM expansion there is room for it beside most programs.
 ;
 ; Windows that move (version 10): on a VE_PTR_DOWN, VOS_DRAG with the
 ; window (HL = x, DE = y, BC = width, A = height) takes it, if the
@@ -74,7 +81,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 18              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 19              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -84,7 +91,7 @@ VOS_API_VERSION equ 18              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; VOS_PTR_KEYS, 13: text styles,
                                     ; 14: VOS_OPEN, 15: VOS_EXT,
                                     ; 16: the clipboard, 17: VX_M4,
-                                    ; 18: VX_MEM
+                                    ; 18: VX_MEM, 19: VX_BEHIND, init A = 3
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -203,7 +210,11 @@ VX_M4           equ 4                   ; (17) HL -> a command for the M4
                                         ; carry: no M4 board
 VX_MEM          equ 5                   ; (18) -> HL = the RAM in K, DE =
                                         ; K free for programs
-VX_COUNT        equ 6
+VX_BEHIND       equ 6                   ; (19) DE -> db drive, 11-byte name
+                                        ; of a file: its program (by type,
+                                        ; as the Desktop opens it) starts
+                                        ; behind this one, soon after
+VX_COUNT        equ 7
 
 ; The data bank: 16K more for the program (bank 4), seen at the same
 ; addresses #4000-#7FFF but never mapped there: the program copies to

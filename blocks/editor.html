@@ -210,14 +210,14 @@ const BT = {
     set_velocity: "ταχύτητα vx %1 vy %2", move: "κινήσου", bounce: "αναπήδησε στις άκρες",
     set_colour: "όρισε χρώμα σε %1", set_size: "όρισε μέγεθος w %1 h %2", show: "εμφανίσου", hide: "κρύψου",
     print_text: "γράψε %1 στο x %2 y %3", print_value: "γράψε τιμή %1 στο x %2 y %3",
-    text_colour: "χρώμα κειμένου %1", clear: "καθάρισε τη σκηνή",
+    text_colour: "χρώμα κειμένου %1", text_style: "στυλ κειμένου %1 (1 έντονα, 2 πλάγια, 4 υπογράμμιση)", clear: "καθάρισε τη σκηνή",
     set: "όρισε %1 σε %2", change: "άλλαξε %1 κατά %2",
     not: "όχι %1", random: "τυχαίος από %1 έως %2", key_held: "πατιέται το %1;",
     touching: "αγγίζει το %1;", at_edge: "στην άκρη;", prop: "%1 του %2", frames: "καρέ",
     and: "και", or: "ή", mod: "υπόλοιπο",
     switch_costume: "άλλαξε κοστούμι σε %1", next_costume: "επόμενο κοστούμι", costume: "αριθμός κοστουμιού",
     play_note: "παίξε νότα %1 για %2 καρέ στο κανάλι %3", start_note: "ξεκίνα νότα %1 για %2 καρέ στο κανάλι %3",
-    noise: "θόρυβος %1 για %2 καρέ στο κανάλι %3", stop_sounds: "σταμάτα τους ήχους", set_volume: "ένταση %1",
+    noise: "θόρυβος %1 για %2 καρέ στο κανάλι %3", music: "μουσική %1 (.MUS, με το MUSIC)", stop_sounds: "σταμάτα τους ήχους", set_volume: "ένταση %1",
     list_add: "πρόσθεσε %1 στη %2", list_delete: "διάγραψε το %1 της %2", list_insert: "βάλε %1 στη θέση %2 της %3",
     list_replace: "άλλαξε το %1 της %2 σε %3", list_clear: "άδειασε τη %1",
     item: "στοιχείο %1 της %2", length: "μήκος της %1", contains: "η %1 έχει το %2;",
@@ -235,14 +235,14 @@ const BT = {
     set_velocity: "velocity vx %1 vy %2", move: "move", bounce: "bounce off the edges",
     set_colour: "set colour to %1", set_size: "set size w %1 h %2", show: "show", hide: "hide",
     print_text: "print %1 at x %2 y %3", print_value: "print value %1 at x %2 y %3",
-    text_colour: "text colour %1", clear: "clear the stage",
+    text_colour: "text colour %1", text_style: "text style %1 (1 bold, 2 italic, 4 underline)", clear: "clear the stage",
     set: "set %1 to %2", change: "change %1 by %2",
     not: "not %1", random: "random %1 to %2", key_held: "key %1 held?",
     touching: "touching %1?", at_edge: "at an edge?", prop: "%1 of %2", frames: "frames",
     and: "and", or: "or", mod: "mod",
     switch_costume: "switch costume to %1", next_costume: "next costume", costume: "costume number",
     play_note: "play note %1 for %2 frames on channel %3", start_note: "start note %1 for %2 frames on channel %3",
-    noise: "noise %1 for %2 frames on channel %3", stop_sounds: "stop all sounds", set_volume: "volume %1",
+    noise: "noise %1 for %2 frames on channel %3", music: "music %1 (.MUS, by MUSIC)", stop_sounds: "stop all sounds", set_volume: "volume %1",
     list_add: "add %1 to %2", list_delete: "delete %1 of %2", list_insert: "insert %1 at %2 of %3",
     list_replace: "replace item %1 of %2 with %3", list_clear: "delete all of %1",
     item: "item %1 of %2", length: "length of %1", contains: "%1 contains %2?",
@@ -336,8 +336,10 @@ function defineBlocks() {
   st("show", [], COL.looks);
   st("hide", [], COL.looks);
   st("print_text", [{ type: "field_input", name: "TEXT", text: "HELLO" }, num("X"), num("Y")], COL.text);
+  st("music", [{ type: "field_input", name: "SONG", text: "AGANAMEM" }], COL.sound);
   st("print_value", [num("VALUE"), num("X"), num("Y")], COL.text);
   st("text_colour", [num("TO")], COL.text);
+  st("text_style", [num("TO")], COL.text);
   st("clear", [], COL.text);
   st("set", [{ type: "field_variable", name: "VAR", variable: "score", variableTypes: [""] }, num("TO")], COL.vars);
   st("change", [{ type: "field_variable", name: "VAR", variable: "score", variableTypes: [""] }, num("BY")], COL.vars);
@@ -392,9 +394,9 @@ function toolbox() {
     cat("c_looks", COL.looks, [b("switch_costume"), b("next_costume"), b("costume"),
       b("set_colour", { TO: N(1) }), b("set_size", { W: N(8), H: N(8) }), b("show"), b("hide")]),
     cat("c_sound", COL.sound, [b("play_note", { NOTE: N(60), FRAMES: N(25) }), b("start_note", { NOTE: N(60), FRAMES: N(25) }),
-      b("noise", { PITCH: N(8), FRAMES: N(10) }), b("stop_sounds"), b("set_volume", { TO: N(12) })]),
+      b("noise", { PITCH: N(8), FRAMES: N(10) }), b("music"), b("stop_sounds"), b("set_volume", { TO: N(12) })]),
     cat("c_text", COL.text, [b("print_text", { X: N(0), Y: N(16) }), b("print_value", { VALUE: N(0), X: N(0), Y: N(16) }),
-      b("text_colour", { TO: N(1) }), b("clear")]),
+      b("text_colour", { TO: N(1) }), b("text_style", { TO: N(1) }), b("clear")]),
     cat("c_ops", COL.ops, [b("num"), b("op", { A: N(0), B: N(0) }), b("not"), b("random", { FROM: N(1), TO: N(10) })]),
     cat("c_sense", COL.sense, [b("key_held"), b("touching"), b("at_edge"), b("prop"), b("frames")]),
     cat("c_ui", COL.ui, [b("window", { W: N(160), H: N(80) }), b("button", { X: N(8), Y: N(24) }),
@@ -439,7 +441,7 @@ const STMT_INPUTS = {   // block -> [vbp key, Blockly input]
   wait_until: [["cond", "COND"]], go_to: [["x", "X"], ["y", "Y"]], set_x: [["to", "TO"]], set_y: [["to", "TO"]],
   change_x: [["by", "BY"]], change_y: [["by", "BY"]], set_velocity: [["vx", "VX"], ["vy", "VY"]],
   set_colour: [["to", "TO"]], set_size: [["w", "W"], ["h", "H"]], print_text: [["x", "X"], ["y", "Y"]],
-  print_value: [["value", "VALUE"], ["x", "X"], ["y", "Y"]], text_colour: [["to", "TO"]],
+  print_value: [["value", "VALUE"], ["x", "X"], ["y", "Y"]], text_colour: [["to", "TO"]], text_style: [["to", "TO"]],
   set: [["to", "TO"]], change: [["by", "BY"]],
   play_note: [["note", "NOTE"], ["frames", "FRAMES"]], start_note: [["note", "NOTE"], ["frames", "FRAMES"]],
   noise: [["pitch", "PITCH"], ["frames", "FRAMES"]], set_volume: [["to", "TO"]],
@@ -493,6 +495,7 @@ function toVbp(ws) {
       if (ty === "switch_costume") s.to = f.COSTUME;
       if (ty === "window") s.title = f.TITLE;
       if (ty === "button") s.text = f.TEXT;
+      if (ty === "music") s.song = f.SONG;
       if (f.CHANNEL !== undefined) s.channel = +f.CHANNEL;
       if (f.LIST) s.list = fieldVar(f.LIST);
       out.push(s);
@@ -591,6 +594,7 @@ function fromVbp(p) {
       if (ty === "switch_costume") b.fields.COSTUME = String(s.to);
       if (ty === "window") b.fields.TITLE = String(s.title ?? "");
       if (ty === "button") b.fields.TEXT = String(s.text ?? "");
+      if (ty === "music") b.fields.SONG = String(s.song ?? "");
       if (["play_note", "start_note", "noise"].includes(ty)) b.fields.CHANNEL = String(s.channel || 0);
       if (s.list !== undefined) b.fields.LIST = L(s.list);
       if (!Blockly.Blocks[b.type]) throw new Error("block " + s.block);

@@ -166,7 +166,9 @@ En la columna "Bloque", los huecos aparecen como en el script.
 | NEXT COSTUME | el siguiente, y después del último otra vez el primero |
 | SHOW, HIDE | |
 | PRINT *valor* AT *x* *y* | escribe un número |
+| STYLE *n* | el estilo de los PRINT y TEXT que siguen: 1 negrita, 2 cursiva, 4 subrayado, sumados (7: todos), 0 normal |
 | NOTE *n* FOR *fotogramas* | toca una nota (número MIDI: 60 = do, 69 = la 440 Hz) y espera a que termine |
+| MUSIC *"nombre"* | toca la canción *nombre*`.MUS` del disquete del programa, detrás de él, con el programa MUSIC (en A: o B:). Sigue después de que el programa termina, hasta el STOP de MUSIC (F6). Hace falta una ampliación de memoria; sin ella: "CIERRE PRIMERO OTRO PROGRAMA". Un nombre que no está (o vacío) para la música |
 
 ### VARIABLES
 

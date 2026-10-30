@@ -188,8 +188,10 @@ OP_NEXT_COSTUME equ 35
 OP_LABEL        equ 36
 OP_SAVE_VARS    equ 37
 OP_LOAD_VARS    equ 38
-OP_COUNT        equ 39
-OP_INFO         equ 13              ; flags, 3 classes, 3 default slots
+OP_STYLE        equ 39              ; 1 bold, 2 italic, 4 underline
+OP_MUSIC        equ 40              ; a .MUS played behind (MUSIC)
+OP_COUNT        equ 41
+OP_INFO         equ 10              ; flags, 3 classes, 3 default slots
 
 FOCUS_SCRIPT    equ 0
 FOCUS_PAL       equ 1
@@ -1829,8 +1831,20 @@ put_line:
         ld bc,4                     ; past flags and classes
         add hl,bc
         pop de
-        ld bc,9
-        ldir
+        ld b,3                      ; the slots: kind, value, high 0
+.slot:
+        ld a,(hl)
+        ld (de),a
+        inc hl
+        inc de
+        ld a,(hl)
+        ld (de),a
+        inc hl
+        inc de
+        xor a
+        ld (de),a
+        inc de
+        djnz .slot
         ret
 
 delete_line:
@@ -4074,15 +4088,12 @@ op_ptr:
         push de
         ld l,a
         ld h,0
-        ld d,h
-        ld e,l
-        add hl,hl
         add hl,hl
         ld b,h
         ld c,l
         add hl,hl
-        add hl,bc
-        add hl,de                   ; * 13
+        add hl,hl
+        add hl,bc                   ; * 10
         ld de,ops
         add hl,de
         pop de
@@ -4121,61 +4132,59 @@ dlg_new:        db T_STUDIO, T_D_NEW, 2, VM_YES, VM_NO
 dlg_pauses:     db T_BEHIND, T_D_PAUSES, 2, VM_YES, VM_NO
 dlg_runs:       db T_BEHIND, T_D_RUNS, 2, VM_YES, VM_NO
 
-; blocks: flags, the classes of slots 0..2, default slots (kind, value)
+; blocks: flags, the classes of slots 0..2, default slots (kind, value;
+; the high byte of a value is 0)
 ops:
-        db F_HAT,  C_SPR, 0, 0,             K_SPR, 0, 0, 0, 0, 0, 0, 0, 0             ; WHEN START
-        db F_HAT,  C_SPR, C_KEYN, 0,        K_SPR, 0, 0, K_KEYN, VK_SPACE, 0, 0, 0, 0 ; WHEN KEY
-        db F_HAT,  C_SPR, 0, 0,             K_SPR, 0, 0, 0, 0, 0, 0, 0, 0             ; WHEN CLICKED
-        db F_OPEN, 0, 0, 0,                 0, 0, 0, 0, 0, 0, 0, 0, 0                 ; FOREVER
-        db F_OPEN, C_VALUE, 0, 0,           K_NUM, 10, 0, 0, 0, 0, 0, 0, 0            ; REPEAT
-        db F_OPEN + F_COND, C_VALUE, C_CMP, C_VALUE
-        db                                  K_KEY, VK_SPACE, 0, K_NONE, 0, 0, K_NUM, 0, 0 ; IF
-        db F_ELSE, 0, 0, 0,                 0, 0, 0, 0, 0, 0, 0, 0, 0                 ; ELSE
-        db F_END,  0, 0, 0,                 0, 0, 0, 0, 0, 0, 0, 0, 0                 ; END
-        db 0,      C_VALUE, 0, 0,           K_NUM, 25, 0, 0, 0, 0, 0, 0, 0            ; WAIT
-        db F_COND, C_VALUE, C_CMP, C_VALUE
-        db                                  K_KEY, VK_SPACE, 0, K_NONE, 0, 0, K_NUM, 0, 0 ; WAIT UNTIL
-        db 0,      0, 0, 0,                 0, 0, 0, 0, 0, 0, 0, 0, 0                 ; STOP
-        db 0,      C_VALUE, C_VALUE, 0,     K_NUM, 96, 0, K_NUM, 120, 0, 0, 0, 0      ; GO TO
-        db 0,      C_VALUE, 0, 0,           K_NUM, 4, 0, 0, 0, 0, 0, 0, 0             ; CHANGE X
-        db 0,      C_VALUE, 0, 0,           K_NUM, 4, 0, 0, 0, 0, 0, 0, 0             ; CHANGE Y
-        db 0,      C_VALUE, C_VALUE, 0,     K_NUM, 2, 0, K_NUM, 2, 0, 0, 0, 0         ; SPEED
-        db 0,      0, 0, 0,                 0, 0, 0, 0, 0, 0, 0, 0, 0                 ; MOVE
-        db 0,      0, 0, 0,                 0, 0, 0, 0, 0, 0, 0, 0, 0                 ; BOUNCE
-        db 0,      C_VALUE, 0, 0,           K_NUM, 8, 0, 0, 0, 0, 0, 0, 0             ; COLOUR
-        db 0,      0, 0, 0,                 0, 0, 0, 0, 0, 0, 0, 0, 0                 ; SHOW
-        db 0,      0, 0, 0,                 0, 0, 0, 0, 0, 0, 0, 0, 0                 ; HIDE
-        db 0,      C_VALUE, C_VALUE, C_VALUE
-        db                                  K_VAR, 0, 0, K_NUM, 8, 0, K_NUM, 20, 0    ; PRINT
-        db 0,      C_VALUE, C_VALUE, 0,     K_NUM, 60, 0, K_NUM, 10, 0, 0, 0, 0       ; NOTE
-        db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 0, 0, 0, 0, 0         ; SET
-        db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 1, 0, 0, 0, 0         ; CHANGE
-        db F_HAT,  C_SPR, C_VALUE, 0,       K_SPR, 0, 0, K_NUM, 1, 0, 0, 0, 0         ; WHEN I RECEIVE
-        db 0,      C_VALUE, 0, 0,           K_NUM, 1, 0, 0, 0, 0, 0, 0, 0             ; BROADCAST
-        db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 1, 0, 0, 0, 0         ; DECREASE
-        db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 10, 0, 0, 0, 0        ; MULTIPLY
-        db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 2, 0, 0, 0, 0         ; DIVIDE
-        db 0,      C_VAR, C_VALUE, 0,       K_VAR, 0, 0, K_NUM, 2, 0, 0, 0, 0         ; REMAINDER
-        db 0,      C_TEXT, C_VALUE, C_VALUE
-        db                                  K_TEXT, 0, 0, K_NUM, 120, 0, K_NUM, 100, 0  ; WINDOW
-        db 0,      C_TEXT, C_VALUE, C_VALUE
-        db                                  K_TEXT, 0, 0, K_NUM, 8, 0, K_NUM, 24, 0   ; BUTTON
-        db F_HAT,  C_SPR, 0, 0,             K_SPR, 0, 0, 0, 0, 0, 0, 0, 0             ; WHEN BUTTON
-        db 0,      C_TEXT, C_VALUE, C_VALUE
-        db                                  K_TEXT, 0, 0, K_NUM, 8, 0, K_NUM, 4, 0    ; TEXT
-        db 0,      C_VALUE, 0, 0,           K_NUM, 1, 0, 0, 0, 0, 0, 0, 0             ; COSTUME
-        db 0,      0, 0, 0,                 0, 0, 0, 0, 0, 0, 0, 0, 0                 ; NEXT COSTUME
-        db 0,      C_TEXT, C_VALUE, 0,      K_TEXT, 0, 0, K_NUM, 0, 0, 0, 0, 0        ; LABEL
-        db 0,      C_TEXT, C_GROUP, 0,      K_TEXT, 0, 0, K_GROUP, 16, 0, 0, 0, 0     ; SAVE VARS
-        db 0,      C_TEXT, C_GROUP, 0,      K_TEXT, 0, 0, K_GROUP, 16, 0, 0, 0, 0     ; LOAD VARS
+        db F_HAT,          C_SPR, 0, 0,        K_SPR, 0, 0, 0, 0, 0              ; WHEN START
+        db F_HAT,          C_SPR, C_KEYN, 0,   K_SPR, 0, K_KEYN, VK_SPACE, 0, 0  ; WHEN KEY
+        db F_HAT,          C_SPR, 0, 0,        K_SPR, 0, 0, 0, 0, 0              ; WHEN CLICKED
+        db F_OPEN,         0, 0, 0,            0, 0, 0, 0, 0, 0                  ; FOREVER
+        db F_OPEN,         C_VALUE, 0, 0,      K_NUM, 10, 0, 0, 0, 0             ; REPEAT
+        db F_OPEN + F_COND,C_VALUE, C_CMP, C_VALUE, K_KEY, VK_SPACE, K_NONE, 0, K_NUM, 0 ; IF
+        db F_ELSE,         0, 0, 0,            0, 0, 0, 0, 0, 0                  ; ELSE
+        db F_END,          0, 0, 0,            0, 0, 0, 0, 0, 0                  ; END
+        db 0,              C_VALUE, 0, 0,      K_NUM, 25, 0, 0, 0, 0             ; WAIT
+        db F_COND,         C_VALUE, C_CMP, C_VALUE, K_KEY, VK_SPACE, K_NONE, 0, K_NUM, 0 ; WAIT UNTIL
+        db 0,              0, 0, 0,            0, 0, 0, 0, 0, 0                  ; STOP
+        db 0,              C_VALUE, C_VALUE, 0,K_NUM, 96, K_NUM, 120, 0, 0       ; GO TO
+        db 0,              C_VALUE, 0, 0,      K_NUM, 4, 0, 0, 0, 0              ; CHANGE X
+        db 0,              C_VALUE, 0, 0,      K_NUM, 4, 0, 0, 0, 0              ; CHANGE Y
+        db 0,              C_VALUE, C_VALUE, 0,K_NUM, 2, K_NUM, 2, 0, 0          ; SPEED
+        db 0,              0, 0, 0,            0, 0, 0, 0, 0, 0                  ; MOVE
+        db 0,              0, 0, 0,            0, 0, 0, 0, 0, 0                  ; BOUNCE
+        db 0,              C_VALUE, 0, 0,      K_NUM, 8, 0, 0, 0, 0              ; COLOUR
+        db 0,              0, 0, 0,            0, 0, 0, 0, 0, 0                  ; SHOW
+        db 0,              0, 0, 0,            0, 0, 0, 0, 0, 0                  ; HIDE
+        db 0,              C_VALUE, C_VALUE, C_VALUE,K_VAR, 0, K_NUM, 8, K_NUM, 20     ; PRINT
+        db 0,              C_VALUE, C_VALUE, 0,K_NUM, 60, K_NUM, 10, 0, 0        ; NOTE
+        db 0,              C_VAR, C_VALUE, 0,  K_VAR, 0, K_NUM, 0, 0, 0          ; SET
+        db 0,              C_VAR, C_VALUE, 0,  K_VAR, 0, K_NUM, 1, 0, 0          ; CHANGE
+        db F_HAT,          C_SPR, C_VALUE, 0,  K_SPR, 0, K_NUM, 1, 0, 0          ; WHEN I RECEIVE
+        db 0,              C_VALUE, 0, 0,      K_NUM, 1, 0, 0, 0, 0              ; BROADCAST
+        db 0,              C_VAR, C_VALUE, 0,  K_VAR, 0, K_NUM, 1, 0, 0          ; DECREASE
+        db 0,              C_VAR, C_VALUE, 0,  K_VAR, 0, K_NUM, 10, 0, 0         ; MULTIPLY
+        db 0,              C_VAR, C_VALUE, 0,  K_VAR, 0, K_NUM, 2, 0, 0          ; DIVIDE
+        db 0,              C_VAR, C_VALUE, 0,  K_VAR, 0, K_NUM, 2, 0, 0          ; REMAINDER
+        db 0,              C_TEXT, C_VALUE, C_VALUE,K_TEXT, 0, K_NUM, 120, K_NUM, 100 ; WINDOW
+        db 0,              C_TEXT, C_VALUE, C_VALUE,K_TEXT, 0, K_NUM, 8, K_NUM, 24    ; BUTTON
+        db F_HAT,          C_SPR, 0, 0,        K_SPR, 0, 0, 0, 0, 0              ; WHEN BUTTON
+        db 0,              C_TEXT, C_VALUE, C_VALUE,K_TEXT, 0, K_NUM, 8, K_NUM, 4     ; TEXT
+        db 0,              C_VALUE, 0, 0,      K_NUM, 1, 0, 0, 0, 0              ; COSTUME
+        db 0,              0, 0, 0,            0, 0, 0, 0, 0, 0                  ; NEXT COSTUME
+        db 0,              C_TEXT, C_VALUE, 0, K_TEXT, 0, K_NUM, 0, 0, 0         ; LABEL
+        db 0,              C_TEXT, C_GROUP, 0, K_TEXT, 0, K_GROUP, 16, 0, 0      ; SAVE VARS
+        db 0,              C_TEXT, C_GROUP, 0, K_TEXT, 0, K_GROUP, 16, 0, 0      ; LOAD VARS
+        db 0,              C_VALUE, 0, 0,      K_NUM, 1, 0, 0, 0, 0              ; STYLE
+        db 0,              C_TEXT, 0, 0,       K_TEXT, 0, 0, 0, 0, 0             ; MUSIC
         assert $ - ops == OP_COUNT * OP_INFO
 
 CATS            equ 6
-cat_first:      db 0, 5, 13, 19, 26, 34, OP_COUNT  ; in pal_order
+cat_first:      db 0, 5, 13, 19, 28, 36, OP_COUNT  ; in pal_order
 pal_order:      db 0, 1, 2, OP_RECEIVE, OP_BROADCAST    ; events
                 db 3, 4, 5, 6, 7, 8, 9, 10              ; control
                 db 11, 12, 13, 14, 15, 16               ; motion
-                db 17, 18, 19, OP_COSTUME, OP_NEXT_COSTUME, 20, 21  ; looks, sound
+                db 17, 18, 19, OP_COSTUME, OP_NEXT_COSTUME, 20, OP_STYLE, 21
+                db OP_MUSIC                             ; looks, sound
                 db 22, 23, OP_SUB, OP_MUL, OP_DIV, OP_MOD   ; variables
                 db OP_SAVE_VARS, OP_LOAD_VARS
                 db OP_WINDOW, OP_BUTTON, OP_PRESSED, OP_TEXT    ; windows

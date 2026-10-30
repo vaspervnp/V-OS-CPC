@@ -55,7 +55,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-notepad windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-notepad windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -716,6 +716,47 @@ test-sysinfo: $(SYSINFO_DSK) $(BUILD)/markdown.dsk $(BUILD)/SYSINFO.BIN
 	  cp $(SYSINFO_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/markdown.dsk $(BUILD)/vos_run_b.dsk; \
 	  iDSK $(BUILD)/vos_run.dsk -i $(BUILD)/SYSINFO.BIN -t 1 -c 4000 -e 4000 > /dev/null; \
 	  snap run --shell caprice32.launcher -c "VOS_RAM=$(SYSINFO_RAM) VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The STYLE block (TEST_SCRIPT=23, as test-sysinfo): STYLES.VBN, from
+# blocks/examples/styles.vbt, last on A:, run from the Commander
+$(BUILD)/STYLES.VBN $(BUILD)/STYLES.VBS &: blocks/examples/styles.vbt tools/mkvbs.py apps/studio/blocks.txt $(BUILD)/VBRUN.SYS
+	$(PYTHON) -I tools/mkvbs.py $< $(BUILD)/STYLES.VBS $(BUILD)/VBRUN.SYS $(BUILD)/STYLES.VBN
+
+STYLES_SHOTS := 330
+test-styles: $(SYSINFO_DSK) $(BUILD)/markdown.dsk $(BUILD)/STYLES.VBN
+	rm -rf $(BUILD)/shots
+	for d in $(STYLES_SHOTS); do \
+	  cp $(SYSINFO_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/markdown.dsk $(BUILD)/vos_run_b.dsk; \
+	  iDSK $(BUILD)/vos_run.dsk -i $(BUILD)/STYLES.VBN -t 1 -c 4000 -e 4000 > /dev/null; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The MUSIC block (TEST_SCRIPT=27, 576K): TUNE.VBN (blocks/examples/
+# tune.vbt) and AGANAMEM.MUS last on A:, MUSIC.BIN on B: (music.dsk)
+$(BUILD)/TUNE.VBN $(BUILD)/TUNE.VBS &: blocks/examples/tune.vbt tools/mkvbs.py apps/studio/blocks.txt $(BUILD)/VBRUN.SYS
+	$(PYTHON) -I tools/mkvbs.py $< $(BUILD)/TUNE.VBS $(BUILD)/VBRUN.SYS $(BUILD)/TUNE.VBN
+
+MBLOCK_DSK := $(BUILD)/vos_mblock.dsk
+MBLOCK_SHOTS := 380 520 600 680
+MBLOCK_RAM := 576
+$(MBLOCK_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/TUNE.VBN $(BUILD)/music.dsk
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_mblock -DTEST_SCRIPT=27
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(call add_apps,$@,myapps/music/owndisc/AGANAMEM.MUS $(BUILD)/TUNE.VBN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-music-block: $(MBLOCK_DSK) $(BUILD)/music.dsk
+	rm -rf $(BUILD)/shots
+	for d in $(MBLOCK_SHOTS); do \
+	  cp $(MBLOCK_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/music.dsk $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=$(MBLOCK_RAM) VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
 

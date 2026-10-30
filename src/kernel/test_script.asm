@@ -52,10 +52,12 @@
 ; =====================================================================
 
 ; ---------------------------------------------------------------------
-; test_inject - interrupt context, right after the matrix is read
-; Destroys: AF, DE, HL, IX
+; test_inject_x - interrupt context, right after the matrix is read,
+; through test_inject (src/vos.asm): this file is in the second
+; extension (kernel/ext2.asm), so it takes no room in the kernel.
+; Destroys: AF, BC, DE, HL, IX
 ; ---------------------------------------------------------------------
-test_inject:
+test_inject_x:
         IFDEF TEST_DUMP                 ; from frame TEST_DUMP: the stack
         ld a,(int_ticks)                ; on the screen (test_show), now
         and #3F                         ; and then (it takes a while; by
@@ -89,27 +91,25 @@ test_inject:
         ret z                       ; #FFFF ends the script
         push hl
         or a
-        sbc hl,de                   ; before the start?
-        pop hl
-        jr c,.next
-        ld e,(ix+2)
-        ld d,(ix+3)
-        push hl
+        sbc hl,de                   ; frames since its first
+        ld a,h
         or a
-        sbc hl,de                   ; before the end?
+        ld a,l
         pop hl
-        jr nc,.next
-        ld a,(ix+4)
+        jr nz,.next                 ; before it, or long after
+        cp (ix+2)
+        jr nc,.next                 ; past its last
+        ld a,(ix+3)
         cp #80                      ; not a key: cursor keys move the
         jr c,.key                   ; pointer (1) or not (0)
         jr nz,.ptr_x
-        ld a,(ix+5)
+        ld a,(ix+4)
         ld (ptr_keys_on),a
         jr .next
 .ptr_x:
         cp #81                      ; the pointer to x = bits * 2
         jr nz,.ptr_y
-        ld a,(ix+5)
+        ld a,(ix+4)
         ld e,a
         ld d,0
         ex de,hl
@@ -118,24 +118,24 @@ test_inject:
         ex de,hl
         jr .next
 .ptr_y:
-        ld a,(ix+5)                 ; #82: to y = bits
+        ld a,(ix+4)                 ; #82: to y = bits
         ld (ptr_y),a
         xor a
         ld (ptr_y + 1),a
         jr .next
 .key:
         push hl
-        ld a,(ix+4)
+        ld a,(ix+3)
         ld hl,kbd_now
         ld e,a
         ld d,0
         add hl,de
-        ld a,(ix+5)
+        ld a,(ix+4)
         or (hl)
         ld (hl),a
         pop hl
 .next:
-        ld de,6
+        ld de,5
         add ix,de
         jr .entry
 
@@ -148,7 +148,7 @@ test_inject:
 TT_BUF          equ GAP2 + 700      ; GAP2 is free from fs_blist's end
 TT_SIZE         equ 96
 TT_POS          equ GAP2 + 698
-test_ring:
+test_ring_x:
         ld b,PPI_B >> 8
         in a,(c)
         rrca
@@ -156,8 +156,8 @@ test_ring:
         ld hl,int_slice
         or (hl)
         ld e,a
-        ld hl,12                    ; the interrupted PC: past this call
-        add hl,sp                   ; and int_handler's 5 pushes
+        ld hl,14                    ; the interrupted PC: past this call,
+        add hl,sp                   ; test_x's and int_handler's 5 pushes
         ld a,(hl)
         inc hl
         ld h,(hl)
@@ -241,7 +241,7 @@ test_show:
 
 test_frame:     dw 0
 
-; dw first frame, frame after the last; db matrix line, bits
+; dw first frame; db frames held (1..255), matrix line, bits
 ; (line #80: bits = ptr_keys_on; #81: pointer x = bits * 2, in pixels
 ; of the mode the pointer is in; #82: pointer y = bits)
         IF TEST_SCRIPT == 2
@@ -265,51 +265,70 @@ test_frame:     dw 0
 ;   frame 2800  RETURN       -> WINDOW added, the dialog asks its text
 ;   frame 2900, 2950 H, I, 3050 RETURN -> WINDOW "ΗΙ" 120 100
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  420,  424 : db 0, %00000100   ; DOWN
-        dw  470,  474 : db 0, %00000100   ; DOWN
-        dw  510,  514 : db 0, %00000010   ; RIGHT
-        dw  535,  539 : db 0, %00000010   ; RIGHT
-        dw  560,  564 : db 2, %00000100   ; RETURN
-        dw  900,  901 : db #80, 1         ; COPY is the left button
-        dw  900, 1000 : db #81, 56        ; 1 (x = 112 in mode 1)
-        dw  900, 1000 : db #82, 161
-        dw  950,  954 : db 1, %00000010   ; COPY
-        dw 1000, 1100 : db #81, 80        ; 2
-        dw 1000, 1100 : db #82, 161
-        dw 1050, 1054 : db 1, %00000010
-        dw 1100, 1200 : db #81, 128       ; +
-        dw 1100, 1200 : db #82, 181
-        dw 1150, 1154 : db 1, %00000010
-        dw 1200, 1300 : db #81, 104       ; 3
-        dw 1200, 1300 : db #82, 161
-        dw 1250, 1254 : db 1, %00000010
-        dw 1300, 1400 : db #81, 104       ; =
-        dw 1300, 1400 : db #82, 181
-        dw 1350, 1354 : db 1, %00000010
-        dw 1450, 1451 : db #80, 0
-        dw 1495, 1510 : db 2, %10000000   ; CONTROL
-        dw 1500, 1504 : db 8, %00001000   ; Q
-        dw 1700, 1704 : db 0, %00000001   ; UP
-        dw 1750, 1754 : db 0, %00000001   ; UP
-        dw 1900, 1904 : db 2, %00000100   ; RETURN
-        dw 2095, 2110 : db 2, %10000000   ; CONTROL
-        dw 2100, 2104 : db 4, %00000100   ; O
-        dw 2150, 2154 : db 0, %00000001   ; UP: the last file (BRICKS.VBN)
-        dw 2178, 2182 : db 0, %00000001   ; UP: MINES.VBS
-        dw 2206, 2210 : db 0, %00000001   ; UP: MINES.VBN
-        dw 2234, 2238 : db 0, %00000001   ; UP: VBRUN.SYS
-        dw 2262, 2266 : db 0, %00000001   ; UP: TICKER.VBS
-        dw 2290, 2294 : db 0, %00000001   ; UP: TICKER.VBN
-        dw 2318, 2322 : db 0, %00000001   ; UP: CLOCK.BIN
-        dw 2346, 2350 : db 0, %00000001   ; UP: CALC.VBS
-        dw 2400, 2404 : db 2, %00000100   ; RETURN
-        dw 2600, 2604 : db 8, %00010000   ; TAB
-        dw 2650, 2654 : db 1, %00000001   ; LEFT
-        dw 2800, 2804 : db 2, %00000100   ; RETURN
-        dw 2900, 2904 : db 5, %00010000   ; H
-        dw 2950, 2954 : db 4, %00001000   ; I
-        dw 3050, 3054 : db 2, %00000100   ; RETURN
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  420 : db   4, 0, %00000100   ; DOWN
+        dw  470 : db   4, 0, %00000100   ; DOWN
+        dw  510 : db   4, 0, %00000010   ; RIGHT
+        dw  535 : db   4, 0, %00000010   ; RIGHT
+        dw  560 : db   4, 2, %00000100   ; RETURN
+        dw  900 : db   1, #80, 1         ; COPY is the left button
+        dw  900 : db 100, #81, 56        ; 1 (x = 112 in mode 1)
+        dw  900 : db 100, #82, 161
+        dw  950 : db   4, 1, %00000010   ; COPY
+        dw 1000 : db 100, #81, 80        ; 2
+        dw 1000 : db 100, #82, 161
+        dw 1050 : db   4, 1, %00000010
+        dw 1100 : db 100, #81, 128       ; +
+        dw 1100 : db 100, #82, 181
+        dw 1150 : db   4, 1, %00000010
+        dw 1200 : db 100, #81, 104       ; 3
+        dw 1200 : db 100, #82, 161
+        dw 1250 : db   4, 1, %00000010
+        dw 1300 : db 100, #81, 104       ; =
+        dw 1300 : db 100, #82, 181
+        dw 1350 : db   4, 1, %00000010
+        dw 1450 : db   1, #80, 0
+        dw 1495 : db  15, 2, %10000000   ; CONTROL
+        dw 1500 : db   4, 8, %00001000   ; Q
+        dw 1700 : db   4, 0, %00000001   ; UP
+        dw 1750 : db   4, 0, %00000001   ; UP
+        dw 1900 : db   4, 2, %00000100   ; RETURN
+        dw 2095 : db  15, 2, %10000000   ; CONTROL
+        dw 2100 : db   4, 4, %00000100   ; O
+        dw 2150 : db   4, 0, %00000001   ; UP: the last file (BRICKS.VBN)
+        dw 2178 : db   4, 0, %00000001   ; UP: MINES.VBS
+        dw 2206 : db   4, 0, %00000001   ; UP: MINES.VBN
+        dw 2234 : db   4, 0, %00000001   ; UP: VBRUN.SYS
+        dw 2262 : db   4, 0, %00000001   ; UP: TICKER.VBS
+        dw 2290 : db   4, 0, %00000001   ; UP: TICKER.VBN
+        dw 2318 : db   4, 0, %00000001   ; UP: CLOCK.BIN
+        dw 2346 : db   4, 0, %00000001   ; UP: CALC.VBS
+        dw 2400 : db   4, 2, %00000100   ; RETURN
+        dw 2600 : db   4, 8, %00010000   ; TAB
+        dw 2650 : db   4, 1, %00000001   ; LEFT
+        dw 2800 : db   4, 2, %00000100   ; RETURN
+        dw 2900 : db   4, 5, %00010000   ; H
+        dw 2950 : db   4, 4, %00001000   ; I
+        dw 3050 : db   4, 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 27
+; make test-music-block (-DTEST_SCRIPT=27, 576K): Studio's MUSIC block.
+; A: the test disc with AGANAMEM.MUS and TUNE.VBN last, B: music.dsk
+; (MUSIC.BIN). Expected:
+;   frame  300  F3           -> the Commander
+;   frame  400-850 DOWN held -> the last file, TUNE.VBN
+;   frame  900  RETURN       -> TUNE: MUSIC BEHIND; MUSIC starts behind
+;                               it with AGANAMEM.MUS (the disc turns)
+;   frame 1500  F6           -> the programs: "> TUNE", MUSIC selected
+;   frame 1700  RETURN       -> MUSIC in front: A:AGANAMEM PLAYING
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db 255, 0, %00000100   ; DOWN, held
+        dw  655 : db 195, 0, %00000100
+        dw  900 : db   4, 2, %00000100   ; RETURN: TUNE
+        dw 1500 : db   4, 0, %00010000   ; F6: MUSIC selected
+        dw 1700 : db   4, 2, %00000100   ; RETURN: MUSIC
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 26
@@ -322,17 +341,17 @@ test_keys:
 ;   frame 1500-1650 TAB x4   -> the fourth link, the secure page
 ;   frame 1750  RETURN       -> "ONLY HTTP ADDRESSES CAN BE OPENED"
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  450,  454 : db 8, %00010000   ; TAB: drive B:
-        dw  600,  604 : db 2, %00000100   ; RETURN: READER
-        dw  900,  904 : db 8, %00010000   ; TAB: a link
-        dw 1000, 1004 : db 2, %00000100   ; RETURN: follow it
-        dw 1300, 1304 : db 9, %10000000   ; DEL: back
-        dw 1500, 1504 : db 8, %00010000   ; TAB
-        dw 1550, 1554 : db 8, %00010000   ; TAB
-        dw 1600, 1604 : db 8, %00010000   ; TAB
-        dw 1650, 1654 : db 8, %00010000   ; TAB
-        dw 1750, 1754 : db 2, %00000100   ; RETURN: the secure page
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  450 : db   4, 8, %00010000   ; TAB: drive B:
+        dw  600 : db   4, 2, %00000100   ; RETURN: READER
+        dw  900 : db   4, 8, %00010000   ; TAB: a link
+        dw 1000 : db   4, 2, %00000100   ; RETURN: follow it
+        dw 1300 : db   4, 9, %10000000   ; DEL: back
+        dw 1500 : db   4, 8, %00010000   ; TAB
+        dw 1550 : db   4, 8, %00010000   ; TAB
+        dw 1600 : db   4, 8, %00010000   ; TAB
+        dw 1650 : db   4, 8, %00010000   ; TAB
+        dw 1750 : db   4, 2, %00000100   ; RETURN: the secure page
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 25
@@ -344,13 +363,14 @@ test_keys:
 ;   frame 1300  RETURN       -> GETTING IT..., then SAVED, BYTES: n, and
 ;                               A:INDEX.HTM on the disc
 test_keys:
-        dw  300,  304 : db 0, %00100000   ; F3
-        dw  400,  850 : db 0, %00000100   ; DOWN, held
-        dw  900,  904 : db 2, %00000100   ; RETURN: WEBGET
-        dw 1095, 1110 : db 2, %10000000   ; CONTROL
-        dw 1100, 1104 : db 6, %00010000   ; G
-        dw 1200, 1204 : db 2, %00000100   ; RETURN: the address
-        dw 1300, 1304 : db 2, %00000100   ; RETURN: the name
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db 255, 0, %00000100   ; DOWN, held
+        dw  655 : db 195, 0, %00000100
+        dw  900 : db   4, 2, %00000100   ; RETURN: WEBGET
+        dw 1095 : db  15, 2, %10000000   ; CONTROL
+        dw 1100 : db   4, 6, %00010000   ; G
+        dw 1200 : db   4, 2, %00000100   ; RETURN: the address
+        dw 1300 : db   4, 2, %00000100   ; RETURN: the name
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 24
@@ -371,36 +391,36 @@ test_keys:
 ;   frame 1800  UP, 1850 RETURN -> MARKDOWN with README.MD
 ;   frame 2050  CONTROL+V    -> the two lines before its first line
 test_keys:
-        dw  300,  304 : db 0, %00100000   ; F3
-        dw  400,  404 : db 8, %00010000   ; TAB: the B: panel
-        dw  450,  454 : db 0, %00000100   ; DOWN
-        dw  500,  504 : db 0, %00000100   ; DOWN: HELLO.TXT
-        dw  600,  604 : db 2, %00000100   ; RETURN: NOTEPAD
-        dw  800, 1000 : db 2, %00100000   ; SHIFT, held
-        dw  820,  824 : db 0, %00000010   ; RIGHT
-        dw  840,  844 : db 0, %00000010
-        dw  860,  864 : db 0, %00000010
-        dw  880,  884 : db 0, %00000010
-        dw  900,  904 : db 0, %00000010
-        dw  920,  924 : db 0, %00000010
-        dw 1045, 1060 : db 2, %10000000   ; CONTROL
-        dw 1050, 1054 : db 7, %01000000   ; C
-        dw 1100, 1104 : db 0, %00000100   ; DOWN
-        dw 1145, 1160 : db 2, %10000000   ; CONTROL
-        dw 1150, 1154 : db 6, %10000000   ; V
-        dw 1295, 1310 : db 2, %10000000   ; CONTROL
-        dw 1300, 1304 : db 8, %00100000   ; A
-        dw 1395, 1410 : db 2, %10000000   ; CONTROL
-        dw 1400, 1404 : db 7, %10000000   ; X
-        dw 1495, 1510 : db 2, %10000000   ; CONTROL
-        dw 1500, 1504 : db 6, %10000000   ; V
-        dw 1595, 1610 : db 2, %10000000   ; CONTROL
-        dw 1600, 1604 : db 8, %00001000   ; Q
-        dw 1700, 1704 : db 2, %00000100   ; RETURN: YES, leave it
-        dw 1800, 1804 : db 0, %00000001   ; UP: README.MD
-        dw 1850, 1854 : db 2, %00000100   ; RETURN: MARKDOWN
-        dw 2045, 2060 : db 2, %10000000   ; CONTROL
-        dw 2050, 2054 : db 6, %10000000   ; V
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db   4, 8, %00010000   ; TAB: the B: panel
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  500 : db   4, 0, %00000100   ; DOWN: HELLO.TXT
+        dw  600 : db   4, 2, %00000100   ; RETURN: NOTEPAD
+        dw  800 : db 200, 2, %00100000   ; SHIFT, held
+        dw  820 : db   4, 0, %00000010   ; RIGHT
+        dw  840 : db   4, 0, %00000010
+        dw  860 : db   4, 0, %00000010
+        dw  880 : db   4, 0, %00000010
+        dw  900 : db   4, 0, %00000010
+        dw  920 : db   4, 0, %00000010
+        dw 1045 : db  15, 2, %10000000   ; CONTROL
+        dw 1050 : db   4, 7, %01000000   ; C
+        dw 1100 : db   4, 0, %00000100   ; DOWN
+        dw 1145 : db  15, 2, %10000000   ; CONTROL
+        dw 1150 : db   4, 6, %10000000   ; V
+        dw 1295 : db  15, 2, %10000000   ; CONTROL
+        dw 1300 : db   4, 8, %00100000   ; A
+        dw 1395 : db  15, 2, %10000000   ; CONTROL
+        dw 1400 : db   4, 7, %10000000   ; X
+        dw 1495 : db  15, 2, %10000000   ; CONTROL
+        dw 1500 : db   4, 6, %10000000   ; V
+        dw 1595 : db  15, 2, %10000000   ; CONTROL
+        dw 1600 : db   4, 8, %00001000   ; Q
+        dw 1700 : db   4, 2, %00000100   ; RETURN: YES, leave it
+        dw 1800 : db   4, 0, %00000001   ; UP: README.MD
+        dw 1850 : db   4, 2, %00000100   ; RETURN: MARKDOWN
+        dw 2045 : db  15, 2, %10000000   ; CONTROL
+        dw 2050 : db   4, 6, %10000000   ; V
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 23
@@ -414,13 +434,14 @@ test_keys:
 ;   frame 1100  CONTROL+R    -> the same, read again
 ;   frame 1250  CONTROL+Q    -> the Commander again
 test_keys:
-        dw  300,  304 : db 0, %00100000   ; F3
-        dw  400,  850 : db 0, %00000100   ; DOWN, held
-        dw  900,  904 : db 2, %00000100   ; RETURN: SYSINFO
-        dw 1095, 1110 : db 2, %10000000   ; CONTROL
-        dw 1100, 1104 : db 6, %00000100   ; R
-        dw 1245, 1260 : db 2, %10000000   ; CONTROL
-        dw 1250, 1254 : db 8, %00001000   ; Q
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db 255, 0, %00000100   ; DOWN, held
+        dw  655 : db 195, 0, %00000100
+        dw  900 : db   4, 2, %00000100   ; RETURN: SYSINFO
+        dw 1095 : db  15, 2, %10000000   ; CONTROL
+        dw 1100 : db   4, 6, %00000100   ; R
+        dw 1245 : db  15, 2, %10000000   ; CONTROL
+        dw 1250 : db   4, 8, %00001000   ; Q
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 22
@@ -433,15 +454,15 @@ test_keys:
 ;   frame  950  DOWN x2      -> HELLO.TXT
 ;   frame 1100  RETURN       -> NOTEPAD (from A:) with HELLO.TXT
 test_keys:
-        dw  300,  304 : db 0, %00100000   ; F3
-        dw  400,  404 : db 8, %00010000   ; TAB: the B: panel
-        dw  450,  454 : db 0, %00000100   ; DOWN
-        dw  550,  554 : db 2, %00000100   ; RETURN: open README.MD
-        dw  795,  810 : db 2, %10000000   ; CONTROL
-        dw  800,  804 : db 8, %00001000   ; Q
-        dw  950,  954 : db 0, %00000100   ; DOWN
-        dw 1000, 1004 : db 0, %00000100   ; DOWN
-        dw 1100, 1104 : db 2, %00000100   ; RETURN: open HELLO.TXT
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db   4, 8, %00010000   ; TAB: the B: panel
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  550 : db   4, 2, %00000100   ; RETURN: open README.MD
+        dw  795 : db  15, 2, %10000000   ; CONTROL
+        dw  800 : db   4, 8, %00001000   ; Q
+        dw  950 : db   4, 0, %00000100   ; DOWN
+        dw 1000 : db   4, 0, %00000100   ; DOWN
+        dw 1100 : db   4, 2, %00000100   ; RETURN: open HELLO.TXT
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 21
@@ -458,16 +479,16 @@ test_keys:
 ;   frame 2200  RETURN       -> the text again
 ; (wide gaps: the shots, counted in typed keys, cannot aim closely)
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  450,  454 : db 8, %00010000   ; TAB: drive B:
-        dw  600,  604 : db 2, %00000100   ; RETURN: MARKDOWN
-        dw  745,  760 : db 2, %10000000   ; CONTROL
-        dw  750,  754 : db 4, %00000100   ; O
-        dw  850,  854 : db 2, %00000100   ; RETURN: README.MD
-        dw  995, 1010 : db 2, %10000000   ; CONTROL
-        dw 1000, 1004 : db 3, %00001000   ; P
-        dw 1600, 1604 : db 0, %00000010   ; RIGHT
-        dw 2200, 2204 : db 2, %00000100   ; RETURN: the text
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  450 : db   4, 8, %00010000   ; TAB: drive B:
+        dw  600 : db   4, 2, %00000100   ; RETURN: MARKDOWN
+        dw  745 : db  15, 2, %10000000   ; CONTROL
+        dw  750 : db   4, 4, %00000100   ; O
+        dw  850 : db   4, 2, %00000100   ; RETURN: README.MD
+        dw  995 : db  15, 2, %10000000   ; CONTROL
+        dw 1000 : db   4, 3, %00001000   ; P
+        dw 1600 : db   4, 0, %00000010   ; RIGHT
+        dw 2200 : db   4, 2, %00000100   ; RETURN: the text
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 20
@@ -481,14 +502,14 @@ test_keys:
 ;   frame 1200  F2           -> the Launcher; the song goes on behind it
 ;   frame 1400  RETURN       -> MUSIC again, still PLAYING
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  450,  454 : db 8, %00010000   ; TAB: drive B:
-        dw  600,  604 : db 2, %00000100   ; RETURN: MUSIC
-        dw  745,  760 : db 2, %10000000   ; CONTROL
-        dw  750,  754 : db 4, %00000100   ; O
-        dw  850,  854 : db 2, %00000100   ; RETURN: the first song
-        dw 1200, 1204 : db 1, %01000000   ; F2
-        dw 1400, 1404 : db 2, %00000100   ; RETURN: MUSIC again
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  450 : db   4, 8, %00010000   ; TAB: drive B:
+        dw  600 : db   4, 2, %00000100   ; RETURN: MUSIC
+        dw  745 : db  15, 2, %10000000   ; CONTROL
+        dw  750 : db   4, 4, %00000100   ; O
+        dw  850 : db   4, 2, %00000100   ; RETURN: the first song
+        dw 1200 : db   4, 1, %01000000   ; F2
+        dw 1400 : db   4, 2, %00000100   ; RETURN: MUSIC again
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 19
@@ -500,12 +521,12 @@ test_keys:
 ;                               AMSTRAD CPC 6128, REVIVE8BIT, 2026,
 ;                               ARCHITECT: VASPER
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  400,  404 : db 8, %00000100   ; ESC: the menus
-        dw  450,  454 : db 0, %00000010   ; RIGHT
-        dw  480,  484 : db 0, %00000010   ; RIGHT: HELP
-        dw  520,  524 : db 0, %00000100   ; DOWN: ABOUT V-OS
-        dw  600,  604 : db 2, %00000100   ; RETURN
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  400 : db   4, 8, %00000100   ; ESC: the menus
+        dw  450 : db   4, 0, %00000010   ; RIGHT
+        dw  480 : db   4, 0, %00000010   ; RIGHT: HELP
+        dw  520 : db   4, 0, %00000100   ; DOWN: ABOUT V-OS
+        dw  600 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 18
@@ -532,40 +553,40 @@ test_keys:
 ;                               pixel wide)
 ;   frame 2600  h            -> layer 3 hidden: the line goes
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  420,  424 : db 0, %00000100   ; DOWN
-        dw  450,  454 : db 0, %00000100   ; DOWN
-        dw  480,  484 : db 0, %00000100   ; DOWN
-        dw  520,  524 : db 0, %00000010   ; RIGHT
-        dw  550,  554 : db 0, %00000010   ; RIGHT
-        dw  580,  584 : db 0, %00000010   ; RIGHT
-        dw  610,  614 : db 0, %00000010   ; RIGHT
-        dw  660,  664 : db 2, %00000100   ; RETURN: PAINT
-        dw  800,  804 : db 8, %00010000   ; TAB
-        dw  830,  834 : db 8, %00010000   ; TAB
-        dw  860,  864 : db 8, %00010000   ; TAB: red
-        dw  900, 1000 : db 1, %00000010   ; COPY held
-        dw  920,  950 : db 0, %00000001   ; UP held
-        dw 1050, 1054 : db 7, %10000000   ; x: BOX
-        dw 1070, 1074 : db 8, %00010000   ; TAB: green
-        dw 1100, 1200 : db 1, %00000010   ; COPY held
-        dw 1110, 1145 : db 1, %00000001   ; LEFT held
-        dw 1250, 1254 : db 6, %00100000   ; f: FILL
-        dw 1270, 1274 : db 8, %00010000   ; TAB: yellow
-        dw 1300, 1304 : db 1, %00000010   ; COPY: fill
-        dw 1500, 1504 : db 8, %00000100   ; ESC: the menu
-        dw 1550, 1554 : db 0, %00000100   ; DOWN
-        dw 1600, 1604 : db 2, %00000100   ; RETURN: NEW LAYERS
-        dw 1650, 1654 : db 2, %00000100   ; RETURN: YES, not saved
-        dw 1700, 1704 : db 8, %00000001   ; 1: layer 1
-        dw 1720, 1724 : db 6, %00100000   ; f: FILL
-        dw 1750, 1754 : db 1, %00000010   ; COPY: fill
-        dw 2300, 2304 : db 7, %00000010   ; 3: layer 3
-        dw 2320, 2324 : db 7, %10000000   ; x: BOX
-        dw 2350, 2354 : db 8, %00010000   ; TAB: cyan
-        dw 2400, 2500 : db 1, %00000010   ; COPY held
-        dw 2410, 2450 : db 0, %00000001   ; UP held
-        dw 2600, 2604 : db 5, %00010000   ; h: hide
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  420 : db   4, 0, %00000100   ; DOWN
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  480 : db   4, 0, %00000100   ; DOWN
+        dw  520 : db   4, 0, %00000010   ; RIGHT
+        dw  550 : db   4, 0, %00000010   ; RIGHT
+        dw  580 : db   4, 0, %00000010   ; RIGHT
+        dw  610 : db   4, 0, %00000010   ; RIGHT
+        dw  660 : db   4, 2, %00000100   ; RETURN: PAINT
+        dw  800 : db   4, 8, %00010000   ; TAB
+        dw  830 : db   4, 8, %00010000   ; TAB
+        dw  860 : db   4, 8, %00010000   ; TAB: red
+        dw  900 : db 100, 1, %00000010   ; COPY held
+        dw  920 : db  30, 0, %00000001   ; UP held
+        dw 1050 : db   4, 7, %10000000   ; x: BOX
+        dw 1070 : db   4, 8, %00010000   ; TAB: green
+        dw 1100 : db 100, 1, %00000010   ; COPY held
+        dw 1110 : db  35, 1, %00000001   ; LEFT held
+        dw 1250 : db   4, 6, %00100000   ; f: FILL
+        dw 1270 : db   4, 8, %00010000   ; TAB: yellow
+        dw 1300 : db   4, 1, %00000010   ; COPY: fill
+        dw 1500 : db   4, 8, %00000100   ; ESC: the menu
+        dw 1550 : db   4, 0, %00000100   ; DOWN
+        dw 1600 : db   4, 2, %00000100   ; RETURN: NEW LAYERS
+        dw 1650 : db   4, 2, %00000100   ; RETURN: YES, not saved
+        dw 1700 : db   4, 8, %00000001   ; 1: layer 1
+        dw 1720 : db   4, 6, %00100000   ; f: FILL
+        dw 1750 : db   4, 1, %00000010   ; COPY: fill
+        dw 2300 : db   4, 7, %00000010   ; 3: layer 3
+        dw 2320 : db   4, 7, %10000000   ; x: BOX
+        dw 2350 : db   4, 8, %00010000   ; TAB: cyan
+        dw 2400 : db 100, 1, %00000010   ; COPY held
+        dw 2410 : db  40, 0, %00000001   ; UP held
+        dw 2600 : db   4, 5, %00010000   ; h: hide
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 17
@@ -583,39 +604,39 @@ test_keys:
 ;   frame 1700  CONTROL+O    -> the files of A:, to open one
 ;   frame 1850  ESC          -> no file: the empty text
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  420,  424 : db 0, %00000100   ; DOWN
-        dw  450,  454 : db 0, %00000100   ; DOWN
-        dw  480,  484 : db 0, %00000100   ; DOWN
-        dw  520,  524 : db 0, %00000010   ; RIGHT
-        dw  550,  554 : db 0, %00000010   ; RIGHT
-        dw  580,  584 : db 0, %00000010   ; RIGHT
-        dw  610,  614 : db 0, %00000010   ; RIGHT
-        dw  660,  664 : db 2, %00000100   ; RETURN: NOTEPAD
-        dw  800,  804 : db 5, %00010000   ; h
-        dw  830,  834 : db 4, %00001000   ; i
-        dw  860,  864 : db 2, %00000100   ; RETURN
-        dw  890,  894 : db 6, %10000000   ; v
-        dw  920,  924 : db 4, %00000100   ; o
-        dw  950,  954 : db 7, %00010000   ; s
-        dw 1000, 1004 : db 1, %00000001   ; LEFT
-        dw 1030, 1034 : db 1, %00000001   ; LEFT
-        dw 1060, 1064 : db 9, %10000000   ; DEL
-        dw 1145, 1160 : db 2, %10000000   ; CONTROL
-        dw 1150, 1154 : db 7, %00010000   ; S
-        dw 1250, 1254 : db 9, %10000000   ; DEL
-        dw 1280, 1284 : db 9, %10000000   ; DEL
-        dw 1310, 1314 : db 9, %10000000   ; DEL
-        dw 1340, 1344 : db 9, %10000000   ; DEL
-        dw 1370, 1374 : db 9, %10000000   ; DEL
-        dw 1400, 1404 : db 9, %10000000   ; DEL
-        dw 1430, 1434 : db 6, %00001000   ; t
-        dw 1480, 1484 : db 2, %00000100   ; RETURN: save
-        dw 1595, 1610 : db 2, %10000000   ; CONTROL
-        dw 1600, 1604 : db 5, %01000000   ; N
-        dw 1695, 1710 : db 2, %10000000   ; CONTROL
-        dw 1700, 1704 : db 4, %00000100   ; O
-        dw 1850, 1854 : db 8, %00000100   ; ESC
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  420 : db   4, 0, %00000100   ; DOWN
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  480 : db   4, 0, %00000100   ; DOWN
+        dw  520 : db   4, 0, %00000010   ; RIGHT
+        dw  550 : db   4, 0, %00000010   ; RIGHT
+        dw  580 : db   4, 0, %00000010   ; RIGHT
+        dw  610 : db   4, 0, %00000010   ; RIGHT
+        dw  660 : db   4, 2, %00000100   ; RETURN: NOTEPAD
+        dw  800 : db   4, 5, %00010000   ; h
+        dw  830 : db   4, 4, %00001000   ; i
+        dw  860 : db   4, 2, %00000100   ; RETURN
+        dw  890 : db   4, 6, %10000000   ; v
+        dw  920 : db   4, 4, %00000100   ; o
+        dw  950 : db   4, 7, %00010000   ; s
+        dw 1000 : db   4, 1, %00000001   ; LEFT
+        dw 1030 : db   4, 1, %00000001   ; LEFT
+        dw 1060 : db   4, 9, %10000000   ; DEL
+        dw 1145 : db  15, 2, %10000000   ; CONTROL
+        dw 1150 : db   4, 7, %00010000   ; S
+        dw 1250 : db   4, 9, %10000000   ; DEL
+        dw 1280 : db   4, 9, %10000000   ; DEL
+        dw 1310 : db   4, 9, %10000000   ; DEL
+        dw 1340 : db   4, 9, %10000000   ; DEL
+        dw 1370 : db   4, 9, %10000000   ; DEL
+        dw 1400 : db   4, 9, %10000000   ; DEL
+        dw 1430 : db   4, 6, %00001000   ; t
+        dw 1480 : db   4, 2, %00000100   ; RETURN: save
+        dw 1595 : db  15, 2, %10000000   ; CONTROL
+        dw 1600 : db   4, 5, %01000000   ; N
+        dw 1695 : db  15, 2, %10000000   ; CONTROL
+        dw 1700 : db   4, 4, %00000100   ; O
+        dw 1850 : db   4, 8, %00000100   ; ESC
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 16
@@ -635,22 +656,22 @@ test_keys:
 ;                               the best five over the playfield
 ;   frame 1900  ^Q           -> back: the Launcher, still on B:
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2: the Launcher
-        dw  450,  454 : db 8, %00010000   ; TAB: drive B:
-        dw  600,  604 : db 2, %00000100   ; RETURN: VROUVES
-        dw  800,  804 : db 5, %10000000   ; SPACE: a Cretan
-        dw  850,  854 : db 0, %00000001   ; UP
-        dw  880,  884 : db 7, %00000001   ; 4: Psssst
-        dw  910,  914 : db 5, %10000000   ; SPACE
-        dw  960,  964 : db 5, %01000000   ; N: the first wave
-        dw 1100, 1104 : db 8, %00000100   ; ESC: the menu
-        dw 1130, 1134 : db 0, %00000100   ; DOWN
-        dw 1160, 1164 : db 0, %00000100   ; DOWN
-        dw 1190, 1194 : db 0, %00000100   ; DOWN
-        dw 1220, 1224 : db 0, %00000100   ; DOWN
-        dw 1250, 1254 : db 2, %00000100   ; RETURN: HIGH SCORES
-        dw 1895, 1910 : db 2, %10000000   ; CONTROL
-        dw 1900, 1904 : db 8, %00001000   ; Q
+        dw  300 : db   4, 1, %01000000   ; F2: the Launcher
+        dw  450 : db   4, 8, %00010000   ; TAB: drive B:
+        dw  600 : db   4, 2, %00000100   ; RETURN: VROUVES
+        dw  800 : db   4, 5, %10000000   ; SPACE: a Cretan
+        dw  850 : db   4, 0, %00000001   ; UP
+        dw  880 : db   4, 7, %00000001   ; 4: Psssst
+        dw  910 : db   4, 5, %10000000   ; SPACE
+        dw  960 : db   4, 5, %01000000   ; N: the first wave
+        dw 1100 : db   4, 8, %00000100   ; ESC: the menu
+        dw 1130 : db   4, 0, %00000100   ; DOWN
+        dw 1160 : db   4, 0, %00000100   ; DOWN
+        dw 1190 : db   4, 0, %00000100   ; DOWN
+        dw 1220 : db   4, 0, %00000100   ; DOWN
+        dw 1250 : db   4, 2, %00000100   ; RETURN: HIGH SCORES
+        dw 1895 : db  15, 2, %10000000   ; CONTROL
+        dw 1900 : db   4, 8, %00001000   ; Q
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 15
@@ -667,24 +688,24 @@ test_keys:
 ;   frame 1450  RETURN       -> closed
 ;   frame 1550  CONTROL+Q    -> BACK: the Launcher
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  420,  424 : db 0, %00000100   ; DOWN
-        dw  450,  454 : db 0, %00000100   ; DOWN
-        dw  480,  484 : db 0, %00000100   ; DOWN
-        dw  520,  524 : db 0, %00000010   ; RIGHT
-        dw  550,  554 : db 0, %00000010   ; RIGHT
-        dw  580,  584 : db 0, %00000010   ; RIGHT
-        dw  610,  614 : db 0, %00000010   ; RIGHT
-        dw  660,  664 : db 2, %00000100   ; RETURN: TEMPLATE
-        dw  800,  900 : db 0, %00000010   ; RIGHT held
-        dw  950, 1000 : db 0, %00000001   ; UP held
-        dw 1100, 1104 : db 8, %00010000   ; TAB
-        dw 1130, 1134 : db 2, %00000100   ; RETURN: BEEP
-        dw 1250, 1254 : db 8, %00000100   ; ESC: the menu
-        dw 1350, 1354 : db 2, %00000100   ; RETURN: ABOUT
-        dw 1450, 1454 : db 2, %00000100   ; RETURN: OK
-        dw 1545, 1560 : db 2, %10000000   ; CONTROL
-        dw 1550, 1554 : db 8, %00001000   ; Q
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  420 : db   4, 0, %00000100   ; DOWN
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  480 : db   4, 0, %00000100   ; DOWN
+        dw  520 : db   4, 0, %00000010   ; RIGHT
+        dw  550 : db   4, 0, %00000010   ; RIGHT
+        dw  580 : db   4, 0, %00000010   ; RIGHT
+        dw  610 : db   4, 0, %00000010   ; RIGHT
+        dw  660 : db   4, 2, %00000100   ; RETURN: TEMPLATE
+        dw  800 : db 100, 0, %00000010   ; RIGHT held
+        dw  950 : db  50, 0, %00000001   ; UP held
+        dw 1100 : db   4, 8, %00010000   ; TAB
+        dw 1130 : db   4, 2, %00000100   ; RETURN: BEEP
+        dw 1250 : db   4, 8, %00000100   ; ESC: the menu
+        dw 1350 : db   4, 2, %00000100   ; RETURN: ABOUT
+        dw 1450 : db   4, 2, %00000100   ; RETURN: OK
+        dw 1545 : db  15, 2, %10000000   ; CONTROL
+        dw 1550 : db   4, 8, %00001000   ; Q
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 14
@@ -699,17 +720,17 @@ test_keys:
 ;               when the ball is missed, and at 0 GAME OVER
 ;   frame 3600  SPACE        -> a new game: all bricks, SCORE 0, LIVES 3
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  420,  424 : db 0, %00000100   ; DOWN
-        dw  450,  454 : db 0, %00000100   ; DOWN
-        dw  480,  484 : db 0, %00000100   ; DOWN
-        dw  520,  524 : db 0, %00000010   ; RIGHT
-        dw  550,  554 : db 0, %00000010   ; RIGHT
-        dw  580,  584 : db 0, %00000010   ; RIGHT
-        dw  630,  634 : db 2, %00000100   ; RETURN: BRICKS
-        dw  900, 1000 : db 0, %00000010   ; RIGHT held
-        dw 1200, 1300 : db 1, %00000001   ; LEFT held
-        dw 3600, 3604 : db 5, %10000000   ; SPACE: a new game
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  420 : db   4, 0, %00000100   ; DOWN
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  480 : db   4, 0, %00000100   ; DOWN
+        dw  520 : db   4, 0, %00000010   ; RIGHT
+        dw  550 : db   4, 0, %00000010   ; RIGHT
+        dw  580 : db   4, 0, %00000010   ; RIGHT
+        dw  630 : db   4, 2, %00000100   ; RETURN: BRICKS
+        dw  900 : db 100, 0, %00000010   ; RIGHT held
+        dw 1200 : db 100, 1, %00000001   ; LEFT held
+        dw 3600 : db   4, 5, %10000000   ; SPACE: a new game
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 13
@@ -727,46 +748,46 @@ test_keys:
 ;                               then after SAVE VARS and LOAD VARS
 ;                               0 9 7 12 10
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  400,  404 : db 0, %00000010   ; RIGHT
-        dw  440,  444 : db 0, %00000010   ; RIGHT
-        dw  480,  484 : db 2, %00000100   ; RETURN: STUDIO
-        dw  795,  810 : db 2, %10000000   ; CONTROL
-        dw  800,  804 : db 4, %00000100   ; O
-        dw  860,  864 : db 0, %00000001   ; UP: the last file (VARS.VBS)
-        dw  920,  924 : db 2, %00000100   ; RETURN
-        dw 1000, 1004 : db 0, %00000100   ; DOWN: SET A TO 1
-        dw 1030, 1034 : db 0, %00000010   ; RIGHT: its variable
-        dw 1060, 1064 : db 8, %00100000   ; A: A1
-        dw 1090, 1094 : db 8, %00100000   ; A: A2
-        dw 1130, 1134 : db 0, %00000100   ; DOWN
-        dw 1140, 1144 : db 0, %00000100   ; DOWN
-        dw 1150, 1154 : db 0, %00000100   ; DOWN
-        dw 1160, 1164 : db 0, %00000100   ; DOWN
-        dw 1170, 1174 : db 0, %00000100   ; DOWN
-        dw 1180, 1184 : db 0, %00000100   ; DOWN
-        dw 1190, 1194 : db 0, %00000100   ; DOWN
-        dw 1200, 1204 : db 0, %00000100   ; DOWN
-        dw 1210, 1214 : db 0, %00000100   ; DOWN
-        dw 1220, 1224 : db 0, %00000100   ; DOWN
-        dw 1230, 1234 : db 0, %00000100   ; DOWN
-        dw 1240, 1244 : db 0, %00000100   ; DOWN
-        dw 1250, 1254 : db 0, %00000100   ; DOWN
-        dw 1260, 1264 : db 0, %00000100   ; DOWN
-        dw 1270, 1274 : db 0, %00000100   ; DOWN
-        dw 1280, 1284 : db 0, %00000100   ; DOWN
-        dw 1290, 1294 : db 0, %00000100   ; DOWN
-        dw 1300, 1304 : db 0, %00000100   ; DOWN
-        dw 1310, 1314 : db 0, %00000100   ; DOWN
-        dw 1320, 1324 : db 0, %00000100   ; DOWN
-        dw 1330, 1334 : db 0, %00000100   ; DOWN
-        dw 1340, 1344 : db 0, %00000100   ; DOWN
-        dw 1350, 1354 : db 0, %00000100   ; DOWN
-        dw 1380, 1384 : db 0, %00000010   ; RIGHT, RIGHT: the group of
-        dw 1410, 1414 : db 0, %00000010   ; LOAD VARS A-H FROM "row1"
-        dw 1440, 1444 : db 8, %00100000   ; A: A1-H1
-        dw 1595, 1610 : db 2, %10000000   ; CONTROL
-        dw 1600, 1604 : db 6, %00000100   ; R
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  400 : db   4, 0, %00000010   ; RIGHT
+        dw  440 : db   4, 0, %00000010   ; RIGHT
+        dw  480 : db   4, 2, %00000100   ; RETURN: STUDIO
+        dw  795 : db  15, 2, %10000000   ; CONTROL
+        dw  800 : db   4, 4, %00000100   ; O
+        dw  860 : db   4, 0, %00000001   ; UP: the last file (VARS.VBS)
+        dw  920 : db   4, 2, %00000100   ; RETURN
+        dw 1000 : db   4, 0, %00000100   ; DOWN: SET A TO 1
+        dw 1030 : db   4, 0, %00000010   ; RIGHT: its variable
+        dw 1060 : db   4, 8, %00100000   ; A: A1
+        dw 1090 : db   4, 8, %00100000   ; A: A2
+        dw 1130 : db   4, 0, %00000100   ; DOWN
+        dw 1140 : db   4, 0, %00000100   ; DOWN
+        dw 1150 : db   4, 0, %00000100   ; DOWN
+        dw 1160 : db   4, 0, %00000100   ; DOWN
+        dw 1170 : db   4, 0, %00000100   ; DOWN
+        dw 1180 : db   4, 0, %00000100   ; DOWN
+        dw 1190 : db   4, 0, %00000100   ; DOWN
+        dw 1200 : db   4, 0, %00000100   ; DOWN
+        dw 1210 : db   4, 0, %00000100   ; DOWN
+        dw 1220 : db   4, 0, %00000100   ; DOWN
+        dw 1230 : db   4, 0, %00000100   ; DOWN
+        dw 1240 : db   4, 0, %00000100   ; DOWN
+        dw 1250 : db   4, 0, %00000100   ; DOWN
+        dw 1260 : db   4, 0, %00000100   ; DOWN
+        dw 1270 : db   4, 0, %00000100   ; DOWN
+        dw 1280 : db   4, 0, %00000100   ; DOWN
+        dw 1290 : db   4, 0, %00000100   ; DOWN
+        dw 1300 : db   4, 0, %00000100   ; DOWN
+        dw 1310 : db   4, 0, %00000100   ; DOWN
+        dw 1320 : db   4, 0, %00000100   ; DOWN
+        dw 1330 : db   4, 0, %00000100   ; DOWN
+        dw 1340 : db   4, 0, %00000100   ; DOWN
+        dw 1350 : db   4, 0, %00000100   ; DOWN
+        dw 1380 : db   4, 0, %00000010   ; RIGHT, RIGHT: the group of
+        dw 1410 : db   4, 0, %00000010   ; LOAD VARS A-H FROM "row1"
+        dw 1440 : db   4, 8, %00100000   ; A: A1-H1
+        dw 1595 : db  15, 2, %10000000   ; CONTROL
+        dw 1600 : db   4, 6, %00000100   ; R
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 12
@@ -781,65 +802,69 @@ test_keys:
 ;                               more opens
 ;   frame 2200  NEW          -> a new game, all cells closed
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  420,  424 : db 0, %00000100   ; DOWN
-        dw  450,  454 : db 0, %00000100   ; DOWN
-        dw  480,  484 : db 0, %00000100   ; DOWN
-        dw  520,  524 : db 0, %00000010   ; RIGHT
-        dw  550,  554 : db 0, %00000010   ; RIGHT
-        dw  600,  604 : db 2, %00000100   ; RETURN: MINES
-        dw 1180, 2260 : db #80, 1         ; COPY is the left button
-        dw 1200, 1260 : db #81, 46        ; cell 0 (92, 93)
-        dw 1200, 1260 : db #82, 93
-        dw 1230, 1234 : db 1, %00000010
-        dw 1260, 1320 : db #81, 60        ; cell 1
-        dw 1260, 1320 : db #82, 93
-        dw 1290, 1294 : db 1, %00000010
-        dw 1320, 1380 : db #81, 74        ; cell 2
-        dw 1320, 1380 : db #82, 93
-        dw 1350, 1354 : db 1, %00000010
-        dw 1380, 1440 : db #81, 88        ; cell 3
-        dw 1380, 1440 : db #82, 93
-        dw 1410, 1414 : db 1, %00000010
-        dw 1440, 1500 : db #81, 102       ; cell 4
-        dw 1440, 1500 : db #82, 93
-        dw 1470, 1474 : db 1, %00000010
-        dw 1500, 1560 : db #81, 116       ; cell 5
-        dw 1500, 1560 : db #82, 93
-        dw 1530, 1534 : db 1, %00000010
-        dw 1560, 1620 : db #81, 130       ; cell 6
-        dw 1560, 1620 : db #82, 93
-        dw 1590, 1594 : db 1, %00000010
-        dw 1620, 1680 : db #81, 144       ; cell 7
-        dw 1620, 1680 : db #82, 93
-        dw 1650, 1654 : db 1, %00000010
-        dw 1680, 1740 : db #81, 46        ; cell 8
-        dw 1680, 1740 : db #82, 111
-        dw 1710, 1714 : db 1, %00000010
-        dw 1740, 1800 : db #81, 60        ; cell 9
-        dw 1740, 1800 : db #82, 111
-        dw 1770, 1774 : db 1, %00000010
-        dw 1800, 1860 : db #81, 74        ; cell 10
-        dw 1800, 1860 : db #82, 111
-        dw 1830, 1834 : db 1, %00000010
-        dw 1860, 1920 : db #81, 88        ; cell 11
-        dw 1860, 1920 : db #82, 111
-        dw 1890, 1894 : db 1, %00000010
-        dw 1920, 1980 : db #81, 102       ; cell 12
-        dw 1920, 1980 : db #82, 111
-        dw 1950, 1954 : db 1, %00000010
-        dw 1980, 2040 : db #81, 116       ; cell 13
-        dw 1980, 2040 : db #82, 111
-        dw 2010, 2014 : db 1, %00000010
-        dw 2040, 2100 : db #81, 130       ; cell 14
-        dw 2040, 2100 : db #82, 111
-        dw 2070, 2074 : db 1, %00000010
-        dw 2100, 2160 : db #81, 144       ; cell 15
-        dw 2100, 2160 : db #82, 111
-        dw 2130, 2134 : db 1, %00000010
-        dw 2200, 2250 : db #81, 54        ; NEW (108, 203)
-        dw 2200, 2250 : db #82, 203
-        dw 2220, 2224 : db 1, %00000010
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  420 : db   4, 0, %00000100   ; DOWN
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  480 : db   4, 0, %00000100   ; DOWN
+        dw  520 : db   4, 0, %00000010   ; RIGHT
+        dw  550 : db   4, 0, %00000010   ; RIGHT
+        dw  600 : db   4, 2, %00000100   ; RETURN: MINES
+        dw 1180 : db 255, #80, 1         ; COPY is the left button
+        dw 1435 : db 255, #80, 1
+        dw 1690 : db 255, #80, 1
+        dw 1945 : db 255, #80, 1
+        dw 2200 : db  60, #80, 1
+        dw 1200 : db  60, #81, 46        ; cell 0 (92, 93)
+        dw 1200 : db  60, #82, 93
+        dw 1230 : db   4, 1, %00000010
+        dw 1260 : db  60, #81, 60        ; cell 1
+        dw 1260 : db  60, #82, 93
+        dw 1290 : db   4, 1, %00000010
+        dw 1320 : db  60, #81, 74        ; cell 2
+        dw 1320 : db  60, #82, 93
+        dw 1350 : db   4, 1, %00000010
+        dw 1380 : db  60, #81, 88        ; cell 3
+        dw 1380 : db  60, #82, 93
+        dw 1410 : db   4, 1, %00000010
+        dw 1440 : db  60, #81, 102       ; cell 4
+        dw 1440 : db  60, #82, 93
+        dw 1470 : db   4, 1, %00000010
+        dw 1500 : db  60, #81, 116       ; cell 5
+        dw 1500 : db  60, #82, 93
+        dw 1530 : db   4, 1, %00000010
+        dw 1560 : db  60, #81, 130       ; cell 6
+        dw 1560 : db  60, #82, 93
+        dw 1590 : db   4, 1, %00000010
+        dw 1620 : db  60, #81, 144       ; cell 7
+        dw 1620 : db  60, #82, 93
+        dw 1650 : db   4, 1, %00000010
+        dw 1680 : db  60, #81, 46        ; cell 8
+        dw 1680 : db  60, #82, 111
+        dw 1710 : db   4, 1, %00000010
+        dw 1740 : db  60, #81, 60        ; cell 9
+        dw 1740 : db  60, #82, 111
+        dw 1770 : db   4, 1, %00000010
+        dw 1800 : db  60, #81, 74        ; cell 10
+        dw 1800 : db  60, #82, 111
+        dw 1830 : db   4, 1, %00000010
+        dw 1860 : db  60, #81, 88        ; cell 11
+        dw 1860 : db  60, #82, 111
+        dw 1890 : db   4, 1, %00000010
+        dw 1920 : db  60, #81, 102       ; cell 12
+        dw 1920 : db  60, #82, 111
+        dw 1950 : db   4, 1, %00000010
+        dw 1980 : db  60, #81, 116       ; cell 13
+        dw 1980 : db  60, #82, 111
+        dw 2010 : db   4, 1, %00000010
+        dw 2040 : db  60, #81, 130       ; cell 14
+        dw 2040 : db  60, #82, 111
+        dw 2070 : db   4, 1, %00000010
+        dw 2100 : db  60, #81, 144       ; cell 15
+        dw 2100 : db  60, #82, 111
+        dw 2130 : db   4, 1, %00000010
+        dw 2200 : db  50, #81, 54        ; NEW (108, 203)
+        dw 2200 : db  50, #82, 203
+        dw 2220 : db   4, 1, %00000010
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 11
@@ -855,23 +880,23 @@ test_keys:
 ;                               keys @ ; ] : -> e grave, a grave,
 ;                               u grave, o grave; 1800 ESC
 test_keys:
-        dw  300,  304 : db 2, %00010000   ; F4
-        dw  400,  404 : db 0, %00000100   ; DOWN: LANGUAGE
-        dw  450,  454 : db 0, %00000010   ; RIGHT: Greek
-        dw  600,  604 : db 0, %00000010   ; RIGHT: French
-        dw  750,  754 : db 0, %00000010   ; RIGHT: Spanish
-        dw  900,  904 : db 0, %00000010   ; RIGHT: German
-        dw 1050, 1054 : db 0, %00000010   ; RIGHT: Italian
-        dw 1200, 1204 : db 1, %00100000   ; F1
-        dw 1345, 1360 : db 2, %10000000   ; CONTROL
-        dw 1350, 1354 : db 5, %01000000   ; N
-        dw 1445, 1460 : db 2, %10000000   ; CONTROL, then
-        dw 1450, 1454 : db 2, %00100000   ; SHIFT
-        dw 1500, 1504 : db 3, %00000100   ; @
-        dw 1550, 1554 : db 3, %00010000   ; ;
-        dw 1600, 1604 : db 2, %00001000   ; ]
-        dw 1650, 1654 : db 3, %00100000   ; :
-        dw 1800, 1804 : db 8, %00000100   ; ESC
+        dw  300 : db   4, 2, %00010000   ; F4
+        dw  400 : db   4, 0, %00000100   ; DOWN: LANGUAGE
+        dw  450 : db   4, 0, %00000010   ; RIGHT: Greek
+        dw  600 : db   4, 0, %00000010   ; RIGHT: French
+        dw  750 : db   4, 0, %00000010   ; RIGHT: Spanish
+        dw  900 : db   4, 0, %00000010   ; RIGHT: German
+        dw 1050 : db   4, 0, %00000010   ; RIGHT: Italian
+        dw 1200 : db   4, 1, %00100000   ; F1
+        dw 1345 : db  15, 2, %10000000   ; CONTROL
+        dw 1350 : db   4, 5, %01000000   ; N
+        dw 1445 : db  15, 2, %10000000   ; CONTROL, then
+        dw 1450 : db   4, 2, %00100000   ; SHIFT
+        dw 1500 : db   4, 3, %00000100   ; @
+        dw 1550 : db   4, 3, %00010000   ; ;
+        dw 1600 : db   4, 2, %00001000   ; ]
+        dw 1650 : db   4, 3, %00100000   ; :
+        dw 1800 : db   4, 8, %00000100   ; ESC
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 10
@@ -890,50 +915,50 @@ test_keys:
 ;                               right and down, with its buttons; 2200
 ;                               a click on 1 there: 1 shown
 test_keys:
-        dw  300,  420 : db #80, 1         ; COPY and the cursor keys
-        dw  300,  340 : db #81, 50        ; FILES's title bar (100, 23)
-        dw  300,  340 : db #82, 23
-        dw  340,  420 : db 1, %00000010   ; COPY held
-        dw  350,  380 : db 0, %00000010   ; RIGHT
-        dw  350,  365 : db 0, %00000100   ; DOWN
-        dw  495,  510 : db 2, %10000000   ; CONTROL
-        dw  500,  504 : db 4, %00100000   ; K: the keys dialog
-        dw  600,  740 : db #80, 1
-        dw  600,  640 : db #81, 75        ; its title bar (150, 64)
-        dw  600,  640 : db #82, 64
-        dw  640,  720 : db 1, %00000010   ; COPY held
-        dw  650,  675 : db 1, %00000001   ; LEFT
-        dw  650,  680 : db 0, %00000100   ; DOWN
-        dw  750,  751 : db #80, 0
-        dw  800,  804 : db 2, %00000100   ; RETURN: OK
-        dw  900,  904 : db 1, %01000000   ; F2
-        dw 1020, 1024 : db 0, %00000100   ; DOWN
-        dw 1050, 1054 : db 0, %00000100   ; DOWN
-        dw 1080, 1084 : db 0, %00000100   ; DOWN
-        dw 1115, 1130 : db 2, %10000000   ; CONTROL
-        dw 1120, 1124 : db 8, %00100000   ; A: CLOCK as the accessory
-        dw 1200, 1340 : db #80, 1
-        dw 1200, 1240 : db #81, 20        ; its title bar (40, 20, mode 0)
-        dw 1200, 1240 : db #82, 20
-        dw 1240, 1320 : db 1, %00000010   ; COPY held
-        dw 1250, 1275 : db 0, %00000010   ; RIGHT
-        dw 1250, 1290 : db 0, %00000100   ; DOWN
-        dw 1350, 1351 : db #80, 0
-        dw 1500, 1504 : db 1, %00010000   ; F5
-        dw 1550, 1554 : db 0, %00000001   ; UP
-        dw 1580, 1584 : db 0, %00000010   ; RIGHT
-        dw 1610, 1614 : db 0, %00000010   ; RIGHT
-        dw 1660, 1664 : db 2, %00000100   ; RETURN: CALC
-        dw 2000, 2140 : db #80, 1
-        dw 2000, 2040 : db #81, 75        ; its title bar (150, 76)
-        dw 2000, 2040 : db #82, 76
-        dw 2040, 2120 : db 1, %00000010   ; COPY held
-        dw 2050, 2075 : db 0, %00000010   ; RIGHT
-        dw 2050, 2075 : db 0, %00000100   ; DOWN
-        dw 2150, 2260 : db #80, 1         ; then its button 1, moved
-        dw 2150, 2260 : db #81, 76        ; with it (152, 204): 1 shown
-        dw 2150, 2260 : db #82, 204
-        dw 2200, 2204 : db 1, %00000010   ; COPY
+        dw  300 : db 120, #80, 1         ; COPY and the cursor keys
+        dw  300 : db  40, #81, 50        ; FILES's title bar (100, 23)
+        dw  300 : db  40, #82, 23
+        dw  340 : db  80, 1, %00000010   ; COPY held
+        dw  350 : db  30, 0, %00000010   ; RIGHT
+        dw  350 : db  15, 0, %00000100   ; DOWN
+        dw  495 : db  15, 2, %10000000   ; CONTROL
+        dw  500 : db   4, 4, %00100000   ; K: the keys dialog
+        dw  600 : db 140, #80, 1
+        dw  600 : db  40, #81, 75        ; its title bar (150, 64)
+        dw  600 : db  40, #82, 64
+        dw  640 : db  80, 1, %00000010   ; COPY held
+        dw  650 : db  25, 1, %00000001   ; LEFT
+        dw  650 : db  30, 0, %00000100   ; DOWN
+        dw  750 : db   1, #80, 0
+        dw  800 : db   4, 2, %00000100   ; RETURN: OK
+        dw  900 : db   4, 1, %01000000   ; F2
+        dw 1020 : db   4, 0, %00000100   ; DOWN
+        dw 1050 : db   4, 0, %00000100   ; DOWN
+        dw 1080 : db   4, 0, %00000100   ; DOWN
+        dw 1115 : db  15, 2, %10000000   ; CONTROL
+        dw 1120 : db   4, 8, %00100000   ; A: CLOCK as the accessory
+        dw 1200 : db 140, #80, 1
+        dw 1200 : db  40, #81, 20        ; its title bar (40, 20, mode 0)
+        dw 1200 : db  40, #82, 20
+        dw 1240 : db  80, 1, %00000010   ; COPY held
+        dw 1250 : db  25, 0, %00000010   ; RIGHT
+        dw 1250 : db  40, 0, %00000100   ; DOWN
+        dw 1350 : db   1, #80, 0
+        dw 1500 : db   4, 1, %00010000   ; F5
+        dw 1550 : db   4, 0, %00000001   ; UP
+        dw 1580 : db   4, 0, %00000010   ; RIGHT
+        dw 1610 : db   4, 0, %00000010   ; RIGHT
+        dw 1660 : db   4, 2, %00000100   ; RETURN: CALC
+        dw 2000 : db 140, #80, 1
+        dw 2000 : db  40, #81, 75        ; its title bar (150, 76)
+        dw 2000 : db  40, #82, 76
+        dw 2040 : db  80, 1, %00000010   ; COPY held
+        dw 2050 : db  25, 0, %00000010   ; RIGHT
+        dw 2050 : db  25, 0, %00000100   ; DOWN
+        dw 2150 : db 110, #80, 1         ; then its button 1, moved
+        dw 2150 : db 110, #81, 76        ; with it (152, 204): 1 shown
+        dw 2150 : db 110, #82, 204
+        dw 2200 : db   4, 1, %00000010   ; COPY
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 9
@@ -952,41 +977,41 @@ test_keys:
 ;   frame 2700  F6, 2750 DOWN, 2800 RETURN -> TICKER again: it counted
 ;                               the time behind, the ball moved on
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  400,  404 : db 0, %00000010   ; RIGHT
-        dw  440,  444 : db 0, %00000010   ; RIGHT
-        dw  480,  484 : db 2, %00000100   ; RETURN
-        dw  800,  804 : db 8, %00000100   ; ESC
-        dw  850,  854 : db 0, %00000100   ; DOWN
-        dw  880,  884 : db 0, %00000100   ; DOWN
-        dw  910,  914 : db 0, %00000100   ; DOWN
-        dw  940,  944 : db 0, %00000100   ; DOWN
-        dw  970,  974 : db 0, %00000100   ; DOWN
-        dw 1010, 1014 : db 2, %00000100   ; RETURN
-        dw 1100, 1104 : db 2, %00000100   ; RETURN
-        dw 1150, 1154 : db 8, %00000100   ; ESC
-        dw 1200, 1204 : db 0, %00000100   ; DOWN
-        dw 1230, 1234 : db 0, %00000100   ; DOWN
-        dw 1260, 1264 : db 0, %00000100   ; DOWN
-        dw 1290, 1294 : db 0, %00000100   ; DOWN
-        dw 1320, 1324 : db 0, %00000100   ; DOWN
-        dw 1360, 1364 : db 2, %00000100   ; RETURN
-        dw 1450, 1454 : db 8, %00000100   ; ESC
-        dw 1550, 1554 : db 1, %01000000   ; F2
-        dw 1650, 1654 : db 0, %00000100   ; DOWN
-        dw 1680, 1684 : db 0, %00000100   ; DOWN
-        dw 1710, 1714 : db 0, %00000010   ; RIGHT
-        dw 1740, 1744 : db 0, %00000010   ; RIGHT
-        dw 1800, 1804 : db 2, %00000100   ; RETURN
-        dw 2100, 2104 : db 1, %01000000   ; F2
-        dw 2200, 2204 : db 0, %00000001   ; UP
-        dw 2230, 2234 : db 0, %00000001   ; UP
-        dw 2260, 2264 : db 0, %00000001   ; UP
-        dw 2290, 2294 : db 1, %00000001   ; LEFT
-        dw 2330, 2334 : db 2, %00000100   ; RETURN
-        dw 2700, 2704 : db 0, %00010000   ; F6
-        dw 2750, 2754 : db 0, %00000100   ; DOWN
-        dw 2800, 2804 : db 2, %00000100   ; RETURN
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  400 : db   4, 0, %00000010   ; RIGHT
+        dw  440 : db   4, 0, %00000010   ; RIGHT
+        dw  480 : db   4, 2, %00000100   ; RETURN
+        dw  800 : db   4, 8, %00000100   ; ESC
+        dw  850 : db   4, 0, %00000100   ; DOWN
+        dw  880 : db   4, 0, %00000100   ; DOWN
+        dw  910 : db   4, 0, %00000100   ; DOWN
+        dw  940 : db   4, 0, %00000100   ; DOWN
+        dw  970 : db   4, 0, %00000100   ; DOWN
+        dw 1010 : db   4, 2, %00000100   ; RETURN
+        dw 1100 : db   4, 2, %00000100   ; RETURN
+        dw 1150 : db   4, 8, %00000100   ; ESC
+        dw 1200 : db   4, 0, %00000100   ; DOWN
+        dw 1230 : db   4, 0, %00000100   ; DOWN
+        dw 1260 : db   4, 0, %00000100   ; DOWN
+        dw 1290 : db   4, 0, %00000100   ; DOWN
+        dw 1320 : db   4, 0, %00000100   ; DOWN
+        dw 1360 : db   4, 2, %00000100   ; RETURN
+        dw 1450 : db   4, 8, %00000100   ; ESC
+        dw 1550 : db   4, 1, %01000000   ; F2
+        dw 1650 : db   4, 0, %00000100   ; DOWN
+        dw 1680 : db   4, 0, %00000100   ; DOWN
+        dw 1710 : db   4, 0, %00000010   ; RIGHT
+        dw 1740 : db   4, 0, %00000010   ; RIGHT
+        dw 1800 : db   4, 2, %00000100   ; RETURN
+        dw 2100 : db   4, 1, %01000000   ; F2
+        dw 2200 : db   4, 0, %00000001   ; UP
+        dw 2230 : db   4, 0, %00000001   ; UP
+        dw 2260 : db   4, 0, %00000001   ; UP
+        dw 2290 : db   4, 1, %00000001   ; LEFT
+        dw 2330 : db   4, 2, %00000100   ; RETURN
+        dw 2700 : db   4, 0, %00010000   ; F6
+        dw 2750 : db   4, 0, %00000100   ; DOWN
+        dw 2800 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 8
@@ -1003,26 +1028,26 @@ test_keys:
 ;   frame 2050  RETURN       -> STUDIO again
 ;   frame 2300  F6, 2350 RETURN -> DEMO goes on
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  400,  404 : db 0, %00000010   ; RIGHT
-        dw  440,  444 : db 0, %00000010   ; RIGHT
-        dw  480,  484 : db 2, %00000100   ; RETURN
-        dw  750,  754 : db 1, %01000000   ; F2
-        dw  850,  854 : db 1, %00000001   ; LEFT
-        dw  890,  894 : db 1, %00000001   ; LEFT
-        dw  930,  934 : db 2, %00000100   ; RETURN
-        dw 1100, 1104 : db 1, %01000000   ; F2
-        dw 1200, 1204 : db 0, %00000100   ; DOWN
-        dw 1260, 1264 : db 2, %00000100   ; RETURN
-        dw 1450, 1454 : db 1, %01000000   ; F2
-        dw 1550, 1554 : db 0, %00000010   ; RIGHT
-        dw 1590, 1594 : db 0, %00000010   ; RIGHT
-        dw 1630, 1634 : db 0, %00000100   ; DOWN
-        dw 1670, 1674 : db 2, %00000100   ; RETURN
-        dw 1950, 1954 : db 0, %00010000   ; F6
-        dw 2050, 2054 : db 2, %00000100   ; RETURN
-        dw 2300, 2304 : db 0, %00010000   ; F6
-        dw 2350, 2354 : db 2, %00000100   ; RETURN
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  400 : db   4, 0, %00000010   ; RIGHT
+        dw  440 : db   4, 0, %00000010   ; RIGHT
+        dw  480 : db   4, 2, %00000100   ; RETURN
+        dw  750 : db   4, 1, %01000000   ; F2
+        dw  850 : db   4, 1, %00000001   ; LEFT
+        dw  890 : db   4, 1, %00000001   ; LEFT
+        dw  930 : db   4, 2, %00000100   ; RETURN
+        dw 1100 : db   4, 1, %01000000   ; F2
+        dw 1200 : db   4, 0, %00000100   ; DOWN
+        dw 1260 : db   4, 2, %00000100   ; RETURN
+        dw 1450 : db   4, 1, %01000000   ; F2
+        dw 1550 : db   4, 0, %00000010   ; RIGHT
+        dw 1590 : db   4, 0, %00000010   ; RIGHT
+        dw 1630 : db   4, 0, %00000100   ; DOWN
+        dw 1670 : db   4, 2, %00000100   ; RETURN
+        dw 1950 : db   4, 0, %00010000   ; F6
+        dw 2050 : db   4, 2, %00000100   ; RETURN
+        dw 2300 : db   4, 0, %00010000   ; F6
+        dw 2350 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 7
@@ -1040,29 +1065,29 @@ test_keys:
 ;   frame 2050  RETURN       -> PROGRAMS: DEMO selected, none marked
 ;   frame 2250  DOWN, 2350 RETURN -> PONG goes on
 test_keys:
-        dw  250,  254 : db 0, %00010000   ; F6
-        dw  330,  334 : db 2, %00000100   ; RETURN
-        dw  400,  404 : db 1, %01000000   ; F2
-        dw  500,  504 : db 2, %00000100   ; RETURN
-        dw  580,  584 : db 5, %10000000   ; SPACE
-        dw  680,  684 : db 1, %01000000   ; F2
-        dw  780,  784 : db 0, %00000100   ; DOWN
-        dw  840,  844 : db 2, %00000100   ; RETURN
-        dw 1000, 1004 : db 0, %00010000   ; F6
-        dw 1100, 1104 : db 2, %00000100   ; RETURN
-        dw 1250, 1254 : db 0, %00010000   ; F6
-        dw 1300, 1304 : db 0, %00010000   ; F6
-        dw 1450, 1454 : db 8, %00000100   ; ESC
-        dw 1550, 1554 : db 0, %00100000   ; F3
-        dw 1700, 1704 : db 8, %00000100   ; ESC
-        dw 1750, 1754 : db 0, %00000010   ; RIGHT
-        dw 1800, 1804 : db 0, %00000100   ; DOWN
-        dw 1840, 1844 : db 0, %00000100   ; DOWN
-        dw 1880, 1884 : db 0, %00000100   ; DOWN
-        dw 1920, 1924 : db 0, %00000100   ; DOWN
-        dw 2050, 2054 : db 2, %00000100   ; RETURN
-        dw 2250, 2254 : db 0, %00000100   ; DOWN
-        dw 2350, 2354 : db 2, %00000100   ; RETURN
+        dw  250 : db   4, 0, %00010000   ; F6
+        dw  330 : db   4, 2, %00000100   ; RETURN
+        dw  400 : db   4, 1, %01000000   ; F2
+        dw  500 : db   4, 2, %00000100   ; RETURN
+        dw  580 : db   4, 5, %10000000   ; SPACE
+        dw  680 : db   4, 1, %01000000   ; F2
+        dw  780 : db   4, 0, %00000100   ; DOWN
+        dw  840 : db   4, 2, %00000100   ; RETURN
+        dw 1000 : db   4, 0, %00010000   ; F6
+        dw 1100 : db   4, 2, %00000100   ; RETURN
+        dw 1250 : db   4, 0, %00010000   ; F6
+        dw 1300 : db   4, 0, %00010000   ; F6
+        dw 1450 : db   4, 8, %00000100   ; ESC
+        dw 1550 : db   4, 0, %00100000   ; F3
+        dw 1700 : db   4, 8, %00000100   ; ESC
+        dw 1750 : db   4, 0, %00000010   ; RIGHT
+        dw 1800 : db   4, 0, %00000100   ; DOWN
+        dw 1840 : db   4, 0, %00000100   ; DOWN
+        dw 1880 : db   4, 0, %00000100   ; DOWN
+        dw 1920 : db   4, 0, %00000100   ; DOWN
+        dw 2050 : db   4, 2, %00000100   ; RETURN
+        dw 2250 : db   4, 0, %00000100   ; DOWN
+        dw 2350 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 6
@@ -1081,25 +1106,25 @@ test_keys:
 ;                               which needs the whole bank: "CLOSE
 ;                               ANOTHER PROGRAM FIRST"
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  400,  404 : db 2, %00000100   ; RETURN
-        dw  480,  484 : db 5, %10000000   ; SPACE
-        dw  520,  524 : db 5, %10000000   ; SPACE
-        dw  600,  604 : db 1, %01000000   ; F2
-        dw  700,  704 : db 0, %00000100   ; DOWN
-        dw  760,  764 : db 2, %00000100   ; RETURN
-        dw  900,  904 : db 1, %01000000   ; F2
-        dw 1000, 1004 : db 0, %00000001   ; UP
-        dw 1060, 1064 : db 2, %00000100   ; RETURN
-        dw 1195, 1210 : db 2, %10000000   ; CONTROL
-        dw 1200, 1204 : db 8, %00001000   ; Q
-        dw 1300, 1304 : db 0, %00000100   ; DOWN
-        dw 1360, 1364 : db 2, %00000100   ; RETURN
-        dw 1500, 1504 : db 1, %01000000   ; F2
-        dw 1600, 1604 : db 0, %00000001   ; UP
-        dw 1640, 1644 : db 0, %00000010   ; RIGHT
-        dw 1680, 1684 : db 0, %00000010   ; RIGHT
-        dw 1720, 1724 : db 2, %00000100   ; RETURN
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  400 : db   4, 2, %00000100   ; RETURN
+        dw  480 : db   4, 5, %10000000   ; SPACE
+        dw  520 : db   4, 5, %10000000   ; SPACE
+        dw  600 : db   4, 1, %01000000   ; F2
+        dw  700 : db   4, 0, %00000100   ; DOWN
+        dw  760 : db   4, 2, %00000100   ; RETURN
+        dw  900 : db   4, 1, %01000000   ; F2
+        dw 1000 : db   4, 0, %00000001   ; UP
+        dw 1060 : db   4, 2, %00000100   ; RETURN
+        dw 1195 : db  15, 2, %10000000   ; CONTROL
+        dw 1200 : db   4, 8, %00001000   ; Q
+        dw 1300 : db   4, 0, %00000100   ; DOWN
+        dw 1360 : db   4, 2, %00000100   ; RETURN
+        dw 1500 : db   4, 1, %01000000   ; F2
+        dw 1600 : db   4, 0, %00000001   ; UP
+        dw 1640 : db   4, 0, %00000010   ; RIGHT
+        dw 1680 : db   4, 0, %00000010   ; RIGHT
+        dw 1720 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 5
@@ -1114,21 +1139,21 @@ test_keys:
 ;   frame 1300  F5           -> the clock over Studio's mixed screen
 ;   frame 1600  ESC          -> closed (VOS_EXIT), Studio drawn again
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  420,  424 : db 0, %00000100   ; DOWN
-        dw  450,  454 : db 0, %00000100   ; DOWN
-        dw  480,  484 : db 0, %00000100   ; DOWN
-        dw  515,  530 : db 2, %10000000   ; CONTROL
-        dw  520,  524 : db 8, %00100000   ; A
-        dw  700,  704 : db 1, %00010000   ; F5
-        dw  760,  764 : db 0, %00000001   ; UP
-        dw  790,  794 : db 0, %00000001   ; UP
-        dw  820,  824 : db 0, %00000001   ; UP
-        dw  850,  854 : db 0, %00000010   ; RIGHT
-        dw  880,  884 : db 0, %00000010   ; RIGHT
-        dw  950,  954 : db 2, %00000100   ; RETURN
-        dw 1300, 1304 : db 1, %00010000   ; F5
-        dw 1600, 1604 : db 8, %00000100   ; ESC
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  420 : db   4, 0, %00000100   ; DOWN
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  480 : db   4, 0, %00000100   ; DOWN
+        dw  515 : db  15, 2, %10000000   ; CONTROL
+        dw  520 : db   4, 8, %00100000   ; A
+        dw  700 : db   4, 1, %00010000   ; F5
+        dw  760 : db   4, 0, %00000001   ; UP
+        dw  790 : db   4, 0, %00000001   ; UP
+        dw  820 : db   4, 0, %00000001   ; UP
+        dw  850 : db   4, 0, %00000010   ; RIGHT
+        dw  880 : db   4, 0, %00000010   ; RIGHT
+        dw  950 : db   4, 2, %00000100   ; RETURN
+        dw 1300 : db   4, 1, %00010000   ; F5
+        dw 1600 : db   4, 8, %00000100   ; ESC
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 4
@@ -1152,39 +1177,39 @@ test_keys:
 ;   frame 2400  CONTROL+Q    -> Studio again, NONAME.VBS opened: the
 ;                               costume is still there
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  420,  424 : db 0, %00000010   ; RIGHT
-        dw  470,  474 : db 0, %00000010   ; RIGHT
-        dw  560,  564 : db 2, %00000100   ; RETURN
-        dw  800,  804 : db 8, %00010000   ; TAB
-        dw  850,  854 : db 8, %00010000   ; TAB
-        dw  900,  904 : db 7, %00000100   ; E
-        dw  950,  954 : db 4, %00000010   ; 9
-        dw 1000, 1004 : db 5, %10000000   ; SPACE
-        dw 1030, 1034 : db 0, %00000010   ; RIGHT
-        dw 1060, 1064 : db 5, %10000000   ; SPACE
-        dw 1090, 1094 : db 0, %00000100   ; DOWN
-        dw 1120, 1124 : db 5, %10000000   ; SPACE
-        dw 1150, 1154 : db 8, %00100000   ; A
-        dw 1180, 1184 : db 0, %00000010   ; RIGHT
-        dw 1210, 1214 : db 5, %10000000   ; SPACE
-        dw 1250, 1251 : db #80, 1         ; COPY is the left button
-        dw 1250, 1340 : db #81, 49        ; cell 10,10: x 49 in mode 0
-        dw 1250, 1340 : db #82, 89
-        dw 1300, 1304 : db 1, %00000010   ; COPY
-        dw 1340, 1400 : db #81, 21        ; pen 3
-        dw 1340, 1400 : db #82, 133
-        dw 1360, 1364 : db 1, %00000010
-        dw 1400, 1450 : db #81, 53        ; cell 11,10
-        dw 1400, 1450 : db #82, 89
-        dw 1420, 1424 : db 1, %00000010
-        dw 1460, 1461 : db #80, 0
-        dw 1500, 1504 : db 7, %00000100   ; E
-        dw 1595, 1610 : db 2, %10000000   ; CONTROL
-        dw 1600, 1604 : db 6, %00000100   ; R
-        dw 1700, 1704 : db 2, %00000100   ; RETURN: the name NONAME
-        dw 2395, 2410 : db 2, %10000000   ; CONTROL
-        dw 2400, 2404 : db 8, %00001000   ; Q
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  420 : db   4, 0, %00000010   ; RIGHT
+        dw  470 : db   4, 0, %00000010   ; RIGHT
+        dw  560 : db   4, 2, %00000100   ; RETURN
+        dw  800 : db   4, 8, %00010000   ; TAB
+        dw  850 : db   4, 8, %00010000   ; TAB
+        dw  900 : db   4, 7, %00000100   ; E
+        dw  950 : db   4, 4, %00000010   ; 9
+        dw 1000 : db   4, 5, %10000000   ; SPACE
+        dw 1030 : db   4, 0, %00000010   ; RIGHT
+        dw 1060 : db   4, 5, %10000000   ; SPACE
+        dw 1090 : db   4, 0, %00000100   ; DOWN
+        dw 1120 : db   4, 5, %10000000   ; SPACE
+        dw 1150 : db   4, 8, %00100000   ; A
+        dw 1180 : db   4, 0, %00000010   ; RIGHT
+        dw 1210 : db   4, 5, %10000000   ; SPACE
+        dw 1250 : db   1, #80, 1         ; COPY is the left button
+        dw 1250 : db  90, #81, 49        ; cell 10,10: x 49 in mode 0
+        dw 1250 : db  90, #82, 89
+        dw 1300 : db   4, 1, %00000010   ; COPY
+        dw 1340 : db  60, #81, 21        ; pen 3
+        dw 1340 : db  60, #82, 133
+        dw 1360 : db   4, 1, %00000010
+        dw 1400 : db  50, #81, 53        ; cell 11,10
+        dw 1400 : db  50, #82, 89
+        dw 1420 : db   4, 1, %00000010
+        dw 1460 : db   1, #80, 0
+        dw 1500 : db   4, 7, %00000100   ; E
+        dw 1595 : db  15, 2, %10000000   ; CONTROL
+        dw 1600 : db   4, 6, %00000100   ; R
+        dw 1700 : db   4, 2, %00000100   ; RETURN: the name NONAME
+        dw 2395 : db  15, 2, %10000000   ; CONTROL
+        dw 2400 : db   4, 8, %00001000   ; Q
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 3
@@ -1196,57 +1221,62 @@ test_keys:
 ;   frame  700  CONTROL+Q, 800 RETURN -> BASIC; then RUN"VOS
 ;                               (tools/cap32_reboot_check.sh): Greek
 test_keys:
-        dw  300,  304 : db 2, %00010000   ; F4
-        dw  445,  460 : db 2, %10000000   ; CONTROL
-        dw  450,  454 : db 4, %00010000   ; L
-        dw  550,  554 : db 2, %00000100   ; RETURN
-        dw  695,  710 : db 2, %10000000   ; CONTROL
-        dw  700,  704 : db 8, %00001000   ; Q
-        dw  800,  804 : db 2, %00000100   ; RETURN
+        dw  300 : db   4, 2, %00010000   ; F4
+        dw  445 : db  15, 2, %10000000   ; CONTROL
+        dw  450 : db   4, 4, %00010000   ; L
+        dw  550 : db   4, 2, %00000100   ; RETURN
+        dw  695 : db  15, 2, %10000000   ; CONTROL
+        dw  700 : db   4, 8, %00001000   ; Q
+        dw  800 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  420,  424 : db 0, %00000010   ; RIGHT
-        dw  470,  474 : db 0, %00000010   ; RIGHT
-        dw  560,  564 : db 2, %00000100   ; RETURN
-        dw  800,  804 : db 0, %00000100   ; DOWN
-        dw  850,  854 : db 0, %00000010   ; RIGHT
-        dw  900,  904 : db 6, %00000010   ; 5
-        dw  950,  954 : db 8, %00010000   ; TAB
-        dw 1000, 1004 : db 0, %00000010   ; RIGHT
-        dw 1050, 1054 : db 0, %00000100   ; DOWN
-        dw 1100, 1104 : db 2, %00000100   ; RETURN
-        dw 1150, 1154 : db 8, %00010000   ; TAB
-        dw 1200, 1240 : db 0, %00000010   ; RIGHT held
-        dw 1280, 1284 : db 7, %01000000   ; C
-        dw 1330, 1334 : db 8, %00010000   ; TAB
-        dw 1375, 1390 : db 2, %10000000   ; CONTROL
-        dw 1380, 1384 : db 7, %00010000   ; S
-        dw 1450, 1454 : db 2, %00000100   ; RETURN
-        dw 1595, 1610 : db 2, %10000000   ; CONTROL
-        dw 1600, 1604 : db 5, %01000000   ; N
-        dw 1650, 1654 : db 2, %00000100   ; RETURN
-        dw 1745, 1760 : db 2, %10000000   ; CONTROL
-        dw 1750, 1754 : db 4, %00000100   ; O
-        dw 1850, 1854 : db 0, %00000001   ; UP
-        dw 2050, 2054 : db 2, %00000100   ; RETURN
-        dw 2150, 2151 : db #80, 1         ; COPY is the left button
-        dw 2150, 2700 : db #81, 20        ; palette, row 3: IF
-        dw 2150, 2300 : db #82, 172
-        dw 2200, 2204 : db 1, %00000010   ; COPY
-        dw 2300, 2700 : db #82, 152       ; script line 2, slot 0
-        dw 2300, 2600 : db #81, 76
-        dw 2350, 2354 : db 1, %00000010   ; COPY
-        dw 2500, 2504 : db 1, %00000010   ; COPY
-        dw 2600, 2700 : db #81, 20        ; the stage
-        dw 2600, 2700 : db #82, 40
-        dw 2650, 2654 : db 1, %00000010   ; COPY
-        dw 2745, 2760 : db 2, %10000000   ; CONTROL
-        dw 2750, 2754 : db 6, %00000100   ; R
-        dw 3395, 3410 : db 2, %10000000   ; CONTROL
-        dw 3400, 3404 : db 8, %00001000   ; Q
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  420 : db   4, 0, %00000010   ; RIGHT
+        dw  470 : db   4, 0, %00000010   ; RIGHT
+        dw  560 : db   4, 2, %00000100   ; RETURN
+        dw  800 : db   4, 0, %00000100   ; DOWN
+        dw  850 : db   4, 0, %00000010   ; RIGHT
+        dw  900 : db   4, 6, %00000010   ; 5
+        dw  950 : db   4, 8, %00010000   ; TAB
+        dw 1000 : db   4, 0, %00000010   ; RIGHT
+        dw 1050 : db   4, 0, %00000100   ; DOWN
+        dw 1100 : db   4, 2, %00000100   ; RETURN
+        dw 1150 : db   4, 8, %00010000   ; TAB
+        dw 1200 : db  40, 0, %00000010   ; RIGHT held
+        dw 1280 : db   4, 7, %01000000   ; C
+        dw 1330 : db   4, 8, %00010000   ; TAB
+        dw 1375 : db  15, 2, %10000000   ; CONTROL
+        dw 1380 : db   4, 7, %00010000   ; S
+        dw 1450 : db   4, 2, %00000100   ; RETURN
+        dw 1595 : db  15, 2, %10000000   ; CONTROL
+        dw 1600 : db   4, 5, %01000000   ; N
+        dw 1650 : db   4, 2, %00000100   ; RETURN
+        dw 1745 : db  15, 2, %10000000   ; CONTROL
+        dw 1750 : db   4, 4, %00000100   ; O
+        dw 1850 : db   4, 0, %00000001   ; UP
+        dw 2050 : db   4, 2, %00000100   ; RETURN
+        dw 2150 : db   1, #80, 1         ; COPY is the left button
+        dw 2150 : db 255, #81, 20        ; palette, row 3: IF
+        dw 2405 : db 255, #81, 20
+        dw 2660 : db  40, #81, 20
+        dw 2150 : db 150, #82, 172
+        dw 2200 : db   4, 1, %00000010   ; COPY
+        dw 2300 : db 255, #82, 152       ; script line 2, slot 0
+        dw 2555 : db 145, #82, 152
+        dw 2300 : db 255, #81, 76
+        dw 2555 : db  45, #81, 76
+        dw 2350 : db   4, 1, %00000010   ; COPY
+        dw 2500 : db   4, 1, %00000010   ; COPY
+        dw 2600 : db 100, #81, 20        ; the stage
+        dw 2600 : db 100, #82, 40
+        dw 2650 : db   4, 1, %00000010   ; COPY
+        dw 2745 : db  15, 2, %10000000   ; CONTROL
+        dw 2750 : db   4, 6, %00000100   ; R
+        dw 3395 : db  15, 2, %10000000   ; CONTROL
+        dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

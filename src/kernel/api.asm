@@ -81,9 +81,21 @@ api_ext:
         ret
 
 xa_table:       dw xa_version, xa_free, xa_clip_put, xa_clip_get, xa_m4
-                dw xa_mem
+                dw xa_mem, xa_behind
         assert $ - xa_table == VX_COUNT * 2
 xa_hl:          dw 0
+
+; VX_BEHIND: DE -> db drive, name: the file in app_open, and the main
+; loop starts its program behind this one (kernel/ext2.asm, behind_run)
+xa_behind:
+        ex de,hl
+        ld de,app_open + 1
+        ld bc,12
+        ldir
+        ld a,1
+        ld (app_open),a
+        ld (bh_req),a
+        ret
 
 ; VX_VERSION -> A = API version, HL = kernel version (BCD)
 xa_version:

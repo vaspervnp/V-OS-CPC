@@ -41,3 +41,5 @@ OP_NEXT_COSTUME | NEXT COSTUME      | ΕΠΟΜΕΝΟ ΚΟΣΤΟΥΜΙ
 OP_LABEL    | LABEL ~1 TO ~0        | ΕΤΙΚΕΤΑ ~1 ΣΕ ~0
 OP_SAVE_VARS | SAVE VARS ~1 TO ~0   | ΑΠΟΘΗΚΕΥΣΕ ~1 ΣΤΟ ~0
 OP_LOAD_VARS | LOAD VARS ~1 FROM ~0 | ΦΟΡΤΩΣΕ ~1 ΑΠΟ ~0
+OP_STYLE    | STYLE ~0              | ΣΤΥΛ ~0
+OP_MUSIC    | MUSIC ~0              | ΜΟΥΣΙΚΗ ~0

@@ -4,6 +4,20 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M41 (Studio: text styles and music; version 0.12):**
+- **STYLE *n*:** a new block in LOOKS/SOUND. The PRINT and TEXT that follow are bold (1), italic (2), underlined (4), or those added together; 0 is plain. Also `text_style` for `vbc.py` and the web editor.
+- **MUSIC *"name"*:** plays *name*`.MUS` from the program's disc behind it, with the MUSIC program from A: or B:. It is started only when the name changes, so a MUSIC inside FOREVER does not keep the disc busy. MUSIC goes on after the program ends; F6 brings it to the front. On a 6128 without an expansion there is no room beside a block program: "CLOSE ANOTHER PROGRAM FIRST". Also `music` for `vbc.py` and the web editor.
+- **API 19, `VX_BEHIND`:** DE -> a file. In the main loop the kernel starts its program (by type, as the Desktop does) behind the caller, or finds it running, and calls its `init` with A = 3 and the file in `VOS_OPEN`: it takes the file and calls `VOS_BACKGROUND`, without drawing anything. MUSIC knows A = 3, and keeps playing when it gets the song it is already playing.
+- **Room in the kernel:** a second kernel extension, `src/kernel/ext2.asm`, in base RAM bank 1 at #4100, which nothing used after boot (VOS.BIN is loaded there). The loader copies it there; `ext2_call` runs it. `VX_BEHIND`'s work is there. The screen set-up (`gfx_init`, the CRTC table, the black palette) moved to the loader: 124 bytes out of the kernel.
+- **The tests fit again:** since M38 the kernel had grown, and the test builds of `test-calc`, `test-mines`, `test-switch` and seven others no longer assembled (not noticed then). The test scripts now live in the second extension too (the interrupt maps it in for a moment), and a key entry takes 5 bytes instead of 6. All 27 test builds assemble.
+- **Studio and the player:** Studio's block table packs its default slots in 6 bytes (their high byte is always 0), which gave it the room for the two blocks. The player (VBRUN.SYS) leaves out the list routines, which only `vbc.py` programs use.
+- **Bugs found:** `rt_music` filled 256 bytes instead of 8 (B was 0); `slot_find` left carry set when it found nothing, which `VX_BEHIND` took for an error; and `ext2_call`, put between `view_programs` and `ext_call`, broke F6, which falls through into `ext_call` (found by `test-switch`).
+- **Tested** in Caprice32:
+  - `test-styles`: STYLES.VBN shows plain, bold, italic, underline, all three, a number in bold italic, and plain again.
+  - `test-music-block` (576K): TUNE.VBN starts MUSIC behind it with AGANAMEM.MUS; F6 shows "> TUNE" and MUSIC, and RETURN brings MUSIC to the front: A:AGANAMEM, PLAYING, the bars moving. With 128K: "CLOSE ANOTHER PROGRAM FIRST", and TUNE goes on.
+  - `test-calc` (Studio with the packed table adds WINDOW "hi" 120 100), `test-mines`, `test-switch`, `test-sysinfo` (0.12, API 19), `test-markdown`, `test-reader`, `test-about`, and again `test-input`, `test-lang`, `test-langs`, `test-costume`, `test-acc`, `test-expand`, `test-behind`, `test-drag`, `test-bricks`, `test-sdk`, `test-vrouves`, `test-music`, `test-clip`, `test-open`, `test-paint`, `test-notepad`, `test-vars`, `test-multi`, `test-amsdos`, `test-reboot`, `test-system`.
+- **Not tested:** on a real CPC.
+
 **M40 (paragraphs and faster scrolling in MARKDOWN; version 0.11):**
 - **Paragraphs:** in MARKDOWN's page and READER, lines that follow each other make one paragraph, as Markdown means them, and wrap together. Two spaces at the end of a line break it there. A list item's next lines go on in the item, and `>` lines in the quote. A blank line, a heading, a list item, a quote, a line or a code block start something new.
 - **Faster scrolling:** the page used to be read from the text's start on every scroll. Now it keeps up to 64 checkpoints (where a text line starts, every 8 page lines or so, with the code-block state and the link count) and starts from the last one above the screen. A new text forgets them (`pv_new`).

@@ -28,6 +28,13 @@ loader_start:
         ld a,LANG_BANK_CFG
         call bank_put
         call xb_detect              ; the banks of a RAM expansion
+        ld hl,ext2_image            ; the second extension into base RAM
+        ld de,EXT2_ADDR             ; bank 1, over the kernel's image
+        ld bc,EXT2_SIZE             ; (kernel/ext2.asm)
+        ldir
+        call gfx_init               ; the screen, black while the disc loads
+        ld hl,palette_black
+        call ga_set_palette
         ; video RAM clear: the screen, and the kernel's buffers and the
         ; program slots in its hidden gaps (include/memmap.inc)
         ld hl,#8000
@@ -36,3 +43,47 @@ loader_start:
         ld (hl),l
         ldir
         jp kernel_entry
+
+; Run once, here: they take no room in the kernel
+; ---------------------------------------------------------------------
+; gfx_init - program the overscan CRTC and build the line table
+; Destroys: all
+; ---------------------------------------------------------------------
+gfx_init:
+        ld hl,crtc_overscan
+        call crtc_load
+        ; gfx_lines_all[line] = address of physical pixel line
+        ld ix,gfx_lines_all
+        ld hl,SCREEN_TOP
+        ld c,0                      ; char row
+.row:
+        push hl
+        ld b,8
+.line:
+        ld (ix+0),l
+        ld (ix+1),h
+        inc ix
+        inc ix
+        ld a,h
+        add a,#08                   ; next pixel line: +#800
+        ld h,a
+        djnz .line
+        pop hl
+        inc c
+        ld a,c
+        cp SCREEN_SPLIT
+        jr nz,.same_page
+        ld hl,SCREEN_LOW
+        jr .next
+.same_page:
+        ld de,SCREEN_BPL
+        add hl,de
+.next:
+        cp SCREEN_ROWS
+        jr c,.row
+        ret
+
+palette_black:  ds 17, 0
+
+        include "../drivers/crtc.asm"
+loader_end:

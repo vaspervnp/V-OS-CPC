@@ -64,4 +64,5 @@ The `*.vbt` files are Studio programs as text, for `tools/mkvbs.py`. See [chapte
 | Variables | 128, A–H15 | with names |
 | Lists, noise, sprite size | no | yes |
 | SAVE/LOAD VARS | yes | no |
+| Text style, `.MUS` music | yes | yes |
 | The program | needs all the memory | small, runs alongside others |

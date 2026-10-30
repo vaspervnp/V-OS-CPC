@@ -105,6 +105,8 @@ Les tests lancent V-OS dans Caprice32 sans fenêtre et prennent des captures d'�
 | `test-clip` | le presse-papiers : sélection avec SHIFT, ^C et ^V dans NOTEPAD, ^A, ^X, ^V, puis ^V dans MARKDOWN |
 | `test-webget` | à la main, dans le CPCEMU de `make linux` (carte M4 ; il faut un écran et internet) : WEBGET télécharge `example.com/index.html`. Fermez CPCEMU avec F12 quand SAVED s'affiche, et `INDEX.HTM` est cherché sur la disquette |
 | `test-reader` | READER depuis `reader.dsk` en B: ouvre `INDEX.MD`, TAB choisit un lien, RETURN ouvre `ABOUT.MD`, DEL revient, et un lien `https://` donne un message |
+| `test-styles` | STYLES.VBN (`blocks/examples/styles.vbt`) depuis le Commander : normal, gras, italique, souligné et les trois, avec le bloc STYLE |
+| `test-music-block` | avec 576K : TUNE.VBN (`blocks/examples/tune.vbt`) lance MUSIC (depuis B:) derrière lui avec AGANAMEM.MUS ; F6 montre « > TUNE » et MUSIC, et RETURN met MUSIC devant : A:AGANAMEM, PLAYING. Avec `MBLOCK_RAM=128` : « FERMEZ D'ABORD UN AUTRE PROGRAMME » |
 | `test-amsdos`, `test-reboot`, `test-system` | les fichiers V-OS en BASIC, redémarrage, disquette SYSTEM |
 
 **Nouveau script :**

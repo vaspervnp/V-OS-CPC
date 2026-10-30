@@ -122,7 +122,7 @@ command: ...
 - **Icon:** 16 lines of 16 characters in `icon.txt`. Each character is a pen in hex (mode 0, Launcher palette) or `.` for transparent.
 - **File names** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 bytes, `"NAME    EXT"`. Drive 0 = A:, 1 = B:.
 
-## The API (version 18)
+## The API (version 19)
 
 | Call | Input → output | What it does |
 |---|---|---|
@@ -164,7 +164,7 @@ command: ...
 | `VOS_BACKGROUND` | A = 1 / 0 | keeps running or freezes when behind another |
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → carry: new HL, DE | dragging a window by its title |
 | `VOS_FIT` | same → HL, DE | brings a window inside the screen |
-| `VOS_EXT` | A = a `VX_*` call, BC, DE, HL as it wants → A, HL, C, DE, carry | the calls after the table (version 15): `VX_VERSION` → A = API, HL = V-OS version (BCD). `VX_FREE` C = drive → A = free K. Unknown: carry `VX_CLIP_PUT` HL = text, BC = bytes → the clipboard (up to 1K). `VX_CLIP_GET` DE = where, BC = room → HL = size (version 16). `VX_M4` HL → a command for the M4 board (db size, dw command, data), DE → the response, BC = bytes; carry: no M4 board (version 17). `VX_MEM` → HL = the RAM in K, DE = the K free for programs (version 18). |
+| `VOS_EXT` | A = a `VX_*` call, BC, DE, HL as it wants → A, HL, C, DE, carry | the calls after the table (version 15): `VX_VERSION` → A = API, HL = V-OS version (BCD). `VX_FREE` C = drive → A = free K. Unknown: carry `VX_CLIP_PUT` HL = text, BC = bytes → the clipboard (up to 1K). `VX_CLIP_GET` DE = where, BC = room → HL = size (version 16). `VX_M4` HL → a command for the M4 board (db size, dw command, data), DE → the response, BC = bytes; carry: no M4 board (version 17). `VX_MEM` → HL = the RAM in K, DE = the K free for programs (version 18). `VX_BEHIND` DE → db drive, 11-byte name of a file: its program (by type) starts behind this one, with `init` A = 3 and the file in `VOS_OPEN` (version 19; MUSIC knows it). |
 
 Full details, e.g. on the background, the accessory and `VOS_SPLIT`, are in `src/api/vos_api.inc`. For examples, see `apps/demo/demo.asm` (mode 0, motion), `apps/clock/clock.asm` (accessory) and `apps/mixed/mixed.asm` (mixed screen). A whole game with sprites, a stage from a file and sound is `myapps/vrouves/`.
 

@@ -204,6 +204,21 @@ app_fail:
         pop af
         jp sys_error
 
+; VX_BEHIND (kernel/ext2.asm: behind_run): the program in vw_cfg,
+; vw_page gets init with A = 3, as the kernel's program; then the second
+; extension's bank is home again
+bh_init:
+        call view_base
+        ld a,(vw_cfg)
+        ld (ram_home_cfg),a
+        call ram_select
+        ld a,3
+        ld de,0
+        call cur_call
+        ld a,EXT2_CFG
+        ld (ram_home_cfg),a
+        jp ram_select
+
 ; HL = name, on the drive selected: the file into bank 4 -> HL = bytes
 ; 9 and 10 (the magic), C = byte 11. Carry and A = error on failure.
 view_fetch:
@@ -305,6 +320,24 @@ view_keys:
 .no:
         or a
         ret
+
+; HL = a routine of the second extension (kernel/ext2.asm, in base RAM
+; bank 1, free after boot): run it with that bank home -> its A, flags
+ext2_call:
+        ld a,(ram_home_cfg)
+        ld (ext2_home),a
+        ld a,EXT2_CFG
+        ld (ram_home_cfg),a
+        call ram_select
+        call .go
+        push af
+        ld a,(ext2_home)
+        ld (ram_home_cfg),a
+        call ram_select
+        pop af
+        ret
+.go:
+        jp (hl)
 
 view_programs:
         ld hl,sw_run
@@ -521,5 +554,7 @@ data_cfg:       db BUF_CFG          ; the data bank (api_drive)
 app_slot:       db 0                ; the program's slot (kernel/ext.asm;
                                     ; 0: none, it has all of bank 5)
 app_wake:       db 0                ; a slot to run again (Launcher, F6)
+bh_req:         db 0                ; VX_BEHIND asked (behind_run)
+ext2_home:      db 0                ; ext2_call
 ext_home:       db 0                ; ext_call
 rl_pages:       db 0

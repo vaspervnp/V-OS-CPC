@@ -15,7 +15,7 @@ Los dos últimos menús son iguales en todas las vistas y en los programas:
 | PROGRAMAS (en marcha) | F6 | | |
 | CAMBIAR DE IDIOMA | ^L | | |
 
-AYUDA > ACERCA DE V-OS muestra la versión (0.11 beta; cada hito suma 0.01), la fecha de compilación, el autor (Revive8bit, 2026) y el arquitecto (Vasper).
+AYUDA > ACERCA DE V-OS muestra la versión (0.12 beta; cada hito suma 0.01), la fecha de compilación, el autor (Revive8bit, 2026) y el arquitecto (Vasper).
 
 ## Escritorio, F1
 

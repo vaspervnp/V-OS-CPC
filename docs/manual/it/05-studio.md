@@ -166,7 +166,9 @@ Nella colonna "Blocco", le caselle appaiono come nello script.
 | NEXT COSTUME | il successivo, e dopo l'ultimo di nuovo il primo |
 | SHOW, HIDE | |
 | PRINT *valore* AT *x* *y* | stampa un numero |
+| STYLE *n* | lo stile di PRINT e TEXT che seguono: 1 grassetto, 2 corsivo, 4 sottolineato, sommati (7: tutti), 0 normale |
 | NOTE *n* FOR *frame* | suona una nota (numero MIDI: 60 = do, 69 = la 440 Hz) e aspetta che finisca |
+| MUSIC *"nome"* | suona la canzone *nome*`.MUS` dal dischetto del programma, dietro di esso, con il programma MUSIC (su A: o B:). Continua anche dopo la fine del programma, fino allo STOP di MUSIC (F6). Serve un'espansione di memoria; senza: "CHIUDI PRIMA UN ALTRO PROGRAMMA". Un nome che non c'è (o vuoto) ferma la musica |
 
 ### VARIABLES
 
