@@ -28,7 +28,7 @@ Lo stesso materiale è disponibile anche in PDF, in [`docs/V-OS-it.pdf`](../../V
 
 ## Altri documenti
 
-- [`README.md`](../../../README.md): lo stato del progetto, milestone per milestone, con quello che è stato testato in ciascuna.
+- [`MILESTONES.md`](../../../MILESTONES.md): lo stato del progetto, milestone per milestone, con quello che è stato testato in ciascuna.
 - [`docs/REQUIREMENTS.md`](../../REQUIREMENTS.md): i requisiti e il progetto, con i dettagli di implementazione di ogni milestone.
 - [`src/api/vos_api.inc`](../../../src/api/vos_api.inc): l'API, con tutte le sue regole nei commenti.
 

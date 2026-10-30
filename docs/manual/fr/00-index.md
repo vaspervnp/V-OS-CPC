@@ -28,7 +28,7 @@ Le même contenu existe aussi en PDF, dans [`docs/V-OS-fr.pdf`](../../V-OS-fr.pd
 
 ## Autres documents
 
-- [`README.md`](../../../README.md) : l'état du projet, étape par étape, avec ce qui a été testé à chacune.
+- [`MILESTONES.md`](../../../MILESTONES.md) : l'état du projet, étape par étape, avec ce qui a été testé à chacune.
 - [`docs/REQUIREMENTS.md`](../../REQUIREMENTS.md) : les exigences et la conception, avec les détails de réalisation de chaque étape.
 - [`src/api/vos_api.inc`](../../../src/api/vos_api.inc) : l'API, avec toutes ses règles en commentaires.
 

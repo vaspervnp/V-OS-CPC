@@ -67,7 +67,7 @@ Con un'espansione di memoria, i suoi banchi ospitano programmi. I dettagli, indi
 
 - **RASM:** l'esadecimale si scrive `#C000` e non `&C000`, perché RASM legge `&` come AND. Le etichette non distinguono maiuscole e minuscole.
 - **Commenti:** in inglese, brevi, come nel codice esistente. Ogni file inizia con un blocco che dice che cosa fa.
-- **Documentazione:** in greco. `README.md` (inglese), `README.el.md` (greco) e `docs/REQUIREMENTS.md` hanno una sezione per ogni milestone. Il manuale è scritto in greco e tradotto nelle altre cinque lingue di V-OS.
+- **Documentazione:** in greco. `MILESTONES.md` (inglese), `MILESTONES.el.md` (greco) e `docs/REQUIREMENTS.md` hanno una sezione per ogni milestone. Il manuale è scritto in greco e tradotto nelle altre cinque lingue di V-OS.
 - **Testi:** i testi di sistema sono in `lang/*/messages.txt`, e i testi dei programmi in `texts.txt` (per `tools/mktexts.py`).
 
 ## Test
@@ -115,6 +115,6 @@ Ogni tasto si scrive come `dw from, to : db row, bit` della tastiera. Il numero 
 
 1. Codice, e un test in Caprice32: nuovo o esistente, con schermate.
 2. I test che la modifica tocca.
-3. Una sezione in `README.md` e `README.el.md`, e una sezione "Υλοποίηση M…" (implementazione) in `docs/REQUIREMENTS.md`.
+3. Una sezione in `MILESTONES.md` e `MILESTONES.el.md`, e una sezione "Υλοποίηση M…" (implementazione) in `docs/REQUIREMENTS.md`.
 4. **Aggiorna il manuale in tutte e sei le lingue** (`docs/manual/` in greco, `docs/manual/<code>/` per en, fr, es, de, it, e `sdk/README.md`, `sdk/README.<code>.md` se l'API cambia), poi `make docs` per tutti i PDF.
 5. Commit e push.

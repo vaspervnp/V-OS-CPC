@@ -28,7 +28,7 @@ Derselbe Inhalt steht auch als PDF zur Verfügung, in [`docs/V-OS-de.pdf`](../..
 
 ## Weitere Dokumente
 
-- [`README.md`](../../../README.md): der Stand des Projekts, Meilenstein für Meilenstein, mit dem, was jeweils getestet wurde.
+- [`MILESTONES.md`](../../../MILESTONES.md): der Stand des Projekts, Meilenstein für Meilenstein, mit dem, was jeweils getestet wurde.
 - [`docs/REQUIREMENTS.md`](../../REQUIREMENTS.md): die Anforderungen und der Entwurf, mit den Umsetzungsdetails jedes Meilensteins.
 - [`src/api/vos_api.inc`](../../../src/api/vos_api.inc): die API, mit allen Regeln in Kommentaren.
 

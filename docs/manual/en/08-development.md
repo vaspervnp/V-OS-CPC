@@ -67,7 +67,7 @@ With a memory expansion, its banks take programs. The details, address by addres
 
 - **RASM:** hex is written `#C000` and not `&C000`, because RASM reads `&` as AND. Labels are not case-sensitive.
 - **Comments:** in English, short, as in the existing code. Each file starts with a block that says what it does.
-- **Documentation:** in Greek. `README.md` (English), `README.el.md` (Greek) and `docs/REQUIREMENTS.md` have a section for each milestone. The manual is written in Greek and translated into the other five languages of V-OS.
+- **Documentation:** in Greek. `MILESTONES.md` (English), `MILESTONES.el.md` (Greek) and `docs/REQUIREMENTS.md` have a section for each milestone. The manual is written in Greek and translated into the other five languages of V-OS.
 - **Texts:** the system texts are in `lang/*/messages.txt`, and the programs' texts in `texts.txt` (for `tools/mktexts.py`).
 
 ## Testing
@@ -115,6 +115,6 @@ Each key is written as `dw from, to : db row, bit` of the keyboard. The key numb
 
 1. Code, and a test in Caprice32: new or existing, with screenshots.
 2. The tests the change touches.
-3. A section in `README.md` and `README.el.md`, and a "Υλοποίηση M…" (implementation) section in `docs/REQUIREMENTS.md`.
+3. A section in `MILESTONES.md` and `MILESTONES.el.md`, and a "Υλοποίηση M…" (implementation) section in `docs/REQUIREMENTS.md`.
 4. **Update the manual in all six languages** (`docs/manual/` in Greek, `docs/manual/<code>/` for en, fr, es, de, it, and `sdk/README.md`, `sdk/README.<code>.md` if the API changes), then `make docs` for all the PDFs.
 5. Commit and push.

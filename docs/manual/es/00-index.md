@@ -28,7 +28,7 @@ El mismo material está también en PDF, en [`docs/V-OS-es.pdf`](../../V-OS-es.p
 
 ## Otros documentos
 
-- [`README.md`](../../../README.md): el estado del proyecto, hito a hito, con lo que se probó en cada uno.
+- [`MILESTONES.md`](../../../MILESTONES.md): el estado del proyecto, hito a hito, con lo que se probó en cada uno.
 - [`docs/REQUIREMENTS.md`](../../REQUIREMENTS.md): los requisitos y el diseño, con los detalles de implementación de cada hito.
 - [`src/api/vos_api.inc`](../../../src/api/vos_api.inc): la API, con todas sus reglas en los comentarios.
 
