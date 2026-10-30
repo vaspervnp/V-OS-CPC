@@ -122,7 +122,7 @@ command: ...
 - **Εικονίδιο:** 16 γραμμές των 16 χαρακτήρων στο `icon.txt`. Κάθε χαρακτήρας είναι πένα σε hex (mode 0, παλέτα του Launcher) ή `.` για διάφανο.
 - **Ονόματα αρχείων** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 bytes, `"NAME    EXT"`. Drive 0 = A:, 1 = B:.
 
-## Το API (έκδοση 17)
+## Το API (έκδοση 18)
 
 | Κλήση | Είσοδος → έξοδος | Τι κάνει |
 |---|---|---|
@@ -164,7 +164,7 @@ command: ...
 | `VOS_BACKGROUND` | A = 1 / 0 | συνεχίζει ή παγώνει όταν είναι πίσω από άλλο |
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → carry: νέα HL, DE | σύρσιμο παραθύρου από τον τίτλο του |
 | `VOS_FIT` | ίδια → HL, DE | φέρνει ένα παράθυρο μέσα στην οθόνη |
-| `VOS_EXT` | A = κλήση `VX_*`, BC, DE, HL όπως θέλει → A, HL, C, DE, carry | οι κλήσεις μετά τον πίνακα (έκδοση 15): `VX_VERSION` → A = API, HL = έκδοση V-OS (BCD). `VX_FREE` C = drive → A = ελεύθερα K. Άγνωστη: carry `VX_CLIP_PUT` HL = κείμενο, BC = bytes → το πρόχειρο (ως 1K). `VX_CLIP_GET` DE = πού, BC = χώρος → HL = μέγεθος (έκδοση 16). `VX_M4` HL → εντολή για την κάρτα M4 (db μέγεθος, dw εντολή, δεδομένα), DE → απάντηση, BC = bytes· carry: δεν υπάρχει M4 (έκδοση 17). |
+| `VOS_EXT` | A = κλήση `VX_*`, BC, DE, HL όπως θέλει → A, HL, C, DE, carry | οι κλήσεις μετά τον πίνακα (έκδοση 15): `VX_VERSION` → A = API, HL = έκδοση V-OS (BCD). `VX_FREE` C = drive → A = ελεύθερα K. Άγνωστη: carry `VX_CLIP_PUT` HL = κείμενο, BC = bytes → το πρόχειρο (ως 1K). `VX_CLIP_GET` DE = πού, BC = χώρος → HL = μέγεθος (έκδοση 16). `VX_M4` HL → εντολή για την κάρτα M4 (db μέγεθος, dw εντολή, δεδομένα), DE → απάντηση, BC = bytes· carry: δεν υπάρχει M4 (έκδοση 17). `VX_MEM` → HL = η RAM σε K, DE = τα ελεύθερα K για προγράμματα (έκδοση 18). |
 
 Πλήρεις λεπτομέρειες, π.χ. για το παρασκήνιο, το accessory και το `VOS_SPLIT`, έχει το `src/api/vos_api.inc`. Για παραδείγματα, δες τα `apps/demo/demo.asm` (mode 0, κίνηση), `apps/clock/clock.asm` (accessory) και `apps/mixed/mixed.asm` (μικτή οθόνη). Ένα ολόκληρο παιχνίδι με sprites, πίστα από αρχείο και ήχο είναι το `myapps/vrouves/`.
 

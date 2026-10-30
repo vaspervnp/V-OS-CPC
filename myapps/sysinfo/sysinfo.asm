@@ -1,7 +1,8 @@
 ; =====================================================================
 ; sysinfo.asm - SYSINFO, what V-OS says about itself (made with the SDK)
 ;
-; Mode 1. The V-OS and API versions (VOS_EXT, VX_VERSION) and the free
+; Mode 1. The V-OS and API versions (VOS_EXT, VX_VERSION), the memory
+; and how much of it is free for programs (VX_MEM), and the free
 ; space on drives A: and B: (VX_FREE), read again with ^R. An example
 ; of VOS_EXT, the calls after the API's jump table (API 15).
 ;   SYSINFO menu: READ AGAIN ^R, ABOUT, BACK ^Q
@@ -94,13 +95,27 @@ redraw:
         ld a,T_API
         ld de,TOP_Y + 14
         call fact
+        ld a,VX_MEM                 ; the memory (API 18)
+        call VOS_EXT
+        jr c,.drives
+        push de
+        call kilo
+        ld a,T_MEMORY
+        ld de,TOP_Y + 28
+        call fact
+        pop hl
+        call kilo
+        ld a,T_MEM_FREE
+        ld de,TOP_Y + 42
+        call fact
+.drives:
         ld c,0                      ; the drives
         ld a,T_FREE_A
-        ld de,TOP_Y + 28
+        ld de,TOP_Y + 56
         call free
         ld c,1
         ld a,T_FREE_B
-        ld de,TOP_Y + 42
+        ld de,TOP_Y + 70
         ; fall through
 
 ; C = drive, A = its label, DE = y: "nK", or NO DISC
@@ -112,12 +127,7 @@ free:
         jr c,.none
         ld l,a
         ld h,0
-        call decimal
-        ld a,"K"
-        ld (de),a
-        inc de
-        xor a
-        ld (de),a
+        call kilo
         jr .show
 .none:
         ld a,T_NO_DISC
@@ -156,6 +166,16 @@ print_lab:
         pop de
         pop hl
         jp VOS_PRINT
+
+; HL = number -> value: "nK"
+kilo:
+        call decimal
+        ld a,"K"
+        ld (de),a
+        inc de
+        xor a
+        ld (de),a
+        ret
 
 ; HL = number -> value, in decimal, DE -> after it
 decimal:

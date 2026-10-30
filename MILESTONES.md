@@ -4,6 +4,17 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M39 (a Markdown reader for the web):**
+- **READER:** a new program (`myapps/reader`, 11K, on its own disc `reader.dsk` with `INDEX.MD` and `ABOUT.MD`). It shows `.MD` pages from the disc or from the web (the M4 board, HTTP, up to 6K) as MARKDOWN's preview does. TAB selects the next link, shown inverted, and the page scrolls to it; RETURN follows it; DEL goes back (4 pages are kept). OPEN A FILE, OPEN AN ADDRESS (^U), OTHER DRIVE.
+- **Links:** a relative link opens next to the page: on the same drive for a disc page, on the same site and folder for a web page; `/x.md` from the top of the site; `http://…` anywhere. `https://` gives "ONLY HTTP ADDRESSES CAN BE OPENED", and the web without an M4 board gives "THE WEB NEEDS AN M4 BOARD".
+- **Shared code:** MARKDOWN's page renderer moved to `myapps/markdown/page.asm` and `page_data.asm`, included by both programs. With `PV_LINKS` defined it also counts the links, inverts the selected one, and can draw only the rows of one link. MARKDOWN's size did not change.
+- **SYSINFO:** it also shows the memory (128K on a 6128, 64K more for each block of a RAM expansion) and how much of it is free for programs, from the new `VX_MEM` (API 18), in the kernel extension.
+- **Bug found** (in the Python harness): an absolute `http://` link from a web page gave an empty address, because the address had moved while its `http://` was cut off.
+- **Tested:**
+  - Caprice32 (`make test-reader`): `INDEX.MD` shows, TAB inverts "About READER", RETURN opens `ABOUT.MD`, DEL shows LOADING… and goes back to `INDEX.MD`, and the `https://` link gives the message. `test-sysinfo`: API 18, MEMORY 128K, FREE MEMORY 10K (bank 5's 12K less SYSINFO).
+  - Python Z80 harness with the M4 emulated: the links resolve right (disc relative, web relative, `/top.md`, `http://`, `https://`), and a web page comes with `C_HTTPGETMEM` and three `C_COPYBUF`, with TAB turned into a space and the text the same.
+- **Not tested:** a real web page through an M4 (see M38); `VX_MEM` with a RAM expansion.
+
 **M38 (the internet with the M4 board):**
 - **WEBGET:** a new program (`myapps/webget`, 2.5K, on `vos.dsk`). GET A FILE (^G) asks for an HTTP address and a name (taken from the end of the address), the M4 board downloads the file, and WEBGET saves it on the drive it shows. Up to 16K, the size of the data bank. It also shows the network status, or "NO M4 BOARD".
 - **API 17:** `VX_M4`, through `VOS_EXT`: HL → a command packet for the M4 (size, command, data), DE → where its response goes, BC = how many bytes. The kernel looks for the M4 ROM by its name ("M4 BOARD") once, sends the packet to `#FE00` and starts it with `#FC00`, then maps the ROM at `#C000` (where the screen is) only while it copies the response from the buffer that `#FF02` points to, with interrupts off. The search is in the kernel extension; the rest took 79 bytes of the main kernel.

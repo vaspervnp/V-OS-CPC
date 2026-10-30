@@ -104,6 +104,7 @@
 | `test-sysinfo` | το SYSINFO από τον Commander: έκδοση, API, ελεύθερα K στο A: και στο B:, ^R, ^Q |
 | `test-clip` | το πρόχειρο: επιλογή με SHIFT, ^C και ^V στο NOTEPAD, ^A, ^X, ^V, και μετά ^V στο MARKDOWN |
 | `test-webget` | με το χέρι, στον CPCEMU του `make linux` (κάρτα M4, χρειάζεται οθόνη και internet): το WEBGET κατεβάζει το `example.com/index.html`. Κλείσε τον CPCEMU με F12 όταν φανεί το ΣΩΘΗΚΕ, και ψάχνει το `INDEX.HTM` στη δισκέτα |
+| `test-reader` | το READER από το `reader.dsk` στο B: ανοίγει το `INDEX.MD`, το TAB διαλέγει σύνδεσμο, το RETURN ανοίγει το `ABOUT.MD`, το DEL γυρίζει πίσω, και ένας σύνδεσμος `https://` βγάζει μήνυμα |
 | `test-amsdos`, `test-reboot`, `test-system` | τα αρχεία του V-OS στη BASIC, επανεκκίνηση, δισκέτα SYSTEM |
 
 **Νέο σενάριο:**

@@ -8,6 +8,8 @@ BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
 TITLE       | THE SYSTEM            | ΤΟ ΣΥΣΤΗΜΑ
 VERSION     | V-OS VERSION          | ΕΚΔΟΣΗ V-OS
 API         | API VERSION           | ΕΚΔΟΣΗ API
+MEMORY      | MEMORY                | ΜΝΗΜΗ
+MEM_FREE    | FREE MEMORY           | ΕΛΕΥΘΕΡΗ ΜΝΗΜΗ
 FREE_A      | FREE ON A:            | ΕΛΕΥΘΕΡΑ ΣΤΟ A:
 FREE_B      | FREE ON B:            | ΕΛΕΥΘΕΡΑ ΣΤΟ B:
 NO_DISC     | NO DISC               | ΧΩΡΙΣ ΔΙΣΚΕΤΑ

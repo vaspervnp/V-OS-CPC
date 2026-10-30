@@ -312,6 +312,29 @@ test_keys:
         dw 3050, 3054 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 26
+; make test-reader (-DTEST_SCRIPT=26): READER (myapps/reader) from its
+; disc, build/reader.dsk, in B:. Expected:
+;   frame  300  F2, 450 TAB, 600 RETURN -> READER with INDEX.MD
+;   frame  900  TAB          -> the first link, About READER, inverted
+;   frame 1000  RETURN       -> ABOUT.MD
+;   frame 1300  DEL          -> INDEX.MD again
+;   frame 1500-1650 TAB x4   -> the fourth link, the secure page
+;   frame 1750  RETURN       -> "ONLY HTTP ADDRESSES CAN BE OPENED"
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  450,  454 : db 8, %00010000   ; TAB: drive B:
+        dw  600,  604 : db 2, %00000100   ; RETURN: READER
+        dw  900,  904 : db 8, %00010000   ; TAB: a link
+        dw 1000, 1004 : db 2, %00000100   ; RETURN: follow it
+        dw 1300, 1304 : db 9, %10000000   ; DEL: back
+        dw 1500, 1504 : db 8, %00010000   ; TAB
+        dw 1550, 1554 : db 8, %00010000   ; TAB
+        dw 1600, 1604 : db 8, %00010000   ; TAB
+        dw 1650, 1654 : db 8, %00010000   ; TAB
+        dw 1750, 1754 : db 2, %00000100   ; RETURN: the secure page
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 25
 ; make test-webget (-DTEST_SCRIPT=25): WEBGET (myapps/webget) with the
 ; M4 board, in CPCEMU (tools/linux/), WEBGET.BIN last on A:. Expected:
@@ -1222,6 +1245,7 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

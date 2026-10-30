@@ -307,6 +307,88 @@ xa_free:
         or a
         ret
 
+; VX_MEM -> HL = the RAM in K (128 and 64 for each block of a RAM
+; expansion), DE = K free for programs: the pages of the banks in
+; bk_list that no slot holds (in bank 5 from PROG_ADDR; none when a
+; program has it alone, app_slot 0)
+xa_mem:
+        ld hl,0
+        ld (xm_free),hl
+        ld hl,bk_list
+        ld c,0                      ; the banks
+.bank:
+        ld a,(hl)
+        or a
+        jr z,.done
+        inc hl
+        inc c
+        push hl
+        push bc
+        ld e,a                      ; E = its RAM config
+        ld d,#80 - #40              ; D = its free pages
+        cp VIEW_BANK_CFG
+        jr nz,.slots
+        ld d,#80 - (PROG_ADDR >> 8)
+        ld a,(app_slot)
+        or a
+        jr nz,.slots
+        ld d,a
+.slots:
+        ld hl,SLOT_TABLE + SLOT_SIZE
+.rec:
+        ld a,(hl)
+        or a
+        jr z,.rec_next
+        push hl
+        ld a,l
+        add a,SLOT_CFG
+        ld l,a
+        ld a,(hl)
+        pop hl
+        cp e
+        jr nz,.rec_next
+        inc l
+        ld a,d
+        sub (hl)
+        ld d,a
+        dec l
+.rec_next:
+        ld a,l
+        add a,SLOT_SIZE
+        ld l,a
+        jr nz,.rec
+        ld hl,(xm_free)
+        ld a,l
+        add a,d
+        ld l,a
+        jr nc,.add
+        inc h
+.add:
+        ld (xm_free),hl
+        pop bc
+        pop hl
+        jr .bank
+.done:
+        ld l,c                      ; 128 + 16 * (banks - 1)
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,128 - 16
+        add hl,de
+        push hl
+        ld hl,(xm_free)             ; 4 pages a K
+        srl h
+        rr l
+        srl h
+        rr l
+        ex de,hl
+        pop hl
+        or a
+        ret
+xm_free:        dw 0
+
 ; -> A = the M4 ROM's number (searched once), carry if there is none
 m4_find:                            ; (VX_M4, kernel/api.asm)
         ld a,(m4_num)

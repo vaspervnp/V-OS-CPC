@@ -1,0 +1,17 @@
+# READER's texts: NAME | English | Greek (tools/mktexts.py). "|" with
+# no spaces around it starts a new line in a dialog.
+MENU        | READER                | READER
+OPEN        | OPEN A FILE...        | ΑΝΟΙΓΜΑ ΑΡΧΕΙΟΥ...
+ADDRESS     | OPEN AN ADDRESS...    | ΑΝΟΙΓΜΑ ΔΙΕΥΘΥΝΣΗΣ...
+PREVIOUS    | PREVIOUS PAGE    DEL  | ΠΡΟΗΓΟΥΜΕΝΗ ΣΕΛΙΔΑ DEL
+DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+ABOUT_TEXT  | READER|MARKDOWN PAGES FROM|THE DISC OR THE WEB|(M4 BOARD, HTTP)|FOR V-OS, FROM THE SDK | READER|ΣΕΛΙΔΕΣ MARKDOWN ΑΠΟ|ΔΙΣΚΕΤΑ Ή WEB|(ΚΑΡΤΑ M4, HTTP)|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+OPEN_T      | OPEN A PAGE           | ΑΝΟΙΓΜΑ ΣΕΛΙΔΑΣ
+URL_T       | ADDRESS (HTTP)        | ΔΙΕΥΘΥΝΣΗ (HTTP)
+NO_PAGE     | THE PAGE CANNOT|BE OPENED | Η ΣΕΛΙΔΑ ΔΕΝ|ΑΝΟΙΓΕΙ
+NO_HTTPS    | ONLY HTTP ADDRESSES|CAN BE OPENED | ΑΝΟΙΓΟΥΝ ΜΟΝΟ|ΔΙΕΥΘΥΝΣΕΙΣ HTTP
+NO_M4       | THE WEB NEEDS|AN M4 BOARD | ΤΟ WEB ΘΕΛΕΙ|ΚΑΡΤΑ M4
+LOADING     | LOADING...            | ΦΟΡΤΩΣΗ...
+HINT        | TAB LINK  RETURN GO  DEL BACK  ^U ADDRESS  ^Q | TAB ΣΥΝΔΕΣΗ  RETURN ΠΑΜΕ  DEL ΠΙΣΩ  ^U ΔΙΕΥΘ.
