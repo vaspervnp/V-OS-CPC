@@ -4,6 +4,17 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M38 (the internet with the M4 board):**
+- **WEBGET:** a new program (`myapps/webget`, 2.5K, on `vos.dsk`). GET A FILE (^G) asks for an HTTP address and a name (taken from the end of the address), the M4 board downloads the file, and WEBGET saves it on the drive it shows. Up to 16K, the size of the data bank. It also shows the network status, or "NO M4 BOARD".
+- **API 17:** `VX_M4`, through `VOS_EXT`: HL → a command packet for the M4 (size, command, data), DE → where its response goes, BC = how many bytes. The kernel looks for the M4 ROM by its name ("M4 BOARD") once, sends the packet to `#FE00` and starts it with `#FC00`, then maps the ROM at `#C000` (where the screen is) only while it copies the response from the buffer that `#FF02` points to, with interrupts off. The search is in the kernel extension; the rest took 79 bytes of the main kernel.
+- **M4 commands used:** `C_NETSTAT` (the network), `C_HTTPGETMEM` (up to 16K into the M4's buffer) and `C_COPYBUF` (512 bytes at a time), from spinpoint.org/cpc/m4info.txt.
+- **Bugs found** (in the Python harness): `m4_rom` changed BC, so the response copy ran over 32K of memory; and a known M4 ROM was reported as "none" from the second call on.
+- **Tested:**
+  - Python Z80 harness with the kernel and its extension from `VOS.BIN` and CPCEMU's `M4.ROM`, with the M4 emulated from its documentation: the ROM is found in slot 6, `C_NETSTAT`, `C_HTTPGETMEM` and `C_COPYBUF` go out and their responses come back right, and the screen RAM is back at `#C000` afterwards.
+  - The harness with WEBGET's GET: a 1,500-byte page comes in three pieces and is saved as `INDEX.HTM`, the same bytes.
+  - Caprice32 (no M4): WEBGET shows NO M4 BOARD and ^G does nothing, without crashing. `test-sysinfo` shows API 17.
+- **Not tested:** a real download. Here CPCEMU (the only emulator with an M4) does not show its window, and it writes the discs only when it is closed with F12, so `make test-webget` is for a machine with a screen. Not tested on a real M4 either.
+
 **M37 (the clipboard):**
 - **What changed:** NOTEPAD and MARKDOWN have an EDIT menu: COPY ^C, CUT ^X, PASTE ^V and SELECT ALL ^A. SHIFT with the arrows selects, and the selection is shown inverted. Typing, RETURN, DEL or CLR replace or delete the selection; an arrow without SHIFT or a click ends it.
 - **Shared:** the clipboard is in the kernel, so text copied in one program can be pasted in another. It keeps up to 1K, in the free end of the kernel extension (bank 7, `#7B00–#7EFF`), which costs nothing in `VOS.BIN`.

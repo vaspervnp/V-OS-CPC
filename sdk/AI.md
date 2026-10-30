@@ -67,7 +67,7 @@ Rules that are easy to break:
 - File names: 11 bytes `"NAME    EXT"`; drive 0 = A:, 1 = B:.
 - Icon: `icon.txt`, 16 rows of 16 hex pens (Launcher palette) or `.`.
 
-## 5. API versions 12 to 16
+## 5. API versions 12 to 17
 
 - `VOS_SELF` (an address, `#8800`): `db drive, 11-byte name` of the running program. Read it in `init` (A = 0) to load your files from your own drive.
 - `VOS_CATALOG` with `A = drive + VOS_CAT_EXT` and `HL -> "EXT"`: the catalog keeps only that extension; `VOS_FILE_PICK` then lists only those files.
@@ -75,6 +75,7 @@ Rules that are easy to break:
 - `VOS_COLOURS` with `A = pen + VOS_BOLD / VOS_ITALIC / VOS_UNDERLINE` (version 13): styled text from the normal font, in every language. A run of one style is one `VOS_COLOURS` and one `VOS_PRINT`; clear long empty areas with `VOS_RECT`, which is much faster than printing spaces (`myapps/markdown`).
 - `VOS_OPEN` (`#B000`, version 14): `db 1, drive, 11-byte name` when RETURN in the Desktop or Commander opened a file in your program. Check it in `init` for A = 0 **and** A = 2 (it may already be running; ask about unsaved work first), then write 0. See `open_arg` in `myapps/notepad`. New types go in `ft_open` in `src/kernel/files_ext.asm`.
 - `VOS_EXT` (version 15): the jump table is closed; new calls go through `VOS_EXT` with A = a `VX_*` number (`VX_VERSION`, `VX_FREE`, …) and the arguments in BC, DE, HL. Check `VOS_API_VERSION` ≥ 15 first. In the kernel, a call is a `dw` in `xa_table` (`src/kernel/api.asm`); one that lives in the extension (bank 7, `files_ext.asm`) cannot see the program's memory and takes HL from `xa_hl`. `myapps/sysinfo` uses both kinds.
+- The M4 board (version 17): `VX_M4` sends a command packet (HL: db size, dw command, data; size counts the command and the data, including a string's 0) and copies BC bytes of the response to DE (db size, dw command, then the data from +3). The commands are in spinpoint.org/cpc/m4info.txt; HTTP only. The kernel finds the M4 ROM and maps it at `#C000` only while copying, with interrupts off. See `myapps/webget` (C_NETSTAT, C_HTTPGETMEM, C_COPYBUF). Caprice32 has no M4: test the logic in the Python harness, the real thing in CPCEMU.
 - The clipboard (version 16): `VX_CLIP_PUT` (HL = text, BC = bytes, 1K kept) and `VX_CLIP_GET` (DE = where, BC = room; BC = 0 gives the size in HL). Text uses LF between lines, as NOTEPAD and MARKDOWN keep it. Selection, cut and paste: `sel_range`, `sel_delete`, `do_paste` in `myapps/notepad`. Key events carry the mods at +3: `VMOD_SHIFT`, `VMOD_CONTROL`.
 - `VOS_BACKGROUND` A = 1: you keep getting `VE_FRAME` behind other views and programs; every other call does nothing there (`MUSIC` uses this to keep playing).
 

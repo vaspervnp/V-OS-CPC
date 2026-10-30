@@ -1,0 +1,19 @@
+# WEBGET's texts: NAME | English | Greek (tools/mktexts.py). "|" with
+# no spaces around it starts a new line in a dialog.
+MENU        | WEBGET                | WEBGET
+GET         | GET A FILE...         | ΛΗΨΗ ΑΡΧΕΙΟΥ...
+DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+ABOUT_TEXT  | WEBGET|FILES FROM THE WEB|(HTTP, UP TO 16K) WITH|THE M4 BOARD|FOR V-OS, FROM THE SDK | WEBGET|ΑΡΧΕΙΑ ΑΠΟ ΤΟ WEB|(HTTP, ΩΣ 16K) ΜΕ ΤΗΝ|ΚΑΡΤΑ M4|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+TITLE       | FILES FROM THE WEB    | ΑΡΧΕΙΑ ΑΠΟ ΤΟ WEB
+URL_T       | ADDRESS (HTTP)        | ΔΙΕΥΘΥΝΣΗ (HTTP)
+NAME_T      | SAVE AS               | ΑΠΟΘΗΚΕΥΣΗ ΩΣ
+NO_M4       | NO M4 BOARD           | ΔΕΝ ΥΠΑΡΧΕΙ ΚΑΡΤΑ M4
+NETWORK     | NETWORK:              | ΔΙΚΤΥΟ:
+URL         | ADDRESS:              | ΔΙΕΥΘΥΝΣΗ:
+GETTING     | GETTING IT...         | ΛΗΨΗ...
+NOTHING     | NOTHING CAME          | ΔΕΝ ΗΡΘΕ ΤΙΠΟΤΑ
+SAVED       | SAVED, BYTES:         | ΣΩΘΗΚΕ, BYTES:
+DRIVE_L     | TO DRIVE:             | ΣΤΗ ΜΟΝΑΔΑ:
+HINT        | ^G GET A FILE  ESC MENU  ^Q BACK | ^G ΛΗΨΗ  ESC ΜΕΝΟΥ  ^Q ΕΠΙΣΤΡΟΦΗ

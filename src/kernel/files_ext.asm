@@ -306,3 +306,47 @@ xa_free:
         call fs_free_k
         or a
         ret
+
+; -> A = the M4 ROM's number (searched once), carry if there is none
+m4_find:                            ; (VX_M4, kernel/api.asm)
+        ld a,(m4_num)
+        cp #FE
+        jr c,.known
+        scf
+        ret z                       ; known: none
+        ld a,31
+.rom:
+        ld (m4_num),a
+        di
+        call m4_rom
+        ld hl,(#C004)               ; the name: "M4 BOARD", "D" + #80
+        ld de,m4_name
+        ld a,(#C000)                ; a background ROM
+        dec a
+        jr nz,.other
+.char:
+        ld a,(de)
+        cp (hl)
+        jr nz,.other
+        inc hl
+        inc de
+        rla
+        jr nc,.char
+        call m4_done
+        ld a,(m4_num)
+        or a
+        ret
+.other:
+        call m4_done
+        ld a,(m4_num)
+        sub 1
+        jr nc,.rom
+        ld a,#FE
+        ld (m4_num),a
+        scf
+        ret
+.known:
+        or a
+        ret
+
+m4_name:        db "M4 BOAR", "D" + #80

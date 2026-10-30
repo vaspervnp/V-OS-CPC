@@ -55,7 +55,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-notepad windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-notepad windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -629,6 +629,28 @@ test-music: $(MUSIC_DSK) $(BUILD)/music.dsk
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
+
+# WEBGET and the M4 board (TEST_SCRIPT=25), in CPCEMU for Linux (the
+# package of make linux, with its M4), by hand: it needs a screen and the
+# internet. When WEBGET says SAVED, close CPCEMU with F12; it writes the
+# disc then, and the downloaded file is looked for on it.
+WEBGET_DSK := $(BUILD)/vos_webget.dsk
+$(WEBGET_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/WEBGET.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_webget -DTEST_SCRIPT=25
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	printf '10 RUN"VOS"\r\n\032' > $(BUILD)/DISC.BAS
+	iDSK $@ -i $(BUILD)/DISC.BAS -t 0 > /dev/null
+	$(call add_apps,$@,$(APPS) $(BUILD)/WEBGET.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-webget: $(WEBGET_DSK)
+	@test -x $(BUILD)/linux/V-OS/cpcemu/cpcemu || { echo "make linux first"; exit 1; }
+	cp $(WEBGET_DSK) $(BUILD)/linux/V-OS/cpcemu/DISC/VOS.DSK
+	-cd $(BUILD)/linux/V-OS/cpcemu && ./cpcemu -c vos.cfg -t 2 > /dev/null 2>&1
+	iDSK $(BUILD)/linux/V-OS/cpcemu/DISC/VOS.DSK -l | grep -i "INDEX" || { echo "test-webget: no INDEX.HTM on the disc"; exit 1; }
 
 # The clipboard (TEST_SCRIPT=24): A: with NOTEPAD.BIN, B: as test-open
 CLIP_DSK := $(BUILD)/vos_clip.dsk

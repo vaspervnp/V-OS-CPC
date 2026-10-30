@@ -74,7 +74,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 16              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 17              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -83,7 +83,7 @@ VOS_API_VERSION equ 16              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 12: VOS_CAT_EXT, VOS_SELF,
                                     ; VOS_PTR_KEYS, 13: text styles,
                                     ; 14: VOS_OPEN, 15: VOS_EXT,
-                                    ; 16: the clipboard
+                                    ; 16: the clipboard, 17: VX_M4
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -195,7 +195,12 @@ VX_CLIP_PUT     equ 2                   ; (16) HL = text, BC = bytes ->
 VX_CLIP_GET     equ 3                   ; (16) DE = where, BC = room -> as
                                         ; much as fits; HL = clipboard size
                                         ; (BC = 0: only the size)
-VX_COUNT        equ 4
+VX_M4           equ 4                   ; (17) HL -> a command for the M4
+                                        ; board (db size, dw command, data),
+                                        ; DE -> its response (db size, dw
+                                        ; command, data), BC = its bytes;
+                                        ; carry: no M4 board
+VX_COUNT        equ 5
 
 ; The data bank: 16K more for the program (bank 4), seen at the same
 ; addresses #4000-#7FFF but never mapped there: the program copies to

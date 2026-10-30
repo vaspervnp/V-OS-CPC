@@ -312,6 +312,24 @@ test_keys:
         dw 3050, 3054 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 25
+; make test-webget (-DTEST_SCRIPT=25): WEBGET (myapps/webget) with the
+; M4 board, in CPCEMU (tools/linux/), WEBGET.BIN last on A:. Expected:
+;   frame  300  F3, 400-850 DOWN held, 900 RETURN -> WEBGET: the network
+;   frame 1100  CONTROL+G    -> the address, example.com/index.html
+;   frame 1200  RETURN       -> the name, INDEX.HTML
+;   frame 1300  RETURN       -> GETTING IT..., then SAVED, BYTES: n, and
+;                               A:INDEX.HTM on the disc
+test_keys:
+        dw  300,  304 : db 0, %00100000   ; F3
+        dw  400,  850 : db 0, %00000100   ; DOWN, held
+        dw  900,  904 : db 2, %00000100   ; RETURN: WEBGET
+        dw 1095, 1110 : db 2, %10000000   ; CONTROL
+        dw 1100, 1104 : db 6, %00010000   ; G
+        dw 1200, 1204 : db 2, %00000100   ; RETURN: the address
+        dw 1300, 1304 : db 2, %00000100   ; RETURN: the name
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 24
 ; make test-clip (-DTEST_SCRIPT=24): the clipboard. A: the test disc
 ; with NOTEPAD.BIN, B: markdown.dsk with HELLO.TXT (as test-open).
@@ -1204,6 +1222,7 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

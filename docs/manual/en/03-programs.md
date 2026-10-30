@@ -60,6 +60,7 @@ While it is open, it gets the keys and clicks. Its window can be dragged by its 
 | **MUSIC** | plays Arkos Tracker 3 songs (`.MUS`, made by `make songs`), with three volume bars. It is on its own disc, `music.dsk`, in B:. OPEN, SPACE plays and stops. The music goes on behind other views and programs (`myapps/music`) |
 | **MARKDOWN** | an editor for Markdown files (`.MD`, up to 6K), like NOTEPAD. ^P shows the page: `#` headings, **bold**, *italic*, `code`, lists, quotes, lines, code blocks and underlined links, without the marks. The arrows scroll the page, RETURN or ^P go back to the text. It is on its own disc, `markdown.dsk`, with a `README.MD`. EDIT menu: COPY ^C, CUT ^X, PASTE ^V, SELECT ALL ^A; SHIFT and the arrows select. The clipboard (up to 1K) is shared by all programs (`myapps/markdown`) |
 | **SYSINFO** | shows the V-OS and API versions and the free space on the discs in A: and B: (^R again). An example of `VOS_EXT` (`myapps/sysinfo`) |
+| **WEBGET** | downloads files from the web with the M4 board: GET A FILE (^G) asks for an address (HTTP, e.g. `example.com/index.html`) and a name, and the file (up to 16K) is saved on the drive it shows (OTHER DRIVE). It also shows the network status. Without an M4 board: "NO M4 BOARD" (`myapps/webget`) |
 | **PONG** | a ball and a paddle with the arrows, score and lives |
 | **CATCH** | catch the falling stars |
 | **STARCAT** | a cat with costumes that walks, a star, a melody from a list |

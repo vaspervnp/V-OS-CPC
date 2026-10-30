@@ -122,7 +122,7 @@ command: ...
 - **Icône :** 16 lignes de 16 caractères dans `icon.txt`. Chaque caractère est une encre en hexadécimal (mode 0, palette du Lanceur) ou `.` pour transparent.
 - **Noms de fichiers** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`) : 11 octets, `"NAME    EXT"`. Lecteur 0 = A:, 1 = B:.
 
-## L'API (version 16)
+## L'API (version 17)
 
 | Appel | Entrée → sortie | Ce qu'il fait |
 |---|---|---|
@@ -164,7 +164,7 @@ command: ...
 | `VOS_BACKGROUND` | A = 1 / 0 | continue à tourner ou se fige quand il est derrière un autre |
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → carry : nouveaux HL, DE | déplacement d'une fenêtre par son titre |
 | `VOS_FIT` | idem → HL, DE | ramène une fenêtre dans l'écran |
-| `VOS_EXT` | A = un appel `VX_*`, BC, DE, HL selon l'appel → A, HL, C, DE, retenue | les appels après la table (version 15) : `VX_VERSION` → A = API, HL = version de V-OS (BCD). `VX_FREE` C = lecteur → A = K libres. Inconnu : retenue `VX_CLIP_PUT` HL = texte, BC = octets → le presse-papiers (jusqu'à 1K). `VX_CLIP_GET` DE = où, BC = place → HL = taille (version 16). |
+| `VOS_EXT` | A = un appel `VX_*`, BC, DE, HL selon l'appel → A, HL, C, DE, retenue | les appels après la table (version 15) : `VX_VERSION` → A = API, HL = version de V-OS (BCD). `VX_FREE` C = lecteur → A = K libres. Inconnu : retenue `VX_CLIP_PUT` HL = texte, BC = octets → le presse-papiers (jusqu'à 1K). `VX_CLIP_GET` DE = où, BC = place → HL = taille (version 16). `VX_M4` HL → une commande pour la carte M4 (db taille, dw commande, données), DE → la réponse, BC = octets ; retenue : pas de carte M4 (version 17). |
 
 Tous les détails, par ex. sur l'arrière-plan, l'accessoire et `VOS_SPLIT`, sont dans `src/api/vos_api.inc`. Pour des exemples, voir `apps/demo/demo.asm` (mode 0, mouvement), `apps/clock/clock.asm` (accessoire) et `apps/mixed/mixed.asm` (écran mixte). Un jeu complet avec des sprites, un niveau lu dans un fichier et du son : `myapps/vrouves/`.
 

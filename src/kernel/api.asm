@@ -80,7 +80,7 @@ api_ext:
         scf
         ret
 
-xa_table:       dw xa_version, xa_free, xa_clip_put, xa_clip_get
+xa_table:       dw xa_version, xa_free, xa_clip_put, xa_clip_get, xa_m4
         assert $ - xa_table == VX_COUNT * 2
 xa_hl:          dw 0
 
@@ -132,6 +132,62 @@ xa_clip_get:
         pop hl
         ret
 clip_len:       dw 0
+
+; VX_M4: HL -> a command for the M4 board (db size, dw command, data),
+; DE -> where its response goes, BC = how many bytes of it (db size,
+; dw command, then the data) -> carry if there is no M4 board. The M4
+; ROM is mapped at #C000 only while the response is copied, with the
+; interrupts off (the screen is there).
+xa_m4:
+        push bc
+        push de
+        push hl
+        ld hl,m4_find               ; (kernel/files_ext.asm)
+        call ext_call
+        pop hl
+        jr c,.none
+        ld bc,#FE00                 ; the command, its size byte first
+        ld d,(hl)
+        inc d
+.send:
+        inc b
+        outi
+        dec d
+        jr nz,.send
+        ld bc,#FC00                 ; go
+        out (c),c
+        pop de
+        pop bc
+        di
+        call m4_rom
+        ld hl,(#FF02)               ; the ROM's response buffer
+        ldir
+        jr m4_done
+.none:
+        pop de
+        pop bc
+        ret
+
+; the ROM m4_num at #C000 (interrupts off before); BC kept
+m4_rom:
+        push bc
+        ld a,(m4_num)
+        ld bc,#DF00
+        out (c),a
+        ld a,(gfx_mode)
+        or GA_RMR + GA_RMR_LOROM_OFF
+        ld b,GA_PORT >> 8
+        out (c),a
+        pop bc
+        ret
+; and the RAM there again; carry clear
+m4_done:
+        ld a,(gfx_mode)
+        call ga_set_mode
+        ei
+        or a
+        ret
+m4_num:         db #FF                ; #FF: not looked for, #FE: none
 
 api_exit:
         ld a,(acc_open)             ; an accessory: it closes, after

@@ -122,7 +122,7 @@ command: ...
 - **Icona:** 16 righe di 16 caratteri in `icon.txt`. Ogni carattere è una penna in esadecimale (modo 0, palette del Launcher) o `.` per trasparente.
 - **Nomi di file** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 byte, `"NAME    EXT"`. Unità 0 = A:, 1 = B:.
 
-## L'API (versione 16)
+## L'API (versione 17)
 
 | Chiamata | Ingresso → uscita | Cosa fa |
 |---|---|---|
@@ -164,7 +164,7 @@ command: ...
 | `VOS_BACKGROUND` | A = 1 / 0 | continua a girare o si blocca quando è dietro un altro |
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → carry: nuovi HL, DE | trascinamento di una finestra per il titolo |
 | `VOS_FIT` | come sopra → HL, DE | riporta una finestra dentro lo schermo |
-| `VOS_EXT` | A = una chiamata `VX_*`, BC, DE, HL come vuole → A, HL, C, DE, carry | le chiamate dopo la tabella (versione 15): `VX_VERSION` → A = API, HL = versione di V-OS (BCD). `VX_FREE` C = unità → A = K liberi. Sconosciuta: carry `VX_CLIP_PUT` HL = testo, BC = byte → gli appunti (fino a 1K). `VX_CLIP_GET` DE = dove, BC = spazio → HL = dimensione (versione 16). |
+| `VOS_EXT` | A = una chiamata `VX_*`, BC, DE, HL come vuole → A, HL, C, DE, carry | le chiamate dopo la tabella (versione 15): `VX_VERSION` → A = API, HL = versione di V-OS (BCD). `VX_FREE` C = unità → A = K liberi. Sconosciuta: carry `VX_CLIP_PUT` HL = testo, BC = byte → gli appunti (fino a 1K). `VX_CLIP_GET` DE = dove, BC = spazio → HL = dimensione (versione 16). `VX_M4` HL → un comando per la scheda M4 (db dimensione, dw comando, dati), DE → la risposta, BC = byte; carry: niente scheda M4 (versione 17). |
 
 I dettagli completi, ad es. sul background, sull'accessorio e su `VOS_SPLIT`, sono in `src/api/vos_api.inc`. Per esempi, vedi `apps/demo/demo.asm` (modo 0, movimento), `apps/clock/clock.asm` (accessorio) e `apps/mixed/mixed.asm` (schermo misto). Un gioco intero con sprite, un livello letto da file e suono è `myapps/vrouves/`.
 

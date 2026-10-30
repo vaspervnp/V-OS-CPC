@@ -60,6 +60,7 @@ Mientras está abierto, recibe las teclas y los clics. Su ventana se puede arras
 | **MUSIC** | reproduce canciones de Arkos Tracker 3 (`.MUS`, hechas con `make songs`), con tres barras de volumen. Está en su propio disquete, `music.dsk`, en B:. OPEN, SPACE reproduce y para. La música sigue detrás de otras vistas y programas (`myapps/music`) |
 | **MARKDOWN** | un editor de archivos Markdown (`.MD`, hasta 6K), como NOTEPAD. ^P muestra la página: títulos `#`, **negrita**, *cursiva*, `código`, listas, citas, líneas, bloques de código y enlaces subrayados, sin las marcas. Las flechas desplazan la página, RETURN o ^P vuelven al texto. Está en su propio disquete, `markdown.dsk`, con un `README.MD`. Menú EDIT: COPY ^C, CUT ^X, PASTE ^V, SELECT ALL ^A; SHIFT y las flechas seleccionan. El portapapeles (hasta 1K) es común a todos los programas (`myapps/markdown`) |
 | **SYSINFO** | muestra las versiones de V-OS y de la API y el espacio libre en los disquetes de A: y B: (^R otra vez). Un ejemplo de `VOS_EXT` (`myapps/sysinfo`) |
+| **WEBGET** | descarga archivos de la web con la tarjeta M4: GET A FILE (^G) pide una dirección (HTTP, p. ej. `example.com/index.html`) y un nombre, y el archivo (hasta 16K) se guarda en la unidad que muestra (OTHER DRIVE). También muestra el estado de la red. Sin tarjeta M4: "NO M4 BOARD" (`myapps/webget`) |
 | **PONG** | una pelota y una pala con las flechas, puntuación y vidas |
 | **CATCH** | atrapar las estrellas que caen |
 | **STARCAT** | un gato con disfraces que camina, una estrella, una melodía a partir de una lista |

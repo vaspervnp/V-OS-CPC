@@ -103,6 +103,7 @@ I test eseguono V-OS in Caprice32 senza finestra e catturano schermate in `build
 | `test-open` | apertura per tipo nel Commander: `README.MD` in MARKDOWN da B:, un `.TXT` in NOTEPAD da A: |
 | `test-sysinfo` | SYSINFO dal Commander: versione, API, K liberi su A: e B:, ^R, ^Q |
 | `test-clip` | gli appunti: selezione con SHIFT, ^C e ^V in NOTEPAD, ^A, ^X, ^V, poi ^V in MARKDOWN |
+| `test-webget` | a mano, nel CPCEMU di `make linux` (scheda M4; servono uno schermo e internet): WEBGET scarica `example.com/index.html`. Chiudi CPCEMU con F12 quando appare SAVED, e si cerca `INDEX.HTM` sul dischetto |
 | `test-amsdos`, `test-reboot`, `test-system` | file di V-OS in BASIC, riavvio, dischetto SYSTEM |
 
 **Nuovo script:**
