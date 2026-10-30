@@ -18,6 +18,7 @@ Pour ceux qui travaillent sur V-OS lui-même. Les programmes *pour* V-OS sont d�
 | `make run` | ouvre la disquette dans Caprice32 (`RUN"VOS"`) |
 | `make shot` | démarre sans fenêtre et prend une capture d'écran |
 | `make docs` | le manuel en PDF : `docs/V-OS.pdf` (grec) et `docs/V-OS-en.pdf`, `-fr`, `-es`, `-de`, `-it` |
+| `make windows` | `build/V-OS-windows.zip` : `V-OS.exe` pour Windows, avec Caprice32 (CPC 6128, 576K), `vos.dsk` en A: et `vrouves.dsk` en B:. V-OS démarre tout seul. Il faut WSL et le `cap32-win64.zip` de Caprice32 (`CAP32_ZIP=…`) |
 | `make new-app NAME=x`, `make app NAME=x` | votre propre programme (SDK) |
 | `make clean` | efface `build/` |
 

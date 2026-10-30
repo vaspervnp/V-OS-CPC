@@ -18,6 +18,7 @@
 | `make run` | ανοίγει τη δισκέτα στον Caprice32 (`RUN"VOS"`) |
 | `make shot` | εκκίνηση χωρίς παράθυρο και ένα screenshot |
 | `make docs` | το manual ως PDF: `docs/V-OS.pdf` (ελληνικά) και `docs/V-OS-en.pdf`, `-fr`, `-es`, `-de`, `-it` |
+| `make windows` | το `build/V-OS-windows.zip`: το `V-OS.exe` για Windows, με τον Caprice32 (CPC 6128, 576K), τη `vos.dsk` στο A: και τη `vrouves.dsk` στο B:. Το V-OS ξεκινά μόνο του. Χρειάζεται WSL και το `cap32-win64.zip` του Caprice32 (`CAP32_ZIP=…`) |
 | `make new-app NAME=x`, `make app NAME=x` | δικό σου πρόγραμμα (SDK) |
 | `make clean` | σβήνει το `build/` |
 

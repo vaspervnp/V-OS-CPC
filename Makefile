@@ -54,7 +54,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -227,6 +227,13 @@ $(BUILD)/$(1).dsk: $(BUILD)/$(call upper,$(1)).BIN $(wildcard myapps/$(1)/owndis
 endef
 $(foreach a,$(OWN_APPS),$(eval $(call own_disc_rule,$(a))))
 all: $(OWN_DSKS)
+
+# V-OS for Windows (tools/mkwindows.sh, under WSL): build/V-OS-windows.zip,
+# V-OS.exe with Caprice32 (576K), vos.dsk in A: and vrouves.dsk in B:.
+# CAP32_ZIP is Caprice32's cap32-win64.zip, from its GitHub releases.
+CAP32_ZIP ?= $(BUILD)/win/dl/cap32-win64.zip
+windows: $(DSK) $(OWN_DSKS) tools/mkwindows.sh tools/windows/launcher.cs tools/windows/README.txt
+	bash tools/mkwindows.sh $(CAP32_ZIP)
 
 # The manual as a PDF (python's user packages: no -I)
 DOC_LANGS := en fr es de it
