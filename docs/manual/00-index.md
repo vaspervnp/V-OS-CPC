@@ -37,7 +37,7 @@
 
 ## Άλλα κείμενα
 
-- [`README.md`](../../README.md): η κατάσταση του έργου, milestone προς milestone, με ό,τι ελέγχθηκε σε καθένα.
+- [`README.el.md`](../../README.el.md) (στα αγγλικά: [`README.md`](../../README.md)): η κατάσταση του έργου, milestone προς milestone, με ό,τι ελέγχθηκε σε καθένα.
 - [`docs/REQUIREMENTS.md`](../REQUIREMENTS.md): οι απαιτήσεις και ο σχεδιασμός, με τις λεπτομέρειες υλοποίησης κάθε milestone.
 - [`src/api/vos_api.inc`](../../src/api/vos_api.inc): το API, με όλους τους κανόνες του σε σχόλια.
 

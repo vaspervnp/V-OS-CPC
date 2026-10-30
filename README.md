@@ -1,652 +1,654 @@
 # V-OS
 
-Γραφικό λειτουργικό σύστημα για τον Amstrad CPC 6128, γραμμένο σε Z80 assembly.
+A graphical operating system for the Amstrad CPC 6128, written in Z80 assembly.
 
-- **Τεκμηρίωση** (χρήση, Studio, SDK, ανάπτυξη): [docs/manual/](docs/manual/00-index.md), και ως PDF στο [docs/V-OS.pdf](docs/V-OS.pdf) (`make docs`)
+*Στα ελληνικά: [README.el.md](README.el.md).*
+
+- **Documentation** (use, Studio, SDK, development), in Greek: [docs/manual/](docs/manual/00-index.md), and as a PDF in [docs/V-OS.pdf](docs/V-OS.pdf) (`make docs`)
 - **Manual** in English, Français, Español, Deutsch, Italiano: [docs/manual/en/](docs/manual/en/00-index.md), [fr](docs/manual/fr/00-index.md), [es](docs/manual/es/00-index.md), [de](docs/manual/de/00-index.md), [it](docs/manual/it/00-index.md); PDFs: `docs/V-OS-<en|fr|es|de|it>.pdf`
-- Τι απαιτείται και τι έχει αποφασιστεί: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)
-- Πρότυπα interface: [docs/interface-templates.html](docs/interface-templates.html)
+- What is required and what has been decided: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)
+- Interface templates: [docs/interface-templates.html](docs/interface-templates.html)
 
 ## Build
 
-Απαιτούνται [RASM](https://github.com/EdouardBERGE/rasm), [iDSK](https://github.com/cpcsdk/idsk), Python 3 και GNU make (4.3 ή νεότερο). Για δοκιμή χρειάζεται ο Caprice32 (snap).
+You need [RASM](https://github.com/EdouardBERGE/rasm), [iDSK](https://github.com/cpcsdk/idsk), Python 3 and GNU make (4.3 or newer). For testing you need Caprice32 (snap).
 
 ```bash
 make          # build/vos.dsk
-make run      # εκκίνηση στον Caprice32 με RUN"VOS"
-make shot     # εκκίνηση χωρίς παράθυρο και screenshot
-make test-input  # σενάριο πλήκτρων με δισκέτες στα A: και B:, screenshots στο build/shots/<καθυστέρηση>
-make test-calc   # η αριθμομηχανή CALC (mode 1) με κλικ στα κουμπιά, μετά το CALC.VBS στο Studio
-make test-costume # κοστούμι στο Studio: σχεδίαση, ΕΚΤΕΛΕΣΗ, άνοιγμα ξανά
-make test-acc    # το ΡΟΛΟΙ ως desk accessory, πάνω από τον Launcher και το Studio
-make test-multi  # DEMO και PONG μαζί: το καθένα συνεχίζει από εκεί που ήταν
-make test-switch # F6: η λίστα των προγραμμάτων που τρέχουν, και από το μενού VIEW
-make test-expand # με επέκταση 512K: STUDIO και CALC δίπλα στα DEMO και PONG
-make test-behind # το ΣΤΟ ΠΑΡΑΣΚΗΝΙΟ του Studio, και το TICKER που μετρά πίσω από τον Launcher και το DEMO
-make test-drag   # σύρσιμο: το ΑΡΧΕΙΑ, ένας διάλογος, το ΡΟΛΟΙ και το παράθυρο του CALC
-make test-mines  # το MINES: κλικ σε κάθε κελί ώσπου να βρεθεί νάρκη, μετά NEW
-make test-bricks # το BRICKS: η ρακέτα κινείται, τούβλα σπάνε, GAME OVER, και SPACE για νέο παιχνίδι
-make test-vars   # οι 128 μεταβλητές και τα SAVE/LOAD VARS: το VARS.VBS ανοίγει στο Studio, αλλάζει και τρέχει
-make test-langs  # η ΓΛΩΣΣΑ του Setup σε όλες τις γλώσσες, και το Desktop και το πληκτρολόγιο στα ιταλικά
-make test-lang   # Αγγλικά στην εκκίνηση, Ελληνικά αποθηκευμένα στο Setup, μετά RUN"VOS" ξανά
-make test-amsdos # το ίδιο σενάριο, μετά η AMSDOS στη BASIC διαβάζει τα αρχεία του V-OS
-make test-reboot # το ίδιο, μετά RUN"VOS" ξανά με το SETUP.CFG που αποθηκεύτηκε
-make test-system # το σενάριο με το A: σε μορφή SYSTEM
-make test-sdk    # το πρότυπο του SDK ως TEMPLATE: ανοίγει από τον Launcher, κουτί, μενού, ABOUT, BACK
-make docs        # τα PDF του manual: docs/V-OS.pdf (ελληνικά) και docs/V-OS-en/fr/es/de/it.pdf
+make run      # start in Caprice32 with RUN"VOS"
+make shot     # start without a window and take a screenshot
+make test-input  # key script with discs in A: and B:, screenshots in build/shots/<delay>
+make test-calc   # the CALC calculator (mode 1) with clicks on the buttons, then CALC.VBS in Studio
+make test-costume # a costume in Studio: draw, RUN, open again
+make test-acc    # the CLOCK as a desk accessory, over the Launcher and Studio
+make test-multi  # DEMO and PONG together: each one continues from where it was
+make test-switch # F6: the list of running programs, and from the VIEW menu
+make test-expand # with 512K expansion: STUDIO and CALC next to DEMO and PONG
+make test-behind # IN BACKGROUND in Studio, and TICKER counting behind the Launcher and DEMO
+make test-drag   # dragging: FILES, a dialog, the CLOCK and the CALC window
+make test-mines  # MINES: click on each cell until a mine is found, then NEW
+make test-bricks # BRICKS: the paddle moves, bricks break, GAME OVER, and SPACE for a new game
+make test-vars   # the 128 variables and SAVE/LOAD VARS: VARS.VBS opens in Studio, changes and runs
+make test-langs  # the LANGUAGE setting of Setup in all languages, and the Desktop and the keyboard in Italian
+make test-lang   # English at start-up, Greek saved in Setup, then RUN"VOS" again
+make test-amsdos # the same script, then AMSDOS in BASIC reads the V-OS files
+make test-reboot # the same, then RUN"VOS" again with the SETUP.CFG that was saved
+make test-system # the script with A: in SYSTEM format
+make test-sdk    # the SDK template as TEMPLATE: opens from the Launcher, box, menu, ABOUT, BACK
+make docs        # the PDFs of the manual: docs/V-OS.pdf (Greek) and docs/V-OS-en/fr/es/de/it.pdf
 ```
 
-Δικά σου προγράμματα σε assembly, με το API του V-OS (οδηγός και λίστα κλήσεων: [sdk/README.md](sdk/README.md)):
+Your own programs in assembly, with the V-OS API (guide and list of calls: [sdk/README.md](sdk/README.md)):
 
 ```bash
-make new-app NAME=hello   # myapps/hello από το πρότυπο του SDK
-make app NAME=hello       # build/HELLO.BIN, και στη build/vos.dsk
+make new-app NAME=hello   # myapps/hello from the SDK template
+make app NAME=hello       # build/HELLO.BIN, and into build/vos.dsk
 ```
 
-Προγράμματα με blocks: άνοιξε το `blocks/editor.html` σε browser, φτιάξε το πρόγραμμα, αποθήκευσε το `.vbp` και μεταγλώττισέ το:
+Programs with blocks: open `blocks/editor.html` in a browser, make the program, save the `.vbp` and compile it:
 
 ```bash
 python3 blocks/vbc.py pong.vbp --dsk build/vos.dsk
 ```
 
-Στον CPC: `RUN"VOS"` από τη δισκέτα.
+On the CPC: `RUN"VOS"` from the disc.
 
-## Δομή
+## Structure
 
 ```
-src/vos.asm          ρίζα του build: loader + kernel image, εγγραφή στο DSK
-src/boot/            loader που τρέχει η AMSDOS στο #4000, ανίχνευση επέκτασης RAM
-src/kernel/          vectors (#0000), είσοδος kernel, interrupts, filesystem, ext.asm (kernel extension στη bank 7)
-src/drivers/         Gate Array, CRTC, πληκτρολόγιο, ποντίκι, FDC
-src/ui/              μενού, κουμπιά, εστίαση, διάλογοι, επιλογή αρχείου
-src/shell/           όψεις του shell ως overlays: Desktop (A), Launcher (B), Commander (C), Setup
-src/api/vos_api.inc  το API για προγράμματα: διευθύνσεις, συμβάντα, πλήκτρα, μορφή αρχείου
-apps/                προγράμματα για το V-OS (apps/demo: το πρώτο, apps/mixed: η μικτή οθόνη, apps/studio: ο editor blocks, apps/clock: το ρολόι, το πρώτο desk accessory, apps/icons: τα εικονίδιά τους)
-blocks/              προγράμματα με blocks: editor.html (Blockly), vbc.py (μεταγλωττιστής), runtime.asm, player.asm (ο παίκτης του Studio, VBRUN.SYS στη δισκέτα), examples/
-src/gfx/             γραφικά overscan, κείμενο, γραμματοσειρά (font_ascii.asm παράγεται)
-src/include/         θύρες υλικού, χάρτης μνήμης
-src/lang/            παραγόμενα: αριθμοί μηνυμάτων, αγγλικά κείμενα και πληκτρολόγιο
-lang/                πηγές γλωσσών: en (βασική: ENGLISH.MSG και το πληκτρολόγιο του kernel), el (GREEK.LNG), fr, es, de, it (FRENCH, SPANISH, GERMAN, ITALIAN.LNG), latin1 (το κοινό font τους)
-tools/               scripts: screenshot στον Caprice32, mkfont.py, mklng.py, mktexts.py, mkicon.py
-docs/                manual/ (η τεκμηρίωση, ανά κεφάλαιο), V-OS.pdf, απαιτήσεις, πρότυπα
-sdk/                 το SDK για προγράμματα σε assembly: οδηγός, API, template/ (πρότυπο προγράμματος)
-myapps/              τα δικά σου προγράμματα (make new-app), που μπαίνουν στη build/vos.dsk
+src/vos.asm          root of the build: loader + kernel image, written to the DSK
+src/boot/            loader that AMSDOS runs at #4000, RAM expansion detection
+src/kernel/          vectors (#0000), kernel entry, interrupts, filesystem, ext.asm (kernel extension in bank 7)
+src/drivers/         Gate Array, CRTC, keyboard, mouse, FDC
+src/ui/              menus, buttons, focus, dialogs, file selection
+src/shell/           shell views as overlays: Desktop (A), Launcher (B), Commander (C), Setup
+src/api/vos_api.inc  the API for programs: addresses, events, keys, file format
+apps/                programs for V-OS (apps/demo: the first, apps/mixed: the mixed screen, apps/studio: the blocks editor, apps/clock: the clock, the first desk accessory, apps/icons: their icons)
+blocks/              programs with blocks: editor.html (Blockly), vbc.py (compiler), runtime.asm, player.asm (the Studio player, VBRUN.SYS on the disc), examples/
+src/gfx/             overscan graphics, text, font (font_ascii.asm is generated)
+src/include/         hardware ports, memory map
+src/lang/            generated: message numbers, English texts and keyboard
+lang/                language sources: en (base: ENGLISH.MSG and the kernel keyboard), el (GREEK.LNG), fr, es, de, it (FRENCH, SPANISH, GERMAN, ITALIAN.LNG), latin1 (their shared font)
+tools/               scripts: screenshot in Caprice32, mkfont.py, mklng.py, mktexts.py, mkicon.py
+docs/                manual/ (the documentation, by chapter), V-OS.pdf, requirements, templates
+sdk/                 the SDK for programs in assembly: guide, API, template/ (program template)
+myapps/              your own programs (make new-app), which go into build/vos.dsk
 ```
 
-Τα hex στον κώδικα γράφονται με `#` (π.χ. `#C000`), γιατί η RASM διαβάζει το `&` ως AND.
+Hex numbers in the code are written with `#` (e.g. `#C000`), because RASM reads `&` as AND.
 
-## Κατάσταση
+## Status
 
-**M34 (MARKDOWN, στυλ κειμένου):**
-- **Στυλ κειμένου:** το `VOS_COLOURS` παίρνει στα bits 4–6 του A τα `VOS_BOLD`, `VOS_ITALIC` και `VOS_UNDERLINE` (API 13). Βγαίνουν από την ίδια γραμματοσειρά 8×8, την ώρα που σχεδιάζεται κάθε γράμμα, άρα δουλεύουν σε όλες τις γλώσσες. Έντονα: κάθε σειρά με τον εαυτό της ένα pixel δεξιά. Πλάγια: οι τέσσερις πάνω σειρές ένα pixel δεξιά, οι δύο κάτω ένα αριστερά. Ο kernel μεγάλωσε 79 bytes.
-- **MARKDOWN:** κειμενογράφος για αρχεία `.MD` (ως 6K), από το NOTEPAD, σε δική του δισκέτα, `markdown.dsk`, με ένα `README.MD`. Το ^P δείχνει τη σελίδα χωρίς τα σημάδια: επικεφαλίδες, έντονα, πλάγια, κώδικας, λίστες, αριθμημένες λίστες, παραθέσεις, γραμμές, μπλοκ κώδικα, συνδέσεις, `\` για ένα σημάδι όπως είναι. Οι μεγάλες γραμμές αναδιπλώνονται σε κενό, κάτω από την αρχή του κειμένου τους.
-- **Λάθος που βρέθηκε:** τα μενού ΠΡΟΒΟΛΗ και ΒΟΗΘΕΙΑ στέλνουν στο πρόγραμμα τις εντολές 6–19, και τα NOTEPAD, PAINT και VROUVES είχαν δικές τους εντολές με τους ίδιους αριθμούς. Στο NOTEPAD το ^L (ΑΛΛΑΓΗ ΓΛΩΣΣΑΣ) έκανε ΕΠΙΣΤΡΟΦΗ, και στο PAINT το ΣΧΕΤΙΚΑ ΜΕ ΤΟ V-OS έβγαινε από το πρόγραμμα. Τώρα οι εντολές των προγραμμάτων αρχίζουν από το `VC_APP` (32), και το SDK το λέει.
-- **Ελέγχθηκε:** στον Caprice32 με το `make test-markdown`: το `README.MD` ανοίγει από το B:, η σελίδα δείχνει σωστά όλα τα στοιχεία και στις δύο οθόνες της, και το RETURN γυρίζει στο κείμενο. Μια σελίδα σχεδιάζεται σε περίπου ένα δευτερόλεπτο (τα κενά στο τέλος των γραμμών με ένα `VOS_RECT`). Ξανά τα `test-notepad`, `test-paint`, `test-vrouves`, `test-music`, `test-sdk`.
-- **Δεν ελέγχθηκαν:** η αποθήκευση ενός `.MD` στον Caprice32 (είναι ο κώδικας του NOTEPAD), η κύλιση γραμμή γραμμή.
+**M34 (MARKDOWN, text styles):**
+- **Text styles:** `VOS_COLOURS` takes `VOS_BOLD`, `VOS_ITALIC` and `VOS_UNDERLINE` in bits 4–6 of A (API 13). They come from the same 8×8 font, as each letter is drawn, so they work in all languages. Bold: each row with itself one pixel to the right. Italic: the top four rows one pixel to the right, the bottom two one to the left. The kernel grew by 79 bytes.
+- **MARKDOWN:** an editor for `.MD` files (up to 6K), from NOTEPAD, on its own disc, `markdown.dsk`, with a `README.MD`. ^P shows the page without the marks: headings, bold, italic, code, lists, numbered lists, quotes, lines, code blocks, links, `\` for a mark as it is. Long lines wrap at a space, under the start of their text.
+- **Bug found:** the VIEW and HELP menus send commands 6–19 to the program, and NOTEPAD, PAINT and VROUVES had their own commands with the same numbers. In NOTEPAD, ^L (SWITCH LANGUAGE) did BACK, and in PAINT ABOUT V-OS left the program. Now the commands of programs start from `VC_APP` (32), and the SDK says so.
+- **Tested:** in Caprice32 with `make test-markdown`: `README.MD` opens from B:, the page shows all the elements correctly on both of its screens, and RETURN goes back to the text. A page is drawn in about one second (the blanks at the end of lines with one `VOS_RECT`). Again `test-notepad`, `test-paint`, `test-vrouves`, `test-music`, `test-sdk`.
+- **Not tested:** saving an `.MD` in Caprice32 (it is the NOTEPAD code), scrolling line by line.
 
-**M33 (δεύτερη μονάδα στον Launcher, σκορ στο VROUVES, NOTEPAD, PAINT, MUSIC, ABOUT):**
-- **Launcher:** το TAB, ή ΑΡΧΕΙΟ > ΑΛΛΗ ΜΟΝΑΔΑ, δείχνει τα προγράμματα του B:. Η γραμμή της σελίδας αρχίζει με `A:` ή `B:`, και ένα πρόγραμμα που ξεκίνησε από το B: γυρίζει στο B:.
-- **VROUVES:** μόνο στη δική του δισκέτα πια. Πόντοι για κάθε εισβολέα και για τους χωριανούς στο τέλος της πίστας, με SCORE και STAGE κάτω από το HUD. Το `VROUVES.SAV` κρατά την πίστα που έφτασες (ΣΥΝΕΧΕΙΑ) και τα πέντε καλύτερα σκορ με όνομα (ΚΑΛΥΤΕΡΑ ΣΚΟΡ).
-- **NOTEPAD:** κειμενογράφος σε mode 1, 48×22, ως 4K. Ανοίγει μόνο αρχεία `.TXT`, γράφει CR LF στη δισκέτα.
-- **PAINT:** ζωγραφική σε mode 0: εικόνα 128×128 (`.PIC`), ή 64×64 με ζουμ 2× σε 3 επίπεδα (`.LYR`) που αλλάζουν σειρά, κρύβονται και φαίνονται. Μολύβι, πινέλο, γραμμή, κουτί, γέμισμα, γόμα. Βελάκια και COPY ζωγραφίζουν χωρίς ποντίκι.
-- **MUSIC:** παίζει τραγούδια του Arkos Tracker 3 με τον player AKM (MIT), σε δική του δισκέτα, `music.dsk`. Τα τραγούδια τα φτιάχνει το `make songs`. Η μουσική συνεχίζει πίσω από άλλες όψεις.
-- **ABOUT:** το ΒΟΗΘΕΙΑ > ΣΧΕΤΙΚΑ ΜΕ ΤΟ V-OS δείχνει «V-OS 0.1 BETA», την ημερομηνία του build, Revive8bit, 2026 και Architect: Vasper, στις έξι γλώσσες.
-- **Windows:** το `make windows` φτιάχνει πλέον το `V-OS.exe` με τον CPCEMU 3.0.2: 576K, ποντίκι AMX, κάρτα M4, οι δύο δισκέτες, autostart.
-- **Linux:** το `make linux` φτιάχνει το `build/V-OS-linux.tar.gz`, με το script `V-OS` και τον CPCEMU 2.5 για x86_64 (ο 3.0.2 δεν έχει βγει για Linux), με τις ίδιες ρυθμίσεις και δισκέτες. Θέλει SDL2. Το `VKBD_LANGUAGE = 0` στο `vos.cfg` (και των Windows) γλιτώνει την ερώτηση του CPCEMU για το εικονικό πληκτρολόγιο στην πρώτη εκκίνηση.
-- **SDK:** API 12 με `VOS_CAT_EXT` (κατάλογος με μία κατάληξη) και `VOS_PTR_KEYS` (ο δείκτης με τα βελάκια). Το `sdk/AI.md` είναι οδηγός του SDK για βοηθούς AI.
-- **Λάθη που βρέθηκαν:**
-  - Το PAINT έκοβε τον καμβά: η RASM υπολόγιζε λάθος το `CW / 2 * CH`. Τώρα με παρενθέσεις.
-  - Στο PAINT το κουτί αντάλλασσε λάθος τις γωνίες, και το φόντο μιας ετικέτας έμενε κίτρινο.
-  - Το μενού έβαζε πάντα τα βελάκια στον δείκτη μετά το κλείσιμο. Τώρα κρατά ό,τι ίσχυε πριν.
-- **Ελέγχθηκε:**
-  - Στον Caprice32: `make test-vrouves` (από το B: μέσω Launcher, ΚΑΛΥΤΕΡΑ ΣΚΟΡ), `test-notepad`, `test-paint` (και τα επίπεδα), `test-about`, `test-music` (το τραγούδι παίζει, οι μπάρες κινούνται, συνεχίζει πίσω από τον Launcher).
-  - Με Z80 σε Python: τα σκορ και το αρχείο του VROUVES, η επεξεργασία και τα CR LF του NOTEPAD, τα εργαλεία και τα επίπεδα του PAINT, η μετακίνηση των τραγουδιών του MUSIC (ίδια byte προς byte με του SongToAkm).
-- **Δεν ελέγχθηκαν:** ο ήχος (χωρίς παράθυρο), η εικόνα και το autostart του CPCEMU στα Windows και στο Linux (μόνο ότι ξεκινά: στο WSLg το παράθυρο δεν πιάνεται σε screenshot), η εισαγωγή ονόματος στον πίνακα σκορ στον Caprice32.
+**M33 (second drive in the Launcher, scores in VROUVES, NOTEPAD, PAINT, MUSIC, ABOUT):**
+- **Launcher:** TAB, or FILE > OTHER DRIVE, shows the programs of B:. The page line starts with `A:` or `B:`, and a program started from B: returns to B:.
+- **VROUVES:** only on its own disc now. Points for every invader and for the villagers at the end of the stage, with SCORE and STAGE under the HUD. `VROUVES.SAV` keeps the stage you reached (CONTINUE) and the five best scores with a name (HIGH SCORES).
+- **NOTEPAD:** a text editor in mode 1, 48×22, up to 4K. It opens only `.TXT` files, and writes CR LF to the disc.
+- **PAINT:** drawing in mode 0: a 128×128 picture (`.PIC`), or 64×64 at 2× zoom in 3 layers (`.LYR`) that change order, hide and show. Pencil, brush, line, box, fill, eraser. Arrows and COPY draw without a mouse.
+- **MUSIC:** plays Arkos Tracker 3 songs with the AKM player (MIT), on its own disc, `music.dsk`. `make songs` makes the songs. The music continues behind other views.
+- **ABOUT:** HELP > ABOUT V-OS shows "V-OS 0.1 BETA", the build date, Revive8bit, 2026 and Architect: Vasper, in the six languages.
+- **Windows:** `make windows` now builds `V-OS.exe` with CPCEMU 3.0.2: 576K, AMX mouse, M4 card, the two discs, autostart.
+- **Linux:** `make linux` builds `build/V-OS-linux.tar.gz`, with the `V-OS` script and CPCEMU 2.5 for x86_64 (3.0.2 has not been released for Linux), with the same settings and discs. It needs SDL2. `VKBD_LANGUAGE = 0` in `vos.cfg` (also for Windows) skips the question CPCEMU asks about the virtual keyboard at the first start.
+- **SDK:** API 12 with `VOS_CAT_EXT` (catalogue with one extension) and `VOS_PTR_KEYS` (the pointer with the arrows). `sdk/AI.md` is a guide to the SDK for AI assistants.
+- **Bugs found:**
+  - PAINT cut the canvas: RASM calculated `CW / 2 * CH` wrongly. Now with parentheses.
+  - In PAINT the box swapped the corners wrongly, and the background of a label stayed yellow.
+  - The menu always put the arrows on the pointer after closing. Now it keeps what was in force before.
+- **Tested:**
+  - In Caprice32: `make test-vrouves` (from B: through the Launcher, HIGH SCORES), `test-notepad`, `test-paint` (and the layers), `test-about`, `test-music` (the song plays, the bars move, it continues behind the Launcher).
+  - With Z80 in Python: the scores and the file of VROUVES, the editing and the CR LF of NOTEPAD, the tools and the layers of PAINT, the moving of the songs of MUSIC (the same byte for byte as SongToAkm's).
+- **Not tested:** the sound (no window), the picture and the autostart of CPCEMU on Windows and Linux (only that it starts: in WSLg the window cannot be caught in a screenshot), entering a name in the score table in Caprice32.
 
-**M32 (VROUVES: και οι 7 πίστες, σε δική του δισκέτα):**
-- **Τι άλλαξε:** το VROUVES έχει πλέον όλες τις πίστες του πρωτοτύπου: Καφενείο, Εκκλησία, Δημαρχείο, Φούρνος, Σχολείο, Γήπεδο, Νεκροταφείο. Κάθε πίστα έχει τον δικό της χάρτη, δρόμους και 10 κύματα. Όταν σωθεί μια πίστα, ακολουθεί η επόμενη με λεφτά και βρούβες από την αρχή. Στην ήττα παίζεις την ίδια πίστα ξανά, και μετά την 7η ξαναρχίζει η πρώτη.
-- **Όπως στο πρωτότυπο:** κάθε πίστα έχει τους αμυντικούς που φέρνει εκεί το πρωτότυπο (η 1 μόνο Κρητικό και Ψσσστ, από την 5 όλους), και οι άλλοι λείπουν από τη μπάρα. Στις πίστες 3 και 4 οι εισβολείς είναι σκληρότεροι. Το όνομα της πίστας, στα αγγλικά ή στα ελληνικά, φαίνεται κάτω από το HUD ως το πρώτο κύμα.
-- **Δική του δισκέτα:** το `build/vrouves.dsk` έχει το `VROUVES.BIN` και τα `VROUV1.DAT` ως `VROUV7.DAT`. Μπαίνει στο B:, και το παιχνίδι τρέχει από τον Commander (ΑΡΧΕΙΟ > ΕΚΚΙΝΗΣΗ). Η `vos.dsk` κρατά το VROUVES με την πίστα 1. Αφού σωθεί αυτή, ένα μήνυμα λέει ότι οι πίστες 2–7 είναι στη δισκέτα VROUVES.
-- **SDK:** ο υποφάκελος `owndisc/` ενός προγράμματος δίνει δική του δισκέτα, `build/<όνομα>.dsk`. Το νέο `VOS_SELF` του API λέει σε ένα πρόγραμμα από ποιον οδηγό ξεκίνησε.
-- **Λάθη που βρέθηκαν:**
-  - Στο `import_art.py` ο αριθμός της πίστας χαλούσε μέσα σε βρόχο, και όλες οι πίστες έπαιρναν το όνομα και τους αμυντικούς της 3.
-  - Στο παιχνίδι, μια γραμμή του HUD 24 χαρακτήρων γραφόταν σε buffer 14 bytes.
-- **Ελέγχθηκε:**
-  - Με Z80 σε Python: οι 7 πίστες σχεδιάζονται σωστά και έχουν τους σωστούς αμυντικούς, τη σωστή δυσκολία και το σωστό όνομα και στις δύο γλώσσες. Η νίκη περνά στην επόμενη πίστα, και μετά την 7η στην 1. Από το A: έρχεται το μήνυμα για τη δισκέτα, και η ήττα ξαναρχίζει την ίδια πίστα. Στις πίστες 3 και 6 έπαιξαν τρία κύματα.
-  - Στον Caprice32, με το `make test-vrouves`, που τώρα ανοίγει το παιχνίδι από τη δισκέτα του στο B: μέσω του Commander. Η πίστα 1 φορτώνεται από το B:, με το όνομά της και μόνο τους δύο αμυντικούς της. Χτίζονται ένας Κρητικός και ένα Ψσσστ, και το κύμα 1 έρχεται.
-- **Δεν ελέγχθηκαν:** ο ήχος, και ολόκληρο το παιχνίδι ως την 7η πίστα στον Caprice32.
+**M32 (VROUVES: all 7 stages, on its own disc):**
+- **What changed:** VROUVES now has all the stages of the original: Kafenio, Church, Town Hall, Bakery, School, Stadium, Cemetery. Each stage has its own map, roads and 10 waves. When a stage is saved, the next follows with money and vrouves from the start. On defeat you play the same stage again, and after the 7th the first starts again.
+- **As in the original:** each stage has the defenders the original brings there (1 only Cretan and Psssst, from 5 all of them), and the others are missing from the bar. In stages 3 and 4 the invaders are tougher. The name of the stage, in English or in Greek, shows under the HUD until the first wave.
+- **Its own disc:** `build/vrouves.dsk` has `VROUVES.BIN` and `VROUV1.DAT` to `VROUV7.DAT`. It goes in B:, and the game runs from the Commander (FILE > RUN). `vos.dsk` keeps VROUVES with stage 1. After this is saved, a message says that stages 2–7 are on the VROUVES disc.
+- **SDK:** the `owndisc/` subfolder of a program gives it its own disc, `build/<name>.dsk`. The new `VOS_SELF` of the API tells a program which drive it started from.
+- **Bugs found:**
+  - In `import_art.py` the stage number was spoiled inside a loop, and all the stages got the name and the defenders of 3.
+  - In the game, a HUD line of 24 characters was written into a buffer of 14 bytes.
+- **Tested:**
+  - With Z80 in Python: the 7 stages are drawn correctly and have the right defenders, the right difficulty and the right name in both languages. A win goes to the next stage, and after the 7th to 1. From A: the message about the disc comes, and a defeat starts the same stage again. In stages 3 and 6 three waves were played.
+  - In Caprice32, with `make test-vrouves`, which now opens the game from its disc in B: through the Commander. Stage 1 loads from B:, with its name and only its two defenders. A Cretan and a Psssst are built, and wave 1 comes.
+- **Not tested:** the sound, and the whole game up to the 7th stage in Caprice32.
 
-**M31 (VROUVES, ένα παιχνίδι με το SDK):**
-- **Τι είναι:** το LET'S GO FOR VROUVES του CPC, tower defence, σε απλοποιημένη μορφή για το V-OS: η πίστα 1, το Καφενείο. Οι εισβολείς της Frankenstein & Moreau CO. κατεβαίνουν τον δρόμο προς το καφενείο των Ζονιανών, και οι χωριανοί χτίζουν αμυντικούς δίπλα του για να σώσουν τις βρούβες.
-- **Πώς παίζεται:** τα βέλη κινούν τον κέρσορα, τα 1–6 διαλέγουν αμυντικό (Κρητικός, Γιαγιά, Νύφη, Ψσσστ, Καζάνι, Φουρνάρης), SPACE ή RETURN χτίζει, S πουλά, N φέρνει το επόμενο κύμα αμέσως, P παύση. Με το ποντίκι, κλικ στην πίστα χτίζει και κλικ στη μπάρα διαλέγει. Δέκα κύματα από drones, φρουρούς και τανκς. Το μενού VROUVES έχει NEW GAME, NEXT WAVE, PAUSE, ABOUT.
-- **Από το πρωτότυπο:** τα sprites, η παλέτα, ο χάρτης, οι δρόμοι και τα κύματα έρχονται από το `~/repos/VrouvesCPC` με το `myapps/vrouves/import_art.py`, σε `art.asm` και `disc/VROUV1.DAT`. Και τα δύο είναι στο repo, οπότε το build δεν χρειάζεται το πρωτότυπο.
-- **Απλοποιήσεις:** χωρίς μπόνους γειτόνων, χωρίς βλήματα στον αέρα (η ζημιά είναι άμεση, με ένα εφέ πάνω στον στόχο), χωρίς μουσική, μόνο ηχητικά εφέ.
-- **Το SDK μεγάλωσε:** ένα πρόγραμμα του `myapps/` μπορεί να έχει κι άλλα `.asm` στον φάκελό του (`include`), και ό,τι είναι στο `disc/` του μπαίνει ως έχει στη δισκέτα. Ο οδηγός του SDK το λέει και στις έξι γλώσσες.
-- **Μέγεθος:** το `VROUVES.BIN` είναι 11,5K (το όριο για πρόγραμμα με πίνακα relocation είναι 12K), το `VROUV1.DAT` 3,4K. Στη `vos.dsk` μένουν 9K.
-- **Ελέγχθηκε στον Caprice32** με το νέο `make test-vrouves`. Ανοίγει από τον Launcher, χτίζονται ένας Κρητικός και ένα Ψσσστ, οι φρουροί του κύματος 1 πέφτουν, τα λεφτά ανεβαίνουν (5 → 30 → 50), το «ΣΕ 15» μετρά και έρχονται τα drones του κύματος 2. Πριν από αυτό, ένα Z80 σε Python έπαιξε ως το κύμα 3 και έβγαλε την οθόνη ως εικόνα.
-- **Δεν ελέγχθηκε:** ο ήχος (ο Caprice32 χωρίς παράθυρο δεν έχει), και ολόκληρο το παιχνίδι ως τη νίκη ή την ήττα στον Caprice32.
-- **Επόμενο:** και οι 7 πίστες, σε δική τους δισκέτα.
+**M31 (VROUVES, a game with the SDK):**
+- **What it is:** LET'S GO FOR VROUVES for the CPC, tower defence, in a simplified form for V-OS: stage 1, the Kafenio. The invaders of Frankenstein & Moreau CO. come down the road to the Zonians' kafenio, and the villagers build defenders next to it to save the vrouves.
+- **How to play:** the arrows move the cursor, 1–6 pick a defender (Cretan, Yiayia, Bride, Psssst, Cauldron, Baker), SPACE or RETURN builds, S sells, N brings the next wave at once, P pauses. With the mouse, a click on the stage builds and a click on the bar picks. Ten waves of drones, guards and tanks. The VROUVES menu has NEW GAME, NEXT WAVE, PAUSE, ABOUT.
+- **From the original:** the sprites, the palette, the map, the roads and the waves come from `~/repos/VrouvesCPC` with `myapps/vrouves/import_art.py`, into `art.asm` and `disc/VROUV1.DAT`. Both are in the repo, so the build does not need the original.
+- **Simplifications:** no neighbour bonuses, no projectiles in the air (the damage is immediate, with an effect on the target), no music, only sound effects.
+- **The SDK grew:** a program in `myapps/` can have more `.asm` files in its folder (`include`), and whatever is in its `disc/` goes onto the disc as it is. The SDK guide says so in all six languages.
+- **Size:** `VROUVES.BIN` is 11.5K (the limit for a program with a relocation table is 12K), `VROUV1.DAT` 3.4K. 9K are left on `vos.dsk`.
+- **Tested in Caprice32** with the new `make test-vrouves`. It opens from the Launcher, a Cretan and a Psssst are built, the guards of wave 1 fall, the money goes up (5 → 30 → 50), the "NEXT IN 15" counts and the drones of wave 2 come. Before that, a Z80 in Python played up to wave 3 and produced the screen as a picture.
+- **Not tested:** the sound (Caprice32 without a window has none), and the whole game up to a win or a defeat in Caprice32.
+- **Next:** all 7 stages, on their own disc.
 
-**M30 (SDK για προγράμματα σε assembly):**
-- **Τι κάνει:** γράφεις δικά σου προγράμματα σε Z80 assembly με το API του V-OS, που τρέχουν όπως τα προγράμματα του συστήματος: στον Launcher, με μενού, κουμπιά, διαλόγους και ήχο, και δίπλα σε άλλα προγράμματα.
-- **`make new-app NAME=hello`** φτιάχνει το `myapps/hello/` από το `sdk/template/`.
-  - Το πρότυπο είναι πρόγραμμα με πίνακα relocation, σε mode 1. Τα βέλη κινούν ένα κουτί, υπάρχει κουμπί BEEP, μετρητής δευτερολέπτων και δικό του μενού (ABOUT, BACK).
-  - Τα κείμενά του είναι στα αγγλικά και ελληνικά (`texts.txt`), και έχει εικονίδιο (`icon.txt`).
-  - Το όνομα ελέγχεται: 1–8 χαρακτήρες, όχι όνομα προγράμματος του V-OS.
-- **`make app NAME=hello`** χτίζει το `build/HELLO.BIN` (κείμενα, εικονίδιο, δύο builds και πίνακας relocation) και το βάζει στη `build/vos.dsk`. Το απλό `make` βάζει όλα τα `myapps/*`, μόνο στην κανονική δισκέτα και όχι στις δοκιμαστικές.
-- **`sdk/README.md`:** οδηγός στα ελληνικά. Εξηγεί πώς δουλεύει ένα πρόγραμμα (init, event, redraw), τα γεγονότα, τα τρία είδη προγράμματος, τους κανόνες, τις μορφές μενού, κουμπιών, διαλόγων και κειμένων, και έχει πίνακα με τις 42 κλήσεις.
-- **Ελέγχθηκε στον Caprice32** με το νέο `make test-sdk`. Το TEMPLATE ανοίγει από τον Launcher με το εικονίδιό του. Το κουτί κινείται με →/↑, ο μετρητής μετρά, το ESC ανοίγει το μενού του, το ABOUT δείχνει τον διάλογο, και το ^Q γυρίζει στον Launcher.
-- **Λάθος που βρέθηκε:** ο μετρητής σχεδίαζε πάνω στο ανοιχτό μενού. Το πρότυπο πλέον δεν σχεδιάζει όσο είναι ανοιχτό μενού, και ο οδηγός το λέει ως κανόνα.
-- **Δεν ελέγχθηκε:** ο ήχος του BEEP, γιατί ο Caprice32 χωρίς παράθυρο δεν έχει ήχο.
+**M30 (SDK for assembly programs):**
+- **What it does:** you write your own programs in Z80 assembly with the V-OS API, and they run like the system programs: in the Launcher, with menus, buttons, dialogs and sound, and next to other programs.
+- **`make new-app NAME=hello`** creates `myapps/hello/` from `sdk/template/`.
+  - The template is a program with a relocation table, in mode 1. The arrows move a box, there is a BEEP button, a seconds counter and its own menu (ABOUT, BACK).
+  - Its texts are in English and Greek (`texts.txt`), and it has an icon (`icon.txt`).
+  - The name is checked: 1–8 characters, not the name of a V-OS program.
+- **`make app NAME=hello`** builds `build/HELLO.BIN` (texts, icon, two builds and a relocation table) and puts it on `build/vos.dsk`. Plain `make` puts in all of `myapps/*`, only on the normal disc and not on the test discs.
+- **`sdk/README.md`:** a guide in Greek. It explains how a program works (init, event, redraw), the events, the three kinds of program, the rules, the formats of menus, buttons, dialogs and texts, and has a table with the 42 calls.
+- **Tested in Caprice32** with the new `make test-sdk`. The TEMPLATE opens from the Launcher with its icon. The box moves with →/↑, the counter counts, ESC opens its menu, ABOUT shows the dialog, and ^Q returns to the Launcher.
+- **Bug found:** the counter drew over the open menu. The template now does not draw while a menu is open, and the guide states it as a rule.
+- **Not tested:** the sound of BEEP, because Caprice32 without a window has no sound.
 
-**M29 (περισσότερος χώρος για τον κώδικα των blocks):**
-- **Τι άλλαξε:** όταν ξεκινά ένα πρόγραμμα του Studio, ο player διαβάζει τις γραμμές blocks μία μία από το αντίγραφο του αρχείου στη bank δεδομένων. Ο kernel φορτώνει εκεί κάθε πρόγραμμα πρώτα, στις ίδιες διευθύνσεις. Έτσι ο κώδικας που γράφει μπορεί να μπει πάνω στις γραμμές, που μετά δεν χρειάζονται.
-- **Τα κοστούμια** μετακινούνται πρώτα προς τα κάτω, εκεί που ξεκινούν οι γραμμές, και ο κώδικας ακολουθεί αμέσως μετά.
-- **Αποτέλεσμα:** το μεγαλύτερο δυνατό πρόγραμμα (240 γραμμές και 8 κοστούμια) έχει πλέον εγγυημένα 4.000 bytes για τον κώδικά του, αντί για 1.536. Κάθε πρόγραμμα κερδίζει 10 bytes για κάθε γραμμή του.
-- **Γιατί όχι 16K:** το πρόγραμμα βλέπει μόνο ένα παράθυρο 16K (`#4000–#7FFF`), μοιρασμένο με τον player, το runtime, τα sprites, τις μεταβλητές και τις στοίβες. Κώδικας σε άλλη bank θα ήθελε αντίγραφο του runtime σε κάθε bank και κοινή μνήμη έξω από το παράθυρο.
-- **Ελέγχθηκε:**
-  - Off-emulator, με Z80 σε Python: το FLAP (3 κοστούμια) δίνει με τον παλιό και τον νέο player τις ίδιες εικόνες κοστουμιών, τα ίδια scripts και τις ίδιες θέσεις sprites μετά από 30 frames.
-  - Στον Caprice32, με τα test-input, test-calc, test-mines, test-vars και test-costume.
+**M29 (more room for the code of blocks):**
+- **What changed:** when a Studio program starts, the player reads the block lines one by one from the copy of the file in the data bank. The kernel loads every program there first, at the same addresses. So the code it writes can go over the lines, which are not needed afterwards.
+- **The costumes** are moved down first, to where the lines start, and the code follows right after.
+- **Result:** the largest possible program (240 lines and 8 costumes) now has a guaranteed 4,000 bytes for its code, instead of 1,536. Every program gains 10 bytes for each of its lines.
+- **Why not 16K:** the program sees only one 16K window (`#4000–#7FFF`), shared with the player, the runtime, the sprites, the variables and the stacks. Code in another bank would need a copy of the runtime in every bank and shared memory outside the window.
+- **Tested:**
+  - Off-emulator, with a Z80 in Python: FLAP (3 costumes) gives, with the old and the new player, the same costume images, the same scripts and the same sprite positions after 30 frames.
+  - In Caprice32, with test-input, test-calc, test-mines, test-vars and test-costume.
 
-**M28 (αποθήκευση και επαναφορά μεταβλητών στο Studio):**
-- **Δύο νέα blocks** στην κατηγορία ΜΕΤΑΒΛΗΤΕΣ:
-  - `SAVE VARS ομάδα TO "όνομα"` (ΑΠΟΘΗΚΕΥΣΕ) γράφει τις μεταβλητές σε αρχείο κειμένου.
-  - `LOAD VARS ομάδα FROM "όνομα"` (ΦΟΡΤΩΣΕ) τις επαναφέρει.
-- **Η ομάδα:** ALL (όλες οι 128) ή ανά 8, δηλαδή A-H, A1-H1 … A15-H15. Στο Studio κάθε γράμμα A–H προχωρά στην επόμενη οκτάδα και το SPACE δίνει ALL. Η γραμμή βοήθειας το λέει.
-- **Το αρχείο:** μία γραμμή για κάθε μεταβλητή, π.χ. `A1=-5`. Αν το όνομα δεν έχει τύπο, παίρνει `.TXT`. Τα πεζά γίνονται κεφαλαία.
-  - Το SAVE VARS γράφει μόνο τις μεταβλητές της ομάδας.
-  - Το LOAD VARS αλλάζει μόνο όσες είναι και στο αρχείο και στην ομάδα. Αγνοεί γραμμές που δεν καταλαβαίνει, και αν το αρχείο λείπει δεν αλλάζει τίποτα.
-  - Έτσι το ίδιο αρχείο μπορεί να επαναφέρει όλες τις μεταβλητές ή μόνο μία οκτάδα.
+**M28 (saving and restoring variables in Studio):**
+- **Two new blocks** in the VARIABLES category:
+  - `SAVE VARS group TO "name"` writes the variables to a text file.
+  - `LOAD VARS group FROM "name"` restores them.
+- **The group:** ALL (all 128) or by 8, that is A-H, A1-H1 … A15-H15. In Studio each letter A–H moves to the next eight and SPACE gives ALL. The help line says so.
+- **The file:** one line for each variable, e.g. `A1=-5`. If the name has no type, it gets `.TXT`. Lowercase becomes uppercase.
+  - SAVE VARS writes only the variables of the group.
+  - LOAD VARS changes only those that are both in the file and in the group. It ignores lines it does not understand, and if the file is missing it changes nothing.
+  - So the same file can restore all the variables or only one eight.
 - **Player:**
-  - Το κείμενο φτιάχνεται και διαβάζεται στη bank δεδομένων, και η εγγραφή και η ανάγνωση γίνονται στη στοίβα του kernel (`rt_on_main`).
-  - Τα δεδομένα τους (όνομα, buffer) μπήκαν στο `#7750`, μετά τις μεταβλητές.
-  - Ο κώδικάς τους (≈430 bytes) μίκρυνε τον εγγυημένο χώρο για τον κώδικα των blocks: το μεγαλύτερο δυνατό πρόγραμμα (240 γραμμές και 8 κοστούμια) έχει πλέον 1,5K αντί για 2K.
-- **Studio:** ξεπερνούσε τα 16K κατά 275 bytes, και χώρεσε με δύο αλλαγές:
-  - Οι προσωρινές μεταβλητές του μπήκαν στα 258 bytes του εικονιδίου. Το εικονίδιο το διαβάζει μόνο ο Launcher από τη δισκέτα, και το Studio μηδενίζει αυτά τα bytes όταν ξεκινά.
-  - Ο χώρος του προγράμματος έχει πλέον ακριβώς το μέγεθος του μεγαλύτερου `.VBS` (5.033 bytes).
-- **`tools/mkvbs.py`:** `SAVE_VARS "όνομα" ALL` ή `A3-H3`, και το ίδιο για το `LOAD_VARS`.
-- **Ελέγχθηκε:**
-  - **Στον Caprice32** με το `make test-vars`. Το VARS.VBS γράφει όλες τις μεταβλητές στο VARS.TXT, βάζει 9 σε πέντε από αυτές και γράφει τη σειρά A1-H1 στο ROW1.TXT. Μετά φορτώνει το VARS.TXT και τη σειρά του ROW1.TXT. Η δεύτερη γραμμή δείχνει 0 9 7 12 10, όπως πρέπει.
-  - **Στο Studio,** στο ίδιο test: τα blocks φαίνονται ως «SAVE VARS ALL TO "VARS"», και το A αλλάζει το A-H σε A1-H1.
-  - **Off-emulator,** με Z80 σε Python: τα κείμενα που γράφονται, οι αρνητικοί αριθμοί, τα πεζά, τα κενά, οι άκυρες γραμμές (A16, Z9) και το φίλτρο της ομάδας.
-- **Δεν τα έχει ο `vbc.py`** (τα προγράμματα `.vbp` του editor σε HTML). Είναι μόνο στα blocks του Studio.
+  - The text is built and read in the data bank, and the writing and reading are done on the kernel stack (`rt_on_main`).
+  - Their data (name, buffer) went to `#7750`, after the variables.
+  - Their code (≈430 bytes) shrank the guaranteed room for the code of blocks: the largest possible program (240 lines and 8 costumes) now has 1.5K instead of 2K.
+- **Studio:** it went over 16K by 275 bytes, and it fitted with two changes:
+  - Its temporary variables went into the 258 bytes of the icon. Only the Launcher reads the icon from the disc, and Studio zeroes these bytes when it starts.
+  - The program area is now exactly the size of the largest `.VBS` (5,033 bytes).
+- **`tools/mkvbs.py`:** `SAVE_VARS "name" ALL` or `A3-H3`, and the same for `LOAD_VARS`.
+- **Tested:**
+  - **In Caprice32** with `make test-vars`. VARS.VBS writes all the variables to VARS.TXT, puts 9 in five of them and writes the row A1-H1 to ROW1.TXT. Then it loads VARS.TXT and the row of ROW1.TXT. The second line shows 0 9 7 12 10, as it should.
+  - **In Studio,** in the same test: the blocks show as "SAVE VARS ALL TO "VARS"", and A changes A-H to A1-H1.
+  - **Off-emulator,** with a Z80 in Python: the texts that are written, the negative numbers, lowercase, spaces, invalid lines (A16, Z9) and the group filter.
+- **`vbc.py` does not have them** (the `.vbp` programs of the editor in HTML). They are only in the Studio blocks.
 
-**M27 (BRICKS, παιχνίδι με τούβλα):**
-- **Τι είναι:** ένα παιχνίδι όπου η μπάλα σπάει τούβλα, φτιαγμένο με blocks (`blocks/examples/bricks.vbp`, μέσω του `blocks/vbc.py`). Είναι στη δισκέτα ως `BRICKS.VBN` και τρέχει από τον Launcher (σελίδα 2).
-- **Το παιχνίδι:**
-  - 32 τούβλα σε τέσσερις σειρές: κόκκινα (4 πόντοι), πορτοκαλί (3), κίτρινα (2), πράσινα (1).
-  - Η ρακέτα κινείται με τα βελάκια ←/→. Η μπάλα φεύγει από τη ρακέτα, και η γωνία της αλλάζει ανάλογα με το πού τη βρίσκει η ρακέτα.
-  - Έχεις 3 ζωές. Μόλις σπάσουν όλα τα τούβλα, ξαναστήνονται, και η μπάλα πηγαίνει γρηγορότερα σε κάθε επίπεδο (ως 5).
-  - Στο GAME OVER, το SPACE ξεκινά νέο παιχνίδι.
-  - Ήχοι στη ρακέτα, στα τούβλα και στη χαμένη μπάλα.
-- **Πώς είναι φτιαγμένο:**
-  - Κάθε τούβλο είναι sprite με το ίδιο script: εμφανίζεται, περιμένει (WAIT UNTIL) να το αγγίξει η μπάλα, κρύβεται, προσθέτει πόντους και στέλνει «hit». Με το «hit», η μπάλα αντιστρέφει την κατακόρυφη ταχύτητά της.
-  - Τα 32 όμοια scripts τα γράφει το `tools/mkbricks.py`, και το Makefile ξαναφτιάχνει το `.vbp` όταν αλλάξει.
-  - Ένα script δεν στέλνει μήνυμα στον εαυτό του, γιατί το μήνυμα θα το ξεκινούσε από την αρχή. Η νέα μπάλα μετά από χαμένη ζωή γίνεται μέσα στον ίδιο βρόχο, με τη μεταβλητή `serve`.
-- **Ελέγχθηκε στον Caprice32** με το νέο `make test-bricks`:
-  - Το BRICKS ανοίγει από τον Launcher, και η ρακέτα κινείται με →/←.
-  - Τα τούβλα που χτυπιούνται σβήνουν, και το SCORE μεγαλώνει (1 για πράσινο).
-  - Οι ζωές μειώνονται ως το GAME OVER. Το SPACE ξεκινά νέο παιχνίδι με όλα τα τούβλα, SCORE από την αρχή και LIVES 3.
-  - Το πέρασμα στο επόμενο επίπεδο δεν ελέγχθηκε, γιατί το test δεν παίζει τόσο καλά.
-- **Μέγεθος:** 13,7K, γιατί το `vbc.py` γράφει στο αρχείο και τις στοίβες των 39 scripts (128 bytes η καθεμία).
+**M27 (BRICKS, a brick game):**
+- **What it is:** a game where the ball breaks bricks, made with blocks (`blocks/examples/bricks.vbp`, through `blocks/vbc.py`). It is on the disc as `BRICKS.VBN` and runs from the Launcher (page 2).
+- **The game:**
+  - 32 bricks in four rows: red (4 points), orange (3), yellow (2), green (1).
+  - The paddle moves with the arrows ←/→. The ball leaves the paddle, and its angle changes depending on where the paddle meets it.
+  - You have 3 lives. As soon as all the bricks are broken, they are set up again, and the ball goes faster at each level (up to 5).
+  - At GAME OVER, SPACE starts a new game.
+  - Sounds on the paddle, on the bricks and on a lost ball.
+- **How it is made:**
+  - Each brick is a sprite with the same script: it appears, waits (WAIT UNTIL) for the ball to touch it, hides, adds points and sends "hit". With "hit", the ball reverses its vertical speed.
+  - The 32 identical scripts are written by `tools/mkbricks.py`, and the Makefile rebuilds the `.vbp` when it changes.
+  - A script does not send a message to itself, because the message would start it from the beginning. The new ball after a lost life is made inside the same loop, with the variable `serve`.
+- **Tested in Caprice32** with the new `make test-bricks`:
+  - BRICKS opens from the Launcher, and the paddle moves with →/←.
+  - The bricks that are hit disappear, and the SCORE grows (1 for green).
+  - The lives go down until GAME OVER. SPACE starts a new game with all the bricks, SCORE from the start and LIVES 3.
+  - Passing to the next level was not tested, because the test does not play that well.
+- **Size:** 13.7K, because `vbc.py` also writes into the file the stacks of the 39 scripts (128 bytes each).
 
-**M26 (128 μεταβλητές στο Studio):**
-- **Τι κάνει:** τα προγράμματα του Studio έχουν 128 μεταβλητές αντί για 64.
-  - **Ονόματα:** A–H, A1–H7 όπως πριν, και τώρα ως A15–H15. Το γράμμα είναι ο αριθμός mod 8 και ο αριθμός μετά το γράμμα ο αριθμός ÷ 8: H15 είναι η 127η, η τελευταία.
-  - Τα παλιά προγράμματα δεν αλλάζουν, γιατί το `.VBS` κρατούσε ήδη τη μεταβλητή σε ένα byte.
-- **Στο Studio:** το ίδιο γράμμα ξανά προχωρά A → A1 … → A15 → A. Ένα ψηφίο σε slot μεταβλητής περνά και από τις 128. Η γραμμή βοήθειας γράφει «AGAIN: A1-A15».
-- **Player:** οι 128 μεταβλητές (256 bytes) μπήκαν στο `#7650`, στο κενό μετά την κατάσταση των scripts, και μηδενίζονται μαζί της. Έτσι ο χώρος για τον κώδικα των blocks μεγάλωσε, αντί να μικρύνει κατά 256 bytes. Οι μετρητές των REPEAT είναι τώρα αμέσως κάτω από τα sprites.
-- **`tools/mkvbs.py`:** δέχεται A..H και A1..H15.
-- **Ελέγχθηκε στον Caprice32** με το `make test-vars`. Το VARS.VBS χρησιμοποιεί πλέον τα H15 και C12. Το Studio τα δείχνει με δύο ψηφία, και το πρόγραμμα τυπώνει 0 5 7 12 10.
+**M26 (128 variables in Studio):**
+- **What it does:** Studio programs have 128 variables instead of 64.
+  - **Names:** A–H, A1–H7 as before, and now up to A15–H15. The letter is the number mod 8 and the number after the letter is the number ÷ 8: H15 is the 127th, the last.
+  - Old programs do not change, because the `.VBS` already kept the variable in one byte.
+- **In Studio:** the same letter again moves on A → A1 … → A15 → A. A digit in a variable slot goes through all 128. The help line says "AGAIN: A1-A15".
+- **Player:** the 128 variables (256 bytes) went to `#7650`, in the gap after the state of the scripts, and are zeroed together with it. So the room for the code of blocks grew, instead of shrinking by 256 bytes. The REPEAT counters are now right below the sprites.
+- **`tools/mkvbs.py`:** accepts A..H and A1..H15.
+- **Tested in Caprice32** with `make test-vars`. VARS.VBS now uses H15 and C12. Studio shows them with two digits, and the program prints 0 5 7 12 10.
 
-**M25 (μεγαλύτερο MINES):**
-- **Το παιχνίδι:** πλέγμα 8×6 με 8 νάρκες (ήταν 5×3 με 3). Κερδίζεις όταν ανοίξεις τα 40 ασφαλή κελιά.
-- **Πώς γράφτηκε χωρίς πίνακες:**
-  - Κάθε σειρά είναι δύο μεταβλητές: οι νάρκες της (A1..F1) και τα ανοιχτά της κελιά (A2..F2), ένα bit για κάθε στήλη. Η στήλη c είναι το bit c + 1, ώστε οι τρεις στήλες γύρω της να είναι πάντα τα bits c..c + 2, και στις άκρες.
-  - Δύο scripts με μήνυμα διαβάζουν (3) και γράφουν (4) τη σειρά A. Όποιος τα καλεί περιμένει με UNTIL ώσπου η A3 να γίνει 1.
-  - Οι νάρκες γύρω από ένα κελί: για τις τρεις σειρές, H = (σειρά ÷ 2^c) mod 8 και πλήθος = H − H/2 − H/4.
-  - Ένα κλικ τη φορά: η D3 είναι 2 όσο εξυπηρετείται ένα κλικ, −2 όσο φαίνονται οι νάρκες. Τα κλικ στο μεταξύ αγνοούνται.
-  - Το πρόγραμμα είναι 218 γραμμές blocks.
-- **Αλλαγές για να χωρέσει και να τρέξει:**
-  - **Γραμμές:** ως 240 (ήταν 200) στο Studio, στον player και στο `mkvbs.py`.
-  - **REPEAT:** ο player δίνει σε κάθε REPEAT τον δικό του μετρητή (ως 64 REPEAT σε ένα πρόγραμμα), αντί για 128 bytes για όλους. Έτσι ο κώδικας των blocks χωρά.
-  - **Κουμπιά:** ως 64 σε ένα παράθυρο. Το runtime τα σχεδιάζει όταν ένα frame δεν προσθέσει κανένα, όχι μετά από κάθε BUTTON, οπότε τα 49 κουμπιά βγαίνουν σε κλάσματα του δευτερολέπτου.
-  - **Kernel:** το `ui_widget_ptr` υπολόγιζε τη θέση ενός widget σε 8 bits και τυλιγόταν στο 32ο. Τώρα είναι 16 bits.
-  - **`VOS_RANDOM`:** είναι πλέον xorshift 16 bits, με το frame να ανακατεύεται πρώτα στο seed. Η παλιά γεννήτρια (x·5 + frames) έδινε συσχετισμένα ζευγάρια, και οι νάρκες μαζεύονταν στην πρώτη σειρά.
-- **Ελέγχθηκε στον Caprice32** με το `make test-mines`:
-  - Τα 48 κελιά και το NEW βγαίνουν γρήγορα.
-  - Τα κελιά ανοίγουν με σωστούς αριθμούς («.», «1»), ώσπου ένα κλικ πέφτει σε νάρκη.
-  - Τότε φαίνονται και οι 8 νάρκες, σκορπισμένες σε 5 σειρές, και το BOOM! σβήνει το «8 MINES». Τα επόμενα κλικ αγνοούνται, και το NEW ξεκινά καθαρό πλέγμα.
-  - Μια δοκιμή που τύπωνε τις τιμές των σειρών έδειξε ότι η εμφάνιση των νάρκων συμφωνεί με αυτές.
+**M25 (bigger MINES):**
+- **The game:** an 8×6 grid with 8 mines (it was 5×3 with 3). You win when you open the 40 safe cells.
+- **How it was written without arrays:**
+  - Each row is two variables: its mines (A1..F1) and its open cells (A2..F2), one bit for each column. Column c is bit c + 1, so the three columns around it are always bits c..c + 2, also at the edges.
+  - Two scripts with a message read (3) and write (4) row A. Whoever calls them waits with UNTIL until A3 becomes 1.
+  - The mines around a cell: for the three rows, H = (row ÷ 2^c) mod 8 and count = H − H/2 − H/4.
+  - One click at a time: D3 is 2 while a click is being served, −2 while the mines are shown. Clicks in between are ignored.
+  - The program is 218 block lines.
+- **Changes to make it fit and run:**
+  - **Lines:** up to 240 (it was 200) in Studio, in the player and in `mkvbs.py`.
+  - **REPEAT:** the player gives each REPEAT its own counter (up to 64 REPEATs in a program), instead of 128 bytes for all. So the code of blocks fits.
+  - **Buttons:** up to 64 in a window. The runtime draws them when a frame has not added any, not after every BUTTON, so the 49 buttons take fractions of a second.
+  - **Kernel:** `ui_widget_ptr` computed the position of a widget in 8 bits and wrapped at the 32nd. Now it is 16 bits.
+  - **`VOS_RANDOM`:** it is now a 16-bit xorshift, with the frame mixed into the seed first. The old generator (x·5 + frames) gave correlated pairs, and the mines gathered in the first row.
+- **Tested in Caprice32** with `make test-mines`:
+  - The 48 cells and NEW appear quickly.
+  - The cells open with correct numbers (".", "1"), until a click lands on a mine.
+  - Then all 8 mines show, scattered over 5 rows, and BOOM! erases "8 MINES". The next clicks are ignored, and NEW starts a clean grid.
+  - A test that printed the values of the rows showed that the display of the mines agrees with them.
 
-**M24 (64 μεταβλητές στο Studio):**
-- **Τι κάνει:** τα προγράμματα του Studio έχουν πλέον 64 μεταβλητές αντί για 8.
-  - **Ονόματα:** A–H, όπως πριν, και μετά A1–H7. Το γράμμα είναι ο αριθμός mod 8 και το ψηφίο ο αριθμός ÷ 8: A1 είναι η 8η, H7 η 63η.
-  - Τα παλιά προγράμματα δεν αλλάζουν.
-- **Στο Studio:**
-  - Σε ένα slot μεταβλητής, το γράμμα A–H διαλέγει τη μεταβλητή. Το ίδιο γράμμα ξανά προχωρά A → A1 → A2 … → A7 → A.
-  - Σε slot που δέχεται μόνο μεταβλητή (SET, CHANGE, …), ένα ψηφίο πηγαίνει στην επόμενη, και περνά και από τις 64.
-  - Η γραμμή βοήθειας γράφει «A-H: VARIABLE, AGAIN: A1-A7».
-- **Player:** οι 64 μεταβλητές (128 bytes) είναι στο `#7480`, κάτω από τα sprites. Ο χώρος για τον κώδικα των blocks μίκρυνε κατά 128 bytes, και ένα assert εξασφαλίζει ότι μένουν τουλάχιστον 2K.
-- **`tools/mkvbs.py`:** δέχεται A..H και A1..H7.
-- **Ελέγχθηκε στον Caprice32** με το νέο `make test-vars`. Το Studio ανοίγει το VARS.VBS και δείχνει τα A1, H7, B2 και C5. Δύο φορές A κάνουν το «SET A» σε «SET A2». Με ΕΚΤΕΛΕΣΗ τυπώνει 0 5 7 12 10, άρα κάθε μεταβλητή έχει τη δική της τιμή. Όπως και το test-costume, τελειώνει με timeout, γιατί η ΕΚΤΕΛΕΣΗ γράφει στη δισκέτα. Περνούν και τα test-mines, test-calc, test-langs, test-lang, test-drag, test-input, test-behind, test-multi, test-switch, test-expand και test-acc.
-- **Όριο:** στο Studio έμειναν 58 bytes ελεύθερα.
+**M24 (64 variables in Studio):**
+- **What it does:** Studio programs now have 64 variables instead of 8.
+  - **Names:** A–H, as before, and then A1–H7. The letter is the number mod 8 and the digit is the number ÷ 8: A1 is the 8th, H7 the 63rd.
+  - Old programs do not change.
+- **In Studio:**
+  - In a variable slot, the letter A–H chooses the variable. The same letter again moves on A → A1 → A2 … → A7 → A.
+  - In a slot that accepts only a variable (SET, CHANGE, …), a digit goes to the next one, and goes through all 64.
+  - The help line says "A-H: VARIABLE, AGAIN: A1-A7".
+- **Player:** the 64 variables (128 bytes) are at `#7480`, below the sprites. The room for the code of blocks shrank by 128 bytes, and an assert makes sure at least 2K remain.
+- **`tools/mkvbs.py`:** accepts A..H and A1..H7.
+- **Tested in Caprice32** with the new `make test-vars`. Studio opens VARS.VBS and shows A1, H7, B2 and C5. Two presses of A turn "SET A" into "SET A2". With RUN it prints 0 5 7 12 10, so each variable has its own value. Like test-costume, it ends with a timeout, because RUN writes to the disc. test-mines, test-calc, test-langs, test-lang, test-drag, test-input, test-behind, test-multi, test-switch, test-expand and test-acc also pass.
+- **Limit:** 58 bytes were left free in Studio.
 
-**M23 (MINES, ναρκαλιευτής φτιαγμένος με το Studio):**
-- **Τι είναι:** το `blocks/examples/mines.vbt`, από το οποίο το `tools/mkvbs.py` φτιάχνει το `MINES.VBS` (ανοίγει στο Studio) και το `MINES.VBN` (τρέχει από τον Launcher).
-- **Το παιχνίδι:**
-  - Πλέγμα 5×3 κελιών με 3 νάρκες, μέσα σε παράθυρο σε mode 1.
-  - Κάθε κελί είναι κουμπί. Το κλικ το ανοίγει και δείχνει πόσες νάρκες έχει γύρω του («.» αν δεν έχει καμία).
-  - Αν ανοίξεις νάρκη, φαίνονται και οι τρεις («*») και το BOOM!. Τα 12 ασφαλή κελιά δίνουν YOU WIN!.
-  - Το NEW ξεκινά νέο παιχνίδι.
-- **Με 8 μεταβλητές και χωρίς πίνακες:**
-  - Οι νάρκες είναι τρεις αριθμοί (γραμμή×16+στήλη). Μια νάρκη είναι γειτονική όταν (νάρκη − κελί + 20) είναι 0..47 με υπόλοιπο 3..5 όταν διαιρεθεί με το 16.
-  - Τα ανοιχτά κελιά είναι ένα bitmask των 15 bits.
-  - Το πρόγραμμα είναι 196 γραμμές blocks.
-- **Νέο block LABEL n TO κείμενο (ΕΤΙΚΕΤΑ):**
-  - Αλλάζει το κείμενο του κουμπιού n, που κρατά το ίδιο μέγεθος. Χωρίς αυτό δεν γινόταν: ό,τι γραφόταν με PRINT πάνω σε κουμπί έσβηνε μόλις ο kernel ξανασχεδίαζε το κουμπί.
-  - Είναι block 36 στο Studio (κατηγορία παράθυρα), στον player και στο runtime (`rt_label`). Τα παλιά `.VBS` μένουν σωστά.
-- **Ελέγχθηκε στον Caprice32** με το νέο `make test-mines`. Τα κελιά ανοίγουν με σωστούς αριθμούς: οι νάρκες ήταν στα (1,4), (2,0) και (2,4), και τα 1, 1, 2 δίπλα τους βγήκαν σωστά. Στη νάρκη εμφανίζονται και οι τρεις «*» και το BOOM!, τα επόμενα κλικ αγνοούνται, και το NEW ξεκινά καθαρό πλέγμα. Το Studio δείχνει το νέο block «LABEL TO» (test-calc). Περνούν και τα test-calc (με δύο UP ακόμα), test-langs, test-lang, test-drag, test-input, test-behind, test-multi, test-switch, test-expand και test-acc. Το test-costume τελειώνει με το συνηθισμένο timeout.
-- **Όρια:**
-  - Δεν ανοίγει μόνο του γύρω από ένα «.». Θα ήθελε αναδρομή ή λίστα, που το Studio δεν έχει.
-  - Η πρώτη επιλογή μπορεί να είναι νάρκη.
-  - Η δημιουργία του παραθύρου είναι αργή, γιατί κάθε BUTTON ξανασχεδιάζει όλα τα κουμπιά.
+**M23 (MINES, a minesweeper made with Studio):**
+- **What it is:** `blocks/examples/mines.vbt`, from which `tools/mkvbs.py` makes `MINES.VBS` (opens in Studio) and `MINES.VBN` (runs from the Launcher).
+- **The game:**
+  - A 5×3 grid of cells with 3 mines, inside a window in mode 1.
+  - Each cell is a button. A click opens it and shows how many mines it has around it ("." if it has none).
+  - If you open a mine, all three show ("*") and BOOM!. The 12 safe cells give YOU WIN!.
+  - NEW starts a new game.
+- **With 8 variables and no arrays:**
+  - The mines are three numbers (row×16+column). A mine is a neighbour when (mine − cell + 20) is 0..47 with remainder 3..5 when divided by 16.
+  - The open cells are a bitmask of 15 bits.
+  - The program is 196 block lines.
+- **New block LABEL n TO text:**
+  - It changes the text of button n, which keeps the same size. Without it this was not possible: whatever was written with PRINT over a button vanished as soon as the kernel redrew the button.
+  - It is block 36 in Studio (WINDOWS category), in the player and in the runtime (`rt_label`). Old `.VBS` files stay correct.
+- **Tested in Caprice32** with the new `make test-mines`. The cells open with correct numbers: the mines were at (1,4), (2,0) and (2,4), and the 1, 1, 2 next to them came out right. On the mine all three "*" and BOOM! appear, the next clicks are ignored, and NEW starts a clean grid. Studio shows the new block "LABEL TO" (test-calc). test-calc (with two more UP), test-langs, test-lang, test-drag, test-input, test-behind, test-multi, test-switch, test-expand and test-acc also pass. test-costume ends with the usual timeout.
+- **Limits:**
+  - It does not open by itself around a ".". That would need recursion or a list, which Studio does not have.
+  - The first choice can be a mine.
+  - Creating the window is slow, because each BUTTON redraws all the buttons.
 
-**M22 (γαλλικά, ισπανικά, γερμανικά και ιταλικά):**
-- **Τι κάνει:** εκτός από τα ελληνικά υπάρχουν πλέον τέσσερα ακόμα language packs: `FRENCH.LNG`, `SPANISH.LNG`, `GERMAN.LNG` και `ITALIAN.LNG`. Το καθένα φέρνει όλα τα κείμενα του συστήματος (102), το δικό του πληκτρολόγιο και τα γράμματα που χρειάζεται.
-- **Setup > ΓΛΩΣΣΑ:**
-  - Περνά κυκλικά από ENGLISH, ΕΛΛΗΝΙΚΑ, FRANÇAIS, ESPAÑOL, DEUTSCH, ITALIANO.
-  - Κάθε γλώσσα φορτώνεται αμέσως από τον A:, με ένα «ΠΕΡΙΜΕΝΕΤΕ» όσο διαβάζεται, και όλη η οθόνη ξαναγράφεται σε αυτήν.
-  - Το SETUP.CFG (έκδοση 2) κρατά και το pack. Στην εκκίνηση φορτώνεται εκείνο το pack αντί για το `GREEK.LNG` που φορτωνόταν πάντα. Ένα παλιό SETUP.CFG αγνοείται.
-  - Με ENGLISH μένει φορτωμένο το τελευταίο pack, για το πληκτρολόγιο.
-- **Πληκτρολόγια (CTRL+SHIFT):**
-  - **Γαλλικά:** AZERTY, με τα ψηφία στο SHIFT. Νεκρά πλήκτρα ^ και ¨.
-  - **Ισπανικά:** το Ñ στο πλήκτρο `:`. Νεκρά πλήκτρα ´ ¨ ` ^, και ¡ ¿.
-  - **Γερμανικά:** QWERTZ, με τα Ü Ö Ä ß. Νεκρά πλήκτρα ´ και `.
-  - **Ιταλικά:** τα è é ò à ù ì στα δικά τους πλήκτρα.
-- **Font:** οι τέσσερις γλώσσες είναι σε ISO 8859-1 και μοιράζονται το `lang/latin1/font.txt` (από το font8x8, `tools/fonts/make_latin_font.py`). Τα κεφαλαία με τόνο έχουν ύψος 5 γραμμών, για να μένει χώρος να φαίνεται ο τόνος.
-- **Κείμενα προγραμμάτων (API 11):**
-  - Ο πίνακας του `VOS_TEXTS` γράφει πλέον ποια γλώσσα έχει η δεύτερη στήλη (`db count, "EL"`). Ο kernel τη δείχνει μόνο όταν το pack είναι αυτής της γλώσσας.
-  - Έτσι, με γαλλικά, το Studio και τα άλλα προγράμματα εμφανίζονται στα αγγλικά και όχι με ελληνικά κείμενα σε λατινικό font.
-- **Χώρος:**
-  - Το `ENGLISH.MSG` έχει πλέον όριο 2K (είναι 1,5K), και το kernel extension μεγάλωσε στα 4K (`#7000–#7FFF`).
-  - Οι εντολές αρχείων (στοιχεία, αντιγραφή, διαγραφή, μετονομασία, φορμάρισμα) πήγαν στο extension.
-  - Ο kernel τελειώνει πλέον στο `#3C0E`, με ~500 bytes ελεύθερα.
-- **Ελέγχθηκε στον Caprice32** με το νέο `make test-langs`. Το Setup περνά από τις πέντε γλώσσες και όλη η οθόνη αλλάζει κάθε φορά. Το Desktop εμφανίζεται στα ιταλικά, και στη μετονομασία το ιταλικό πληκτρολόγιο (IT) γράφει è à ù ò. Περνούν και τα test-lang (τα ελληνικά αποθηκεύονται και ξαναφορτώνονται μετά από επανεκκίνηση), test-drag, test-calc, test-input, test-behind, test-multi, test-switch, test-expand και test-acc. Το test-costume τελειώνει με το συνηθισμένο timeout.
-- **Όρια:**
-  - Τα προγράμματα έχουν μόνο αγγλικά και ελληνικά κείμενα, οπότε με τις νέες γλώσσες είναι στα αγγλικά.
-  - Λείπουν τα Œ œ (δεν υπάρχουν στο ISO 8859-1). Τα @ # [ ] { } \ | δεν γράφονται με τα νέα πληκτρολόγια, αφού ο CPC δεν έχει AltGr· γράφονται με το αγγλικό (CTRL+SHIFT).
+**M22 (French, Spanish, German and Italian):**
+- **What it does:** besides Greek there are now four more language packs: `FRENCH.LNG`, `SPANISH.LNG`, `GERMAN.LNG` and `ITALIAN.LNG`. Each brings all the system texts (102), its own keyboard and the letters it needs.
+- **Setup > LANGUAGE:**
+  - It cycles through ENGLISH, ΕΛΛΗΝΙΚΑ, FRANÇAIS, ESPAÑOL, DEUTSCH, ITALIANO.
+  - Each language is loaded at once from A:, with a "PLEASE WAIT" while it is read, and the whole screen is rewritten in it.
+  - SETUP.CFG (version 2) keeps the pack too. At startup that pack is loaded, instead of the `GREEK.LNG` that was always loaded. An old SETUP.CFG is ignored.
+  - With ENGLISH the last pack stays loaded, for the keyboard.
+- **Keyboards (CTRL+SHIFT):**
+  - **French:** AZERTY, with the digits on SHIFT. Dead keys ^ and ¨.
+  - **Spanish:** Ñ on the `:` key. Dead keys ´ ¨ ` ^, and ¡ ¿.
+  - **German:** QWERTZ, with Ü Ö Ä ß. Dead keys ´ and `.
+  - **Italian:** è é ò à ù ì on their own keys.
+- **Font:** the four languages are in ISO 8859-1 and share `lang/latin1/font.txt` (from font8x8, `tools/fonts/make_latin_font.py`). Capitals with an accent are 5 lines high, so there is room to show the accent.
+- **Program texts (API 11):**
+  - The `VOS_TEXTS` table now says which language the second column has (`db count, "EL"`). The kernel shows it only when the pack is of that language.
+  - So, with French, Studio and the other programs appear in English and not with Greek texts in a Latin font.
+- **Space:**
+  - `ENGLISH.MSG` now has a limit of 2K (it is 1.5K), and the kernel extension grew to 4K (`#7000–#7FFF`).
+  - The file commands (info, copy, delete, rename, format) went to the extension.
+  - The kernel now ends at `#3C0E`, with ~500 bytes free.
+- **Tested in Caprice32** with the new `make test-langs`. Setup cycles through the five languages and the whole screen changes each time. The Desktop appears in Italian, and in rename the Italian keyboard (IT) types è à ù ò. test-lang (Greek is saved and reloaded after a restart), test-drag, test-calc, test-input, test-behind, test-multi, test-switch, test-expand and test-acc also pass. test-costume ends with the usual timeout.
+- **Limits:**
+  - Programs have only English and Greek texts, so with the new languages they are in English.
+  - Œ œ are missing (they are not in ISO 8859-1). @ # [ ] { } \ | cannot be typed with the new keyboards, since the CPC has no AltGr; they are typed with the English one (CTRL+SHIFT).
 
-**M21 (παράθυρα που μετακινούνται):**
-- **Τι κάνει:** κάθε παράθυρο σέρνεται από τη γραμμή τίτλου του με το ποντίκι (ή με COPY και τα βελάκια, όταν τα βελάκια κινούν το ποντίκι). Όσο κρατάς το κουμπί φαίνεται μόνο ένα σπαστό περίγραμμα, που ακολουθεί το ποντίκι. Όταν το αφήσεις, το παράθυρο ξανασχεδιάζεται εκεί.
-- **Ποια παράθυρα:**
-  - οι διάλογοι του συστήματος: μηνύματα, ερωτήσεις, εισαγωγή κειμένου, επιλογή αρχείου
-  - το παράθυρο ΑΡΧΕΙΑ του Desktop, που μένει εκεί που το άφησες και όταν αλλάζεις όψη
-  - το desk accessory (ΡΟΛΟΙ): ο kernel ξανασχεδιάζει ό,τι ήταν από κάτω και μετά το ρολόι στη νέα θέση
-  - τα WINDOW των προγραμμάτων με blocks, μαζί με τα κουμπιά τους
+**M21 (movable windows):**
+- **What it does:** every window can be dragged by its title bar with the mouse (or with COPY and the arrow keys, when the arrow keys move the mouse). While you hold the button, only a dashed outline is shown, and it follows the mouse. When you let go, the window is redrawn there.
+- **Which windows:**
+  - the system dialogs: messages, questions, text input, file selection
+  - the FILES window of the Desktop, which stays where you left it, also when you change view
+  - the desk accessory (CLOCK): the kernel redraws whatever was underneath, and then the clock in its new position
+  - the WINDOWs of programs with blocks, together with their buttons
 - **API 10:**
-  - `VOS_DRAG`: ένα πρόγραμμα το καλεί με το παράθυρό του όταν πάρει κλικ. Επιστρέφει carry και τη νέα θέση, αν το παράθυρο μετακινήθηκε.
-  - `VOS_FIT`: φέρνει ένα παράθυρο μέσα στην οθόνη. Το accessory το χρειάζεται, γιατί ανοίγει πάνω από όψεις και στα δύο modes.
-- **Κανόνες:**
-  - Το x γίνεται πολλαπλάσιο του 8.
-  - Το παράθυρο μένει κάτω από τη γραμμή μενού και αφήνει 4 pixels για τη σκιά.
-  - Το περίγραμμα σχεδιάζεται με XOR, άρα σβήνει χωρίς να ξανασχεδιαστεί τίποτα από κάτω.
-- **Μνήμη:**
-  - Ο kernel είχε μόνο 280 bytes ελεύθερα. Το σύρσιμο μπήκε στο kernel extension.
-  - Για να χωρέσει, μεταφέρθηκαν σε κρυφή RAM ο πίνακας `bg_api` (στο GAP0) και οι μεταβλητές του F6 και του παρασκηνίου (`#9800`, `#A800`).
-  - Το extension είναι πλέον γεμάτο ως το `#7F00`.
-- **Ελέγχθηκε στον Caprice32** με το νέο `make test-drag`. Φαίνεται το σπαστό περίγραμμα και μετά το παράθυρο στη νέα θέση, και για το ΑΡΧΕΙΑ, και για τον διάλογο ΠΛΗΚΤΡΑ, και για το ΡΟΛΟΙ πάνω από τον Launcher, και για το παράθυρο του CALC. Μετά τη μετακίνηση, ένα κλικ στο «1» του CALC στη νέα του θέση δίνει 1. Περνούν και τα test-lang, test-calc, test-input, test-behind, test-multi, test-switch, test-expand και test-acc. Το test-costume τελειώνει με το συνηθισμένο timeout.
-- **Όρια:**
-  - Ό,τι έχει τυπώσει ένα πρόγραμμα με blocks με PRINT χάνεται όταν μετακινηθεί το παράθυρό του, όπως και σε κάθε ξανασχεδίαση.
-  - Το ΑΡΧΕΙΑ μπορεί να σκεπάσει τα εικονίδια των δίσκων· το ξανασέρνεις πίσω.
-  - Όσο σέρνεται ένα παράθυρο, τα προγράμματα στο παρασκήνιο περιμένουν.
+  - `VOS_DRAG`: a program calls it with its window when it gets a click. It returns carry and the new position, if the window was moved.
+  - `VOS_FIT`: brings a window inside the screen. The accessory needs it, because it opens over views in both modes.
+- **Rules:**
+  - x becomes a multiple of 8.
+  - The window stays below the menu bar and leaves 4 pixels for the shadow.
+  - The outline is drawn with XOR, so it is erased without redrawing anything underneath.
+- **Memory:**
+  - The kernel had only 280 bytes free. The dragging went into the kernel extension.
+  - To make it fit, the `bg_api` table (in GAP0) and the variables of F6 and of the background (`#9800`, `#A800`) were moved to hidden RAM.
+  - The extension is now full up to `#7F00`.
+- **Tested on Caprice32** with the new `make test-drag`. The dashed outline is shown and then the window in its new position, for FILES, for the KEYS dialog, for CLOCK over the Launcher, and for the CALC window. After the move, a click on the "1" of CALC at its new position gives 1. test-lang, test-calc, test-input, test-behind, test-multi, test-switch, test-expand and test-acc also pass. test-costume ends with the usual timeout.
+- **Limits:**
+  - Whatever a program with blocks has printed with PRINT is lost when its window is moved, as with every redraw.
+  - FILES can cover the disc icons; you drag it back.
+  - While a window is being dragged, the programs in the background wait.
 
-**M20 (τα προγράμματα με blocks ως `.VBN`):**
-- **Τι κάνει:** τα προγράμματα που φτιάχνονται με blocks έχουν πλέον δικό τους τύπο, `.VBN`, για να ξεχωρίζουν από τα `.BIN`. Είναι κανονικά προγράμματα του V-OS με το ίδιο header, απλώς άλλη επέκταση.
-  - Η ΕΚΤΕΛΕΣΗ του Studio γράφει `ΟΝΟΜΑ.VBN`.
-  - Το `blocks/vbc.py` και το `tools/mkvbs.py` γράφουν επίσης `.VBN`. Στη δισκέτα είναι τα PONG, CATCH, STARCAT, COUNTER, FLAP, CALC και TICKER.
-- **Desktop (ΑΡΧΕΙΑ):** η σελίδα ενός `.VBN` γράφει «VBN» και έχει δίπλα της ένα σύμβολο ▶, στο χρώμα της σελίδας (σκούρο όταν είναι επιλεγμένη).
-- **Launcher:** δείχνει τα `.VBN` ως προγράμματα, μαζί με τα `.BIN` και `.BAS`, και διαβάζει και από αυτά το εικονίδιο (το ▶ του player). Το F6, το παρασκήνιο και η συνέχιση δουλεύουν όπως και πριν, γιατί ο kernel δεν κοιτάζει την επέκταση.
-- **Studio:** δεν χρειάζεται πια ο έλεγχος «όχι το όνομα STUDIO», γιατί το `STUDIO.VBN` δεν πέφτει πάνω στο `STUDIO.BIN`.
-- **Ελέγχθηκε στον Caprice32:** το Desktop δείχνει το ▶ δίπλα σε κάθε `.VBN`. Το CALC.VBN ξεκινά από τον Launcher (test-calc). Η ΕΚΤΕΛΕΣΗ του Studio γράφει και τρέχει `.VBN` (test-input). Περνούν και τα test-lang, test-behind, test-multi, test-switch, test-expand και test-acc. Το test-costume τελειώνει με το συνηθισμένο timeout. Τα σενάρια δεν χρειάστηκαν αλλαγή, γιατί η σειρά των αρχείων στη δισκέτα έμεινε ίδια.
+**M20 (programs with blocks as `.VBN`):**
+- **What it does:** programs made with blocks now have a type of their own, `.VBN`, to tell them apart from `.BIN`. They are ordinary V-OS programs with the same header, only with another extension.
+  - RUN in Studio writes `NAME.VBN`.
+  - `blocks/vbc.py` and `tools/mkvbs.py` also write `.VBN`. On the disc these are PONG, CATCH, STARCAT, COUNTER, FLAP, CALC and TICKER.
+- **Desktop (FILES):** the page of a `.VBN` says "VBN" and has a ▶ symbol next to it, in the color of the page (dark when it is selected).
+- **Launcher:** shows the `.VBN` as programs, together with `.BIN` and `.BAS`, and also reads the icon from them (the ▶ of the player). F6, the background and resuming work as before, because the kernel does not look at the extension.
+- **Studio:** the check "not the name STUDIO" is no longer needed, because `STUDIO.VBN` does not collide with `STUDIO.BIN`.
+- **Tested on Caprice32:** the Desktop shows the ▶ next to every `.VBN`. CALC.VBN starts from the Launcher (test-calc). RUN in Studio writes and runs `.VBN` (test-input). test-lang, test-behind, test-multi, test-switch, test-expand and test-acc also pass. test-costume ends with the usual timeout. The scripts needed no change, because the order of the files on the disc stayed the same.
 
-**M19 (προγράμματα που τρέχουν στο παρασκήνιο):**
-- **Τι κάνει:** όταν φτιάχνεις ένα πρόγραμμα, διαλέγεις αν παγώνει πίσω από άλλα προγράμματα και όψεις (όπως πριν, και αυτή είναι η προεπιλογή) ή αν συνεχίζει να τρέχει εκεί.
-  - **Studio:** STUDIO > ΣΤΟ ΠΑΡΑΣΚΗΝΙΟ. Ο διάλογος λέει τι κάνει τώρα το πρόγραμμα («ΕΚΕΙ ΠΑΓΩΝΕΙ» ή «ΕΚΕΙ ΤΡΕΧΕΙ») και το ΝΑΙ το αλλάζει. Η επιλογή αποθηκεύεται στο `.VBS` (bit 6 του byte φόντου), άρα μένει και στο `.BIN`.
-  - **Editor blocks (PC):** το κουτάκι «Παγώνει στο παρασκήνιο», `"freeze"` στο `.vbp`. Στο `tools/mkvbs.py`: `BEHIND RUN`.
-- **Στο παρασκήνιο** το πρόγραμμα παίρνει ένα frame σε κάθε frame και τρέχει τα scripts του, αλλά δεν φαίνεται, δεν ακούγεται και δεν παίρνει πλήκτρα. Όταν ξαναβγεί μπροστά (F6 ή Launcher) ζωγραφίζει την κατάστασή του όπως έχει γίνει.
-- **Kernel, API 9:** νέα κλήση `VOS_BACKGROUND` (A = 1 τρέχει, 0 παγώνει). Όσο τρέχει ένα πρόγραμμα στο παρασκήνιο, ο kernel κάνει σιωπηλές όλες τις κλήσεις εκτός από τις `VOS_FRAMES`, `VOS_RANDOM`, `VOS_KEEP` και `VOS_BACKGROUND`, ώστε να μην πειράξει την οθόνη ή τα δεδομένα αυτού που είναι μπροστά.
-- **Ο player συνεχίζει πλέον** από εκεί που ήταν όταν ξαναβγαίνει μπροστά. Πριν, ένα πρόγραμμα του Studio ξεκινούσε από την αρχή.
-- **Το Studio φορτώνει τον player από τη δισκέτα** (`VBRUN.SYS`) μόνο στην ΕΚΤΕΛΕΣΗ, αντί να τον κουβαλά μέσα του. Είχε μείνει με 5 bytes ελεύθερα· τώρα έχει 145, και το `STUDIO.BIN` έγινε 11K αντί για 16K. Το `VBRUN.SYS` πρέπει να είναι στον A: μαζί με το Studio.
-- **Παράδειγμα:** το `TICKER` (`blocks/examples/ticker.vbt`) μετρά δευτερόλεπτα και κινεί μια μπάλα, και τρέχει στο παρασκήνιο.
-- **Ελέγχθηκε στον Caprice32** με το νέο `make test-behind` (576K). Περνούν και τα test-calc, test-multi, test-switch, test-expand, test-acc, test-input και test-lang. Το test-costume τελειώνει με το συνηθισμένο timeout, με τις ίδιες λήψεις. Η ΕΚΤΕΛΕΣΗ του Studio με το `VBRUN.SYS` δουλεύει στα test-input, test-costume και test-calc. Στο test-calc προστέθηκαν τρία UP, γιατί στη λίστα αρχείων υπάρχουν πλέον τρία αρχεία μετά το CLOCK.BIN.
-- **Όρια:**
-  - Τα προγράμματα του Studio θέλουν δική τους bank, άρα τρέχουν δίπλα σε άλλα μόνο με επέκταση μνήμης. Τα προγράμματα του `vbc.py` τρέχουν στο παρασκήνιο και στα 128K.
-  - Ό,τι έχει τυπώσει ένα πρόγραμμα από blocks με PRINT χάνεται στη συνέχιση, ως την επόμενη αλλαγή του (όπως από το M16).
-  - Πίσω από διάλογο, μενού ή το παράθυρο του F6 τα προγράμματα σταματούν για λίγο, και όσο ο δίσκος διαβάζει δεν παίρνουν frames, οπότε ένα χρονόμετρο στο παρασκήνιο μένει λίγο πίσω.
+**M19 (programs that run in the background):**
+- **What it does:** when you make a program, you choose whether it freezes behind other programs and views (as before, and this is the default) or keeps running there.
+  - **Studio:** STUDIO > IN BACKGROUND. The dialog says what the program does now ("THE PROGRAM PAUSES THERE" or "THE PROGRAM KEEPS RUNNING THERE") and YES changes it. The choice is saved in the `.VBS` (bit 6 of the background byte), so it stays in the `.BIN` too.
+  - **Blocks editor (PC):** the box "Freezes in the background", `"freeze"` in the `.vbp`. In `tools/mkvbs.py`: `BEHIND RUN`.
+- **In the background** the program gets one frame on every frame and runs its scripts, but it is not seen, not heard and gets no keys. When it comes to the front again (F6 or Launcher) it draws its state as it has become.
+- **Kernel, API 9:** new call `VOS_BACKGROUND` (A = 1 runs, 0 freezes). While a program runs in the background, the kernel makes all calls silent except `VOS_FRAMES`, `VOS_RANDOM`, `VOS_KEEP` and `VOS_BACKGROUND`, so that it does not disturb the screen or the data of the program in front.
+- **The player now resumes** from where it was when it comes to the front again. Before, a Studio program started from the beginning.
+- **Studio loads the player from the disc** (`VBRUN.SYS`) only at RUN, instead of carrying it inside. It had been left with 5 bytes free; now it has 145, and `STUDIO.BIN` became 11K instead of 16K. `VBRUN.SYS` must be on A: together with Studio.
+- **Example:** `TICKER` (`blocks/examples/ticker.vbt`) counts seconds and moves a ball, and runs in the background.
+- **Tested on Caprice32** with the new `make test-behind` (576K). test-calc, test-multi, test-switch, test-expand, test-acc, test-input and test-lang also pass. test-costume ends with the usual timeout, with the same captures. RUN in Studio with `VBRUN.SYS` works in test-input, test-costume and test-calc. Three UP keys were added to test-calc, because the file list now has three files after CLOCK.BIN.
+- **Limits:**
+  - Studio programs need a bank of their own, so they run next to others only with a memory expansion. The programs of `vbc.py` run in the background also with 128K.
+  - Whatever a program from blocks has printed with PRINT is lost on resume, until its next change (as since M16).
+  - Behind a dialog, a menu or the F6 window the programs stop for a moment, and while the disc is reading they get no frames, so a timer in the background falls a little behind.
 
-**M18 (επέκταση μνήμης):**
-- **Τι κάνει:** με μια επέκταση RAM (64K ως 512K, μέσω των bits 3–5 της θύρας του Gate Array) τα προγράμματα μπαίνουν και στις banks της. Ο loader βρίσκει ποιες υπάρχουν στην εκκίνηση (`src/boot/expand.asm`).
-- **Τοποθέτηση:**
-  - Κάθε πρόγραμμα πάει στον πρώτο χώρο που χωρά: πρώτα η bank 5 πάνω από το `#5000`, μετά οι banks της επέκτασης από το `#4000`.
-  - Όσα έχουν πίνακα relocation μοιράζονται μια bank. Το STUDIO, το CALC και το FLAP παίρνουν μια ολόκληρη bank το καθένα και τρέχουν πλέον δίπλα στα άλλα, χωρίς «CLOSE ANOTHER PROGRAM FIRST».
-- **Πόσα:** ως 15 προγράμματα. Ο πίνακάς τους μεταφέρθηκε στο kernel extension της bank 7 (`#7F00`), και το F6 δείχνει ως 8.
-- **Χωρίς επέκταση** όλα μένουν όπως στο M16.
-- **Διόρθωση:** η μικτή οθόνη και ο ήχος ενός προγράμματος σταματούν όταν πας σε όψη ή άλλο πρόγραμμα. Πριν, η μικτή οθόνη του Studio ή του MIXED έμενε ενεργή και χάλαγε τα χρώματα του επόμενου.
-- **Ελέγχθηκε στον Caprice32** με 576K και το νέο `make test-expand`: STUDIO, DEMO, PONG και CALC μαζί, και το F6 τα συνεχίζει. Τα άλλα tests (με 128K) περνούν όπως πριν.
-- **Όρια:**
-  - Η bank δεδομένων (bank 4) είναι κοινή. Το Studio την ξαναγεμίζει στο `init`, οπότε δουλεύει, αλλά στη συνέχιση ξανανοίγει το πρόγραμμα που αποθηκεύτηκε τελευταίο, και ό,τι δεν αποθηκεύτηκε χάνεται.
-  - Τα προγράμματα στο παρασκήνιο είναι παγωμένα (στο M19 έγινε επιλογή).
+**M18 (memory expansion):**
+- **What it does:** with a RAM expansion (64K up to 512K, through bits 3-5 of the Gate Array port) programs go into its banks too. The loader finds which ones exist at boot (`src/boot/expand.asm`).
+- **Placement:**
+  - Each program goes to the first space where it fits: first bank 5 above `#5000`, then the banks of the expansion from `#4000`.
+  - Those with a relocation table share a bank. STUDIO, CALC and FLAP take a whole bank each and now run next to the others, without "CLOSE ANOTHER PROGRAM FIRST".
+- **How many:** up to 15 programs. Their table was moved to the kernel extension of bank 7 (`#7F00`), and F6 shows up to 8.
+- **Without an expansion** everything stays as in M16.
+- **Fix:** the mixed screen and the sound of a program stop when you go to a view or another program. Before, the mixed screen of Studio or MIXED stayed active and spoiled the colors of the next one.
+- **Tested on Caprice32** with 576K and the new `make test-expand`: STUDIO, DEMO, PONG and CALC together, and F6 resumes them. The other tests (with 128K) pass as before.
+- **Limits:**
+  - The data bank (bank 4) is shared. Studio refills it in `init`, so it works, but on resume it reopens the program that was saved last, and whatever was not saved is lost.
+  - Programs in the background are frozen (in M19 this became a choice).
 
-**M17 (εναλλαγή προγραμμάτων):**
-- **Τι κάνει:** το F6, από οποιαδήποτε όψη ή πρόγραμμα, ανοίγει το παράθυρο ΠΡΟΓΡΑΜΜΑΤΑ με όσα τρέχουν, με τη σειρά που ξεκίνησαν. Το πρόγραμμα που τρέχει τώρα έχει «>» μπροστά του, και είναι επιλεγμένο το επόμενο.
-- **Χειρισμός:**
-  - F6 ή DOWN και UP μετακινούν την επιλογή.
-  - RETURN, ENTER, SPACE ή κλικ συνεχίζουν το επιλεγμένο πρόγραμμα από εκεί που ήταν.
-  - ESC ή κλικ έξω από το παράθυρο το κλείνουν.
-  - Χωρίς προγράμματα βγαίνει «NO PROGRAM IS RUNNING».
-- **Μενού:** το ίδιο ανοίγει από το PROGRAMS (F6) στο μενού VIEW των όψεων.
-- **Kernel extension:** ο κώδικας είναι στη bank 7 (`src/kernel/ext.asm`, στο `#7800`, ως 2K), όπου τον βάζει ο loader. Εκεί μεταφέρθηκε και το `lang_init`, που τρέχει μόνο στην εκκίνηση. Ο kernel κέρδισε χώρο και τελειώνει στο `#3CE3`.
-- **Ελέγχθηκε στον Caprice32** με το νέο `make test-switch`.
+**M17 (switching programs):**
+- **What it does:** F6, from any view or program, opens the PROGRAMS window with all that are running, in the order they were started. The program that runs now has ">" in front of it, and the next one is selected.
+- **Controls:**
+  - F6 or DOWN and UP move the selection.
+  - RETURN, ENTER, SPACE or a click resume the selected program from where it was.
+  - ESC or a click outside the window closes it.
+  - With no programs it says "NO PROGRAM IS RUNNING".
+- **Menu:** the same opens from PROGRAMS (F6) in the VIEW menu of the views.
+- **Kernel extension:** the code is in bank 7 (`src/kernel/ext.asm`, at `#7800`, up to 2K), where the loader puts it. `lang_init`, which runs only at boot, was moved there too. The kernel gained space and ends at `#3CE3`.
+- **Tested on Caprice32** with the new `make test-switch`.
 
-**M16 (πολλά προγράμματα μαζί):**
-- **Τι κάνει:** ένα πρόγραμμα δεν τερματίζεται πια όταν πας σε άλλη όψη (F1–F4). Στον Launcher, το RUN σε πρόγραμμα που τρέχει ήδη το συνεχίζει από εκεί που ήταν, και μπορείς να ξεκινήσεις κι άλλα δίπλα του. ^Q (ή VOS_EXIT) το κλείνει.
-- **Πόσα χωράνε:** όσα χωρούν στα 12K πάνω από τις όψεις (`#5000–#7FFF` της bank 5), ως τέσσερα. Π.χ. DEMO, PONG, CATCH και ΡΟΛΟΙ μαζί.
-- **Το STUDIO, το CALC και το FLAP** χρειάζονται όλη τη bank. Ξεκινούν μόνο αν δεν τρέχει τίποτα άλλο· αλλιώς βγαίνει «CLOSE ANOTHER PROGRAM FIRST».
-- **API 8:** στη συνέχιση το `init` παίρνει A = 2: το πρόγραμμα ξαναστήνει την οθόνη του χωρίς να χάσει την κατάστασή του (`src/api/vos_api.inc`).
-- **Όρια:**
-  - Τα προγράμματα στο παρασκήνιο είναι παγωμένα.
-  - Ένα πρόγραμμα από blocks χάνει στη συνέχιση ό,τι έχει τυπώσει, ως την επόμενη αλλαγή (στο PONG το σκορ).
-  - Η εναλλαγή γίνεται μόνο μέσω του Launcher (στο M17 προστέθηκε το F6), και τα πλακίδια δεν δείχνουν ποια προγράμματα τρέχουν.
-- **Ελέγχθηκε στον Caprice32** με το νέο `make test-multi`. Περνούν και τα test-acc, test-input, test-calc, test-costume, test-lang.
+**M16 (many programs together):**
+- **What it does:** a program is no longer ended when you go to another view (F1-F4). In the Launcher, RUN on a program that is already running resumes it from where it was, and you can start more next to it. ^Q (or VOS_EXIT) closes it.
+- **How many fit:** as many as fit in the 12K above the views (`#5000-#7FFF` of bank 5), up to four. E.g. DEMO, PONG, CATCH and CLOCK together.
+- **STUDIO, CALC and FLAP** need the whole bank. They start only if nothing else is running; otherwise "CLOSE ANOTHER PROGRAM FIRST" appears.
+- **API 8:** on resume `init` gets A = 2: the program sets up its screen again without losing its state (`src/api/vos_api.inc`).
+- **Limits:**
+  - Programs in the background are frozen.
+  - A program from blocks loses on resume whatever it has printed, until the next change (in PONG the score).
+  - Switching is done only through the Launcher (F6 was added in M17), and the tiles do not show which programs are running.
+- **Tested on Caprice32** with the new `make test-multi`. test-acc, test-input, test-calc, test-costume and test-lang also pass.
 
-**M15 (relocation σε όλα τα προγράμματα):**
-- Πρώτο βήμα για να τρέχουν πολλά προγράμματα μαζί: όσα προγράμματα μπορούν να μετακινηθούν έχουν πλέον πίνακα relocation (DEMO, MIXED, CLOCK, PONG, CATCH, STARCAT, COUNTER), και ο kernel μπορεί να τα φορτώσει σε οποιαδήποτε σελίδα της bank.
-- Το STUDIO και τα προγράμματά του (CALC, FLAP) χρειάζονται ολόκληρη τη bank και μένουν στο `#4000`.
-- Ο kernel κέρδισε χώρο: τρεις buffers μεταφέρθηκαν σε κρυφά σημεία της οθόνης.
-- **Ελέγχθηκε στον Caprice32** με το `make test-reloc` (που στο M16 έγινε `test-multi`): τα DEMO, PONG και MIXED τρέχουν από το `#6300`.
+**M15 (relocation in all programs):**
+- First step to run many programs together: all programs that can be moved now have a relocation table (DEMO, MIXED, CLOCK, PONG, CATCH, STARCAT, COUNTER), and the kernel can load them at any page of the bank.
+- STUDIO and its programs (CALC, FLAP) need the whole bank and stay at `#4000`.
+- The kernel gained space: three buffers were moved to hidden places of the screen.
+- **Tested on Caprice32** with `make test-reloc` (which became `test-multi` in M16): DEMO, PONG and MIXED run from `#6300`.
 
-**M14 (relocation και δεύτερο πρόγραμμα: desk accessory):**
-- **Τι κάνει:** ένα μικρό πρόγραμμα (ως 4K) μπορεί να τρέχει ως «αξεσουάρ» πάνω από οποιοδήποτε άλλο πρόγραμμα ή όψη.
-  - Στον Launcher: επιλογή του προγράμματος, μετά ΑΡΧΕΙΟ > ΩΣ ΑΞΕΣΟΥΑΡ (^A). Φορτώνεται και ανοίγει.
-  - Από εκεί και πέρα το **F5** το ανοίγει και το κλείνει, πάνω από το Studio, την αριθμομηχανή ή μια όψη.
-  - Όσο είναι ανοιχτό παίρνει τα πλήκτρα και το ποντίκι. Το πρόγραμμα από κάτω περιμένει, και στο κλείσιμο ξανασχεδιάζεται.
-- **Relocation:** το `tools/mkreloc.py` μεταγλωττίζει το πρόγραμμα στο `#4000` και στο `#4100` και βρίσκει τα bytes που διαφέρουν. Αυτά είναι οι διευθύνσεις του ίδιου του προγράμματος, και ο πίνακάς τους μπαίνει στο τέλος του αρχείου. Ο kernel μεταφέρει το πρόγραμμα στο `#7000` της bank 6, όπου μένει όσο χρειάζεται.
-- **Παράδειγμα: το ΡΟΛΟΙ** (`apps/clock`, 888 bytes μαζί με τον πίνακα). Δείχνει τον χρόνο από την εκκίνηση του V-OS. Ως πρόγραμμα έχει δική του οθόνη, ως αξεσουάρ ένα μικρό παράθυρο. Κλείνει με F5 ή ESC.
-- **API 7:** περιγραφή στο `src/api/vos_api.inc`. Το `init` παίρνει A = 1 όταν το πρόγραμμα ξεκινά ως αξεσουάρ. Το `VOS_FRAMES` δίνει πλέον 24 bits, σχεδόν 4 ημέρες.
-- **Διόρθωση στον Launcher:** με περισσότερα από 9 προγράμματα, η αλλαγή σελίδας με τα βελάκια σχεδίαζε πλακίδια σε λάθος θέσεις. Φάνηκε τώρα, με το 10ο πρόγραμμα.
-- **Όρια:**
-  - Ένα αξεσουάρ τη φορά.
-  - Δεν μπορεί να αλλάξει mode, παλέτα ή γραμμή μενού, ούτε να χρησιμοποιήσει τη bank δεδομένων.
-  - Ο kernel είχε τότε περίπου 150 bytes ελεύθερα (`#3D68`).
-- **Ελέγχθηκε στον Caprice32** με το `make test-acc`: το ΡΟΛΟΙ πάνω από τον Launcher (mode 0) και πάνω από τη μικτή οθόνη του Studio, κλείσιμο με F5 και με ESC, σωστή επανασχεδίαση. Επίσης με εξομοιωτή Z80, μετά το relocation στο `#7000`.
+**M14 (relocation and a second program: desk accessory):**
+- **What it does:** a small program (up to 4K) can run as an "accessory" over any other program or view.
+  - In the Launcher: select the program, then FILE > AS ACCESSORY (^A). It is loaded and opened.
+  - From then on **F5** opens and closes it, over Studio, the calculator or a view.
+  - While it is open it gets the keys and the mouse. The program underneath waits, and on closing it is redrawn.
+- **Relocation:** `tools/mkreloc.py` assembles the program at `#4000` and at `#4100` and finds the bytes that differ. These are the addresses of the program itself, and their table is put at the end of the file. The kernel moves the program to `#7000` of bank 6, where it stays as long as needed.
+- **Example: CLOCK** (`apps/clock`, 888 bytes together with the table). It shows the time since V-OS started. As a program it has its own screen, as an accessory a small window. It closes with F5 or ESC.
+- **API 7:** described in `src/api/vos_api.inc`. `init` gets A = 1 when the program starts as an accessory. `VOS_FRAMES` now gives 24 bits, almost 4 days.
+- **Fix in the Launcher:** with more than 9 programs, changing the page with the arrow keys drew tiles in wrong positions. It showed up now, with the 10th program.
+- **Limits:**
+  - One accessory at a time.
+  - It cannot change mode, palette or menu bar, nor use the data bank.
+  - The kernel then had about 150 bytes free (`#3D68`).
+- **Tested on Caprice32** with `make test-acc`: CLOCK over the Launcher (mode 0) and over the mixed screen of Studio, closing with F5 and with ESC, correct redraw. Also with a Z80 emulator, after relocation at `#7000`.
 
-**M13 (κοστούμια στο Studio):**
-- **Επεξεργαστής:** στη σκηνή, το E σχεδιάζει το κοστούμι του αντικειμένου (νέο αν δεν έχει) και το K αλλάζει ποιο φορά (κανένα, 1, 2, …).
-  - Ο επεξεργαστής παίρνει τη θέση της σκηνής: πλέγμα 16×16, από κάτω οι 16 πένες.
-  - Πλήκτρα: βελάκια, SPACE ή RETURN για βάψιμο, 0–9 και A–F για πένα, `.` για διάφανο, E ή TAB για τέλος. Με το ποντίκι, κλικ σε κελί για βάψιμο και στη σειρά για πένα.
-- **Blocks:** `ΚΟΣΤΟΥΜΙ n`, `ΕΠΟΜΕΝΟ ΚΟΣΤΟΥΜΙ` (ΕΜΦΑΝ./ΗΧΟΣ) και η τιμή `ΚΟΣΤΟΥΜΙ` (γράμμα U). Ως 8 κοστούμια ανά πρόγραμμα, κοινά για όλα τα αντικείμενα.
-- **Αρχεία:** μορφή `.VBS` 3, με τα κοστούμια μετά τις γραμμές. Τα παλιά `.VBS` ανοίγουν κανονικά.
-- **Παίκτης:** κάνει τα κοστούμια εικόνες όταν ξεκινά, σε mode 0 ή 1, και βγάζει τα ίδια bytes με το `vbc.py`. Το `vbc.py` δέχεται πλέον και τιμή στο `switch_costume`.
-- **Παράδειγμα:** `blocks/examples/flap.vbt`. Το FLAP έχει ένα πουλί που χτυπά τα φτερά του και ένα αστέρι που αλλάζει κοστούμι. Είναι στη δισκέτα ως `FLAP.BIN` και `FLAP.VBS`.
-- **Λίστα αρχείων:** το UP από το πρώτο αρχείο πάει στο τελευταίο, και το DOWN από το τελευταίο στο πρώτο.
-- **Διόρθωση στις δοκιμές:** η λάθος αποθήκευση από ένα `ld bc,-vbs`, που η RASM το έκανε `+vbs`, έδινε «DISC FULL». Τώρα γράφεται `0 - vbs`.
-- **Ελέγχθηκε:**
-  - Στον Caprice32: το `make test-costume` σχεδιάζει με πλήκτρα και κλικ, κάνει ΕΚΤΕΛΕΣΗ, όπου το αντικείμενο σχεδιάζεται με το κοστούμι, και CONTROL+Q, όπου το NONAME.VBS ανοίγει με το κοστούμι. Επίσης το FLAP από τον Launcher, και τα `make test-input`, `make test-calc`, `make test-lang`.
-  - Με εξομοιωτή Z80 σε Python: οι εικόνες του παίκτη σε mode 0 και 1 είναι ίδιες με του `vbc.py`.
-- **Όριο:** το Studio γέμισε τη bank του (μένουν 6 bytes).
+**M13 (costumes in Studio):**
+- **Editor:** on the stage, E draws the costume of the sprite (a new one if it has none) and K changes which one it wears (none, 1, 2, ...).
+  - The editor takes the place of the stage: a 16×16 grid, with the 16 pens below.
+  - Keys: arrow keys, SPACE or RETURN to paint, 0-9 and A-F for a pen, `.` for transparent, E or TAB to finish. With the mouse, a click on a cell paints and a click on the row picks a pen.
+- **Blocks:** `COSTUME n`, `NEXT COSTUME` (LOOKS/SOUND) and the value `COSTUME` (letter U). Up to 8 costumes per program, shared by all sprites.
+- **Files:** `.VBS` format 3, with the costumes after the lines. Old `.VBS` files open normally.
+- **Player:** turns the costumes into images when it starts, in mode 0 or 1, and produces the same bytes as `vbc.py`. `vbc.py` now also accepts a value in `switch_costume`.
+- **Example:** `blocks/examples/flap.vbt`. FLAP has a bird that flaps its wings and a star that changes costume. It is on the disc as `FLAP.BIN` and `FLAP.VBS`.
+- **File list:** UP from the first file goes to the last, and DOWN from the last to the first.
+- **Fix in the tests:** the wrong save caused by an `ld bc,-vbs`, which RASM turned into `+vbs`, gave "DISC FULL". Now it is written `0 - vbs`.
+- **Tested:**
+  - On Caprice32: `make test-costume` draws with keys and clicks, does RUN, where the sprite is drawn with the costume, and CONTROL+Q, where NONAME.VBS opens with the costume. Also FLAP from the Launcher, and `make test-input`, `make test-calc`, `make test-lang`.
+  - With a Z80 emulator in Python: the images of the player in mode 0 and 1 are the same as those of `vbc.py`.
+- **Limit:** Studio has filled its bank (6 bytes are left).
 
-**Παράθυρα και κουμπιά στον editor και στο `vbc.py`:**
-- Ο web editor έχει τώρα την κατηγορία ΠΑΡΑΘΥΡΑ (WINDOWS) με τα blocks `παράθυρο`, `κουμπί`, `όταν πατηθεί κουμπί` και την τιμή `κουμπί`, όπως το Studio. Τα δύο εργαλεία έχουν ξανά τα ίδια blocks.
-- Στο `.vbp`: `{"block": "window", "title", "w", "h"}`, `{"block": "button", "text", "x", "y"}`, το γεγονός `"button"` και η τιμή `{"button": true}`.
-- Ο κώδικας των παραθύρων είναι πλέον στο `blocks/runtime.asm` (`RT_UI`), κοινός για τον παίκτη του Studio και για το `vbc.py`. Με παράθυρο, το `print` γράφει μέσα σε αυτό.
-- Παράδειγμα: `blocks/examples/counter.vbp`, ο μετρητής COUNTER σε mode 1, με κουμπιά +1, -1 και 0. Είναι στη δισκέτα.
+**Windows and buttons in the editor and in `vbc.py`:**
+- The web editor now has the category WINDOWS with the blocks `window`, `button`, `when button pressed` and the value `button`, as in Studio. The two tools again have the same blocks.
+- In the `.vbp`: `{"block": "window", "title", "w", "h"}`, `{"block": "button", "text", "x", "y"}`, the event `"button"` and the value `{"button": true}`.
+- The code of the windows is now in `blocks/runtime.asm` (`RT_UI`), shared by the Studio player and `vbc.py`. With a window, `print` writes inside it.
+- Example: `blocks/examples/counter.vbp`, the COUNTER in mode 1, with buttons +1, -1 and 0. It is on the disc.
 
-**Διόρθωση: η επιλογή του Launcher.** Ο Launcher επέλεγε στην αρχή το πρόγραμμα με αριθμό στον κατάλογο ίσο με το πλήθος των προγραμμάτων, αντί για αυτό που ήταν επιλεγμένο στην προηγούμενη όψη (ο A χανόταν στο `ln_load`). Με 7 προγράμματα έπεφτε κατά τύχη στο DEMO. Με το COUNTER έπεφτε στο MIXED, και το `make test-input` ξεκινούσε το PONG.
+**Fix: the Launcher selection.** At the start, the Launcher selected the program whose number in the catalog was equal to the number of programs, instead of the one that was selected in the previous view (the A register was lost in `ln_load`). With 7 programs it landed on DEMO by chance. With COUNTER it landed on MIXED, and `make test-input` started PONG.
 
-**Η γλώσσα εκκίνησης:**
-- Στην αρχή, χωρίς `SETUP.CFG`, το V-OS ξεκινά στα Αγγλικά. Το πληκτρολόγιο ήταν ήδη Αγγλικό.
-- Η γλώσσα εκκίνησης αλλάζει στο Setup (F4), στη γραμμή LANGUAGE / ΓΛΩΣΣΑ.
-- Και η εντολή ΠΡΟΒΟΛΗ > ΓΛΩΣΣΑ (CONTROL+L) αλλάζει πλέον και τη ρύθμιση. Με αποθήκευση στο Setup (RETURN ή ^S) μένει και στην επόμενη εκκίνηση.
-- Ελέγχθηκε με το νέο `make test-lang`: εκκίνηση στα Αγγλικά, Ελληνικά με CONTROL+L, αποθήκευση, BASIC, `RUN"VOS`, και το V-OS ξεκινά στα Ελληνικά.
+**The boot language:**
+- At first, without `SETUP.CFG`, V-OS starts in English. The keyboard was already English.
+- The boot language is changed in Setup (F4), in the LANGUAGE row.
+- The command VIEW > SWITCH LANGUAGE (CONTROL+L) now also changes the setting. With saving in Setup (RETURN or ^S) it stays for the next boot.
+- Tested with the new `make test-lang`: boot in English, Greek with CONTROL+L, saving, BASIC, `RUN"VOS`, and V-OS starts in Greek.
 
-**Διόρθωση: η μικτή οθόνη μετά από πρόσβαση στον δίσκο (μετά το M12):**
-- **Το σύμπτωμα:** οι ζώνες του Studio χαλούσαν για πάντα μετά από ανάγνωση ή εγγραφή στον δίσκο, και μερικές φορές το Studio πάγωνε.
-- **Αιτία:** ο handler καταλαβαίνει το interrupt του VSYNC μόνο αν το εξυπηρετήσει μέσα σε περίπου 3 γραμμές.
-  - Μια μεταφορά τομέα κρατά κλειστά τα interrupts για 16 ms. Χάνονται interrupts, οπότε η αρίθμηση των 6 φετών μετατοπίζεται.
-  - Με λάθος αρίθμηση, η αναμονή 45 γραμμών της μικτής οθόνης μπορούσε να πέσει ακριβώς πριν από το VSYNC σε κάθε frame. Τότε το VSYNC δεν φαινόταν ποτέ ξανά.
-  - Χωρίς VSYNC το `int_frames` σταματούσε, και το `wait_frame` δεν επέστρεφε.
-- **Διόρθωση:** αν περάσουν 12 interrupts (2 frames) χωρίς VSYNC, ο handler περιμένει μία φορά ενεργά την αρχή του VSYNC και ξεκινά από εκεί. Αυτό δεν γίνεται ανάμεσα σε τομείς ενός αρχείου, για να μη χάνονται τομείς (`interrupts.asm`).
-- **Πώς βρέθηκε:** με το `-DTEST_TRACE` (μόνο στα builds δοκιμής). Γράφει για κάθε interrupt τη φέτα, το `int_frames` και τη διεύθυνση που διέκοψε, και τα δείχνει στην οθόνη μαζί με το `-DTEST_DUMP`.
-- **Ελέγχθηκε στον Caprice32:** `make test-input`, `make test-calc`, και η λήψη 760, όπου οι ζώνες ήταν πριν λάθος. Κατά τη μεταφορά ενός τομέα η κάτω ζώνη μπορεί να δείξει για μια στιγμή λωρίδες, όπως γράφει και το API.
+**Fix: the mixed screen after disc access (after M12):**
+- **The symptom:** the zones of Studio were spoiled for good after a read or write on the disc, and sometimes Studio froze.
+- **Cause:** the handler notices the VSYNC interrupt only if it serves it within about 3 lines.
+  - A sector transfer keeps interrupts disabled for 16 ms. Interrupts are lost, so the counting of the 6 slices shifts.
+  - With wrong counting, the wait of 45 lines of the mixed screen could fall exactly before the VSYNC in every frame. Then the VSYNC was never seen again.
+  - Without VSYNC `int_frames` stopped, and `wait_frame` did not return.
+- **Fix:** if 12 interrupts (2 frames) pass without VSYNC, the handler waits once actively for the start of the VSYNC and starts counting from there. This is not done between the sectors of one file, so that no sectors are lost (`interrupts.asm`).
+- **How it was found:** with `-DTEST_TRACE` (only in test builds). It writes for every interrupt the slice, `int_frames` and the address that was interrupted, and shows them on the screen together with `-DTEST_DUMP`.
+- **Tested on Caprice32:** `make test-input`, `make test-calc`, and capture 760, where the zones were wrong before. During the transfer of a sector the bottom zone may show stripes for a moment, as the API also says.
 
-**M12 (πράξεις, παράθυρα και κουμπιά στο Studio, mode 1):**
-- **Πράξεις** στις ΜΕΤΑΒΛΗΤΕΣ: `ΜΕΙΩΣΕ`, `ΠΟΛΛΑΠΛΑΣΙΑΣΕ`, `ΔΙΑΙΡΕΣΕ`, `ΥΠΟΛΟΙΠΟ` (π.χ. `ΠΟΛΛΑΠΛΑΣΙΑΣΕ A ΕΠΙ 10`), ακέραιοι 16 bit με πρόσημο.
-- **Νέα κατηγορία ΠΑΡΑΘΥΡΑ:**
-  - `ΠΑΡΑΘΥΡΟ "τίτλος" πλάτος ύψος`: παράθυρο στη μέση της σκηνής, με την εμφάνιση των διαλόγων του V-OS.
-  - `ΚΟΥΜΠΙ "κείμενο" ΣΤΟ x y`: κουμπί του συστήματος (ποντίκι, TAB, RETURN). Τα κουμπιά αριθμούνται από το 0 με τη σειρά που εμφανίζονται, ως 16.
-  - `ΟΤΑΝ ΚΟΥΜΠΙ`: ξεκινά όταν πατηθεί οποιοδήποτε κουμπί. Η τιμή `ΚΟΥΜΠΙ` (πλήκτρο P σε πεδίο τιμής) δίνει ποιο.
-  - `ΚΕΙΜΕΝΟ "κείμενο" ΣΤΟ x y`. Το `ΚΕΙΜΕΝΟ`, το `ΚΟΥΜΠΙ` και το `ΓΡΑΨΕ` μετρούν από το εσωτερικό του παραθύρου.
-- **Κείμενα σε πεδία:** κάθε πρόγραμμα έχει ως 32 κείμενα των 14 χαρακτήρων. Όταν προστίθεται ένα block με κείμενο, το Studio το ζητά αμέσως. Με RETURN ή κλικ στο πεδίο αλλάζει.
-- **Μορφή `.VBS` 2:** τα κείμενα μπαίνουν μετά τα αντικείμενα. Τα αρχεία της μορφής 1 ανοίγουν κανονικά.
-- **Mode 1:** ένα πρόγραμμα μπορεί να τρέχει σε mode 1, με 384 pixels πλάτος, 48 στήλες και τις πένες 0–3.
-  - Επιλέγεται από ΕΠΕΞΕΡΓΑΣΙΑ > MODE ΟΘΟΝΗΣ, και κάτω από τη σκηνή φαίνεται M0 ή M1.
-  - Η προεπισκόπηση της σκηνής, τα βελάκια και τα κλικ μετρούν τότε σε pixels του mode 1.
-  - Ο player διαβάζει το mode όταν ξεκινά το πρόγραμμα. Αποθηκεύεται στο bit 7 του χρώματος φόντου.
-- **Παράδειγμα:** η αριθμομηχανή `CALC` σε mode 1 (`blocks/examples/calc.vbt`). Το `tools/mkvbs.py` φτιάχνει από κείμενο το `CALC.VBS` για το Studio και το `CALC.BIN` για τον Launcher.
-- **Ελέγχθηκε:**
-  - Σε εξομοιωτή Z80, η αριθμομηχανή για 12+3=, 7*6=, 100/7=, 5-9= και 2+3*4=.
-  - Στον Caprice32, με το `make test-calc`: η CALC σε mode 1 με κλικ στα κουμπιά (12+3= δίνει 15), το CALC.VBS στο Studio, και προσθήκη ΠΑΡΑΘΥΡΟΥ με κείμενο από τον διάλογο.
-  - Όλο το `make test-input`, με τα αρχεία CALC στον δίσκο.
-  - Δεν δοκιμάστηκαν στο emulator αντικείμενα σε πρόγραμμα mode 1, δηλαδή η κλίμακα της σκηνής, τα βελάκια και τα κλικ του Studio. Η CALC δεν έχει αντικείμενα.
-- **Διόρθωση στον kernel (παλιό σφάλμα, υπήρχε και στο M11):** με περισσότερα αρχεία στον δίσκο, το άνοιγμα του `.VBS` στη δοκιμή έβγαζε «ΔΕΝ ΕΙΝΑΙ ΠΡΟΓΡΑΜΜΑ V-OS» σε διάλογο που δεν φαινόταν, και το Studio έμοιαζε κολλημένο.
-  - Αιτία: όσο κρατιέται ένα πλήκτρο, η αυτόματη επανάληψη έστελνε συμβάντα πιο γρήγορα από όσο η λίστα αρχείων ξαναζωγράφιζε τις γραμμές της όταν κυλούσε. Η ουρά των 32 συμβάντων γέμιζε και τα πλήκτρα μετά, όπως το RETURN, χάνονταν.
-  - Τώρα η επανάληψη στέλνει συμβάν μόνο όταν η ουρά είναι άδεια (`kbd.asm`), άρα ένα αργό πρόγραμμα δεν χάνει πλήκτρα.
-  - Βρέθηκε με νέο εργαλείο για δοκιμές: το `-DTEST_DUMP=frame` δείχνει τη στοίβα ή μνήμη ως bits στην πάνω γραμμή της οθόνης (`test_script.asm`).
+**M12 (operations, windows and buttons in Studio, mode 1):**
+- **Operations** in VARIABLES: `DECREASE`, `MULTIPLY`, `DIVIDE`, `REMAINDER` (e.g. `MULTIPLY A BY 10`), 16-bit signed integers.
+- **New category WINDOWS:**
+  - `WINDOW "title" width height`: a window in the middle of the stage, with the look of the V-OS dialogs.
+  - `BUTTON "text" AT x y`: a system button (mouse, TAB, RETURN). The buttons are numbered from 0 in the order they appear, up to 16.
+  - `WHEN BUTTON`: starts when any button is pressed. The value `BUTTON` (key P in a value field) says which one.
+  - `TEXT "text" AT x y`. `TEXT`, `BUTTON` and `PRINT` count from the inside of the window.
+- **Texts in fields:** every program has up to 32 texts of 14 characters. When a block with text is added, Studio asks for it at once. With RETURN or a click on the field it changes.
+- **`.VBS` format 2:** the texts go after the sprites. Files of format 1 open normally.
+- **Mode 1:** a program can run in mode 1, with 384 pixels width, 48 columns and pens 0-3.
+  - It is selected from EDIT > SCREEN MODE, and under the stage M0 or M1 is shown.
+  - The preview of the stage, the arrow keys and the clicks then count in pixels of mode 1.
+  - The player reads the mode when the program starts. It is saved in bit 7 of the background color.
+- **Example:** the calculator `CALC` in mode 1 (`blocks/examples/calc.vbt`). `tools/mkvbs.py` makes `CALC.VBS` for Studio and `CALC.BIN` for the Launcher from text.
+- **Tested:**
+  - On a Z80 emulator, the calculator for 12+3=, 7*6=, 100/7=, 5-9= and 2+3*4=.
+  - On Caprice32, with `make test-calc`: CALC in mode 1 with clicks on the buttons (12+3= gives 15), CALC.VBS in Studio, and adding a WINDOW with text from the dialog.
+  - All of `make test-input`, with the CALC files on the disc.
+  - Not tested in the emulator: sprites in a program of mode 1, that is the scale of the stage, the arrow keys and the clicks of Studio. CALC has no sprites.
+- **Fix in the kernel (old bug, it was also in M11):** with more files on the disc, opening the `.VBS` in the test gave "NOT A V-OS PROGRAM" in a dialog that was not visible, and Studio looked stuck.
+  - Cause: while a key is held, the auto-repeat sent events faster than the file list redrew its rows when it scrolled. The queue of 32 events filled up and the keys after that, like RETURN, were lost.
+  - Now the repeat sends an event only when the queue is empty (`kbd.asm`), so a slow program does not lose keys.
+  - Found with a new tool for tests: `-DTEST_DUMP=frame` shows the stack or memory as bits in the top line of the screen (`test_script.asm`).
 
-**M11 (μηνύματα στο Studio):**
-- **Νέα blocks** στα ΓΕΓΟΝΟΤΑ:
-  - `ΟΤΑΝ ΛΑΒΕΙ n` ξεκινά script όταν σταλεί το μήνυμα n.
-  - `ΣΤΕΙΛΕ n` στέλνει μήνυμα, και το n μπορεί να είναι και μεταβλητή.
-  - Έτσι ένα αντικείμενο μπορεί να ξεκινά scripts άλλων, όπως στο Scratch.
-- **Συμβατότητα:** τα blocks μπήκαν στο τέλος της λίστας (24, 25), οπότε τα παλιά `.VBS` ανοίγουν όπως πριν. Η σειρά στην παλέτα ορίζεται πλέον από πίνακα (`pal_order`).
-- **Κείμενα:** τα κείμενα του Studio είχαν φτάσει το όριο των 64, οπότε τα κουμπιά ΝΑΙ/ΟΧΙ έρχονται πλέον από το σύστημα. Το API δίνει τα `VM_OK`, `VM_YES`, `VM_NO`, και ο kernel ελέγχει ότι ταιριάζουν με τα `MSG_BTN_*`.
-- **Ελέγχθηκε:** σε εξομοιωτή Z80, ένα πρόγραμμα όπου το αντικείμενο 1 στέλνει το μήνυμα 7 στην άκρη και το αντικείμενο 2 μετρά. Στον Caprice32 φάνηκαν τα blocks στην παλέτα, και όλο το `make test-input`.
-- **Γνωστό πρόβλημα (από το M8a, διορθώθηκε μετά το M12):** η μικτή οθόνη του Studio μπορεί να χαλάσει για πάντα μετά από εγγραφές στον δίσκο. Στη λήψη 960 του `make test-input` φαίνεται το Studio με τις ζώνες λάθος.
-  - Στον Caprice32 μέτρησα το VSYNC άμεσα, από το bit 0 του PPI. Στην υγιή κατάσταση κρατά 7 γραμμές σε κάθε frame. Μετά τις εγγραφές της ΕΚΤΕΛΕΣΗΣ εμφανίζεται ακανόνιστα: κάθε 2–5 frames, για 0–3 γραμμές.
-  - Έτσι κανένα interrupt δεν το βλέπει, και η αρίθμηση των interrupts δεν ξαναστήνεται.
-  - Ο kernel δεν γράφει στον CRTC μετά την εκκίνηση, και όλα τα `OUT` έχουν σωστή θύρα. Δεν ξέρω ακόμα αν φταίει ο κώδικας ή ο εξομοιωτής. Θέλει έλεγχο σε άλλον εξομοιωτή ή σε πραγματικό CPC.
+**M11 (messages in Studio):**
+- **New blocks** in EVENTS:
+  - `WHEN I RECEIVE n` starts a script when message n is sent.
+  - `SEND n` sends a message, and n can also be a variable.
+  - So a sprite can start the scripts of others, as in Scratch.
+- **Compatibility:** the blocks were put at the end of the list (24, 25), so old `.VBS` files open as before. The order in the palette is now set by a table (`pal_order`).
+- **Texts:** the texts of Studio had reached the limit of 64, so the YES/NO buttons now come from the system. The API gives `VM_OK`, `VM_YES`, `VM_NO`, and the kernel checks that they match `MSG_BTN_*`.
+- **Tested:** on a Z80 emulator, a program where sprite 1 sends message 7 at the edge and sprite 2 counts. On Caprice32 the blocks were seen in the palette, and all of `make test-input`.
+- **Known problem (from M8a, fixed after M12):** the mixed screen of Studio can be spoiled for good after writes to the disc. In capture 960 of `make test-input` Studio is seen with the zones wrong.
+  - On Caprice32 I measured the VSYNC directly, from bit 0 of the PPI. In the healthy state it lasts 7 lines on every frame. After the writes of RUN it appears irregularly: every 2-5 frames, for 0-3 lines.
+  - So no interrupt sees it, and the counting of the interrupts is not set up again.
+  - The kernel does not write to the CRTC after boot, and all `OUT` instructions have the right port. I do not know yet whether the code or the emulator is at fault. It needs a check on another emulator or on a real CPC.
 
-**M10 (εικονίδια προγραμμάτων):**
-- **Τι φαίνεται:** ο Launcher δείχνει το εικονίδιο κάθε προγράμματος πάνω στην κάρτα του, με το όνομα και τον τύπο από κάτω.
-  - Το DEMO έχει ρόμβο, το MIXED τις ζώνες του, το STUDIO τρία blocks το ένα μέσα στο άλλο.
-  - Τα προγράμματα με blocks (PONG, CATCH, STARCAT και όσα φτιάχνει το Studio) έχουν ένα «play».
-- **Μορφή:** προαιρετικό `"IC"` και 256 bytes στο `+12` του προγράμματος (`VOS_ICON` στο `vos_api.inc`): 16×16 pixels σε mode 0, με μάσκα, όπως τα σχεδιάζει το `VOS_BLIT`.
-  - Τα εικονίδια γράφονται ως κείμενο στο `apps/icons/` (πένα σε hex ή `.` για διάφανο) και τα μετατρέπει το νέο `tools/mkicon.py`.
-  - Στο `.vbp` ένα `"icon"` με 16 γραμμές δίνει δικό του εικονίδιο σε πρόγραμμα με blocks.
-- **Launcher:** διαβάζει το πρώτο sector κάθε `.BIN` μόνο την πρώτη φορά που ζωγραφίζει μια σελίδα, και κρατά το εικονίδιο. Μετακινήσεις στην ίδια σελίδα δεν ξαναδιαβάζουν τον δίσκο.
-- **Διόρθωση στη μικτή οθόνη (bug από το M8a):**
-  - Αν ένα interrupt VSYNC εξυπηρετούνταν αργά, για παράδειγμα μετά από μεταφορά sector από τον δίσκο, οι ζώνες μπορούσαν να μείνουν λάθος για πάντα. Η αναμονή 45 γραμμών για το όριο στη γραμμή 12 έπεφτε τότε ακριβώς πριν από το VSYNC και κρατούσε κάθε επόμενο interrupt VSYNC καθυστερημένο.
-  - Φάνηκε όταν το Studio ξαναξεκινούσε μετά από ένα πρόγραμμα.
-  - Τώρα, αν μετά τις αναμονές το VSYNC είναι ενεργό ενώ δεν είναι το interrupt 0, το επόμενο interrupt μετρά ως 0 (`split_irq`). **Δεν φτάνει:** δες το M11, που βρήκε την πραγματική εικόνα.
-  - Ο kernel τελειώνει στο `#3C3E` και μένουν περίπου 450 bytes (μετά το M12 `#3C78`).
-- **Ελέγχθηκε στον Caprice32:** τα έξι εικονίδια στον Launcher, και όλο το `make test-input`. Η επιστροφή στο Studio έδειξε σωστές ζώνες σε εκείνες τις λήψεις, αλλά στο M11 το λάθος ξαναφάνηκε.
-- **Δεν ελέγχθηκαν:** δεύτερη σελίδα με προγράμματα, και πραγματικό CPC.
+**M10 (program icons):**
+- **What is shown:** the Launcher shows the icon of each program on its card, with the name and the type below.
+  - DEMO has a diamond, MIXED its zones, STUDIO three blocks one inside the other.
+  - Programs with blocks (PONG, CATCH, STARCAT and those made by Studio) have a "play".
+- **Format:** an optional `"IC"` and 256 bytes at `+12` of the program (`VOS_ICON` in `vos_api.inc`): 16×16 pixels in mode 0, with a mask, as `VOS_BLIT` draws them.
+  - The icons are written as text in `apps/icons/` (a pen in hex or `.` for transparent) and are converted by the new `tools/mkicon.py`.
+  - In the `.vbp` an `"icon"` with 16 lines gives its own icon to a program with blocks.
+- **Launcher:** reads the first sector of each `.BIN` only the first time it draws a page, and keeps the icon. Moves within the same page do not read the disc again.
+- **Fix in the mixed screen (bug from M8a):**
+  - If a VSYNC interrupt was served late, for example after a sector transfer from the disc, the zones could stay wrong for good. The wait of 45 lines for the limit at line 12 then fell exactly before the VSYNC and kept every next VSYNC interrupt late.
+  - It showed when Studio restarted after a program.
+  - Now, if after the waits the VSYNC is active while it is not interrupt 0, the next interrupt counts as 0 (`split_irq`). **It is not enough:** see M11, which found the real picture.
+  - The kernel ends at `#3C3E` and about 450 bytes are left (after M12 `#3C78`).
+- **Tested on Caprice32:** the six icons in the Launcher, and all of `make test-input`. The return to Studio showed correct zones in those captures, but in M11 the error showed again.
+- **Not tested:** a second page with programs, and a real CPC.
 
-**M9 (bank δεδομένων για προγράμματα):**
-- **Τι δίνει:** όσο τρέχει ένα πρόγραμμα, η bank 4 είναι δική του, 16K ακόμα. Στο CPC 6128 ο kernel χρησιμοποιεί και τις τέσσερις επιπλέον banks, αλλά τη 4 μόνο στις όψεις και όταν φορτώνει την επόμενη όψη ή το επόμενο πρόγραμμα.
-- **API έκδοση 6** (39 κλήσεις):
-  - `VOS_BANK_GET` και `VOS_BANK_PUT` αντιγράφουν από και προς τη bank.
-  - Το `VOS_LOAD` και το `VOS_SAVE` με μονάδα + `VOS_DATA` φορτώνουν και αποθηκεύουν αρχεία κατευθείαν σε αυτή.
-  - Η bank δεν μπαίνει ποτέ στη θέση του προγράμματος, οπότε ο κώδικας μένει ως 16K. Οι κλήσεις γίνονται από τη στοίβα του kernel, όχι από στοίβα μέσα στη bank του προγράμματος.
-- **Το Studio τη χρησιμοποιεί:**
-  - Ο παίκτης μένει στη bank, και ο χώρος του γίνεται ο buffer του προγράμματος: το Studio πιάνει 11,3K αντί για 14,6K.
-  - Η ΕΚΤΕΛΕΣΗ φτιάχνει το `.BIN` μέσα στη bank, οπότε το header του έχει πλέον σωστή διεύθυνση φόρτωσης `#4000`.
-  - Το ΑΝΟΙΓΜΑ ελέγχει το αρχείο στη bank πριν το φέρει στο Studio, οπότε ένα χαλασμένο αρχείο δεν σβήνει πια το πρόγραμμα που είναι ανοιχτό.
-- **Kernel:** τελειώνει στο `#3C2A` και μένουν περίπου 470 bytes.
-- **Ελέγχθηκε στον Caprice32** με όλο το `make test-input`: το ΑΝΟΙΓΜΑ, η ΕΚΤΕΛΕΣΗ και η επαναφόρτωση μετά την εκτέλεση περνούν από τη bank.
-- **Δεν ελέγχθηκε:** το ΑΝΟΙΓΜΑ αρχείου που δεν είναι πρόγραμμα, και πραγματικό CPC.
+**M9 (data bank for programs):**
+- **What it gives:** while a program runs, bank 4 is its own, another 16K. On the CPC 6128 the kernel uses all four extra banks, but bank 4 only in the views and when it loads the next view or the next program.
+- **API version 6** (39 calls):
+  - `VOS_BANK_GET` and `VOS_BANK_PUT` copy from and to the bank.
+  - `VOS_LOAD` and `VOS_SAVE` with a drive + `VOS_DATA` load and save files directly in it.
+  - The bank is never mapped to the place of the program, so the code stays up to 16K. The calls are made from the kernel stack, not from a stack inside the bank of the program.
+- **Studio uses it:**
+  - The player stays in the bank, and its space becomes the buffer of the program: Studio takes 11.3K instead of 14.6K.
+  - RUN builds the `.BIN` inside the bank, so its header now has the correct load address `#4000`.
+  - OPEN checks the file in the bank before it brings it into Studio, so a damaged file no longer erases the program that is open.
+- **Kernel:** ends at `#3C2A` and about 470 bytes are left.
+- **Tested on Caprice32** with all of `make test-input`: OPEN, RUN and the reload after the run go through the bank.
+- **Not tested:** OPEN of a file that is not a program, and a real CPC.
 
-**M8c (Studio: εκτέλεση του προγράμματος):**
-- **ΕΚΤΕΛΕΣΗ (CONTROL+R)** στο μενού STUDIO:
-  - Αποθηκεύει το `ΟΝΟΜΑ.VBS`, γράφει το `ΟΝΟΜΑ.BIN` και το τρέχει.
-  - Όταν το πρόγραμμα σταματήσει (ΠΡΟΓΡΑΜΜΑ > ΤΕΛΟΣ, CONTROL+Q), το Studio ξαναξεκινά με το ίδιο πρόγραμμα ανοιχτό.
-  - Το `.BIN` είναι κανονικό πρόγραμμα του V-OS και τρέχει και από τον Launcher.
-- **Ο παίκτης** (`blocks/player.asm`, 3,7K): το runtime του M7 μαζί με έναν μεταγλωττιστή για τις γραμμές του `.VBS`.
-  - Το `.BIN` είναι ο παίκτης και αμέσως μετά το πρόγραμμα. Όταν ξεκινά, ο παίκτης γράφει τον κώδικα Z80 των blocks, τον ίδιο που βγάζει το `vbc.py`, και μετά τρέχει το runtime.
-  - Η μεταγλώττιση γίνεται εκεί και όχι μέσα στο Studio για λόγους μνήμης: το Studio χρειάζεται μόνο τον παίκτη (11,5K συνολικά, 14,6K με τον χώρο του `.VBS`), και ο κώδικας έχει όλη τη bank του προγράμματος.
-  - Τα `ΟΤΑΝ …` γίνονται scripts, ως 16. Ό,τι μένει ανοιχτό κλείνει στο επόμενο `ΟΤΑΝ`. Σε script της σκηνής, τα blocks κίνησης και εμφάνισης δεν κάνουν τίποτα.
-- **Kernel, API έκδοση 5** (37 κλήσεις):
-  - `VOS_RUN` τρέχει ένα πρόγραμμα και μετά ξαναξεκινά αυτό που το κάλεσε.
-  - `VOS_KEEP` δίνει 16 bytes που μένουν από πρόγραμμα σε πρόγραμμα. Εκεί το Studio γράφει ποιο `.VBS` να ανοίξει.
-  - Ο πίνακας κειμένου των 16 bytes, που θέλει αρχή σελίδας, πήγε στο `#8000`, μνήμη οθόνης που δεν φαίνεται. Πριν έχανε ως 255 bytes σε στοίχιση.
-  - Ο kernel τελειώνει στο `#3BB2` και μένουν περίπου 590 bytes.
-- **Ελέγχθηκε:**
-  - Ο μεταγλωττιστής, με ένα πρόγραμμα που χρησιμοποιεί σχεδόν όλα τα blocks. Έτρεξε σε εξομοιωτή Z80 στην Python και στον Caprice32: βρόχοι, `ΑΝ`/`ΑΛΛΙΩΣ`, `ΠΕΡΙΜΕΝΕ ΩΣ`, τυχαίο, «αγγίζει», νότα, `ΓΡΑΨΕ` και μεταβλητές.
-  - Όλη η ροή στον Caprice32, με το σενάριο του `make test-input`: CONTROL+R στο Studio, το πρόγραμμα τρέχει, CONTROL+Q, και το Studio επιστρέφει με το πρόγραμμα όπως ήταν.
-- **Δεν ελέγχθηκε:** πραγματικό CPC. (Η διεύθυνση φόρτωσης στο header του `.BIN` ήταν λάθος· διορθώθηκε στο M9.)
+**M8c (Studio: running the program):**
+- **RUN (CONTROL+R)** in the STUDIO menu:
+  - Saves `NAME.VBS`, writes `NAME.BIN` and runs it.
+  - When the program stops (PROGRAM > STOP, CONTROL+Q), Studio starts again with the same program open.
+  - The `.BIN` is a normal V-OS program and also runs from the Launcher.
+- **The player** (`blocks/player.asm`, 3.7K): the M7 runtime plus a compiler for the lines of the `.VBS`.
+  - The `.BIN` is the player and, right after it, the program. When it starts, the player writes the Z80 code of the blocks, the same code `vbc.py` produces, and then runs the runtime.
+  - The compiling happens there and not inside Studio, because of memory: Studio needs only the player (11.5K in total, 14.6K with the space for the `.VBS`), and the code gets the whole bank of the program.
+  - The `WHEN …` blocks become scripts, up to 16. Whatever is left open is closed at the next `WHEN`. In a stage script, the motion and looks blocks do nothing.
+- **Kernel, API version 5** (37 calls):
+  - `VOS_RUN` runs a program and then starts again the one that called it.
+  - `VOS_KEEP` gives 16 bytes that stay from program to program. Studio writes there which `.VBS` to open.
+  - The 16-byte text table, which needs a page start, moved to `#8000`, screen memory that is not visible. Before, it lost up to 255 bytes to alignment.
+  - The kernel ends at `#3BB2` and about 590 bytes are left.
+- **Tested:**
+  - The compiler, with a program that uses almost all the blocks. It ran on a Z80 emulator in Python and in Caprice32: loops, `IF`/`ELSE`, `WAIT UNTIL`, random, "touching", note, `PRINT` and variables.
+  - The whole flow in Caprice32, with the `make test-input` script: CONTROL+R in Studio, the program runs, CONTROL+Q, and Studio returns with the program as it was.
+- **Not tested:** a real CPC. (The load address in the header of the `.BIN` was wrong; it was fixed in M9.)
 
-**M8b (Studio: ο editor blocks μέσα στο V-OS):**
-- **Τι είναι:** το πρόγραμμα `STUDIO` (`apps/studio`) πάνω στη μικτή οθόνη.
-  - Πάνω, σε mode 0 με 16 χρώματα: η σκηνή σε μισό μέγεθος και η λίστα με τα αντικείμενα (χρώμα, x y, μέγεθος).
-  - Κάτω, σε mode 1 με 48 στήλες: η παλέτα με τα blocks, το script και μια γραμμή κατάστασης που λέει τι κάνουν τα πλήκτρα εκεί που βρίσκεσαι.
-  - Το όριο είναι στη γραμμή 138, για να χωράει ολόκληρη η σκηνή. Κοστίζει 13 γραμμές αναμονής, περίπου 4% του χρόνου, πέρα από τις 45 της γραμμής μενού.
-- **Το πρόγραμμα** είναι λίστα από γραμμές, ένα block η καθεμία:
-  - Τα `ΟΤΑΝ …` ξεκινούν ένα script για ένα αντικείμενο ή για τη σκηνή.
-  - Τα `ΓΙΑ ΠΑΝΤΑ`, `ΕΠΑΝΑΛΑΒΕ` και `ΑΝ` ανοίγουν ένα block που κλείνει με `ΤΕΛΟΣ`. Η εσοχή βγαίνει από τις γραμμές μόνες τους.
-  - Υπάρχουν 24 blocks σε 5 κατηγορίες: γεγονότα, έλεγχος, κίνηση, εμφάνιση/ήχος, μεταβλητές. Αντικείμενα μπορούν να είναι ως 6, και οι μεταβλητές είναι οι A–H.
-  - Κάθε block έχει ως τρία πεδία. Ένα πεδίο κρατά αριθμό, μεταβλητή, x ή y του αντικειμένου, τυχαίο, «πατιέται το πλήκτρο», «αγγίζει», «στην άκρη», ή σύγκριση `< = >`.
-- **Χειρισμός:**
-  - Το TAB περνά από το script στην παλέτα και στη σκηνή.
-  - Στο script: τα βελάκια επιλέγουν γραμμή και πεδίο, το RETURN βάζει από κάτω το block της παλέτας, και το CLR σβήνει τη γραμμή. Ένα block που ανοίγει μπαίνει μαζί με το `ΤΕΛΟΣ` του, και σβήνεται μαζί του.
-  - Σε επιλεγμένο πεδίο, τα ψηφία γράφουν αριθμό, τα A–H μεταβλητή, τα X/Y/R/K/T/Z τα υπόλοιπα είδη, και το DEL σβήνει ψηφίο. Τα γράμματα διαβάζονται ως πλήκτρα, οπότε δουλεύουν και με το ελληνικό πληκτρολόγιο.
-  - Στη σκηνή: τα βελάκια μετακινούν το αντικείμενο, τα 1–6 το επιλέγουν, το C αλλάζει χρώμα και τα W/H μέγεθος.
-  - Με το ποντίκι: κλικ σε block της παλέτας το προσθέτει, κλικ σε πεδίο το επιλέγει, δεύτερο κλικ αλλάζει το είδος του. Κλικ στη σκηνή βάζει εκεί το αντικείμενο.
-- **Αρχεία:** το ΑΠΟΘΗΚΕΥΣΗ γράφει `ΟΝΟΜΑ.VBS` (δυαδική μορφή, περιγραφή στην αρχή του `studio.asm`) και το ΑΝΟΙΓΜΑ το ξαναδιαβάζει. Τα κείμενα, αγγλικά και ελληνικά, βγαίνουν από το `apps/studio/texts.txt` με το νέο `tools/mktexts.py`.
-- **Kernel:** με ενεργό split, οι διάλογοι κεντράρονται μέσα στη ζώνη mode 0. Η λίστα αρχείων δείχνει εκεί 8 γραμμές αντί για 10.
-- **Ελέγχθηκε στον Caprice32** με το σενάριο του `make test-input`:
-  - Το Studio ξεκινά από τον Launcher, με τις δύο ζώνες στη θέση τους.
-  - Με πλήκτρα: γραμμή και πεδίο, το `5` στο `ΤΑΧΥΤΗΤΑ`, το `ΕΠΑΝΑΛΑΒΕ 10` με το `ΤΕΛΟΣ` του από την παλέτα, μετακίνηση και χρώμα του αντικειμένου.
-  - Το αρχείο: αποθήκευση ως `NONAME.VBS`, ΝΕΟ, και άνοιγμα από τη λίστα αρχείων, που φέρνει πίσω το πρόγραμμα όπως ήταν.
-  - Με κλικ (το δοκιμαστικό build βάζει τον δείκτη σε συγκεκριμένο x, y): block από την παλέτα, επιλογή πεδίου και αλλαγή του είδους του, θέση στη σκηνή.
-- **Δεν δοκιμάστηκε** σε πραγματικό CPC.
+**M8b (Studio: the blocks editor inside V-OS):**
+- **What it is:** the `STUDIO` program (`apps/studio`) on the mixed screen.
+  - Top, in mode 0 with 16 colours: the stage at half size and the list of the objects (colour, x y, size).
+  - Bottom, in mode 1 with 48 columns: the palette of blocks, the script and a status line that says what the keys do where you are.
+  - The boundary is at line 138, so the whole stage fits. It costs 13 lines of waiting, about 4% of the time, on top of the 45 of the menu bar line.
+- **The program** is a list of lines, one block each:
+  - The `WHEN …` blocks start a script for one object or for the stage.
+  - `FOREVER`, `REPEAT` and `IF` open a block that is closed with `END`. The indent comes from the lines themselves.
+  - There are 24 blocks in 5 categories: events, control, motion, looks/sound, variables. There can be up to 6 objects, and the variables are A–H.
+  - Each block has up to three fields. A field holds a number, a variable, the x or y of an object, random, "key is pressed", "touching", "at edge", or a comparison `< = >`.
+- **Controls:**
+  - TAB goes from the script to the palette and to the stage.
+  - In the script: the arrows choose a line and a field, RETURN puts the block of the palette below, and CLR deletes the line. A block that opens goes in together with its `END`, and is deleted together with it.
+  - In a chosen field, the digits write a number, A–H a variable, X/Y/R/K/T/Z the other kinds, and DEL deletes a digit. The letters are read as keys, so they work with the Greek keyboard too.
+  - On the stage: the arrows move the object, 1–6 choose it, C changes the colour and W/H the size.
+  - With the mouse: a click on a block of the palette adds it, a click on a field chooses it, a second click changes its kind. A click on the stage puts the object there.
+- **Files:** SAVE writes `NAME.VBS` (binary format, described at the start of `studio.asm`) and OPEN reads it back. The texts, English and Greek, come from `apps/studio/texts.txt` with the new `tools/mktexts.py`.
+- **Kernel:** with the split active, the dialogs are centred inside the mode 0 zone. The file list shows 8 lines there instead of 10.
+- **Tested in Caprice32** with the `make test-input` script:
+  - Studio starts from the Launcher, with the two zones in place.
+  - With keys: line and field, the `5` in `SPEED`, the `REPEAT 10` with its `END` from the palette, moving and colouring the object.
+  - The file: save as `NONAME.VBS`, NEW, and open from the file list, which brings the program back as it was.
+  - With clicks (the test build puts the pointer at a given x, y): a block from the palette, choosing a field and changing its kind, a position on the stage.
+- **Not tested** on a real CPC.
 
-**M8a (μικτή οθόνη, το πρώτο κομμάτι του Studio):**
-- **Τι κάνει:** μια ζώνη σε mode 0 (16 χρώματα, 192 pixels) ανάμεσα σε δύο ζώνες σε mode 1 (4 χρώματα, 384 pixels). Κάθε ζώνη έχει δικά της χρώματα για τις πένες 0–3. Η αλλαγή γίνεται στο interrupt (`src/gfx/split.asm`), και τα όρια τα ορίζει το πρόγραμμα με τη νέα κλήση `VOS_SPLIT`.
-- **Κόστος:** ένα όριο αμέσως κάτω από τις γραμμές 22, 74, 126, 178 ή 230 δεν κοστίζει τίποτα. Σε άλλη γραμμή το interrupt περιμένει, 64 µs ανά γραμμή. Κάτω από τη γραμμή μενού (y = 12) η αναμονή είναι 45 γραμμές, περίπου 14% του χρόνου. Τις γραμμές των interrupts τις μέτρησα στον Caprice32.
-- **Σχεδίαση:** το `VOS_MODE` επιλέγει πλέον μόνο πώς σχεδιάζει το πρόγραμμα, και κάθε ζώνη σχεδιάζεται στο δικό της mode. Ο kernel σχεδιάζει τη γραμμή μενού σε mode 1 και τα μενού που πέφτουν από κάτω σε mode 0, με φαρδιά γράμματα, όπως ορίζει το §2.3.
-- **Ποντίκι:** ο δείκτης σχεδιάζεται στο mode της γραμμής όπου βρίσκεται. Στα συμβάντα το x δίνεται σε pixels της ζώνης όπου έγινε το κλικ.
-- **Διόρθωση χρονισμού:** με μεγάλη αναμονή, το διάβασμα πληκτρολογίου και ποντικιού στο ίδιο interrupt έκανε την οθόνη να χάνει την αλλαγή mode σε κάποια frames. Αυτή η δουλειά των 50 Hz γίνεται πλέον σε interrupt όπου το split δεν περιμένει.
-- **API έκδοση 4** (35 κλήσεις). Ο kernel τελειώνει στο `#3B37` και μένουν περίπου 700 bytes.
-- **Πρόγραμμα `MIXED`:** γραμμή μενού και γραμμή κατάστασης σε mode 1, και ανάμεσά τους 16 χρώματα κι ένα τετράγωνο που αναπηδά σε mode 0. Ένα κλικ δείχνει τα x, y του συμβάντος.
-- **Ελέγχθηκε στον Caprice32** με το σενάριο του `make test-input`:
-  - Η αλλαγή mode πέφτει ακριβώς στη γραμμή 12 και στη γραμμή 230, και ήταν σταθερή σε 11 στιγμιότυπα.
-  - Το μενού ανοίγει από τη γραμμή μενού με κλικ και με ESC.
-  - Ο δείκτης σχεδιάζεται σωστά και στις δύο ζώνες.
-  - Το κλικ στο mode 0 δίνει `X=010` εκεί που ο δείκτης είναι στα 20 pixels του mode 1.
-  - Το SPACE γυρίζει στον Launcher, με mode 0 σε όλη την οθόνη.
-- **Περιορισμοί:**
-  - Όσο διαβάζεται ή γράφεται ο δίσκος, τα interrupts κλείνουν για λίγο και η οθόνη μπορεί να τρεμοπαίξει.
-  - Ένας δείκτης ακριβώς πάνω στο όριο σχεδιάζεται με το mode της πάνω γραμμής του.
-  - Οι διάλογοι σχεδιάζονται στο mode που έχει επιλέξει το πρόγραμμα, άρα σε mode 0.
-  - Δεν δοκιμάστηκε σε πραγματικό CPC, ούτε σε άλλους τύπους CRTC.
+**M8a (mixed screen, the first part of Studio):**
+- **What it does:** a zone in mode 0 (16 colours, 192 pixels) between two zones in mode 1 (4 colours, 384 pixels). Each zone has its own colours for pens 0–3. The change is made in the interrupt (`src/gfx/split.asm`), and the program sets the boundaries with the new call `VOS_SPLIT`.
+- **Cost:** a boundary right below lines 22, 74, 126, 178 or 230 costs nothing. On any other line the interrupt waits, 64 µs per line. Below the menu bar line (y = 12) the wait is 45 lines, about 14% of the time. I measured the interrupt lines in Caprice32.
+- **Drawing:** `VOS_MODE` now selects only how the program draws, and each zone is drawn in its own mode. The kernel draws the menu bar in mode 1 and the menus that fall below it in mode 0, with wide letters, as §2.3 defines.
+- **Mouse:** the pointer is drawn in the mode of the line where it is. In events, x is given in pixels of the zone where the click happened.
+- **Timing fix:** with a long wait, reading the keyboard and the mouse in the same interrupt made the screen miss the mode change on some frames. This 50 Hz work is now done in an interrupt where the split does not wait.
+- **API version 4** (35 calls). The kernel ends at `#3B37` and about 700 bytes are left.
+- **Program `MIXED`:** menu bar and status line in mode 1, and between them 16 colours and a square that bounces in mode 0. A click shows the x, y of the event.
+- **Tested in Caprice32** with the `make test-input` script:
+  - The mode change falls exactly on line 12 and on line 230, and was stable in 11 snapshots.
+  - The menu opens from the menu bar with a click and with ESC.
+  - The pointer is drawn correctly in both zones.
+  - The click in mode 0 gives `X=010` where the pointer is at 20 pixels of mode 1.
+  - SPACE returns to the Launcher, with mode 0 on the whole screen.
+- **Limits:**
+  - While the disc is read or written, the interrupts are off for a short time and the screen may flicker.
+  - A pointer exactly on the boundary is drawn with the mode of its upper line.
+  - The dialogs are drawn in the mode the program has chosen, so in mode 0.
+  - Not tested on a real CPC, nor on other CRTC types.
 
-**M7b (κοστούμια, ήχος, λίστες):**
-- **Κοστούμια:** ένα αντικείμενο μπορεί να έχει εικόνες αντί για ορθογώνιο. Τις ζωγραφίζεις στον editor, pixel προς pixel, με τις πένες του mode ή με «διάφανο». Blocks: άλλαξε κοστούμι, επόμενο κοστούμι, αριθμός κοστουμιού. Το μέγεθος του αντικειμένου γίνεται αυτό του κοστουμιού.
-- **Σχεδίαση:** νέα κλήση `VOS_BLIT` στον kernel. Κάθε byte εικόνας συνοδεύεται από μάσκα, οπότε το διάφανο είναι ξεχωριστό από την πένα 0. Το x στρογγυλεύεται σε ολόκληρο byte (2 pixels σε mode 0). Τα αντικείμενα κόβονται πλέον και στις τέσσερις άκρες, και δεν χάνονται όταν βγαίνουν λίγο αριστερά ή πάνω.
-- **Ήχος:** driver για το AY (`src/drivers/psg.asm`) και κλήση `VOS_SOUND`: κανάλι, τόνος ή θόρυβος, ένταση, διάρκεια σε καρέ. Ο kernel σταματά τη νότα μόνος του όταν τελειώσει ο χρόνος της. Blocks: παίξε νότα (περιμένει), ξεκίνα νότα, θόρυβος, σταμάτα τους ήχους, ένταση. Οι νότες είναι αριθμοί MIDI (60 = ντο).
-- **Λίστες:** αριθμών 16 bit, με σταθερό μέγιστο μήκος (`"max"`, 64 αν λείπει). Blocks: πρόσθεσε, διάγραψε, βάλε στη θέση, άλλαξε, άδειασε, στοιχείο, μήκος, «έχει το…;». Η αρίθμηση ξεκινά από το 1, και ένα στοιχείο εκτός ορίων δίνει 0.
-- **API έκδοση 3** (34 κλήσεις). Ο kernel μεγάλωσε κατά 256 bytes (τελειώνει στο `#3911`).
-- **Παράδειγμα `STARCAT`:** μια γάτα με δύο κοστούμια, που περπατά με τα βελάκια, κι ένα αστέρι. Παίζει μια μελωδία από λίστα, ακούγεται θόρυβος όταν η γάτα πιάνει το αστέρι, και τυπώνει έλεγχο των λιστών (`4 9 5 1 / 0 2 7 0`). Είναι το «Παράδειγμα» του editor.
-- **Δεν ελέγχθηκε:** ο ήχος. Ο Caprice32 χωρίς παράθυρο δεν βγάζει ήχο ούτε snapshot, οπότε έχει ελεγχθεί μόνο ο κώδικας.
+**M7b (costumes, sound, lists):**
+- **Costumes:** an object can have pictures instead of a rectangle. You draw them in the editor, pixel by pixel, with the pens of the mode or with "transparent". Blocks: switch costume, next costume, costume number. The size of the object becomes that of the costume.
+- **Drawing:** new call `VOS_BLIT` in the kernel. Each byte of the picture comes with a mask, so transparent is separate from pen 0. The x is rounded to a whole byte (2 pixels in mode 0). Objects are now clipped on all four edges, and are not lost when they go a little off to the left or the top.
+- **Sound:** a driver for the AY (`src/drivers/psg.asm`) and the call `VOS_SOUND`: channel, tone or noise, volume, duration in frames. The kernel stops the note by itself when its time is over. Blocks: play note (waits), start note, noise, stop sounds, volume. The notes are MIDI numbers (60 = C).
+- **Lists:** of 16-bit numbers, with a fixed maximum length (`"max"`, 64 if missing). Blocks: add, delete, insert at, replace, empty, item, length, "contains…?". Numbering starts from 1, and an item out of range gives 0.
+- **API version 3** (34 calls). The kernel grew by 256 bytes (it ends at `#3911`).
+- **Example `STARCAT`:** a cat with two costumes, which walks with the arrows, and a star. It plays a melody from a list, a noise is heard when the cat catches the star, and it prints a check of the lists (`4 9 5 1 / 0 2 7 0`). It is the "Example" of the editor.
+- **Not tested:** the sound. Caprice32 without a window gives no sound and no snapshot of it, so only the code has been checked.
 
-**M7 (blocks, τύπου Scratch):**
-- **Editor** (`blocks/editor.html`): σελίδα με Blockly, στα ελληνικά ή στα αγγλικά. Έχει κατηγορίες γεγονότα, έλεγχος, κίνηση, εμφάνιση, κείμενο, τελεστές, αισθητήρες και μεταβλητές. Έχει και παράθυρα με κουμπιά. Τα αντικείμενα (ορθογώνια με θέση, μέγεθος, χρώμα και ταχύτητα) ορίζονται σε πίνακα, και η σκηνή τα δείχνει με τα χρώματα του CPC· σέρνονται με το ποντίκι. Ανοίγει και αποθηκεύει `.vbp`.
-- **`.vbp`:** JSON με το πρόγραμμα μόνο: όνομα, mode, αντικείμενα, μεταβλητές, scripts. Ο editor ξαναφτιάχνει τα blocks από αυτό, άρα ανοίγει και αρχεία γραμμένα με το χέρι. Η περιγραφή όλων των blocks είναι στην αρχή του `blocks/vbc.py`.
-- **Μεταγλωττιστής** (`blocks/vbc.py`): βγάζει ένα `.ASM` που διαβάζεται, με ένα σχόλιο ανά block. Το μεταγλωττίζει με τη RASM σε `.BIN` για το API του V-OS και, με `--dsk`, το γράφει στη δισκέτα. Αριθμοί 16 bit με πρόσημο· οι συγκρίσεις δίνουν 1 ή 0. Τα κείμενα γράφονται σε ISO 8859-7, οπότε τα ελληνικά δουλεύουν.
-- **Runtime** (`blocks/runtime.asm`, ≈2K): κάθε script είναι coroutine με δική του στοίβα και παραχωρεί τον επεξεργαστή στο τέλος κάθε επανάληψης. Σε κάθε frame τρέχουν μία φορά όλα τα scripts που είναι ενεργά, και μετά ξανασχεδιάζονται τα αντικείμενα που άλλαξαν. Έχει μενού ΠΡΟΓΡΑΜΜΑ → ΤΕΛΟΣ (^Q) δίπλα στα κοινά.
-- **Παραδείγματα:** `PONG` (μπάλα, ρακέτα με τα βελάκια, σκορ και ζωές, GAME OVER) και `CATCH`. Είναι στις δισκέτες και τρέχουν από τον Launcher.
-- **Μένουν:** κείμενο σε μεταβλητές (έγιναν στο M7b: κοστούμια, ήχος, λίστες).
+**M7 (blocks, Scratch-style):**
+- **Editor** (`blocks/editor.html`): a page with Blockly, in Greek or in English. It has the categories events, control, motion, looks, text, operators, sensors and variables. It also has windows with buttons. The objects (rectangles with position, size, colour and speed) are defined in a table, and the stage shows them with the colours of the CPC; they are dragged with the mouse. It opens and saves `.vbp`.
+- **`.vbp`:** JSON with the program only: name, mode, objects, variables, scripts. The editor rebuilds the blocks from it, so it also opens files written by hand. The description of all the blocks is at the start of `blocks/vbc.py`.
+- **Compiler** (`blocks/vbc.py`): produces a readable `.ASM`, with one comment per block. It compiles it with RASM into a `.BIN` for the V-OS API and, with `--dsk`, writes it to the disc. 16-bit signed numbers; comparisons give 1 or 0. The texts are written in ISO 8859-7, so Greek works.
+- **Runtime** (`blocks/runtime.asm`, ≈2K): each script is a coroutine with its own stack and gives up the processor at the end of each repetition. In each frame, all the scripts that are active run once, and then the objects that changed are redrawn. It has a menu PROGRAM → STOP (^Q) next to the common ones.
+- **Examples:** `PONG` (ball, paddle with the arrows, score and lives, GAME OVER) and `CATCH`. They are on the discs and run from the Launcher.
+- **Left:** text in variables (done in M7b: costumes, sound, lists).
 
-**M6b (χώρος στον kernel):** τα αγγλικά κείμενα έγιναν το αρχείο `ENGLISH.MSG` (1,5K) στη δισκέτα. Ο kernel το φορτώνει στη bank 7 και η `lang_msg` το χρησιμοποιεί όπως τα μηνύματα των packs. Ο kernel έπεσε από `#3D11` σε `#3811`, άρα μένουν περίπου 1,5K. Η δοκιμαστική έκδοση εξακολουθεί να δανείζεται χώρο από τη stack μόνο αν χρειαστεί.
+**M6b (space in the kernel):** the English texts became the file `ENGLISH.MSG` (1.5K) on the disc. The kernel loads it into bank 7 and `lang_msg` uses it like the messages of the packs. The kernel went down from `#3D11` to `#3811`, so about 1.5K is left. The test version still borrows space from the stack only if needed.
 
-**M6 (API και εκτέλεση προγραμμάτων):**
-- **API:** πίνακας άλματος στο `#0108` με 31 κλήσεις: σύστημα, γραφικά, κείμενο, μενού και διάλογοι, αρχεία. Περιγράφεται στο `src/api/vos_api.inc`, το μόνο αρχείο που χρειάζεται ένα πρόγραμμα. Ο kernel ελέγχει κατά το build ότι ο πίνακάς του συμφωνεί με αυτό.
-- **Μορφή προγράμματος:** binary με header AMSDOS, για το `#4000`, έως 16K. Ξεκινά με `jp init`, `jp event`, `jp redraw` και `"VA"` μαζί με την έκδοση του API. Τρέχει στη bank 5 όπως οι όψεις, και ο kernel του στέλνει τα συμβάντα. Με το `VOS_TICKS` παίρνει και ένα συμβάν ανά frame, για κίνηση.
-- **Κείμενα προγράμματος:** οι αριθμοί από `#C0` και πάνω είναι κείμενα του προγράμματος (`VOS_TEXTS`), με αγγλική και ελληνική εκδοχή. Τα χρησιμοποιούν μενού, διάλογοι και εκτύπωση, και ακολουθούν την αλλαγή γλώσσας.
-- **Εκκίνηση:** ENTER στον Launcher, ή ΑΡΧΕΙΟ → ΕΚΚΙΝΗΣΗ στο Desktop και στον Commander, από οποιαδήποτε μονάδα. Αν το αρχείο δεν είναι πρόγραμμα V-OS, βγαίνει σφάλμα. Το `VOS_EXIT` γυρίζει στην όψη που ξεκίνησε το πρόγραμμα.
-- **DEMO.BIN** (`apps/demo`, 495 bytes): mode 0, ένα τετράγωνο που κινείται μόνο του και αναπηδά. Τα βελάκια το οδηγούν, το SPACE αλλάζει χρώμα. Έχει δικό του μενού δίπλα στα κοινά ΠΡΟΒΟΛΗ και ΒΟΗΘΕΙΑ, και κείμενα σε δύο γλώσσες. Μεταγλωττίζεται χωριστά, μόνο με το include του API.
-- **Μνήμη:** με το M6 ο kernel γέμισε (`#3D11` από `#3E00`). Το M6b ελευθέρωσε χώρο.
-- **Μένουν από το §7:** relocation (ήρθε στο M14), εικονίδιο στο header, banks για προγράμματα (`MEM`), ήχος (`SND`), ανάγνωση αρχείων σε ροή.
+**M6 (API and running programs):**
+- **API:** a jump table at `#0108` with 31 calls: system, graphics, text, menus and dialogs, files. It is described in `src/api/vos_api.inc`, the only file a program needs. The kernel checks at build time that its table agrees with it.
+- **Program format:** a binary with an AMSDOS header, for `#4000`, up to 16K. It starts with `jp init`, `jp event`, `jp redraw` and `"VA"` together with the API version. It runs in bank 5 like the views, and the kernel sends it the events. With `VOS_TICKS` it also gets one event per frame, for motion.
+- **Program texts:** the numbers from `#C0` upwards are texts of the program (`VOS_TEXTS`), with an English and a Greek version. Menus, dialogs and printing use them, and they follow the language switch.
+- **Starting:** ENTER in the Launcher, or FILE → RUN in the Desktop and in the Commander, from any drive. If the file is not a V-OS program, an error is shown. `VOS_EXIT` returns to the view that started the program.
+- **DEMO.BIN** (`apps/demo`, 495 bytes): mode 0, a square that moves by itself and bounces. The arrows drive it, SPACE changes colour. It has its own menu next to the common VIEW and HELP, and texts in two languages. It is compiled separately, with only the include of the API.
+- **Memory:** with M6 the kernel became full (`#3D11` from `#3E00`). M6b freed space.
+- **Left from §7:** relocation (came in M14), icon in the header, banks for programs (`MEM`), sound (`SND`), reading files as a stream.
 
-**M5c (Setup, format, ολοκλήρωση του shell):**
-- **Ρυθμίσεις (F4, όψη Setup):** όψη εκκίνησης, γλώσσα, καθυστέρηση και ταχύτητα επανάληψης πλήκτρων, AMX Mouse (ναι/όχι και τρόπος ανάγνωσης), χρώμα φόντου σε mode 1. Οι αλλαγές ισχύουν αμέσως. Το ^S ή το RETURN τις αποθηκεύει στο `A:SETUP.CFG`, που ο kernel διαβάζει στην εκκίνηση (`src/kernel/setup.asm`).
-- **Format (Commander, ΑΡΧΕΙΟ → ΦΟΡΜΑΡΙΣΜΑ):** 40 tracks σε μορφή DATA με το interleave της AMSDOS, αφού ζητήσει επιβεβαίωση. Η AMSDOS διαβάζει τη δισκέτα ως άδεια, με 178K.
-- **Αντικατάσταση:** η αντιγραφή ρωτά πριν γράψει πάνω σε αρχείο με το ίδιο όνομα.
-- **Παράθυρο αναμονής:** «ΠΕΡΙΜΕΝΕΤΕ» όσο διαρκούν η αντιγραφή και το format.
-- **Η επιλογή μένει:** το αρχείο και η μονάδα που επέλεξες σε μια όψη είναι επιλεγμένα και στην επόμενη.
-- **Διορθώσεις:**
-  - Οι διάλογοι έπαιρναν πλάτος από την τελευταία γραμμή του κειμένου, όχι από τη μακρύτερη (σφάλμα από το M3).
-  - Η έξοδος στη BASIC ενεργοποιούσε την κάτω ROM ενώ εκτελούσε κώδικα στο `#0000–#3FFF`, και δούλευε μόνο από τύχη. Τώρα οι τελευταίες εντολές εκτελούνται από RAM.
-- **Μνήμη:** ο kernel έφτασε τα 15K· μένουν περίπου 500 bytes. Τα περισσότερα είναι τα αγγλικά κείμενα, που ζουν μέσα στον kernel. Αν χρειαστεί χώρος, μπορούν να γίνουν κι αυτά pack.
+**M5c (Setup, format, finishing the shell):**
+- **Settings (F4, Setup view):** start view, language, delay and speed of key repeat, AMX Mouse (yes/no and way of reading), background colour in mode 1. The changes apply at once. ^S or RETURN saves them to `A:SETUP.CFG`, which the kernel reads at start (`src/kernel/setup.asm`).
+- **Format (Commander, FILE → FORMAT DISC):** 40 tracks in DATA format with the interleave of AMSDOS, after asking for confirmation. AMSDOS reads the disc as empty, with 178K.
+- **Overwrite:** the copy asks before it writes over a file with the same name.
+- **Wait window:** "PLEASE WAIT" while the copy and the format last.
+- **The choice stays:** the file and the drive you chose in one view are chosen in the next one too.
+- **Fixes:**
+  - The dialogs took their width from the last line of the text, not from the longest (a bug from M3).
+  - The exit to BASIC switched on the lower ROM while running code at `#0000–#3FFF`, and worked only by luck. Now the last commands run from RAM.
+- **Memory:** the kernel reached 15K; about 500 bytes are left. Most of it is the English texts, which live inside the kernel. If space is needed, they can become a pack too.
 
-**M5b (όψεις, μετονομασία, μεγάλα αρχεία):**
-- **Τρεις όψεις ως overlays:** `DESKTOP.OVL`, `LAUNCHER.OVL` και `COMMANDR.OVL` στη δισκέτα A:. Ο kernel τις φορτώνει στη bank 5 (`#4000`) και αλλάζουν με F1/F2/F3 ή από το μενού ΠΡΟΒΟΛΗ. Κάθε νέα όψη φορτώνεται πρώτα στη bank 4 και ελέγχεται, οπότε ένα σφάλμα δισκέτας δεν χαλάει αυτή που τρέχει. Όταν ο kernel αλλάζει bank, επιστρέφει πάντα στη bank της όψης (`ram_home`). Οι όψεις διαβάζουν και γράφουν σε άλλες banks μόνο μέσω του kernel (`bank_put`, `bank_get`).
-- **Desktop (A), αρχική όψη:** παράθυρο με τα αρχεία της μονάδας ως εικονίδια (ο τύπος μέσα στο εικονίδιο, το όνομα από κάτω), 4 ανά σειρά με κύλιση, και εικονίδια μονάδων A:/B: στα δεξιά. Βελάκια για επιλογή, TAB ή κλικ στη μονάδα για αλλαγή μονάδας, ENTER για στοιχεία, ^C αντιγραφή στην άλλη μονάδα, ^D διαγραφή, ^N μετονομασία, ^R ξαναδιάβασμα.
-- **Launcher (B), mode 0:** τα προγράμματα (.BIN, .BAS) του A: σε πλέγμα 3×3 με χρωματιστά πλακίδια και σελίδες. Η εκκίνηση προγραμμάτων έρχεται με τον loader του M6· για την ώρα το ENTER δείχνει σχετικό μήνυμα.
-- **Μετονομασία (^N):** νέος διάλογος εισαγωγής κειμένου (`src/ui/input.asm`) και `fs_rename`. Το όνομα ελέγχεται και μετατρέπεται σε κεφαλαία μορφής AMSDOS. Βγαίνει σφάλμα αν το όνομα υπάρχει ήδη ή δεν είναι έγκυρο.
-- **Αρχεία πάνω από 16K:** η αντιγραφή (`fs_copy`) γίνεται sector προς sector, ανά 16K μέσω της bank 4, με το header όπως είναι. Δεν έχει όριο μεγέθους. Η AMSDOS φορτώνει ένα αρχείο 20K που αντιγράφηκε έτσι, και τα bytes πριν και μετά το όριο των 16K είναι σωστά.
-- **Κοινός κώδικας:** οι εντολές αρχείων (`src/kernel/files.asm`), τα μενού ΠΡΟΒΟΛΗ/ΒΟΗΘΕΙΑ και η έξοδος (`src/kernel/view.asm`) είναι στον kernel. Το ίδιο και το παράθυρο διαλόγου (`ui_window`), που το μοιράζονται οι διάλογοι, η λίστα αρχείων και η εισαγωγή κειμένου. Ο kernel είναι 14,2K και κάθε όψη περίπου 1,3K.
-- **Δοκιμές:** το `cap32_shot.sh` παίρνει πλέον και πολλές καθυστερήσεις (`120,200,…`). Μετά από εγγραφή στη δισκέτα ο Caprice32 δεν κλείνει με το CAP32_EXIT, οπότε η εκτέλεση τελειώνει με timeout (40 δευτερόλεπτα).
-- **Μένουν:** format, επιβεβαίωση πριν γραφτεί πάνω σε αρχείο με το ίδιο όνομα, εκκίνηση προγραμμάτων (M6), Setup και `SETUP.CFG`, joystick στον Launcher (το AMX Mouse χρησιμοποιεί την ίδια θύρα).
+**M5b (views, rename, large files):**
+- **Three views as overlays:** `DESKTOP.OVL`, `LAUNCHER.OVL` and `COMMANDR.OVL` on disc A:. The kernel loads them into bank 5 (`#4000`) and they switch with F1/F2/F3 or from the VIEW menu. Each new view is first loaded into bank 4 and checked, so a disc error does not damage the one that is running. When the kernel changes bank, it always returns to the bank of the view (`ram_home`). The views read and write other banks only through the kernel (`bank_put`, `bank_get`).
+- **Desktop (A), the start view:** a window with the files of the drive as icons (the type inside the icon, the name below), 4 per row with scrolling, and drive icons A:/B: on the right. Arrows to choose, TAB or a click on the drive to change drive, ENTER for details, ^C copy to the other drive, ^D delete, ^N rename, ^R read again.
+- **Launcher (B), mode 0:** the programs (.BIN, .BAS) of A: in a 3×3 grid with coloured tiles and pages. Starting programs comes with the loader of M6; for now ENTER shows a message about it.
+- **Rename (^N):** a new text input dialog (`src/ui/input.asm`) and `fs_rename`. The name is checked and converted to AMSDOS capitals. An error is shown if the name already exists or is not valid.
+- **Files over 16K:** the copy (`fs_copy`) is done sector by sector, per 16K through bank 4, with the header as it is. It has no size limit. AMSDOS loads a 20K file copied this way, and the bytes before and after the 16K limit are correct.
+- **Shared code:** the file commands (`src/kernel/files.asm`), the VIEW/HELP menus and the exit (`src/kernel/view.asm`) are in the kernel. So is the dialog window (`ui_window`), shared by the dialogs, the file list and the text input. The kernel is 14.2K and each view about 1.3K.
+- **Tests:** `cap32_shot.sh` now also takes several delays (`120,200,…`). After a write to the disc, Caprice32 does not close with CAP32_EXIT, so the run ends with a timeout (40 seconds).
+- **Left:** format, confirmation before writing over a file with the same name, starting programs (M6), Setup and `SETUP.CFG`, joystick in the Launcher (the AMX Mouse uses the same port).
 
 **M5a (Commander):**
-- **Δύο πάνελ**, A: και B:, σε mode 1. Κάθε πάνελ δείχνει μορφή, πλήθος αρχείων, τα αρχεία με μέγεθος και τον ελεύθερο χώρο. Το ενεργό πάνελ έχει σκούρο τίτλο και επιλογή. Αν μια μονάδα δεν διαβάζεται, το πάνελ γράφει το σφάλμα.
-- **Πλήκτρα:** ΠΑΝΩ/ΚΑΤΩ για επιλογή (με SHIFT ανά σελίδα), TAB ή ΑΡΙΣΤΕΡΑ/ΔΕΞΙΑ για το άλλο πάνελ, ENTER για στοιχεία αρχείου, ^C αντιγραφή απέναντι, ^D διαγραφή με επιβεβαίωση, ^R ξαναδιάβασμα δισκετών. Με το ποντίκι, ένα κλικ επιλέγει και δεύτερο κλικ δείχνει στοιχεία.
-- **Αντιγραφή:** κρατά το header AMSDOS ή την απουσία του (αρχεία κειμένου), έως 16K. Η AMSDOS διαβάζει και τα δύο είδη αντιγράφων (`make test-amsdos`).
-- **Μνήμη:** οι λίστες των πάνελ είναι στη bank 5, οπότε η εναλλαγή πάνελ δεν διαβάζει τη δισκέτα. Η εφαρμογή δοκιμής του M3/M4 αφαιρέθηκε· ο kernel είναι 14,2K.
-- **Δοκιμές:** τα screenshots πάνε πλέον στο `build/shots`, γιατί άλλα projects γράφουν ταυτόχρονα στον κοινό φάκελο του snap. Το `mklng` απορρίπτει μηνύματα πάνω από 127 χαρακτήρες.
-- **Μένουν για το M5:** μετονομασία (θέλει διάλογο εισαγωγής κειμένου), αρχεία πάνω από 16K, format, το Desktop (A) και ο Launcher (B) ως overlays.
+- **Two panels**, A: and B:, in mode 1. Each panel shows the format, the number of files, the files with size and the free space. The active panel has a dark title and a selection. If a drive cannot be read, the panel writes the error.
+- **Keys:** UP/DOWN to choose (with SHIFT per page), TAB or LEFT/RIGHT for the other panel, ENTER for file details, ^C copy across, ^D delete with confirmation, ^R read the discs again. With the mouse, one click chooses and a second click shows details.
+- **Copy:** keeps the AMSDOS header or its absence (text files), up to 16K. AMSDOS reads both kinds of copies (`make test-amsdos`).
+- **Memory:** the lists of the panels are in bank 5, so switching panels does not read the disc. The test application of M3/M4 was removed; the kernel is 14.2K.
+- **Tests:** the screenshots now go to `build/shots`, because other projects write at the same time to the shared snap folder. `mklng` rejects messages over 127 characters.
+- **Left for M5:** rename (needs a text input dialog), files over 16K, format, the Desktop (A) and the Launcher (B) as overlays.
 
-**M4 (δισκέτα):**
-- **Driver FDC** (`src/drivers/fdc.asm`): ανάγνωση και εγγραφή sector με polling, επαναλήψεις, μηνύματα σφάλματος, αυτόματο σβήσιμο μοτέρ. Όπως ο driver του TerraCPC, που δοκιμάστηκε σε πραγματικό CPC, δεν περιμένει ποτέ χωρίς όριο: κάθε αναμονή έχει timeout, το αποτέλεσμα διαβάζεται όσο ο FDC είναι απασχολημένος (bit CB) και πριν από κάθε νέα προσπάθεια ο ελεγκτής ρυθμίζεται από την αρχή.
-- **Δισκέτα Extended DSK** με και τα 42 tracks formatted (`tools/dsk_ext.py`), γιατί κάποιοι emulators (π.χ. WinAPE) χαλάνε τις εικόνες με κενά tracks όταν γράφουν σε αυτές.
-- **Συμβατότητα:** η AMSDOS (στη BASIC, μέσα στην ίδια εκτέλεση του Caprice32) κάνει `CAT` και `LOAD` στο αρχείο που έγραψε το V-OS. Η μορφή SYSTEM δοκιμάστηκε με τα `tools/dsk_system.py` και `make test-system`.
-- **Filesystem AMSDOS** (`src/kernel/fs.asm`): μορφές DATA και SYSTEM, κατάλογος, φόρτωση σε bank, αποθήκευση με header AMSDOS, διαγραφή, ελεύθερος χώρος.
-- **Χωρίς AMSDOS μετά την εκκίνηση:** ο loader μόνο μεταφέρει τον kernel. Το `GREEK.LNG` φορτώνεται πια με τον δικό μας driver.
-- **Μνήμη:** πίνακες και buffers μεταφέρθηκαν στα κενά της μνήμης οθόνης (`GAP0–GAP7`, `memmap.inc`), ώστε ο kernel να χωράει.
-- **Εφαρμογή δοκιμής:** το μενού ΑΡΧΕΙΟ έχει Άνοιγμα (λίστα αρχείων, μετά όνομα, μέγεθος, τύπος, διεύθυνση και τα πρώτα bytes), Αποθήκευση δοκιμής (`VOSTEST.TXT`), Διαγραφή με επιβεβαίωση και Στοιχεία δισκέτας.
-- **Διόρθωση πληκτρολογίου:** τα CONTROL+A έως G δεν θεωρούνται πια dead keys, και οι συντομεύσεις CONTROL δουλεύουν και με ελληνικό πληκτρολόγιο.
-- **Δεν έχει δοκιμαστεί σε πραγματικό CPC** (μόνο στον Caprice32). Το format δισκέτας μένει για αργότερα.
+**M4 (disc):**
+- **FDC driver** (`src/drivers/fdc.asm`): sector read and write with polling, retries, error messages, automatic motor off. Like the driver of TerraCPC, which was tested on a real CPC, it never waits without a limit: every wait has a timeout, the result is read while the FDC is busy (bit CB) and before each new attempt the controller is set up from the start.
+- **Extended DSK disc** with all 42 tracks formatted (`tools/dsk_ext.py`), because some emulators (e.g. WinAPE) damage images with empty tracks when they write to them.
+- **Compatibility:** AMSDOS (in BASIC, in the same run of Caprice32) does `CAT` and `LOAD` on the file that V-OS wrote. The SYSTEM format was tested with `tools/dsk_system.py` and `make test-system`.
+- **AMSDOS filesystem** (`src/kernel/fs.asm`): DATA and SYSTEM formats, directory, load into a bank, save with an AMSDOS header, delete, free space.
+- **No AMSDOS after start:** the loader only moves the kernel. `GREEK.LNG` is now loaded with our own driver.
+- **Memory:** tables and buffers moved to the gaps of screen memory (`GAP0–GAP7`, `memmap.inc`), so the kernel fits.
+- **Test application:** the FILE menu has Open (file list, then name, size, type, address and the first bytes), Save test (`VOSTEST.TXT`), Delete with confirmation and Disc info.
+- **Keyboard fix:** CONTROL+A to G are no longer dead keys, and the CONTROL shortcuts work with the Greek keyboard too.
+- **Not tested on a real CPC** (only in Caprice32). Formatting the disc is left for later.
 
 **M3 (UI):**
-- **Εργαλειοθήκη UI** (`src/ui/`): γραμμή μενού, πτυσσόμενα μενού, κουμπιά με εστίαση και TAB, συντομεύσεις CONTROL+γράμμα, modal διάλογοι. Όλα δουλεύουν με ποντίκι και με πλήκτρα, σε mode 0 και mode 1, ελληνικά ή αγγλικά.
-- **Φόντο:** μενού και διάλογοι κρατούν ό,τι καλύπτουν στη bank 6.
-- **Pointer:** κρύβεται μόνο όταν η σχεδίαση πέφτει πάνω του.
-- **Εφαρμογή δοκιμής:** ΑΡΧΕΙΟ / ΠΡΟΒΟΛΗ / ΒΟΗΘΕΙΑ, τρία κουμπιά, γραμμή κατάστασης, διάλογοι Σχετικά, Πλήκτρα και Έξοδος (επανεκκίνηση στη BASIC).
-- **Ελληνική γραμματοσειρά:** τα ά έ ή ί έχουν πλέον τον ίδιο τόνο με τα ό ύ ώ.
+- **UI toolkit** (`src/ui/`): menu bar, drop-down menus, buttons with focus and TAB, CONTROL+letter shortcuts, modal dialogs. All work with the mouse and with keys, in mode 0 and mode 1, Greek or English.
+- **Background:** menus and dialogs keep what they cover in bank 6.
+- **Pointer:** it is hidden only when drawing falls on it.
+- **Test application:** FILE / VIEW / HELP, three buttons, a status line, the dialogs About, Keys and Exit (restart into BASIC).
+- **Greek font:** the ά έ ή ί now have the same accent as ό ύ ώ.
 
-**M2b (γλώσσες):**
-- **Language packs (`.LNG`):** παράγονται από τα αρχεία κειμένου στο `lang/` με το `tools/mklng.py`. Το `GREEK.LNG` γράφεται στη δισκέτα μαζί με το `VOS.BIN`.
-- **Φόρτωση:** ο loader φορτώνει το pack μέσω AMSDOS. Ο kernel κρατά τη γραμματοσειρά και το πληκτρολόγιο στη μνήμη του και ολόκληρο το pack στη bank 7.
-- **Ελληνικά στην οθόνη:** κείμενα UI μέσω `lang_msg`, γραμματοσειρά ISO 8859-7. Το F3 στην οθόνη δοκιμής αλλάζει τη γλώσσα των ετικετών.
-- **Ελληνική πληκτρολόγηση:** εναλλαγή EN/EL με CONTROL+SHIFT, dead keys για τόνο και διαλυτικά, CAPS LOCK για τα ελληνικά.
-- **Ένα παράδειγμα:** αν θέλεις άλλη γλώσσα, προσθέτεις φάκελο στο `lang/`, χωρίς αλλαγές στον kernel.
-- **Διόρθωση bug του M2:** ο αγγλικός χάρτης παράγεται πλέον από το `lang/en/keymap.txt`. Αυτό διόρθωσε το bug του M2, όπου τα πλήκτρα 35–39 (I L K M ,) έδιναν λάθος χαρακτήρα.
+**M2b (languages):**
+- **Language packs (`.LNG`):** produced from the text files in `lang/` with `tools/mklng.py`. `GREEK.LNG` is written to the disc together with `VOS.BIN`.
+- **Loading:** the loader loads the pack through AMSDOS. The kernel keeps the font and the keyboard in its memory and the whole pack in bank 7.
+- **Greek on screen:** UI texts through `lang_msg`, ISO 8859-7 font. F3 in the test screen switches the language of the labels.
+- **Greek typing:** switching EN/EL with CONTROL+SHIFT, dead keys for the accent and the diaeresis, CAPS LOCK for Greek.
+- **One example:** if you want another language, you add a folder to `lang/`, with no changes to the kernel.
+- **Fix of an M2 bug:** the English map is now produced from `lang/en/keymap.txt`. This fixed the M2 bug where keys 35–39 (I L K M ,) gave the wrong character.
 
-**M2 (είσοδος):**
-- Σάρωση πληκτρολογίου 50 φορές το δευτερόλεπτο, με αγγλικό χάρτη, SHIFT, CONTROL, CAPS LOCK και auto-repeat. Τα ελληνικά έρχονται με το language pack στο M2b.
-- Το `txt_char` είναι ξετυλιγμένο, με πίνακα ευθυγραμμισμένο σε σελίδα 256 bytes, ώστε να γράφει πιο γρήγορα.
-- Ουρά 32 συμβάντων για πλήκτρα και pointer.
-- Pointer από cursor keys (COPY = κλικ) και AMX Mouse (300 Hz, δεν έχει δοκιμαστεί σε υλικό).
-- Δείκτης λογισμικού με save-under σε mode 0 και mode 1.
-- Οι συντεταγμένες των γραφικών καλύπτουν πλέον μόνο την ωφέλιμη περιοχή 384×259 / 192×259 (φυσικές γραμμές 6–264).
-- Οθόνη δοκιμής: τελευταία συμβάντα, πίνακας πληκτρολογίου σε πραγματικό χρόνο, πεδίο κειμένου, θέση pointer, κουτί για κλικ. F1/F2 αλλάζουν mode.
-- Το `make test-input` χτίζει έκδοση που «πατάει» cursor keys, COPY, H, I και F2 από σενάριο (`src/kernel/test_script.asm`), γιατί ο Caprice32 δεν μπορεί να πληκτρολογήσει αυτά τα πλήκτρα.
+**M2 (input):**
+- Keyboard scan 50 times per second, with an English map, SHIFT, CONTROL, CAPS LOCK and auto-repeat. Greek comes with the language pack in M2b.
+- `txt_char` is unrolled, with a table aligned to a 256-byte page, so it writes faster.
+- A queue of 32 events for keys and pointer.
+- Pointer from cursor keys (COPY = click) and AMX Mouse (300 Hz, not tested on hardware).
+- Software pointer with save-under in mode 0 and mode 1.
+- The graphics coordinates now cover only the useful area 384×259 / 192×259 (physical lines 6–264).
+- Test screen: last events, keyboard table in real time, text field, pointer position, a box for clicks. F1/F2 change mode.
+- `make test-input` builds a version that "presses" cursor keys, COPY, H, I and F2 from a script (`src/kernel/test_script.asm`), because Caprice32 cannot type these keys.
 
-**M1 (οθόνη):** overscan 32K στο `#8000–#FFFF` (384×272 σε mode 1, 192×272 σε mode 0). Υπάρχουν πίνακας διευθύνσεων για τις 272 γραμμές και ρουτίνες `gfx_plot`, `gfx_fill_rect`, `gfx_cls`, `txt_char` και `txt_print`, που δουλεύουν και στα δύο modes. Η γραμματοσειρά ASCII 8×8 είναι η font8x8, public domain. Η οθόνη δοκιμής εναλλάσσει mode 1 και mode 0 κάθε 3 δευτερόλεπτα και δείχνει στον τίτλο πόσα frames πήρε η σχεδίαση: 34 σε mode 1, 39 σε mode 0, χωρίς βελτιστοποιήσεις ακόμα.
+**M1 (screen):** 32K overscan at `#8000–#FFFF` (384×272 in mode 1, 192×272 in mode 0). There is an address table for the 272 lines and the routines `gfx_plot`, `gfx_fill_rect`, `gfx_cls`, `txt_char` and `txt_print`, which work in both modes. The 8×8 ASCII font is font8x8, public domain. The test screen alternates mode 1 and mode 0 every 3 seconds and shows in the title how many frames the drawing took: 34 in mode 1, 39 in mode 0, with no optimisations yet.
 
-**M0 (υποδομή):** η AMSDOS φορτώνει το `VOS.BIN` στο `#4000`. Ο loader κλείνει τις ROM και μεταφέρει τον kernel στο `#0000`. Ο kernel εγκαθιστά δικό του IM 1 handler, συγχρονισμένο με το VSYNC. Η οθόνη δοκιμής του M0 (πριν την αντικαταστήσει αυτή του M1) έδειχνε:
-- 4 κάθετες ζώνες με τα pens 0–3,
-- 6 χρωματιστές λωρίδες στο περίγραμμα, μία για κάθε interrupt slice,
-- το pen 3, που αλλάζει χρώμα κάθε δευτερόλεπτο.
+**M0 (infrastructure):** AMSDOS loads `VOS.BIN` at `#4000`. The loader switches off the ROMs and moves the kernel to `#0000`. The kernel installs its own IM 1 handler, synchronised with VSYNC. The test screen of M0 (before the one from M1 replaced it) showed:
+- 4 vertical bands with pens 0–3,
+- 6 coloured stripes on the border, one for each interrupt slice,
+- pen 3, which changes colour every second.
