@@ -312,6 +312,40 @@ test_keys:
         dw 3050, 3054 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 15
+; make test-sdk (-DTEST_SCRIPT=15): the SDK's template (sdk/template)
+; built as TEMPLATE.BIN, last on the disc. Expected:
+;   frame  300  F2, 420-480 DOWN x3, 520-610 RIGHT x4 -> TEMPLATE chosen
+;                               (page 2, after CLOCK ... BRICKS)
+;   frame  660  RETURN       -> its screen in mode 1: HELLO..., the
+;                               seconds counting, BEEP, the box
+;   frame  800-900 RIGHT held, 950-1000 UP held -> the box moves
+;   frame 1100  TAB, 1130 RETURN -> BEEP focused and pressed
+;   frame 1250  ESC          -> its menu: ABOUT, BACK
+;   frame 1350  RETURN       -> the ABOUT dialog
+;   frame 1450  RETURN       -> closed
+;   frame 1550  CONTROL+Q    -> BACK: the Launcher
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  420,  424 : db 0, %00000100   ; DOWN
+        dw  450,  454 : db 0, %00000100   ; DOWN
+        dw  480,  484 : db 0, %00000100   ; DOWN
+        dw  520,  524 : db 0, %00000010   ; RIGHT
+        dw  550,  554 : db 0, %00000010   ; RIGHT
+        dw  580,  584 : db 0, %00000010   ; RIGHT
+        dw  610,  614 : db 0, %00000010   ; RIGHT
+        dw  660,  664 : db 2, %00000100   ; RETURN: TEMPLATE
+        dw  800,  900 : db 0, %00000010   ; RIGHT held
+        dw  950, 1000 : db 0, %00000001   ; UP held
+        dw 1100, 1104 : db 8, %00010000   ; TAB
+        dw 1130, 1134 : db 2, %00000100   ; RETURN: BEEP
+        dw 1250, 1254 : db 8, %00000100   ; ESC: the menu
+        dw 1350, 1354 : db 2, %00000100   ; RETURN: ABOUT
+        dw 1450, 1454 : db 2, %00000100   ; RETURN: OK
+        dw 1545, 1560 : db 2, %10000000   ; CONTROL
+        dw 1550, 1554 : db 8, %00001000   ; Q
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 14
 ; make test-bricks (-DTEST_SCRIPT=14): BRICKS, a block game
 ; (blocks/examples/bricks.vbp). Expected:
@@ -872,6 +906,7 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

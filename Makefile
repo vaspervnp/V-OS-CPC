@@ -27,6 +27,11 @@
 #                 files V-OS wrote (one screenshot)
 #   make test-reboot  the same, then RUN"VOS" with the saved SETUP.CFG
 #   make test-system  the script with drive A in SYSTEM format
+#   make new-app NAME=hello   a program of your own in myapps/hello,
+#                 from sdk/template (sdk/README.md)
+#   make app NAME=hello       it as build/HELLO.BIN, on build/vos.dsk
+#   make test-sdk    the template built as HELLO, run from the Launcher:
+#                 the box moved, BEEP, its menu and ABOUT dialog
 #   make clean
 
 RASM    ?= rasm
@@ -44,7 +49,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: new-app app test-sdk all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -87,6 +92,15 @@ APPS    := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/STUDIO.BIN $(BUILD)/PON
            $(BUILD)/TICKER.VBS $(BUILD)/VBRUN.SYS $(BUILD)/MINES.VBN $(BUILD)/MINES.VBS \
            $(BUILD)/BRICKS.VBN
 APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
+
+# Your own programs (sdk/README.md): each folder myapps/name holds
+# name.asm, texts.txt and icon.txt, and becomes build/NAME.BIN, with a
+# relocation table, on build/vos.dsk (not on the test discs).
+#   make new-app NAME=hello   myapps/hello, from sdk/template
+#   make app NAME=hello       build/HELLO.BIN and build/vos.dsk
+upper = $(shell echo $(1) | tr a-z A-Z)
+MYAPPS := $(notdir $(wildcard myapps/*))
+MYAPP_BINS := $(foreach a,$(MYAPPS),$(BUILD)/$(call upper,$(a)).BIN)
 
 # Icons for the Launcher (VOS_ICON): text in apps/icons, made into
 # assembly by tools/mkicon.py
@@ -177,16 +191,44 @@ $(BUILD)/TICKER.VBN $(BUILD)/TICKER.VBS &: blocks/examples/ticker.vbt tools/mkvb
 $(BUILD)/MINES.VBN $(BUILD)/MINES.VBS &: blocks/examples/mines.vbt tools/mkvbs.py apps/studio/blocks.txt $(BUILD)/VBRUN.SYS
 	$(PYTHON) -I tools/mkvbs.py $< $(BUILD)/MINES.VBS $(BUILD)/VBRUN.SYS $(BUILD)/MINES.VBN
 
+# $(1): a folder in myapps (or build/sdk_test), $(2): its name; the
+# texts and icon go to $(BUILD)/myapp_$(2), where the source includes
+# them from
+define myapp_rule
+$(BUILD)/$(call upper,$(2)).BIN: $(1)/$(2).asm $(1)/texts.txt $(1)/icon.txt src/api/vos_api.inc tools/mkreloc.py tools/mktexts.py tools/mkicon.py
+	@mkdir -p $(BUILD)/myapp_$(2)
+	$(PYTHON) -I tools/mktexts.py $(1)/texts.txt $(BUILD)/myapp_$(2)/app_texts.asm
+	$(PYTHON) -I tools/mkicon.py $(1)/icon.txt $(BUILD)/myapp_$(2)/app_icon.asm
+	@$(RASM) $(1)/$(2).asm -I src -I $(BUILD)/myapp_$(2) -o $(BUILD)/myapp_$(2)/lo > $(BUILD)/myapp_$(2)/rasm.log || { cat $(BUILD)/myapp_$(2)/rasm.log; exit 1; }
+	@$(RASM) $(1)/$(2).asm -I src -I $(BUILD)/myapp_$(2) -DVOS_RELOC_PASS=1 -o $(BUILD)/myapp_$(2)/hi > $(BUILD)/myapp_$(2)/rasm.log || { cat $(BUILD)/myapp_$(2)/rasm.log; exit 1; }
+	$(PYTHON) -I tools/mkreloc.py $(BUILD)/myapp_$(2)/lo.bin $(BUILD)/myapp_$(2)/hi.bin $$@
+endef
+$(foreach a,$(MYAPPS),$(eval $(call myapp_rule,myapps/$(a),$(a))))
+
+new-app:
+	@echo "$(NAME)" | grep -Eq '^[a-z][a-z0-9]{0,7}$$' || { echo "make new-app NAME=name: 1-8 lower-case letters or digits, a letter first"; exit 1; }
+	@test ! -e myapps/$(NAME) || { echo "myapps/$(NAME) is there already"; exit 1; }
+	@test -z "$(filter $(addprefix $(BUILD)/$(call upper,$(NAME)).,BIN VBN SYS),$(APPS))" || { echo "$(call upper,$(NAME)) is a V-OS program already: choose another name"; exit 1; }
+	mkdir -p myapps/$(NAME)
+	sed 's/APPNAME/$(call upper,$(NAME))/g; s/appname/$(NAME)/g' sdk/template/app.asm > myapps/$(NAME)/$(NAME).asm
+	sed 's/APPNAME/$(call upper,$(NAME))/g' sdk/template/texts.txt > myapps/$(NAME)/texts.txt
+	sed 's/APPNAME/$(call upper,$(NAME))/g' sdk/template/icon.txt > myapps/$(NAME)/icon.txt
+	@echo "myapps/$(NAME) is ready: make app NAME=$(NAME), then make run"
+
+app:
+	@test -d "myapps/$(NAME)" || { echo "make app NAME=name, for a folder in myapps (make new-app NAME=name)"; exit 1; }
+	$(MAKE) $(BUILD)/$(call upper,$(NAME)).BIN $(DSK)
+
 define add_apps
 	for p in $(2); do $(IDSK) $(1) -i $$p -t 1 -c 4000 -e 4000 > /dev/null; done
 endef
 
-$(DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+$(DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(MYAPP_BINS)
 	@mkdir -p $(BUILD)
 	@rm -f $(DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos -s -sl
 	$(call add_packs,$(DSK))
-	$(call add_apps,$(DSK),$(APPS))
+	$(call add_apps,$(DSK),$(APPS) $(MYAPP_BINS))
 	$(PYTHON) -I tools/dsk_ext.py $(DSK)
 
 run: $(DSK)
@@ -444,6 +486,34 @@ test-bricks: $(BRICKS_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(BRICKS_SHOTS); do \
 	  cp $(BRICKS_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The SDK's template (TEST_SCRIPT=15): built as TEMPLATE.BIN, as
+# make new-app would make it, last on the test disc
+$(BUILD)/sdk_test/template.asm $(BUILD)/sdk_test/texts.txt $(BUILD)/sdk_test/icon.txt &: sdk/template/app.asm sdk/template/texts.txt sdk/template/icon.txt
+	@mkdir -p $(BUILD)/sdk_test
+	sed 's/APPNAME/TEMPLATE/g; s/appname/template/g' sdk/template/app.asm > $(BUILD)/sdk_test/template.asm
+	sed 's/APPNAME/TEMPLATE/g' sdk/template/texts.txt > $(BUILD)/sdk_test/texts.txt
+	sed 's/APPNAME/TEMPLATE/g' sdk/template/icon.txt > $(BUILD)/sdk_test/icon.txt
+$(eval $(call myapp_rule,$(BUILD)/sdk_test,template))
+
+SDK_DSK := $(BUILD)/vos_sdk.dsk
+SDK_SHOTS := 250 330 370 400 470
+$(SDK_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/TEMPLATE.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_sdk -DTEST_SCRIPT=15
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS) $(BUILD)/TEMPLATE.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-sdk: $(SDK_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(SDK_SHOTS); do \
+	  cp $(SDK_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png

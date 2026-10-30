@@ -1,0 +1,11 @@
+# APPNAME's texts: NAME | English | Greek (tools/mktexts.py makes T_NAME
+# and the table "texts:"). "|" with no spaces around it starts a new
+# line in a dialog. At most 64 texts.
+MENU        | APPNAME               | APPNAME
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+ABOUT_TEXT  | A V-OS PROGRAM,|MADE FROM THE SDK | ΠΡΟΓΡΑΜΜΑ ΤΟΥ V-OS,|ΑΠΟ ΤΟ SDK
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+BEEP        | BEEP                  | ΗΧΟΣ
+HELLO       | HELLO! THE ARROWS MOVE THE BOX | ΓΕΙΑ! ΤΑ ΒΕΛΗ ΚΙΝΟΥΝ ΤΟ ΚΟΥΤΙ
+SECONDS     | SECONDS               | ΔΕΥΤΕΡΟΛΕΠΤΑ
+HINT        | ESC: MENU  TAB: BUTTON  ^Q: BACK | ESC: ΜΕΝΟΥ  TAB: ΚΟΥΜΠΙ  ^Q: ΕΠΙΣΤΡΟΦΗ
