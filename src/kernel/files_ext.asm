@@ -293,3 +293,16 @@ ft_open:        db "TXT", "NOTEPAD BIN"
                 db "LYR", "PAINT   BIN"
                 db "MUS", "MUSIC   BIN"
                 db 0
+
+; ---------------------------------------------------------------------
+; VOS_EXT calls that live here (kernel/api.asm: api_ext)
+; ---------------------------------------------------------------------
+; VX_FREE: C = drive -> A = its free kilobytes; carry and A = error
+xa_free:
+        ld a,c
+        call fdc_select
+        call fs_mount
+        ret c
+        call fs_free_k
+        or a
+        ret

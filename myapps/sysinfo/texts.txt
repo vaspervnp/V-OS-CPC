@@ -1,0 +1,14 @@
+# SYSINFO's texts: NAME | English | Greek (tools/mktexts.py). "|" with
+# no spaces around it starts a new line in a dialog.
+MENU        | SYSINFO               | ΣΥΣΤΗΜΑ
+REFRESH     | READ AGAIN            | ΞΑΝΑΔΙΑΒΑΣΜΑ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+ABOUT_TEXT  | SYSINFO|V-OS AND ITS DISCS,|WITH VOS_EXT CALLS|FOR V-OS, FROM THE SDK | ΣΥΣΤΗΜΑ|ΤΟ V-OS ΚΑΙ ΟΙ ΔΙΣΚΕΤΕΣ|ΤΟΥ, ΜΕ ΚΛΗΣΕΙΣ VOS_EXT|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+TITLE       | THE SYSTEM            | ΤΟ ΣΥΣΤΗΜΑ
+VERSION     | V-OS VERSION          | ΕΚΔΟΣΗ V-OS
+API         | API VERSION           | ΕΚΔΟΣΗ API
+FREE_A      | FREE ON A:            | ΕΛΕΥΘΕΡΑ ΣΤΟ A:
+FREE_B      | FREE ON B:            | ΕΛΕΥΘΕΡΑ ΣΤΟ B:
+NO_DISC     | NO DISC               | ΧΩΡΙΣ ΔΙΣΚΕΤΑ
+HINT        | ^R READ AGAIN  ESC MENU  ^Q BACK | ^R ΞΑΝΑΔΙΑΒΑΣΜΑ  ESC ΜΕΝΟΥ  ^Q ΕΠΙΣΤΡ.

@@ -312,6 +312,26 @@ test_keys:
         dw 3050, 3054 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 23
+; make test-sysinfo (-DTEST_SCRIPT=23): SYSINFO (myapps/sysinfo) and
+; VOS_EXT. A: the test disc with SYSINFO.BIN last, B: markdown.dsk.
+; Expected:
+;   frame  300  F3           -> the Commander
+;   frame  400-850 DOWN held -> the last file, SYSINFO.BIN
+;   frame  900  RETURN       -> SYSINFO: V-OS 0.10, API 15, the free K
+;                               on A: and on B:
+;   frame 1100  CONTROL+R    -> the same, read again
+;   frame 1250  CONTROL+Q    -> the Commander again
+test_keys:
+        dw  300,  304 : db 0, %00100000   ; F3
+        dw  400,  850 : db 0, %00000100   ; DOWN, held
+        dw  900,  904 : db 2, %00000100   ; RETURN: SYSINFO
+        dw 1095, 1110 : db 2, %10000000   ; CONTROL
+        dw 1100, 1104 : db 6, %00000100   ; R
+        dw 1245, 1260 : db 2, %10000000   ; CONTROL
+        dw 1250, 1254 : db 8, %00001000   ; Q
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 22
 ; make test-open (-DTEST_SCRIPT=22): files opened by their type. B: is
 ; build/markdown.dsk with a HELLO.TXT added. Expected:
@@ -1134,6 +1154,7 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

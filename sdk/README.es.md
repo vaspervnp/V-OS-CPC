@@ -122,7 +122,7 @@ command: ...
 - **Icono:** 16 líneas de 16 caracteres en `icon.txt`. Cada carácter es una tinta en hexadecimal (modo 0, paleta de Programas) o `.` para transparente.
 - **Nombres de archivo** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 bytes, `"NAME    EXT"`. Unidad 0 = A:, 1 = B:.
 
-## La API (versión 14)
+## La API (versión 15)
 
 | Llamada | Entrada → salida | Qué hace |
 |---|---|---|
@@ -164,6 +164,7 @@ command: ...
 | `VOS_BACKGROUND` | A = 1 / 0 | sigue funcionando o se congela cuando está detrás de otro |
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → carry: nuevos HL, DE | arrastrar una ventana por su título |
 | `VOS_FIT` | igual → HL, DE | mete una ventana dentro de la pantalla |
+| `VOS_EXT` | A = una llamada `VX_*`, BC, DE, HL según la llamada → A, HL, C, DE, acarreo | las llamadas después de la tabla (versión 15): `VX_VERSION` → A = API, HL = versión de V-OS (BCD). `VX_FREE` C = unidad → A = K libres. Desconocida: acarreo |
 
 Todos los detalles, p. ej. sobre el segundo plano, el accesorio y `VOS_SPLIT`, están en `src/api/vos_api.inc`. Como ejemplos, véanse `apps/demo/demo.asm` (modo 0, movimiento), `apps/clock/clock.asm` (accesorio) y `apps/mixed/mixed.asm` (pantalla mixta). Un juego completo con sprites, una pantalla leída de un archivo y sonido es `myapps/vrouves/`.
 

@@ -46,8 +46,50 @@ api_jumps:
         jp api_background           ; 39
         jp api_drag                 ; 40
         jp ui_fit
+        jp api_ext                  ; 42: VOS_EXT, the calls after it
         assert $ == VOS_API + VOS_API_COUNT * 3
         assert VM_OK == MSG_BTN_OK && VM_YES == MSG_BTN_YES && VM_NO == MSG_BTN_NO
+
+; VOS_EXT: A = call number (VX_*), BC, DE, HL as the call wants. A
+; call in the kernel extension (bank 7, from EXT_ADDR) runs through
+; ext_call and finds its HL in xa_hl; the others get it as it was.
+; An unknown number: carry, A = 0.
+api_ext:
+        cp VX_COUNT
+        jr nc,.none
+        ld (xa_hl),hl
+        add a,a
+        ld l,a
+        ld h,0
+        push de
+        ld de,xa_table
+        add hl,de
+        ld e,(hl)
+        inc hl
+        ld d,(hl)
+        ex de,hl                    ; HL = the routine
+        pop de
+        ld a,h
+        cp EXT_ADDR >> 8
+        jp nc,ext_call
+        push hl
+        ld hl,(xa_hl)
+        ret
+.none:
+        xor a
+        scf
+        ret
+
+xa_table:       dw xa_version, xa_free
+        assert $ - xa_table == VX_COUNT * 2
+xa_hl:          dw 0
+
+; VX_VERSION -> A = API version, HL = kernel version (BCD)
+xa_version:
+        ld hl,VOS_VERSION
+        ld a,VOS_API_VERSION
+        or a
+        ret
 
 api_exit:
         ld a,(acc_open)             ; an accessory: it closes, after

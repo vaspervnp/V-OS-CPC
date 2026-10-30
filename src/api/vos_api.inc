@@ -74,7 +74,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 14              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 15              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -82,7 +82,7 @@ VOS_API_VERSION equ 14              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 11: the language of VOS_TEXTS,
                                     ; 12: VOS_CAT_EXT, VOS_SELF,
                                     ; VOS_PTR_KEYS, 13: text styles,
-                                    ; 14: VOS_OPEN
+                                    ; 14: VOS_OPEN, 15: VOS_EXT
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -179,7 +179,16 @@ VOS_DRAG        equ VOS_API + 40 * 3    ; HL = x, DE = y, BC = w, A = h
                                         ; -> carry: moved to HL, DE
 VOS_FIT         equ VOS_API + 41 * 3    ; HL = x, DE = y, BC = w, A = h
                                         ; -> HL, DE on the screen
-VOS_API_COUNT   equ 42
+; ---- more calls (version 15) ----------------------------------------
+VOS_EXT         equ VOS_API + 42 * 3    ; A = VX_* call, BC, DE, HL as it
+                                        ; wants; unknown: carry, A = 0.
+                                        ; Results in A, HL, C, DE, carry
+VOS_API_COUNT   equ 43
+VX_VERSION      equ 0                   ; -> A = API version, HL = V-OS
+                                        ; version (BCD: #0010 is 0.10)
+VX_FREE         equ 1                   ; C = drive -> A = free K on it;
+                                        ; carry and A = error
+VX_COUNT        equ 2
 
 ; The data bank: 16K more for the program (bank 4), seen at the same
 ; addresses #4000-#7FFF but never mapped there: the program copies to

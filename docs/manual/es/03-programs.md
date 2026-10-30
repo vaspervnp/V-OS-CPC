@@ -59,6 +59,7 @@ Mientras está abierto, recibe las teclas y los clics. Su ventana se puede arras
 | **PAINT** | dibujo en modo 0 con 16 colores: una imagen de 128×128 (`.PIC`), o de 64×64 con zoom 2× en 3 capas (`.LYR`, NEW LAYERS). Herramientas: P lápiz, B pincel, L línea, X rectángulo, F relleno; TAB cambia el color. Las flechas y COPY dibujan sin ratón. Capas: 1–3 eligen una, H la oculta o la muestra, U y D la suben y la bajan, E es la goma (`myapps/paint`) |
 | **MUSIC** | reproduce canciones de Arkos Tracker 3 (`.MUS`, hechas con `make songs`), con tres barras de volumen. Está en su propio disquete, `music.dsk`, en B:. OPEN, SPACE reproduce y para. La música sigue detrás de otras vistas y programas (`myapps/music`) |
 | **MARKDOWN** | un editor de archivos Markdown (`.MD`, hasta 6K), como NOTEPAD. ^P muestra la página: títulos `#`, **negrita**, *cursiva*, `código`, listas, citas, líneas, bloques de código y enlaces subrayados, sin las marcas. Las flechas desplazan la página, RETURN o ^P vuelven al texto. Está en su propio disquete, `markdown.dsk`, con un `README.MD` (`myapps/markdown`) |
+| **SYSINFO** | muestra las versiones de V-OS y de la API y el espacio libre en los disquetes de A: y B: (^R otra vez). Un ejemplo de `VOS_EXT` (`myapps/sysinfo`) |
 | **PONG** | una pelota y una pala con las flechas, puntuación y vidas |
 | **CATCH** | atrapar las estrellas que caen |
 | **STARCAT** | un gato con disfraces que camina, una estrella, una melodía a partir de una lista |

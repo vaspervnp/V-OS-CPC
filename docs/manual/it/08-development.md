@@ -101,6 +101,7 @@ I test eseguono V-OS in Caprice32 senza finestra e catturano schermate in `build
 | `test-music` | MUSIC da `music.dsk` in B:: un brano suona e continua dietro il Launcher |
 | `test-markdown` | MARKDOWN da `markdown.dsk` in B:: apre `README.MD`, la pagina con ^P, una schermata più giù, ritorno al testo |
 | `test-open` | apertura per tipo nel Commander: `README.MD` in MARKDOWN da B:, un `.TXT` in NOTEPAD da A: |
+| `test-sysinfo` | SYSINFO dal Commander: versione, API, K liberi su A: e B:, ^R, ^Q |
 | `test-amsdos`, `test-reboot`, `test-system` | file di V-OS in BASIC, riavvio, dischetto SYSTEM |
 
 **Nuovo script:**

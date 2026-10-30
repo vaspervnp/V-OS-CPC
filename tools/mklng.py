@@ -43,7 +43,7 @@ DEAD_FIRST = 1
 DEAD_LAST = 7
 
 
-MSG_MAX = 159                       # LANG_MSG_MAX in src/kernel/lang.asm
+MSG_MAX = 151                       # LANG_MSG_MAX in src/kernel/lang.asm
 
 # "{DATE}" in a text: the day of the build (VOS_DATE, else today)
 BUILD_DATE = os.environ.get("VOS_DATE") or __import__("time").strftime("%d.%m.%Y")

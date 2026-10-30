@@ -412,18 +412,19 @@ bg_hush:
         ret
 
 ; the calls quiet in the background: first, count; all but VOS_FRAMES,
-; VOS_RANDOM, VOS_KEEP and VOS_BACKGROUND
-bg_quiet:       db 0, 2, 4, 32, 37, 2, 40, 2, #FF
+; VOS_RANDOM, VOS_KEEP and VOS_BACKGROUND (VOS_EXT too is quiet)
+bg_quiet:       db 0, 2, 4, 32, 37, 2, 40, 3, #FF
         assert (VOS_FRAMES - VOS_API) / 3 == 2 && (VOS_KEEP - VOS_API) / 3 == 36
-        assert (VOS_BACKGROUND - VOS_API) / 3 == 39 && VOS_API_COUNT == 42
+        assert (VOS_BACKGROUND - VOS_API) / 3 == 39 && VOS_API_COUNT == 43
 bg_id           equ #9814           ; (include/memmap.inc)
 bg_hushed       equ #9815
 bg_home         equ #9816
 bg_cfg          equ #9817
 bg_slot         equ #9818
 bg_base         equ #9819
-bg_api          equ GAP0 + 672      ; VOS_API_COUNT * 3 (include/memmap.inc)
-        assert 672 + VOS_API_COUNT * 3 <= GAP_SIZE
+bg_api          equ GAP0 + 664      ; VOS_API_COUNT * 3 (include/memmap.inc)
+        assert lang_msg_buf + LANG_MSG_MAX + 1 <= bg_api
+        assert 664 + VOS_API_COUNT * 3 <= GAP_SIZE
 
 ; ---------------------------------------------------------------------
 ; Moving windows (VOS_DRAG, VOS_FIT; kernel/api.asm, ui/ui.asm): a

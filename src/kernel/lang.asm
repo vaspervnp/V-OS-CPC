@@ -27,7 +27,7 @@ LNG_MSGS        equ 16
 LNG_SIZE        equ 18
 LNG_NAME        equ 20
 LANG_COMBOS_MAX equ 32
-LANG_MSG_MAX    equ 159             ; its buffers end by GAP + 704
+LANG_MSG_MAX    equ 151             ; its buffers end by GAP + 664
 
 ; ---------------------------------------------------------------------
 ; ram_select - A = Gate Array RAM configuration (#C0..#C7)

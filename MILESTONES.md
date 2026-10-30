@@ -4,6 +4,15 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M36 (VOS_EXT, room for more calls):**
+- **What changed:** the API's jump table gets one last call, `VOS_EXT` (API 15). A program puts a call number (`VX_*`) in A and the arguments in BC, DE and HL. An unknown number returns carry. New calls no longer need a place in the table.
+- **Where the calls live:** `xa_table` in the kernel (`src/kernel/api.asm`) has the address of each one. A call in the main kernel gets HL as it was. A call in the kernel extension (bank 7, where there is about 1.6K free) runs through `ext_call` and finds HL in `xa_hl`; it cannot see the program's memory there. The dispatcher took 51 bytes of the main kernel.
+- **The first calls:** `VX_VERSION` (in the kernel): A = API version, HL = V-OS version in BCD. `VX_FREE` (in the extension): C = drive → A = free K.
+- **SYSINFO:** a small new program (`myapps/sysinfo`, 1.2K) that shows the V-OS and API versions and the free space on A: and B:, with styled text. It is an example of `VOS_EXT`.
+- **Bug avoided:** background programs keep a copy of the jump table in GAP0, and 43 calls no longer fitted there (801 of 800 bytes). The language messages' buffer went from 160 to 152 bytes (the longest message is 139), and the copy starts 8 bytes earlier. `VOS_EXT` is quiet in the background, like most calls.
+- **Tested:** in Caprice32 with `make test-sysinfo`: SYSINFO from the Commander shows 0.10, API 15, 23K free on A: and 165K on B:, the same as the Commander, ^R reads them again, ^Q goes back. `test-behind` (TICKER keeps counting in the background) and `test-music` again.
+- **Not tested:** `VX_FREE` on an empty drive.
+
 **M35 (opening files by type):**
 - **What changed:** RETURN, ENTER or a second click on a file in the Desktop or the Commander now opens it. A program runs, as before. A `.TXT` opens in NOTEPAD, a `.MD` in MARKDOWN, a `.PIC` or `.LYR` in PAINT, and a `.MUS` in MUSIC, which starts playing it. Any other file shows its info, which is also on FILE > FILE INFO and ^I. The FILE menu's first item is now OPEN.
 - **Where the program is:** on the file's drive, then on A:, then on B:. So `README.MD` on `markdown.dsk` in B: opens in MARKDOWN from B:, and a `.TXT` on B: opens in NOTEPAD from A:. If there is none, "NO PROGRAM FOR THIS FILE" (error 14).

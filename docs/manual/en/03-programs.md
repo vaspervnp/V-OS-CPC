@@ -59,6 +59,7 @@ While it is open, it gets the keys and clicks. Its window can be dragged by its 
 | **PAINT** | drawing in mode 0 with 16 colors: a 128×128 picture (`.PIC`), or 64×64 at 2× zoom in 3 layers (`.LYR`, NEW LAYERS). Tools: P pencil, B brush, L line, X box, F fill; TAB changes the color. Arrows and COPY draw without a mouse. Layers: 1–3 choose one, H hides or shows it, U and D move it up and down, E is the eraser (`myapps/paint`) |
 | **MUSIC** | plays Arkos Tracker 3 songs (`.MUS`, made by `make songs`), with three volume bars. It is on its own disc, `music.dsk`, in B:. OPEN, SPACE plays and stops. The music goes on behind other views and programs (`myapps/music`) |
 | **MARKDOWN** | an editor for Markdown files (`.MD`, up to 6K), like NOTEPAD. ^P shows the page: `#` headings, **bold**, *italic*, `code`, lists, quotes, lines, code blocks and underlined links, without the marks. The arrows scroll the page, RETURN or ^P go back to the text. It is on its own disc, `markdown.dsk`, with a `README.MD` (`myapps/markdown`) |
+| **SYSINFO** | shows the V-OS and API versions and the free space on the discs in A: and B: (^R again). An example of `VOS_EXT` (`myapps/sysinfo`) |
 | **PONG** | a ball and a paddle with the arrows, score and lives |
 | **CATCH** | catch the falling stars |
 | **STARCAT** | a cat with costumes that walks, a star, a melody from a list |
