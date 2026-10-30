@@ -30,7 +30,7 @@
 #   make new-app NAME=hello   a program of your own in myapps/hello,
 #                 from sdk/template (sdk/README.md)
 #   make app NAME=hello       it as build/HELLO.BIN, on build/vos.dsk
-#   make test-vrouves VROUVES (myapps/vrouves): defenders built, a wave
+#   make test-vrouves VROUVES (myapps/vrouves) from its disc in B:: defenders built, a wave
 #   make test-sdk    the template built as HELLO, run from the Launcher:
 #                 the box moved, BEEP, its menu and ABOUT dialog
 #   make docs      the manual as PDFs: docs/V-OS.pdf (Greek, from
@@ -102,7 +102,8 @@ APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
 # name.asm, texts.txt and icon.txt (and may include more .asm of its
 # own), and becomes build/NAME.BIN, with a relocation table, on
 # build/vos.dsk (not on the test discs), with the files of its disc/
-# folder as they are (its data files).
+# folder as they are (its data files); with an owndisc/ folder, also on
+# a disc of its own, build/<name>.dsk, below.
 #   make new-app NAME=hello   myapps/hello, from sdk/template
 #   make app NAME=hello       build/HELLO.BIN and build/vos.dsk
 upper = $(shell echo $(1) | tr a-z A-Z)
@@ -213,6 +214,20 @@ $(BUILD)/$(call upper,$(2)).BIN: $(1)/$(2).asm $(wildcard $(1)/*.asm) $(1)/texts
 endef
 $(foreach a,$(MYAPPS),$(eval $(call myapp_rule,myapps/$(a),$(a))))
 
+# One with an owndisc/ folder also gets a disc of its own,
+# build/<name>.dsk: NAME.BIN and the files of owndisc/, as they are
+OWN_APPS := $(patsubst myapps/%/owndisc/,%,$(wildcard myapps/*/owndisc/))
+OWN_DSKS := $(foreach a,$(OWN_APPS),$(BUILD)/$(a).dsk)
+define own_disc_rule
+$(BUILD)/$(1).dsk: $(BUILD)/$(call upper,$(1)).BIN $(wildcard myapps/$(1)/owndisc/*) tools/dsk_ext.py
+	@rm -f $$@
+	$(IDSK) $$@ -n > /dev/null
+	$$(call add_apps,$$@,$(BUILD)/$(call upper,$(1)).BIN $(wildcard myapps/$(1)/owndisc/*))
+	$(PYTHON) -I tools/dsk_ext.py $$@
+endef
+$(foreach a,$(OWN_APPS),$(eval $(call own_disc_rule,$(a))))
+all: $(OWN_DSKS)
+
 # The manual as a PDF (python's user packages: no -I)
 DOC_LANGS := en fr es de it
 docs: docs/V-OS.pdf $(foreach l,$(DOC_LANGS),docs/V-OS-$(l).pdf)
@@ -236,7 +251,7 @@ new-app:
 
 app:
 	@test -d "myapps/$(NAME)" || { echo "make app NAME=name, for a folder in myapps (make new-app NAME=name)"; exit 1; }
-	$(MAKE) $(BUILD)/$(call upper,$(NAME)).BIN $(DSK)
+	$(MAKE) $(BUILD)/$(call upper,$(NAME)).BIN $(DSK) $(if $(wildcard myapps/$(NAME)/owndisc),$(BUILD)/$(NAME).dsk)
 
 define add_apps
 	for p in $(2); do $(IDSK) $(1) -i $$p -t 1 -c 4000 -e 4000 > /dev/null; done
@@ -537,23 +552,23 @@ test-sdk: $(SDK_DSK) $(TEST_DSK_B)
 	done
 	ls $(BUILD)/shots/*/*.png
 
-# VROUVES (TEST_SCRIPT=16): myapps/vrouves, last on the test disc with
-# its stage
+# VROUVES (TEST_SCRIPT=16): myapps/vrouves from its own disc,
+# build/vrouves.dsk, in drive B:, run from the Commander
 VROUVES_DSK := $(BUILD)/vos_vrouves.dsk
-VROUVES_SHOTS := 250 300 330 360 400 450
-$(VROUVES_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/VROUVES.BIN myapps/vrouves/disc/VROUV1.DAT
+VROUVES_SHOTS := 200 280 330 400 450
+$(VROUVES_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_vrouves -DTEST_SCRIPT=16
 	mv $(TEST_DSK) $@
 	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS) $(BUILD)/VROUVES.BIN myapps/vrouves/disc/VROUV1.DAT)
+	$(call add_apps,$@,$(APPS))
 	$(PYTHON) -I tools/dsk_ext.py $@
 
-test-vrouves: $(VROUVES_DSK) $(TEST_DSK_B)
+test-vrouves: $(VROUVES_DSK) $(BUILD)/vrouves.dsk
 	rm -rf $(BUILD)/shots
 	for d in $(VROUVES_SHOTS); do \
-	  cp $(VROUVES_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  cp $(VROUVES_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/vrouves.dsk $(BUILD)/vos_run_b.dsk; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png

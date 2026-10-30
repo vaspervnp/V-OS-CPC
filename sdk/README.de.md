@@ -35,6 +35,7 @@ Ein größeres Programm:
 
 - Leg weitere `.asm`-Dateien in seinen Ordner (z. B. `art.asm` mit Sprites) und hol sie mit `include "art.asm"` herein. Der Build findet sie und baut das Programm neu, wenn sie sich ändern.
 - Was du in den Unterordner `disc/` legst (z. B. `disc/LEVEL1.DAT`), kommt unverändert auf die Diskette, für `VOS_LOAD`.
+- Mit einem Unterordner `owndisc/` bekommt das Programm auch eine eigene Diskette, `build/<name>.dsk`, mit der `.BIN` und den Dateien aus `owndisc/`. Du legst sie in B: ein und startest es aus dem Commander (DATEI > STARTEN). Von welchem Laufwerk es gestartet wurde, damit es seine Dateien von dort lädt, steht in `VOS_SELF`: `db Laufwerk`, dann sein Name (11 Bytes).
 - Ein Programm mit Relocation-Tabelle (wie die des SDK) darf bis zu 12K groß sein. Für den Rest lädst du Dateien in die Daten-Bank.
 
 ## Wie ein Programm funktioniert

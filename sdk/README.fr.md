@@ -35,6 +35,7 @@ Un programme plus grand :
 
 - Mettez d'autres fichiers `.asm` dans son dossier (par ex. `art.asm` avec des sprites) et intégrez-les avec `include "art.asm"`. Le build les trouve, et reconstruit le programme quand ils changent.
 - Ce que vous mettez dans le sous-dossier `disc/` (par ex. `disc/LEVEL1.DAT`) va tel quel sur la disquette, pour `VOS_LOAD`.
+- Avec un sous-dossier `owndisc/`, le programme a aussi sa propre disquette, `build/<nom>.dsk`, avec le `.BIN` et les fichiers de `owndisc/`. Vous la mettez en B: et le lancez depuis le Commander (FICHIER > LANCER). Le lecteur d'où il a été lancé, pour y charger ses fichiers, est dans `VOS_SELF` : `db lecteur`, puis son nom (11 octets).
 - Un programme avec une table de relocation (comme ceux du SDK) peut faire jusqu'à 12K. Pour le reste, chargez des fichiers dans la banque de données.
 
 ## Comment fonctionne un programme

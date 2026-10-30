@@ -6,7 +6,7 @@ NEXT        | NEXT WAVE             | ΕΠΟΜΕΝΟ ΚΥΜΑ
 PAUSE       | PAUSE                 | ΠΑΥΣΗ
 ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
 BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
-ABOUT_TEXT  | LET'S GO FOR VROUVES!|STAGE 1: THE KAFENIO|FOR V-OS, FROM THE CPC|GAME | ΠΑΜΕ ΓΙΑ ΒΡΟΥΒΕΣ!|ΠΙΣΤΑ 1: ΤΟ ΚΑΦΕΝΕΙΟ|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ|ΠΑΙΧΝΙΔΙ ΤΟΥ CPC
+ABOUT_TEXT  | LET'S GO FOR VROUVES!|SEVEN STAGES|FOR V-OS, FROM THE CPC|GAME | ΠΑΜΕ ΓΙΑ ΒΡΟΥΒΕΣ!|ΕΠΤΑ ΠΙΣΤΕΣ|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ|ΠΑΙΧΝΙΔΙ ΤΟΥ CPC
 FUNDS       | FUNDS                 | ΛΕΦΤΑ
 WAVE        | WAVE                  | ΚΥΜΑ
 GREENS      | VROUVES               | ΒΡΟΥΒΕΣ
@@ -21,6 +21,9 @@ D5          | CAULDRON              | ΚΑΖΑΝΙ
 D6          | BAKER                 | ΦΟΥΡΝΑΡΗΣ
 HINT        | 1-6 SPACE S:SELL N P  | 1-6 SPACE S:ΠΩΛΗΣΗ N P
 WIN_T       | VICTORY               | ΝΙΚΗ
-WIN         | KAFENIO SAVED!|THE VROUVES ARE SAFE | ΤΟ ΚΑΦΕΝΕΙΟ ΣΩΘΗΚΕ!|ΟΙ ΒΡΟΥΒΕΣ ΣΩΘΗΚΑΝ
+WIN         | STAGE SAVED!|ON TO THE NEXT ONE! | Η ΠΙΣΤΑ ΣΩΘΗΚΕ!|ΣΤΗΝ ΕΠΟΜΕΝΗ!
+FINAL       | THE VILLAGE IS SAVED!|THE VROUVES ARE SAFE | ΤΟ ΧΩΡΙΟ ΣΩΘΗΚΕ!|ΟΙ ΒΡΟΥΒΕΣ ΣΩΘΗΚΑΝ
+MORE        | STAGES 2-7 ARE ON|THE VROUVES DISC | ΟΙ ΠΙΣΤΕΣ 2-7 ΕΙΝΑΙ|ΣΤΗ ΔΙΣΚΕΤΑ VROUVES
 LOSE_T      | DEFEAT                | ΗΤΤΑ
-LOSE        | THE KAFENIO|HAS FALLEN! | ΤΟ ΚΑΦΕΝΕΙΟ|ΕΠΕΣΕ!
+LOSE        | IT HAS FALLEN!|THE STAGE AGAIN | ΕΠΕΣΕ!|ΞΑΝΑ Η ΠΙΣΤΑ
+LANG        | E                     | G

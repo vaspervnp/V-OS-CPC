@@ -91,7 +91,7 @@ Las pruebas ejecutan V-OS en Caprice32 sin ventana y hacen capturas de pantalla 
 | `test-mines`, `test-bricks` | los juegos |
 | `test-vars` | las 128 variables, SAVE/LOAD VARS |
 | `test-sdk` | la plantilla del SDK |
-| `test-vrouves` | VROUVES: construir, la oleada 1, el dinero |
+| `test-vrouves` | VROUVES desde su disquete en B:, por el Commander: construir, la oleada 1, el dinero |
 | `test-amsdos`, `test-reboot`, `test-system` | archivos de V-OS en el BASIC, reinicio, disquete SYSTEM |
 
 **Script nuevo:**

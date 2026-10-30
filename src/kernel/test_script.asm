@@ -313,26 +313,24 @@ test_keys:
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 16
-; make test-vrouves (-DTEST_SCRIPT=16): VROUVES (myapps/vrouves), last
-; on the disc with its stage VROUV1.DAT. Expected:
-;   frame  300  F2, 420-480 DOWN x3, 520-610 RIGHT x4 -> VROUVES chosen
-;                               (page 2, after CLOCK ... BRICKS)
-;   frame  660  RETURN       -> the Kafenio stage: the road, the walls
-;                               and trees, the Kafenio; the HUD
+; make test-vrouves (-DTEST_SCRIPT=16): VROUVES (myapps/vrouves) from
+; its own disc, build/vrouves.dsk, in drive B:. Expected:
+;   frame  300  F3           -> the Commander: A: and B: (VROUVES.BIN,
+;                               VROUV1..7.DAT)
+;   frame  450  TAB          -> the B: panel, VROUVES.BIN selected
+;   frame  520  ESC, 570 RETURN -> FILE > RUN: stage 1, from B:, with
+;                               its name under the HUD; on the bar only
+;                               the Cretan and the Psssst
 ;   frame  800  SPACE        -> a Cretan on the cursor's cell (10, 6)
 ;   frame  850  UP, 880 4, 910 SPACE -> Psssst on (10, 5)
-;   frame  960  N            -> wave 1: guards come down the road
+;   frame  960  N            -> wave 1: guards come down the road, the
+;                               keys replace the stage's name
 ;   later       the defenders fire, the guards fall, FUNDS grows
 test_keys:
-        dw  300,  304 : db 1, %01000000   ; F2
-        dw  420,  424 : db 0, %00000100   ; DOWN
-        dw  450,  454 : db 0, %00000100   ; DOWN
-        dw  480,  484 : db 0, %00000100   ; DOWN
-        dw  520,  524 : db 0, %00000010   ; RIGHT
-        dw  550,  554 : db 0, %00000010   ; RIGHT
-        dw  580,  584 : db 0, %00000010   ; RIGHT
-        dw  610,  614 : db 0, %00000010   ; RIGHT
-        dw  660,  664 : db 2, %00000100   ; RETURN: VROUVES
+        dw  300,  304 : db 0, %00100000   ; F3: the Commander
+        dw  450,  454 : db 8, %00010000   ; TAB: drive B:
+        dw  520,  524 : db 8, %00000100   ; ESC: the menus
+        dw  570,  574 : db 2, %00000100   ; RETURN: FILE > RUN
         dw  800,  804 : db 5, %10000000   ; SPACE: a Cretan
         dw  850,  854 : db 0, %00000001   ; UP
         dw  880,  884 : db 7, %00000001   ; 4: Psssst

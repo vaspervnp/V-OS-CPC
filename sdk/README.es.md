@@ -35,6 +35,7 @@ Un programa más grande:
 
 - Ponga más archivos `.asm` en su carpeta (p. ej. `art.asm` con sprites) e inclúyalos con `include "art.asm"`. El build los encuentra y vuelve a compilar el programa cuando cambian.
 - Lo que ponga en la subcarpeta `disc/` (p. ej. `disc/LEVEL1.DAT`) va tal cual al disquete, para `VOS_LOAD`.
+- Con una subcarpeta `owndisc/`, el programa tiene además su propio disquete, `build/<nombre>.dsk`, con el `.BIN` y los archivos de `owndisc/`. Se pone en B: y se ejecuta desde el Commander (ARCHIVO > EJECUTAR). La unidad desde la que se inició, para cargar de allí sus archivos, está en `VOS_SELF`: `db unidad`, y luego su nombre (11 bytes).
 - Un programa con tabla de reubicación (como los del SDK) puede ocupar hasta 12K. Para lo demás, cargue archivos en el banco de datos.
 
 ## Cómo funciona un programa

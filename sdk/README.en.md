@@ -35,6 +35,7 @@ A bigger program:
 
 - Put more `.asm` files in its folder (e.g. `art.asm` with sprites) and bring them in with `include "art.asm"`. The build finds them, and rebuilds the program when they change.
 - Whatever you put in the subfolder `disc/` (e.g. `disc/LEVEL1.DAT`) goes onto the disk as it is, for `VOS_LOAD`.
+- With a subfolder `owndisc/`, the program also gets a disk of its own, `build/<name>.dsk`, with the `.BIN` and the files of `owndisc/`. You put it in B: and run it from the Commander (FILE > RUN). Which drive it was started from, so that it loads its files from there, is in `VOS_SELF`: `db drive`, then its name (11 bytes).
 - A program with a relocation table (like those of the SDK) can be up to 12K. For the rest, load files into the data bank.
 
 ## How a program works

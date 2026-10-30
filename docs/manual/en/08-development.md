@@ -91,7 +91,7 @@ The tests run V-OS in Caprice32 without a window and take screenshots in `build/
 | `test-mines`, `test-bricks` | the games |
 | `test-vars` | the 128 variables, SAVE/LOAD VARS |
 | `test-sdk` | the SDK template |
-| `test-vrouves` | VROUVES: building, wave 1, the funds |
+| `test-vrouves` | VROUVES from its disk in B:, through the Commander: building, wave 1, the funds |
 | `test-amsdos`, `test-reboot`, `test-system` | V-OS files in BASIC, reboot, SYSTEM disk |
 
 **New script:**

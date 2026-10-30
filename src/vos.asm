@@ -81,6 +81,7 @@ EXT_SIZE        equ ext_end - ext_start
         assert KERNEL_SIZE <= KERNEL_LIMIT - KERNEL_BASE
         ENDIF
         assert MSG_COUNT <= VT_FIRST          ; program texts start there
+        assert app_self == VOS_SELF
         assert kernel_image + KERNEL_SIZE <= EXT_IMAGE
         assert EXT_SIZE <= EXT_MAX
         assert ext_end == EXT_ADDR + EXT_MAX

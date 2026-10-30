@@ -35,6 +35,7 @@ Un programma più grande:
 
 - Metti altri file `.asm` nella sua cartella (ad es. `art.asm` con gli sprite) e includili con `include "art.asm"`. Il build li trova, e ricostruisce il programma quando cambiano.
 - Quello che metti nella sottocartella `disc/` (ad es. `disc/LEVEL1.DAT`) va così com'è sul dischetto, per `VOS_LOAD`.
+- Con una sottocartella `owndisc/`, il programma ha anche un dischetto suo, `build/<nome>.dsk`, con il `.BIN` e i file di `owndisc/`. Lo metti in B: e lo avvii dal Commander (FILE > AVVIA). Il drive da cui è partito, per caricare da lì i suoi file, è in `VOS_SELF`: `db drive`, poi il suo nome (11 byte).
 - Un programma con tabella di rilocazione (come quelli dell'SDK) può arrivare a 12K. Per il resto, carica file nel banco dati.
 
 ## Come funziona un programma

@@ -4,20 +4,22 @@
 ; A tower defence game after the CPC game by the same author: the
 ; invaders of Frankenstein & Moreau CO. come down the road to the
 ; Kafenio of Zoniana, and the villagers build defenders beside it to
-; save its sacks of vrouves. Stage 1 (the Kafenio), simplified: the six
-; defenders and three invaders, ten waves; no neighbour bonus, no
-; projectiles in flight, no music.
+; save its sacks of vrouves. Simplified: the seven stages, each with
+; ten waves of three invaders and the defenders the original has there;
+; no neighbour bonus, no projectiles in flight, no music.
 ;
-; Mode 0, the original's art and palette (art.asm, import_art.py). The
-; stage, VROUV1.DAT, is loaded into the data bank: its first #400
-; bytes (map, cell kinds, roads, waves) are copied here, and its cells
+; Mode 0, the original's art and palette (art.asm, import_art.py). A
+; stage, VROUVn.DAT, from the drive the game was run from, is loaded
+; into the data bank: its head (map, cell kinds, roads, waves, the
+; defenders it has, its name) is copied here, and its cells
 ; (8 x 12 pixels) are read from there when they are drawn, through a
 ; small cache. Logic runs at 25 Hz (every other VE_FRAME); the screen
 ; is brought up to date every other tick: what moved is erased by
 ; drawing the stage's cells there again, then every invader, effect and
 ; the cursor are drawn.
 ;
-;   make app NAME=vrouves     build/VROUVES.BIN and VROUV1.DAT on the disc
+;   make app NAME=vrouves     build/VROUVES.BIN, with VROUV1.DAT on the
+;                             V-OS disc and all seven on build/vrouves.dsk
 ; =====================================================================
 
         include "api/vos_api.inc"
@@ -36,6 +38,12 @@ ST_KIND         equ #118            ; offsets in the stage (import_art.py)
 ST_ROAD         equ #230
 ST_AIR          equ #258
 ST_WAVES        equ #280
+ST_UNLOCK       equ #2E0            ; bit n-1: it has defender n
+ST_TOUGH        equ #2E1            ; invaders as this many waves later
+ST_NAME         equ #2E2            ; in English, then Greek: 0-ended
+ST_NAME_EL      equ #2FB
+ST_HEAD         equ #320            ; what is copied here
+STAGES          equ 7
 K_GRASS         equ 0
 K_ROAD          equ 1
 K_BLOCK         equ 2
@@ -144,7 +152,17 @@ init:
         call VOS_SET_BAR
         ld a,1
         call VOS_TICKS
+        pop af
+        push af
+        cp 2
+        jr z,.again
+        ld a,(VOS_SELF)             ; the stages are on its drive
+        ld (drive),a
+        ld a,1
+        ld (stage_no),a
+.again:
         call load_stage
+        call c,VOS_ERROR
         pop af
         cp 2
         call nz,new_game
@@ -180,18 +198,22 @@ redraw:
         call draw_tick
         jp hud_draw
 
-; the stage into the data bank, its head here
+; stage_no into the data bank, its head here -> carry, A = error
 load_stage:
         xor a
         ld (loaded),a
-        ld a,VOS_DATA               ; drive A:
+        ld a,(stage_no)
+        add a,"0"
+        ld (stage_name + 5),a
+        ld a,(drive)
+        or VOS_DATA
         ld hl,stage_name
         ld de,STAGE_BANK
         call VOS_LOAD
-        jp c,VOS_ERROR
+        ret c
         ld hl,STAGE_BANK
         ld de,stage
-        ld bc,#400
+        ld bc,ST_HEAD
         call VOS_BANK_GET
         ld hl,cache_tag             ; the cache is empty
         ld b,8
@@ -201,7 +223,17 @@ load_stage:
         djnz .tag
         ld a,1
         ld (loaded),a
+        or a
         ret
+
+; NEW GAME, and after the last stage: stage 1
+stage_one:
+        ld a,1
+        ld (stage_no),a
+        call load_stage
+        call c,VOS_ERROR
+        call new_game
+        jp redraw
 
 new_game:
         ld hl,game_vars
@@ -311,10 +343,7 @@ keys:           db VK_UP : dw cur_up
 
 command:
         cp CMD_NEW
-        jr nz,.not_new
-        call new_game
-        jp redraw
-.not_new:
+        jp z,stage_one
         cp CMD_NEXT
         jp z,next_wave
         cp CMD_PAUSE
@@ -348,11 +377,26 @@ sel_5:  ld a,5
         jr select
 sel_6:  ld a,6
 select:
+        ld c,a
+        call has_type
+        ret nc
+        ld a,c
         ld (sel),a
         ld a,HUD_BAR + HUD_INFO
         call hud_set
         call cursor_moved
         jp hud_draw
+
+; A = defender 1..6 -> carry if this stage has it (BC kept)
+has_type:
+        push bc
+        ld b,a
+        ld a,(stage + ST_UNLOCK)
+.bit:
+        rrca
+        djnz .bit
+        pop bc
+        ret
 
 cur_up:
         ld hl,cur_r
@@ -666,13 +710,25 @@ frame:
         ld a,(state)
         cp 2
         ret nz
-.won:
+.won:                               ; on to the next stage
+        ld a,(stage_no)
+        cp STAGES
+        ld hl,dlg_final
+        jr nc,.first
         ld hl,dlg_win
-        jr .over
-.lost:
-        ld hl,dlg_lose
-.over:
         call VOS_DIALOG
+        ld hl,stage_no
+        inc (hl)
+        call load_stage
+        jr nc,.again
+        ld hl,dlg_more              ; not on this disc
+.first:
+        call VOS_DIALOG
+        jp stage_one
+.lost:                              ; this stage again
+        ld hl,dlg_lose
+        call VOS_DIALOG
+.again:
         call new_game
         jp redraw
 
@@ -782,7 +838,7 @@ start_wave:
         ld hl,213
         ld bc,#140C
         call VOS_SOUND
-        ld a,HUD_WAVE + HUD_CD
+        ld a,HUD_WAVE + HUD_CD + HUD_INFO
         jp hud_set
 
 ; A = type -> carry: an invader at the start of its way
@@ -806,8 +862,11 @@ spawn:
 .got:
         ld a,e
         ld (ix + E_TYPE),a
-        call etype_ptr              ; hp: base + per wave x wave
+        call etype_ptr              ; hp: base + per wave x (wave
+        ld a,(stage + ST_TOUGH)     ; + the stage's toughness)
+        ld b,a
         ld a,(wave)
+        add a,b
         ld b,a
         ld a,(hl)
         inc hl
@@ -2108,9 +2167,12 @@ hud_draw:
 .bar:
         push bc
         ld a,1                      ; the six defenders, the chosen one on
-.slot:                              ; yellow, the others on grey
-        push af
+.slot:                              ; yellow, the others on grey,
+        push af                     ; those the stage has not on black
         ld c,a
+        call has_type
+        ld a,0
+        jr nc,.frame
         ld a,(sel)
         cp c
         ld a,8                      ; yellow, or grey
@@ -2145,6 +2207,10 @@ hud_draw:
         pop ix
         pop af
         push af
+        call has_type
+        jr nc,.next
+        pop af
+        push af
         dec a
         add a,a
         ld l,a
@@ -2161,6 +2227,7 @@ hud_draw:
         ld b,a
         ld c,HUD_Y + 22
         call draw_spr
+.next:
         pop af
         inc a
         cp 7
@@ -2192,7 +2259,25 @@ hud_draw:
         ld de,96
         ld bc,HUD_Y + 40
         call number
-.hint:
+.hint:                              ; the stage's name, until its
+        ld a,(wave)                 ; first wave; then the keys
+        or a
+        jr nz,.keys
+        ld a,24
+        ld (lb_w),a
+        ld hl,0
+        push hl
+        ld hl,HUD_Y + 52
+        push hl
+        ld a,T_LANG                 ; "E", or "G" in Greek
+        call VOS_MSG
+        ld a,(hl)
+        ld hl,stage + ST_NAME
+        cp "E"
+        jr z,print_text
+        ld hl,stage + ST_NAME_EL
+        jr print_text
+.keys:
         ld a,T_HINT
         ld hl,0
         ld de,HUD_Y + 52
@@ -2211,6 +2296,8 @@ print_label:
         push hl
         push de
         call VOS_MSG
+; HL -> the text; y, x on the stack
+print_text:
         ld de,line
         ld a,(lb_w)
         ld b,a
@@ -2299,8 +2386,10 @@ menu:           db T_MENU, 6
                 db T_BACK, CMD_BACK, "Q", 0
 dlg_about:      db T_MENU, T_ABOUT_TEXT, 1, VM_OK
 dlg_win:        db T_WIN_T, T_WIN, 1, VM_OK
+dlg_final:      db T_WIN_T, T_FINAL, 1, VM_OK
+dlg_more:       db T_WIN_T, T_MORE, 1, VM_OK
 dlg_lose:       db T_LOSE_T, T_LOSE, 1, VM_OK
-stage_name:     db "VROUV1  DAT"
+stage_name:     db "VROUV1  DAT"      ; the digit is stage_no
 
 ; invaders: base hp, hp a wave, speed (x 16), armour, reward, damage, -, -
 etype_tab:      db 6, 3, 20, 0, 3, 4, 0, 0     ; bio-drone
@@ -2333,6 +2422,8 @@ squares:
 
 ; ---- state ----------------------------------------------------------
 loaded:         db 0
+drive:          db 0                ; the game's drive (VOS_SELF)
+stage_no:       db 1                ; 1..STAGES
 blt:            dw 0, 0             ; VOS_BLIT: x, y, bytes, rows, source,
                 db 0, 0             ; stride
                 dw 0
@@ -2344,7 +2435,7 @@ cache:          ds 8 * 96
 cell_raw:       ds 48
 cp_slot:        db 0
 lb_w:           db 0
-line:           ds 14
+line:           ds 25
 rs_x0:          db 0                ; restore: the rectangle, in the
 rs_x1:          db 0                ; playfield (bytes, lines)
 rs_y0:          db 0
@@ -2371,7 +2462,7 @@ sp_x:           db 0
 sp_y:           db 0
 sp_dmg:         db 0
 sp_range:       db 0
-stage:          ds #400             ; the stage's head (VROUV1.DAT)
+stage:          ds ST_HEAD          ; the stage's head (VROUVn.DAT)
 game_vars:
 funds:          dw 0
 hp:             db 0                ; the Kafenio's greens, 100 at first

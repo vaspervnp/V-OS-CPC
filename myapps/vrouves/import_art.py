@@ -7,7 +7,8 @@ Run by hand when the original's art changes; its outputs are kept in
 the repo, so building V-OS does not need the original:
   art.asm             the palette and the sprites, as VOS_BLIT draws them:
                       db bytes, rows, then per row (mask, pixels) pairs
-  disc/VROUV1.DAT     stage 1, the Kafenio, for the data bank:
+  owndisc/VROUVn.DAT  the seven stages, for the data bank (stage 1, the
+                      Kafenio, also in disc/, for the V-OS disc):
      #000  the map: 20 x 14 cell numbers, row by row
      #118  the cell kinds: 0 grass (build), 1 road, 2 blocked (Psssst
            only), 3 the Kafenio and its yard
@@ -15,6 +16,9 @@ the repo, so building V-OS does not need the original:
      #258  the drones' way, the same
      #280  10 waves x 3 groups: db type (1 drone, 2 guard, 3 tank,
            0 none), count, interval (25 Hz ticks)
+     #2E0  the defenders it has: bit n-1 for type n
+     #2E1  toughness: the invaders have the health of this many waves later
+     #2E2  its name in English, #2FB in Greek (ISO 8859-7), 0-ended
      #400  the cells: 48 bytes each (8 x 12 pixels, 4 bytes a row)
 The original's pens are moved so that the V-OS menu bar (pen 1 white,
 text pen 0 black) looks right; both blacks become pen 0.
@@ -74,7 +78,18 @@ def sprite_lines(name, rows):
     return out
 
 
-def stage_file(st, waves):
+# the defenders each stage has (the original's UNLOCKS; all from stage 6)
+UNLOCK = [{1, 4}, {1, 2, 4}, {1, 2, 3, 4}, {1, 2, 3, 4, 6}]
+NAMES = [("STAGE 1: THE KAFENIO", "ΠΙΣΤΑ 1: ΤΟ ΚΑΦΕΝΕΙΟ"),
+         ("STAGE 2: THE CHURCH", "ΠΙΣΤΑ 2: Η ΕΚΚΛΗΣΙΑ"),
+         ("STAGE 3: THE TOWN HALL", "ΠΙΣΤΑ 3: ΤΟ ΔΗΜΑΡΧΕΙΟ"),
+         ("STAGE 4: THE BAKERY", "ΠΙΣΤΑ 4: Ο ΦΟΥΡΝΟΣ"),
+         ("STAGE 5: THE SCHOOL", "ΠΙΣΤΑ 5: ΤΟ ΣΧΟΛΕΙΟ"),
+         ("STAGE 6: THE PITCH", "ΠΙΣΤΑ 6: ΤΟ ΓΗΠΕΔΟ"),
+         ("STAGE 7: THE CEMETERY", "ΠΙΣΤΑ 7: ΤΟ ΝΕΚΡΟΤΑΦΕΙΟ")]
+
+
+def stage_file(stage_no, st, waves):
     grid = g.carve_path(st.map, st.ground)
     cv = g.render_background(st, grid)
     cells, index = [], {}
@@ -117,6 +132,13 @@ def stage_file(st, waves):
             t, n, i = w[k] if k < len(w) else (0, 0, 0)
             out[at:at + 3] = bytes([t, n, i])
             at += 3
+    types = UNLOCK[stage_no] if stage_no < len(UNLOCK) else {1, 2, 3, 4, 5, 6}
+    out[0x2E0] = sum(1 << (t - 1) for t in types)
+    out[0x2E1] = st.toughness
+    for at, text, codec in ((0x2E2, NAMES[stage_no][0], "ascii"), (0x2FB, NAMES[stage_no][1], "iso8859_7")):
+        raw = text.encode(codec)
+        assert len(raw) <= 24, text
+        out[at:at + len(raw)] = raw
     return bytes(out) + b"".join(cells), len(cells)
 
 
@@ -127,10 +149,16 @@ def main():
     for name, rows in SPRITES:
         lines += sprite_lines(name, rows)
     open(os.path.join(HERE, "art.asm"), "w").write("\n".join(lines) + "\n")
-    data, n = stage_file(g.STAGES[0], g.WAVES1)
-    os.makedirs(os.path.join(HERE, "disc"), exist_ok=True)
-    open(os.path.join(HERE, "disc", "VROUV1.DAT"), "wb").write(data)
-    print(f"art.asm: {len(SPRITES)} sprites; VROUV1.DAT: {n} cells, {len(data)} bytes")
+    print(f"art.asm: {len(SPRITES)} sprites")
+    for d in ("disc", "owndisc"):
+        os.makedirs(os.path.join(HERE, d), exist_ok=True)
+    for k, st in enumerate(g.STAGES):
+        data, n = stage_file(k, st, getattr(g, st.waves))
+        name = f"VROUV{k + 1}.DAT"
+        open(os.path.join(HERE, "owndisc", name), "wb").write(data)
+        if k == 0:
+            open(os.path.join(HERE, "disc", name), "wb").write(data)
+        print(f"{name}: {n} cells, {len(data)} bytes")
 
 
 if __name__ == "__main__":

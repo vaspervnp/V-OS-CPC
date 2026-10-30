@@ -151,6 +151,8 @@ VOS_BANK_PUT    equ VOS_API + 38 * 3    ; HL = source, DE = destination
                                         ; in the data bank, BC = bytes
 VOS_DATA        equ #80                 ; drive + VOS_DATA: VOS_LOAD and
                                         ; VOS_SAVE use the data bank
+VOS_SELF        equ #8800               ; the program running: db drive,
+                                        ; then its 11-byte name (read it)
 ; ---- the background (version 9) -------------------------------------
 VOS_BACKGROUND  equ VOS_API + 39 * 3    ; A = 1: go on in the background,
                                         ; 0: pause there (as at the start)
