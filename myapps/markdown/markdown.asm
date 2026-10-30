@@ -77,11 +77,33 @@ init:
         call VOS_SET_BAR
         pop af
         cp 2
-        jr z,redraw
+        jr z,.back
         ld a,(VOS_SELF)             ; files on its own drive at first
         ld (fdrive),a
         call new_doc
+.back:
+        call redraw
         ; fall through
+
+; a file to open from the Desktop or the Commander (VOS_OPEN): taken,
+; then loaded as OPEN does, after asking about unsaved changes
+open_arg:
+        ld hl,VOS_OPEN
+        ld a,(hl)
+        or a
+        ret z
+        ld (hl),0
+        call discard_ok
+        ret nz
+        xor a                       ; the text, not the page
+        ld (pv_mode),a
+        ld a,(VOS_OPEN + 1)
+        ld (fdrive),a
+        ld hl,VOS_OPEN + 2
+        ld de,name_tmp
+        ld bc,11
+        ldir
+        jp load_file
 
 ; everything, again
 redraw:
@@ -514,6 +536,7 @@ open:
         ld de,name_tmp
         ld bc,11
         ldir
+load_file:                          ; name_tmp on fdrive
         ld a,(fdrive)
         or VOS_DATA
         ld hl,name_tmp

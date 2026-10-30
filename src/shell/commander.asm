@@ -138,9 +138,9 @@ cm_event:
         jp cm_activate
 .not_tab:
         cp KEY_RETURN
-        jp z,cm_info
+        jp z,cm_run
         cp KEY_ENTER
-        jp z,cm_info
+        jp z,cm_run
         jr .ui                      ; ESC, CONTROL shortcuts
 .click:
         ld hl,(ev_cur + 6)
@@ -201,7 +201,7 @@ cm_event:
         cp (hl)
         jp nz,cm_select
         dec b                       ; second click on the selected file
-        jp z,cm_info
+        jp z,cm_run
         ret
 
 ; A = CMD_*
@@ -701,7 +701,7 @@ cm_info:
 cm_run:
         call cm_selected
         ret c
-        jp app_request
+        jp file_open
 
 cm_copy:
         call cm_selected
@@ -741,8 +741,8 @@ cm_bar:
         dw cm_menu_file, menu_view, menu_help
 cm_menu_file:
         db MSG_MENU_FILE, 10
-        db MSG_ITEM_RUN, CMD_RUN, 0, 0
-        db MSG_ITEM_INFO, CMD_INFO, 0, 0
+        db MSG_ITEM_OPEN, CMD_RUN, 0, 0
+        db MSG_ITEM_INFO, CMD_INFO, "I", 0
         db MSG_ITEM_COPY, CMD_COPY, "C", 0
         db MSG_ITEM_DELETE, CMD_DELETE, "D", 0
         db MSG_ITEM_RENAME, CMD_RENAME, "N", 0

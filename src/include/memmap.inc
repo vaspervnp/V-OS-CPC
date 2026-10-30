@@ -21,6 +21,7 @@
 ;          (kernel/ext.asm)
 ;   #A000  where the Desktop's window is (shell/desktop.asm)
 ;   #A800  the program switcher's sw_ and sa_ (kernel/ext.asm)
+;   #B000  app_open: the file a program is opened for (kernel/view.asm)
 ; The loader clears video RAM, so they start empty.
 
 KERNEL_BASE     equ #0000

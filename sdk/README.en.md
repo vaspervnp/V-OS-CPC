@@ -36,6 +36,7 @@ A bigger program:
 - Put more `.asm` files in its folder (e.g. `art.asm` with sprites) and bring them in with `include "art.asm"`. The build finds them, and rebuilds the program when they change.
 - Whatever you put in the subfolder `disc/` (e.g. `disc/LEVEL1.DAT`) goes onto the disk as it is, for `VOS_LOAD`.
 - With a subfolder `owndisc/`, the program also gets a disk of its own, `build/<name>.dsk`, with the `.BIN` and the files of `owndisc/`. It stays off `vos.dsk`. You put it in B: and run it from the Launcher (TAB, the other drive). Which drive it was started from, so that it loads its files from there, is in `VOS_SELF`: `db drive`, then its name (11 bytes).
+- **A file to open (version 14):** when RETURN in the Desktop or the Commander opens a file in your program, `VOS_OPEN` (`#B000`) holds `db 1, drive, 11-byte name` (0: none). Read it in `init`, with A = 0 and also with A = 2 (the program was already running), then write 0 there. The types and their programs are in the kernel's `ft_open` table (`src/kernel/files_ext.asm`).
 - A program with a relocation table (like those of the SDK) can be up to 12K. For the rest, load files into the data bank.
 
 ## How a program works
@@ -121,7 +122,7 @@ command: ...
 - **Icon:** 16 lines of 16 characters in `icon.txt`. Each character is a pen in hex (mode 0, Launcher palette) or `.` for transparent.
 - **File names** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 bytes, `"NAME    EXT"`. Drive 0 = A:, 1 = B:.
 
-## The API (version 13)
+## The API (version 14)
 
 | Call | Input → output | What it does |
 |---|---|---|

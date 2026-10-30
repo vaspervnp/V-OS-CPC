@@ -67,12 +67,13 @@ Rules that are easy to break:
 - File names: 11 bytes `"NAME    EXT"`; drive 0 = A:, 1 = B:.
 - Icon: `icon.txt`, 16 rows of 16 hex pens (Launcher palette) or `.`.
 
-## 5. API versions 12 and 13
+## 5. API versions 12 to 14
 
 - `VOS_SELF` (an address, `#8800`): `db drive, 11-byte name` of the running program. Read it in `init` (A = 0) to load your files from your own drive.
 - `VOS_CATALOG` with `A = drive + VOS_CAT_EXT` and `HL -> "EXT"`: the catalog keeps only that extension; `VOS_FILE_PICK` then lists only those files.
 - `VOS_TICKS` with `A + VOS_PTR_KEYS`: the cursor keys and COPY also drive the pointer (for drawing programs without a mouse). Without it a program's cursor keys are its own.
 - `VOS_COLOURS` with `A = pen + VOS_BOLD / VOS_ITALIC / VOS_UNDERLINE` (version 13): styled text from the normal font, in every language. A run of one style is one `VOS_COLOURS` and one `VOS_PRINT`; clear long empty areas with `VOS_RECT`, which is much faster than printing spaces (`myapps/markdown`).
+- `VOS_OPEN` (`#B000`, version 14): `db 1, drive, 11-byte name` when RETURN in the Desktop or Commander opened a file in your program. Check it in `init` for A = 0 **and** A = 2 (it may already be running; ask about unsaved work first), then write 0. See `open_arg` in `myapps/notepad`. New types go in `ft_open` in `src/kernel/files_ext.asm`.
 - `VOS_BACKGROUND` A = 1: you keep getting `VE_FRAME` behind other views and programs; every other call does nothing there (`MUSIC` uses this to keep playing).
 
 The full table of calls is in `sdk/README.en.md` and `src/api/vos_api.inc`.

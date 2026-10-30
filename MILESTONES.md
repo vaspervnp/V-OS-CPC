@@ -4,6 +4,14 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M35 (opening files by type):**
+- **What changed:** RETURN, ENTER or a second click on a file in the Desktop or the Commander now opens it. A program runs, as before. A `.TXT` opens in NOTEPAD, a `.MD` in MARKDOWN, a `.PIC` or `.LYR` in PAINT, and a `.MUS` in MUSIC, which starts playing it. Any other file shows its info, which is also on FILE > FILE INFO and ^I. The FILE menu's first item is now OPEN.
+- **Where the program is:** on the file's drive, then on A:, then on B:. So `README.MD` on `markdown.dsk` in B: opens in MARKDOWN from B:, and a `.TXT` on B: opens in NOTEPAD from A:. If there is none, "NO PROGRAM FOR THIS FILE" (error 14).
+- **API 14:** `VOS_OPEN` (`#B000`, in unused video RAM): `db 1, drive, name`. The program reads it in `init`, also when it was already running (A = 2), and writes 0 there. NOTEPAD, MARKDOWN and PAINT ask first if there are unsaved changes; PAINT picks the picture or layers mode by the extension.
+- **Texts:** the hint lines of the Desktop and the Commander and the KEYS dialog say ENTER OPEN in all six languages. The hint lines that were wider than the screen in French, Spanish, German and Italian were shortened.
+- **Tested:** in Caprice32 with `make test-open`: the Commander, `README.MD` on B: opens in MARKDOWN, back with ^Q, then `HELLO.TXT` on B: opens in NOTEPAD from A:. When NOTEPAD was not on the disc, the error came up as expected. `test-notepad`, `test-markdown` and `test-paint` again.
+- **Not tested:** the Desktop (it calls the same `file_open`), `.PIC`, `.LYR` and `.MUS` from a view, and a program that was already running when its file was opened.
+
 **M34 (MARKDOWN, text styles):**
 - **Text styles:** `VOS_COLOURS` takes `VOS_BOLD`, `VOS_ITALIC` and `VOS_UNDERLINE` in bits 4–6 of A (API 13). They come from the same 8×8 font, as each letter is drawn, so they work in all languages. Bold: each row with itself one pixel to the right. Italic: the top four rows one pixel to the right, the bottom two one to the left. The kernel grew by 79 bytes.
 - **MARKDOWN:** an editor for `.MD` files (up to 6K), from NOTEPAD, on its own disc, `markdown.dsk`, with a `README.MD`. ^P shows the page without the marks: headings, bold, italic, code, lists, numbered lists, quotes, lines, code blocks, links, `\` for a mark as it is. Long lines wrap at a space, under the start of their text.

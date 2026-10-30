@@ -194,3 +194,102 @@ fx_format:
         jp c,sys_error_nc
         ret
 
+
+; ---------------------------------------------------------------------
+; fx_open - file_open: a program (ft_run) runs; a file of a type in
+; ft_open runs its program, found on the file's drive, then A:, then
+; B:, with the file in app_open; any other file: FILE INFO
+; ---------------------------------------------------------------------
+fx_open:
+        ld de,ft_run
+        ld b,3
+        call fx_type
+        ld a,(fi_drive)
+        jp z,app_request
+        ld de,ft_open
+        ld b,3 + 11
+        call fx_type
+        jp nz,fx_info
+        push de                     ; -> the program's name
+        ld hl,app_open              ; the file, for the program
+        ld (hl),1
+        inc hl
+        ld a,(fi_drive)
+        ld (hl),a
+        inc hl
+        ex de,hl
+        ld hl,file_name
+        ld bc,11
+        ldir
+        pop hl
+        ld de,file_name
+        ld bc,11
+        ldir
+        ld a,(fi_drive)             ; where the program is
+        call fx_has
+        jp nc,app_request
+        xor a
+        call fx_has
+        jp nc,app_request
+        ld a,1
+        call fx_has
+        jp nc,app_request
+        xor a                       ; nowhere: the file selected again
+        ld (app_open),a
+        ld hl,app_open + 2
+        ld de,file_name
+        ld bc,11
+        ldir
+        ld a,FS_ERR_NO_APP
+        jp sys_error
+
+; DE -> a table of B-byte entries, each starting with an extension, 0 at
+; the end -> Z if file_name's extension is in it, DE -> the rest of
+; that entry
+fx_type:
+        ld a,(de)
+        or a
+        jr z,.none
+        ld hl,file_name + 8
+        ld c,3
+        push de
+.char:
+        ld a,(de)
+        xor (hl)
+        and #7F                     ; not the read-only and system bits
+        jr nz,.other
+        inc hl
+        inc de
+        dec c
+        jr nz,.char
+        pop af
+        xor a
+        ret
+.other:
+        pop hl                      ; the next entry
+        ld e,b
+        ld d,0
+        add hl,de
+        ex de,hl
+        jr fx_type
+.none:
+        or 1
+        ret
+
+; A = drive -> no carry if file_name is on it; A kept
+fx_has:
+        push af
+        call fdc_select
+        ld hl,file_name
+        call fs_exists
+        pop bc
+        ld a,b
+        ret
+
+ft_run:         db "BIN", "VBN", "BAS", 0
+ft_open:        db "TXT", "NOTEPAD BIN"
+                db "MD ", "MARKDOWNBIN"
+                db "PIC", "PAINT   BIN"
+                db "LYR", "PAINT   BIN"
+                db "MUS", "MUSIC   BIN"
+                db 0

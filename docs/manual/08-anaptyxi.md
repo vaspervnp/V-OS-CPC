@@ -100,6 +100,7 @@
 | `test-about` | ΒΟΗΘΕΙΑ > ΣΧΕΤΙΚΑ ΜΕ ΤΟ V-OS |
 | `test-music` | MUSIC από τη `music.dsk` στο B:: ένα τραγούδι παίζει και συνεχίζει πίσω από τον Launcher |
 | `test-markdown` | MARKDOWN από τη `markdown.dsk` στο B:: ανοίγει το `README.MD`, η σελίδα με ^P, μια οθόνη κάτω, πίσω στο κείμενο |
+| `test-open` | άνοιγμα ανά τύπο στον Commander: το `README.MD` στο MARKDOWN από το B:, ένα `.TXT` στο NOTEPAD από το A: |
 | `test-amsdos`, `test-reboot`, `test-system` | τα αρχεία του V-OS στη BASIC, επανεκκίνηση, δισκέτα SYSTEM |
 
 **Νέο σενάριο:**

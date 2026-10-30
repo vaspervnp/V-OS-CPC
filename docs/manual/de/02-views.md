@@ -25,15 +25,16 @@ Modus 1. Ein Fenster DATEIEN zeigt die Dateien eines Laufwerks als Symbole, vier
 |---|---|
 | Pfeile | eine Datei auswählen (↑/↓ eine Reihe) |
 | TAB | das andere Laufwerk |
-| RETURN, ENTER | Dateiinfo |
+| RETURN, ENTER | öffnen: ein Programm startet, eine Datei bekannten Typs öffnet sich in ihrem Programm, andere zeigen ihre Info |
 | ^C | auf das andere Laufwerk kopieren |
 | ^D | löschen (fragt vorher) |
 | ^N | umbenennen |
 | ^R | die Disketten neu lesen |
-| Maus | Klick auf eine Datei: auswählen, noch einmal: Info. Klick auf ein Laufwerk: öffnet es |
+| Maus | Klick auf eine Datei: auswählen, noch einmal: öffnen. Klick auf ein Laufwerk: öffnet es |
 
-- **Menü DATEI:** STARTEN (startet das ausgewählte Programm), DATEI-INFO, AUF ANDERES LAUFWERK, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, ZURÜCK ZU BASIC.
+- **Menü DATEI:** ÖFFNEN, DATEI-INFO (^I), AUF ANDERES LAUFWERK, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, ZURÜCK ZU BASIC.
 - **Das Fenster DATEIEN** lässt sich an seinem Titel verschieben und bleibt dort, auch wenn du die Ansicht wechselst.
+- **Öffnen nach Typ** (auch im Commander): `.TXT`-Dateien öffnen sich in NOTEPAD, `.MD` in MARKDOWN, `.PIC` und `.LYR` in PAINT, `.MUS` in MUSIC, das sie gleich abspielt. Das Programm wird auf dem Laufwerk der Datei gesucht, dann auf A:, dann auf B:. Wird es nicht gefunden, erscheint „KEIN PROGRAMM FÜR DIESE DATEI“. Hat das Programm ungespeicherte Änderungen, fragt es zuerst.
 
 ## Programme, F2
 
@@ -58,14 +59,14 @@ Modus 1, zwei Felder mit Dateilisten: A: links, B: rechts. Jedes Feld zeigt in s
 |---|---|
 | ↑/↓ | auswählen (mit SHIFT: eine Seite) |
 | TAB, ←/→ | das andere Feld |
-| RETURN, ENTER | Info: Größe, Typ, Ladeadresse, die ersten Bytes |
+| RETURN, ENTER | öffnen, wie auf dem Schreibtisch. Die Info (Größe, Typ, Ladeadresse, die ersten Bytes) mit ^I |
 | ^C | in das andere Feld kopieren, in beliebiger Größe. Gibt es eine Datei mit demselben Namen, fragt es vorher |
 | ^D | löschen |
 | ^N | umbenennen |
 | ^R | beide Disketten neu lesen |
-| Maus | Klick: auswählen, noch einmal: Info |
+| Maus | Klick: auswählen, noch einmal: öffnen |
 
-**Menü DATEI:** STARTEN, DATEI-INFO, INS ANDERE FELD KOPIEREN, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, FORMATIEREN (DATA), ZURÜCK ZU BASIC.
+**Menü DATEI:** ÖFFNEN, DATEI-INFO (^I), INS ANDERE FELD KOPIEREN, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, FORMATIEREN (DATA), ZURÜCK ZU BASIC.
 
 > FORMATIEREN löscht alle Dateien auf der Diskette des aktiven Feldes. Es fragt vorher.
 

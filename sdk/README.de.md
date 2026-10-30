@@ -36,6 +36,7 @@ Ein größeres Programm:
 - Leg weitere `.asm`-Dateien in seinen Ordner (z. B. `art.asm` mit Sprites) und hol sie mit `include "art.asm"` herein. Der Build findet sie und baut das Programm neu, wenn sie sich ändern.
 - Was du in den Unterordner `disc/` legst (z. B. `disc/LEVEL1.DAT`), kommt unverändert auf die Diskette, für `VOS_LOAD`.
 - Mit einem Unterordner `owndisc/` bekommt das Programm auch eine eigene Diskette, `build/<name>.dsk`, mit der `.BIN` und den Dateien aus `owndisc/`. Es kommt nicht auf `vos.dsk`. Du legst sie in B: ein und startest es aus dem Launcher (TAB, das andere Laufwerk). Von welchem Laufwerk es gestartet wurde, damit es seine Dateien von dort lädt, steht in `VOS_SELF`: `db Laufwerk`, dann sein Name (11 Bytes).
+- **Eine Datei zum Öffnen (Version 14):** wenn RETURN auf dem Schreibtisch oder im Commander eine Datei in deinem Programm öffnet, enthält `VOS_OPEN` (`#B000`) `db 1, Laufwerk, 11-Byte-Name` (0: keine). Lies es in `init`, mit A = 0 und auch mit A = 2 (das Programm lief schon), und schreibe danach 0 hinein. Die Typen und ihre Programme stehen in der Tabelle `ft_open` des Kernels (`src/kernel/files_ext.asm`).
 - Ein Programm mit Relocation-Tabelle (wie die des SDK) darf bis zu 12K groß sein. Für den Rest lädst du Dateien in die Daten-Bank.
 
 ## Wie ein Programm funktioniert
@@ -121,7 +122,7 @@ command: ...
 - **Symbol:** 16 Zeilen mit 16 Zeichen in `icon.txt`. Jedes Zeichen ist ein Stift in Hex (Modus 0, Palette der Ansicht Programme) oder `.` für transparent.
 - **Dateinamen** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 Bytes, `"NAME    EXT"`. Laufwerk 0 = A:, 1 = B:.
 
-## Die API (Version 13)
+## Die API (Version 14)
 
 | Aufruf | Eingabe → Ausgabe | Was er tut |
 |---|---|---|

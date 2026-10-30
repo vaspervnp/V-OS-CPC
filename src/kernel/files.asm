@@ -9,6 +9,9 @@
 ;   file_delete   ask, then delete
 ;   file_rename   ask for the new name (input_run), then rename
 ;   file_format   ask, then format the drive (DATA)
+;   file_open     a program: run it; a file of a known type: run its
+;                 program, which finds the file in app_open; others:
+;                 file_info
 ; Copying onto a file of the same name asks first.
 ; file_name and sys_drive also say which file is selected, so the next
 ; view selects it again (file_find).
@@ -35,6 +38,9 @@ file_rename:
         jr file_ext
 file_format:
         ld hl,fx_format
+        jr file_ext
+file_open:
+        ld hl,fx_open
 file_ext:
         ld (fi_drive),a
         jp ext_call

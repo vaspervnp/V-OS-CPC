@@ -22,7 +22,7 @@ ITEM_ABOUT  ΣΧΕΤΙΚΑ ΜΕ ΤΟ V-OS
 BTN_OK      ΕΝΤΑΞΕΙ
 BTN_YES     ΝΑΙ
 BTN_NO      ΟΧΙ
-KEYS_BAR    TAB ΠΑΝΕΛ ^C ΑΝΤΙΓΡΑΦΗ ^D ΔΙΑΓΡΑΦΗ ^N ΜΕΤΟΝ.
+KEYS_BAR    TAB ΠΑΝΕΛ ENTER ΑΝΟΙΓΜΑ ^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.
 FILES       ΑΡΧΕΙΑ
 FREE        ΕΛΕΥΘΕΡΑ
 NO_FILES    ΚΑΝΕΝΑ ΑΡΧΕΙΟ
@@ -40,7 +40,7 @@ QMARK       ;
 DLG_ABOUT_T ΣΧΕΤΙΚΑ
 DLG_ABOUT   V-OS 0.1 BETA|ΚΑΤΑΣΚΕΥΗ {DATE}|AMSTRAD CPC 6128|REVIVE8BIT, 2026|ΑΡΧΙΤΕΚΤΟΝΑΣ: VASPER
 DLG_KEYS_T  ΠΛΗΚΤΡΑ
-DLG_KEYS    F1-F4 ΟΨΕΙΣ|F5 ΑΞΕΣΟΥΑΡ|F6 ΠΡΟΓΡΑΜΜΑΤΑ|ESC ΜΕΝΟΥ|ΒΕΛΗ ΕΠΙΛΟΓΗ|TAB ΜΟΝΑΔΑ|ENTER ΣΤΟΙΧΕΙΑ|^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.|^N ΜΕΤΟΝΟΜΑΣΙΑ|CTRL+SHIFT EN/EL
+DLG_KEYS    F1-F4 ΟΨΕΙΣ|F5 ΑΞΕΣΟΥΑΡ|F6 ΠΡΟΓΡΑΜΜΑΤΑ|ESC ΜΕΝΟΥ|ΒΕΛΗ ΕΠΙΛΟΓΗ|TAB ΜΟΝΑΔΑ|ENTER ΑΝΟΙΓΜΑ|^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.|^N ΜΕΤΟΝΟΜΑΣΙΑ|CTRL+SHIFT EN/EL
 DLG_QUIT_T  ΕΞΟΔΟΣ
 DLG_QUIT    ΕΠΑΝΕΚΚΙΝΗΣΗ CPC|ΕΞΟΔΟΣ ΣΤΗ BASIC;
 DLG_FILE_T  ΑΡΧΕΙΟ
@@ -58,9 +58,10 @@ ERR_10      ΤΟ ΟΝΟΜΑ ΥΠΑΡΧΕΙ
 ERR_11      ΜΗ ΕΓΚΥΡΟ ΟΝΟΜΑ
 ERR_12      ΔΕΝ ΕΙΝΑΙ ΠΡΟΓΡΑΜΜΑ V-OS
 ERR_13      ΚΛΕΙΣΤΕ ΠΡΩΤΑ|ΑΛΛΟ ΠΡΟΓΡΑΜΜΑ
+ERR_14      ΚΑΝΕΝΑ ΠΡΟΓΡΑΜΜΑ|ΓΙΑ ΑΥΤΟ ΤΟ ΑΡΧΕΙΟ
 RENAME_T    ΜΕΤΟΝΟΜΑΣΙΑ
 INPUT_HINT  RETURN ΕΝΤΑΞΕΙ  ESC ΑΚΥΡΟ
-DT_KEYS     TAB ΜΟΝΑΔΑ ^C ΑΝΤΙΓΡΑΦΗ ^D ΔΙΑΓΡΑΦΗ ^N ΜΕΤΟΝ.
+DT_KEYS     TAB ΜΟΝΑΔΑ ENTER ΑΝΟΙΓΜΑ ^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.
 LN_KEYS     ΒΕΛΗ ΚΙΝΗΣΗ ENTER ΕΚΚΙΝ.
 NO_PROGRAMS ΚΑΝΕΝΑ ΠΡΟΓΡΑΜΜΑ ΣΤΟ A:
 PAGE        ΣΕΛΙΔΑ
@@ -102,6 +103,7 @@ SET_KEYS    ΠΑΝΩ ΚΑΤΩ ΕΠΙΛΟΓΗ  ΑΡΙΣΤ. ΔΕΞΙΑ ΑΛΛΑΓ�
 SET_SAVED   ΑΠΟΘΗΚΕΥΤΗΚΑΝ ΣΤΟ A:SETUP.CFG
 ITEM_ACC    ΩΣ ΑΞΕΣΟΥΑΡ
 ITEM_DRIVE  ΑΛΛΗ ΜΟΝΑΔΑ   TAB
+ITEM_OPEN   ΑΝΟΙΓΜΑ
 ITEM_PROGRAMS ΠΡΟΓΡΑΜΜΑΤΑ  F6
 SW_T        ΠΡΟΓΡΑΜΜΑΤΑ
 SW_NONE     ΚΑΝΕΝΑ ΠΡΟΓΡΑΜΜΑ|ΔΕΝ ΤΡΕΧΕΙ

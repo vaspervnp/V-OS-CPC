@@ -47,6 +47,7 @@ FS_ERR_EXISTS   equ 10              ; rename: the new name is taken
 FS_ERR_BAD_NAME equ 11              ; for callers: not an AMSDOS name
 FS_ERR_NOT_PROGRAM equ 12           ; for callers: not a V-OS program
 FS_ERR_NO_ROOM  equ 13              ; for callers: no room for a program
+FS_ERR_NO_APP   equ 14              ; for callers: no program for a file
 
 FS_ENTRIES      equ 64
 FS_FREE_ENTRY   equ #E5

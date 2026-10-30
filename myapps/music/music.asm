@@ -63,10 +63,29 @@ init:
         call VOS_BACKGROUND
         pop af
         cp 2
-        jr z,redraw
+        jr z,.back
         ld a,(VOS_SELF)
         ld (fdrive),a
+.back:
+        call redraw
         ; fall through
+
+; a song to open from the Desktop or the Commander (VOS_OPEN): taken,
+; loaded as OPEN does, and played
+open_arg:
+        ld hl,VOS_OPEN
+        ld a,(hl)
+        or a
+        ret z
+        ld (hl),0
+        call stop_song
+        ld a,(VOS_OPEN + 1)
+        ld (fdrive),a
+        ld hl,VOS_OPEN + 2
+        ld de,name_tmp
+        ld bc,11
+        ldir
+        jp load_file
 
 ; everything, again
 redraw:
@@ -349,6 +368,7 @@ open:
         ld de,name_tmp
         ld bc,11
         ldir
+load_file:                          ; name_tmp on fdrive
         xor a
         ld (loaded),a
         ld a,(fdrive)

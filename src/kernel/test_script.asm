@@ -312,6 +312,27 @@ test_keys:
         dw 3050, 3054 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 22
+; make test-open (-DTEST_SCRIPT=22): files opened by their type. B: is
+; build/markdown.dsk with a HELLO.TXT added. Expected:
+;   frame  300  F3, 400 TAB  -> the Commander, the B: panel
+;   frame  450  DOWN         -> README.MD
+;   frame  550  RETURN       -> MARKDOWN (from B:) with README.MD
+;   frame  800  CONTROL+Q    -> the Commander again
+;   frame  950  DOWN x2      -> HELLO.TXT
+;   frame 1100  RETURN       -> NOTEPAD (from A:) with HELLO.TXT
+test_keys:
+        dw  300,  304 : db 0, %00100000   ; F3
+        dw  400,  404 : db 8, %00010000   ; TAB: the B: panel
+        dw  450,  454 : db 0, %00000100   ; DOWN
+        dw  550,  554 : db 2, %00000100   ; RETURN: open README.MD
+        dw  795,  810 : db 2, %10000000   ; CONTROL
+        dw  800,  804 : db 8, %00001000   ; Q
+        dw  950,  954 : db 0, %00000100   ; DOWN
+        dw 1000, 1004 : db 0, %00000100   ; DOWN
+        dw 1100, 1104 : db 2, %00000100   ; RETURN: open HELLO.TXT
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 21
 ; make test-markdown (-DTEST_SCRIPT=21): MARKDOWN (myapps/markdown)
 ; from its own disc, build/markdown.dsk, in drive B:. Expected:
@@ -1113,6 +1134,7 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

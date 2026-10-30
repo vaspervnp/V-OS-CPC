@@ -25,15 +25,16 @@ Modo 1. Una ventana ARCHIVOS muestra los archivos de una unidad como iconos, cua
 |---|---|
 | flechas | eligen un archivo (↑/↓ una fila) |
 | TAB | la otra unidad |
-| RETURN, ENTER | información del archivo |
+| RETURN, ENTER | abrir: un programa se ejecuta, un archivo de un tipo conocido se abre en su programa, los demás muestran su información |
 | ^C | copiar a la otra unidad |
 | ^D | borrar (pregunta antes) |
 | ^N | renombrar |
 | ^R | releer los discos |
-| ratón | clic en un archivo: lo selecciona, otra vez: información. Clic en una unidad: la abre |
+| ratón | clic en un archivo: lo selecciona, otra vez: lo abre. Clic en una unidad: la abre |
 
-- **Menú ARCHIVO:** EJECUTAR (ejecuta el programa seleccionado), INFO DEL ARCHIVO, COPIAR A LA OTRA UNIDAD, BORRAR, RENOMBRAR, RELEER LOS DISCOS, SALIR AL BASIC.
+- **Menú ARCHIVO:** ABRIR, INFO DEL ARCHIVO (^I), COPIAR A LA OTRA UNIDAD, BORRAR, RENOMBRAR, RELEER LOS DISCOS, SALIR AL BASIC.
 - **La ventana ARCHIVOS** se puede arrastrar por su título y se queda ahí, incluso al cambiar de vista.
+- **Abrir según el tipo** (también en el Commander): los `.TXT` se abren en NOTEPAD, los `.MD` en MARKDOWN, los `.PIC` y `.LYR` en PAINT, los `.MUS` en MUSIC, que empieza a tocarlos. El programa se busca en la unidad del archivo, luego en A: y luego en B:. Si no se encuentra, aparece "NINGÚN PROGRAMA PARA ESTE ARCHIVO". Si el programa tiene cambios sin guardar, pregunta primero.
 
 ## Programas, F2
 
@@ -58,14 +59,14 @@ Modo 1, dos paneles con listas de archivos: A: a la izquierda, B: a la derecha. 
 |---|---|
 | ↑/↓ | eligen (con SHIFT: una página) |
 | TAB, ←/→ | el otro panel |
-| RETURN, ENTER | información: tamaño, tipo, dirección de carga, los primeros bytes |
+| RETURN, ENTER | abrir, como en el Escritorio. La información (tamaño, tipo, dirección de carga, los primeros bytes) con ^I |
 | ^C | copiar al otro panel, de cualquier tamaño. Si hay un archivo con el mismo nombre, pregunta antes |
 | ^D | borrar |
 | ^N | renombrar |
 | ^R | releer los dos discos |
-| ratón | clic: selecciona, otra vez: información |
+| ratón | clic: selecciona, otra vez: abre |
 
-**Menú ARCHIVO:** EJECUTAR, INFO DEL ARCHIVO, COPIAR AL OTRO PANEL, BORRAR, RENOMBRAR, RELEER LOS DISCOS, FORMATEAR DISCO (DATA), SALIR AL BASIC.
+**Menú ARCHIVO:** ABRIR, INFO DEL ARCHIVO (^I), COPIAR AL OTRO PANEL, BORRAR, RENOMBRAR, RELEER LOS DISCOS, FORMATEAR DISCO (DATA), SALIR AL BASIC.
 
 > FORMATEAR borra todos los archivos del disquete del panel activo. Pregunta antes.
 

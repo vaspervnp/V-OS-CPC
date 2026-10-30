@@ -25,15 +25,16 @@ Mode 1. A FILES window shows the files of a drive as icons, four in each row. Th
 |---|---|
 | arrows | choose a file (↑/↓ one row) |
 | TAB | the other drive |
-| RETURN, ENTER | file info |
+| RETURN, ENTER | open: a program runs, a file of a known type opens in its program, others show their info |
 | ^C | copy to the other drive |
 | ^D | delete (asks first) |
 | ^N | rename |
 | ^R | read the discs again |
-| mouse | click on a file: select, again: info. Click on a drive: opens it |
+| mouse | click on a file: select, again: open. Click on a drive: opens it |
 
-- **FILE menu:** RUN (runs the selected program), FILE INFO, COPY TO OTHER DRIVE, DELETE, RENAME, READ DISCS AGAIN, EXIT TO BASIC.
+- **FILE menu:** OPEN, FILE INFO (^I), COPY TO OTHER DRIVE, DELETE, RENAME, READ DISCS AGAIN, EXIT TO BASIC.
 - **The FILES window** can be dragged by its title and stays there, even when you switch view.
+- **Opening by type** (also in the Commander): `.TXT` files open in NOTEPAD, `.MD` in MARKDOWN, `.PIC` and `.LYR` in PAINT, `.MUS` in MUSIC, which starts playing them. The program is looked for on the file's drive, then on A:, then on B:. If it is not found, "NO PROGRAM FOR THIS FILE" is shown. If the program has unsaved changes, it asks first.
 
 ## Launcher, F2
 
@@ -58,14 +59,14 @@ Mode 1, two panels with file lists: A: on the left, B: on the right. Each panel 
 |---|---|
 | ↑/↓ | choose (with SHIFT: one page) |
 | TAB, ←/→ | the other panel |
-| RETURN, ENTER | info: size, type, load address, the first bytes |
+| RETURN, ENTER | open, as in the Desktop. The info (size, type, load address, the first bytes) with ^I |
 | ^C | copy to the other panel, of any size. If there is a file with the same name, it asks first |
 | ^D | delete |
 | ^N | rename |
 | ^R | read both discs again |
-| mouse | click: select, again: info |
+| mouse | click: select, again: open |
 
-**FILE menu:** RUN, FILE INFO, COPY TO OTHER PANEL, DELETE, RENAME, READ DISCS AGAIN, FORMAT DISC (DATA), EXIT TO BASIC.
+**FILE menu:** OPEN, FILE INFO (^I), COPY TO OTHER PANEL, DELETE, RENAME, READ DISCS AGAIN, FORMAT DISC (DATA), EXIT TO BASIC.
 
 > FORMAT erases all the files on the disc of the active panel. It asks first.
 

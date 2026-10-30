@@ -55,7 +55,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-markdown linux test-music songs FORCE test-about test-paint test-notepad windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-open test-markdown linux test-music songs FORCE test-about test-paint test-notepad windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -626,6 +626,30 @@ test-music: $(MUSIC_DSK) $(BUILD)/music.dsk
 	rm -rf $(BUILD)/shots
 	for d in $(MUSIC_SHOTS); do \
 	  cp $(MUSIC_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/music.dsk $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# Files opened by type (TEST_SCRIPT=22): B: is markdown.dsk with a text
+OPEN_DSK := $(BUILD)/vos_open.dsk
+OPEN_SHOTS := 215 235 330 370 400
+$(OPEN_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_open -DTEST_SCRIPT=22
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-open: $(OPEN_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN
+	rm -rf $(BUILD)/shots
+	printf 'HELLO FROM THE COMMANDER.\r\nRETURN OPENED THIS IN NOTEPAD.\r\n' > $(BUILD)/HELLO.TXT
+	cp $(BUILD)/markdown.dsk $(BUILD)/vos_open_b.dsk
+	iDSK $(BUILD)/vos_open_b.dsk -i $(BUILD)/HELLO.TXT -t 0 > /dev/null
+	for d in $(OPEN_SHOTS); do \
+	  cp $(OPEN_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/vos_open_b.dsk $(BUILD)/vos_run_b.dsk; \
+	  iDSK $(BUILD)/vos_run.dsk -i $(BUILD)/NOTEPAD.BIN -t 1 -c 4000 -e 4000 > /dev/null; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png

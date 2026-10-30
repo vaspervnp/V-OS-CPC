@@ -36,6 +36,7 @@ Un programme plus grand :
 - Mettez d'autres fichiers `.asm` dans son dossier (par ex. `art.asm` avec des sprites) et intégrez-les avec `include "art.asm"`. Le build les trouve, et reconstruit le programme quand ils changent.
 - Ce que vous mettez dans le sous-dossier `disc/` (par ex. `disc/LEVEL1.DAT`) va tel quel sur la disquette, pour `VOS_LOAD`.
 - Avec un sous-dossier `owndisc/`, le programme a aussi sa propre disquette, `build/<nom>.dsk`, avec le `.BIN` et les fichiers de `owndisc/`. Il ne va pas sur `vos.dsk`. Vous la mettez en B: et le lancez depuis le Lanceur (TAB, l'autre lecteur). Le lecteur d'où il a été lancé, pour y charger ses fichiers, est dans `VOS_SELF` : `db lecteur`, puis son nom (11 octets).
+- **Un fichier à ouvrir (version 14) :** quand RETURN dans le Bureau ou le Commander ouvre un fichier dans votre programme, `VOS_OPEN` (`#B000`) contient `db 1, lecteur, nom de 11 octets` (0 : aucun). Lisez-le dans `init`, avec A = 0 et aussi avec A = 2 (le programme tournait déjà), puis écrivez-y 0. Les types et leurs programmes sont dans la table `ft_open` du noyau (`src/kernel/files_ext.asm`).
 - Un programme avec une table de relocation (comme ceux du SDK) peut faire jusqu'à 12K. Pour le reste, chargez des fichiers dans la banque de données.
 
 ## Comment fonctionne un programme
@@ -121,7 +122,7 @@ command: ...
 - **Icône :** 16 lignes de 16 caractères dans `icon.txt`. Chaque caractère est une encre en hexadécimal (mode 0, palette du Lanceur) ou `.` pour transparent.
 - **Noms de fichiers** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`) : 11 octets, `"NAME    EXT"`. Lecteur 0 = A:, 1 = B:.
 
-## L'API (version 13)
+## L'API (version 14)
 
 | Appel | Entrée → sortie | Ce qu'il fait |
 |---|---|---|

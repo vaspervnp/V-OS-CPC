@@ -641,9 +641,9 @@ dt_event:
         jr dt_open_drive
 .not_tab:
         cp KEY_RETURN
-        jp z,dt_info
+        jp z,dt_run
         cp KEY_ENTER
-        jp z,dt_info
+        jp z,dt_run
         jr .ui
 .move:
         ld a,(dt_count)
@@ -767,7 +767,7 @@ dt_event:
         ld hl,dt_sel
         cp (hl)
         jp nz,dt_select
-        jr dt_info                  ; again on the selected file
+        jr dt_run                   ; again on the selected file: open
 dt_open_drive_a:
         jp dt_open_drive
 
@@ -817,7 +817,7 @@ dt_info:
 dt_run:
         call dt_selected
         ret c
-        jp app_request
+        jp file_open
 
 ; the target is the other drive, which is not on the screen
 dt_copy:
@@ -845,8 +845,8 @@ dt_bar:
         dw dt_menu_file, menu_view, menu_help
 dt_menu_file:
         db MSG_MENU_FILE, 9
-        db MSG_ITEM_RUN, CMD_RUN, 0, 0
-        db MSG_ITEM_INFO, CMD_INFO, 0, 0
+        db MSG_ITEM_OPEN, CMD_RUN, 0, 0
+        db MSG_ITEM_INFO, CMD_INFO, "I", 0
         db MSG_ITEM_COPY_DRIVE, CMD_COPY, "C", 0
         db MSG_ITEM_DELETE, CMD_DELETE, "D", 0
         db MSG_ITEM_RENAME, CMD_RENAME, "N", 0

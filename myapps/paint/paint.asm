@@ -94,11 +94,39 @@ init:
         call VOS_TICKS
         pop af
         cp 2
-        jr z,redraw
+        jr z,.back
         ld a,(VOS_SELF)
         ld (fdrive),a
         call new_pic
+.back:
+        call redraw
         ; fall through
+
+; a picture to open from the Desktop or the Commander (VOS_OPEN): taken,
+; then loaded as OPEN or OPEN LAYERS does (by its extension)
+open_arg:
+        ld hl,VOS_OPEN
+        ld a,(hl)
+        or a
+        ret z
+        ld (hl),0
+        call discard_ok
+        ret nz
+        ld a,(VOS_OPEN + 1)
+        ld (fdrive),a
+        ld hl,VOS_OPEN + 2
+        ld de,name_tmp
+        ld bc,11
+        ldir
+        ld a,(name_tmp + 8)         ; .LYR: layers
+        and #7F
+        sub "L"
+        jr z,.mode
+        ld a,1
+.mode:
+        xor 1
+        ld (open_mode),a
+        jp load_file
 
 ; everything, again
 redraw:
@@ -1548,6 +1576,7 @@ open:
         ld de,name_tmp
         ld bc,11
         ldir
+load_file:                          ; name_tmp on fdrive, open_mode
         ld a,(fdrive)
         or VOS_DATA
         ld hl,name_tmp

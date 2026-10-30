@@ -100,6 +100,7 @@ The tests run V-OS in Caprice32 without a window and take screenshots in `build/
 | `test-about` | HELP > ABOUT V-OS |
 | `test-music` | MUSIC from `music.dsk` in B:: a song plays, and goes on behind the Launcher |
 | `test-markdown` | MARKDOWN from `markdown.dsk` in B:: `README.MD` opened, the page with ^P, a screen down, back to the text |
+| `test-open` | opening by type in the Commander: `README.MD` in MARKDOWN from B:, a `.TXT` in NOTEPAD from A: |
 | `test-amsdos`, `test-reboot`, `test-system` | V-OS files in BASIC, reboot, SYSTEM disk |
 
 **New script:**

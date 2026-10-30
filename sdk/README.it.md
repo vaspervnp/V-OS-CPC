@@ -36,6 +36,7 @@ Un programma più grande:
 - Metti altri file `.asm` nella sua cartella (ad es. `art.asm` con gli sprite) e includili con `include "art.asm"`. Il build li trova, e ricostruisce il programma quando cambiano.
 - Quello che metti nella sottocartella `disc/` (ad es. `disc/LEVEL1.DAT`) va così com'è sul dischetto, per `VOS_LOAD`.
 - Con una sottocartella `owndisc/`, il programma ha anche un dischetto suo, `build/<nome>.dsk`, con il `.BIN` e i file di `owndisc/`. Non va su `vos.dsk`. Lo metti in B: e lo avvii dal Launcher (TAB, l'altra unità). Il drive da cui è partito, per caricare da lì i suoi file, è in `VOS_SELF`: `db drive`, poi il suo nome (11 byte).
+- **Un file da aprire (versione 14):** quando RETURN nella Scrivania o nel Commander apre un file nel tuo programma, `VOS_OPEN` (`#B000`) contiene `db 1, unità, nome di 11 byte` (0: nessuno). Leggilo in `init`, con A = 0 e anche con A = 2 (il programma era già in esecuzione), poi scrivici 0. I tipi e i loro programmi sono nella tabella `ft_open` del kernel (`src/kernel/files_ext.asm`).
 - Un programma con tabella di rilocazione (come quelli dell'SDK) può arrivare a 12K. Per il resto, carica file nel banco dati.
 
 ## Come funziona un programma
@@ -121,7 +122,7 @@ command: ...
 - **Icona:** 16 righe di 16 caratteri in `icon.txt`. Ogni carattere è una penna in esadecimale (modo 0, palette del Launcher) o `.` per trasparente.
 - **Nomi di file** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 byte, `"NAME    EXT"`. Unità 0 = A:, 1 = B:.
 
-## L'API (versione 13)
+## L'API (versione 14)
 
 | Chiamata | Ingresso → uscita | Cosa fa |
 |---|---|---|

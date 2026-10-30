@@ -25,15 +25,16 @@ Mode 1. Une fenêtre FICHIERS montre les fichiers d'un lecteur sous forme d'icô
 |---|---|
 | flèches | choisir un fichier (↑/↓ une rangée) |
 | TAB | l'autre lecteur |
-| RETURN, ENTER | infos du fichier |
+| RETURN, ENTER | ouvrir : un programme se lance, un fichier d'un type connu s'ouvre dans son programme, les autres montrent leurs infos |
 | ^C | copier sur l'autre lecteur |
 | ^D | supprimer (demande d'abord) |
 | ^N | renommer |
 | ^R | relire les disques |
-| souris | clic sur un fichier : sélection, encore : infos. Clic sur un lecteur : l'ouvre |
+| souris | clic sur un fichier : sélection, encore : ouverture. Clic sur un lecteur : l'ouvre |
 
-- **Menu FICHIER :** LANCER (lance le programme sélectionné), INFOS DU FICHIER, COPIER SUR L'AUTRE LECTEUR, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, QUITTER VERS LE BASIC.
+- **Menu FICHIER :** OUVRIR, INFOS DU FICHIER (^I), COPIER SUR L'AUTRE LECTEUR, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, QUITTER VERS LE BASIC.
 - **La fenêtre FICHIERS** se déplace par son titre et reste là où vous la mettez, même quand vous changez de vue.
+- **Ouverture selon le type** (aussi dans le Commander) : les `.TXT` s'ouvrent dans NOTEPAD, les `.MD` dans MARKDOWN, les `.PIC` et `.LYR` dans PAINT, les `.MUS` dans MUSIC, qui commence à les jouer. Le programme est cherché sur le lecteur du fichier, puis sur A:, puis sur B:. S'il n'est pas trouvé, « AUCUN PROGRAMME POUR CE FICHIER » s'affiche. Si le programme a des modifications non enregistrées, il demande d'abord.
 
 ## Lanceur (PROGRAMMES), F2
 
@@ -58,14 +59,14 @@ Mode 1, deux panneaux avec des listes de fichiers : A: à gauche, B: à droite. 
 |---|---|
 | ↑/↓ | choisir (avec SHIFT : une page) |
 | TAB, ←/→ | l'autre panneau |
-| RETURN, ENTER | infos : taille, type, adresse de chargement, les premiers octets |
+| RETURN, ENTER | ouvrir, comme dans le Bureau. Les infos (taille, type, adresse de chargement, les premiers octets) avec ^I |
 | ^C | copier vers l'autre panneau, quelle que soit la taille. S'il existe un fichier du même nom, demande d'abord |
 | ^D | supprimer |
 | ^N | renommer |
 | ^R | relire les deux disquettes |
-| souris | clic : sélection, encore : infos |
+| souris | clic : sélection, encore : ouverture |
 
-**Menu FICHIER :** LANCER, INFOS DU FICHIER, COPIER EN FACE, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, FORMATER LE DISQUE (DATA), QUITTER VERS LE BASIC.
+**Menu FICHIER :** OUVRIR, INFOS DU FICHIER (^I), COPIER EN FACE, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, FORMATER LE DISQUE (DATA), QUITTER VERS LE BASIC.
 
 > FORMATER efface tous les fichiers de la disquette du panneau actif. Une confirmation est demandée.
 

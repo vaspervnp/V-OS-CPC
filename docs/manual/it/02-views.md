@@ -25,15 +25,16 @@ Modo 1. Una finestra FILE mostra i file di un'unità come icone, quattro per rig
 |---|---|
 | frecce | scelgono un file (↑/↓ una riga) |
 | TAB | l'altra unità |
-| RETURN, ENTER | informazioni sul file |
+| RETURN, ENTER | apri: un programma si avvia, un file di un tipo noto si apre nel suo programma, gli altri mostrano le loro informazioni |
 | ^C | copia sull'altra unità |
 | ^D | elimina (chiede prima) |
 | ^N | rinomina |
 | ^R | rilegge i dischi |
-| mouse | clic su un file: selezione, di nuovo: informazioni. Clic su un'unità: la apre |
+| mouse | clic su un file: selezione, di nuovo: apertura. Clic su un'unità: la apre |
 
-- **Menu FILE:** AVVIA (avvia il programma selezionato), INFO SUL FILE, COPIA SULL'ALTRA UNITÀ, ELIMINA, RINOMINA, RILEGGI I DISCHI, ESCI IN BASIC.
+- **Menu FILE:** APRI, INFO SUL FILE (^I), COPIA SULL'ALTRA UNITÀ, ELIMINA, RINOMINA, RILEGGI I DISCHI, ESCI IN BASIC.
 - **La finestra FILE** si può trascinare per il suo titolo e resta lì, anche quando cambi vista.
+- **Apertura per tipo** (anche nel Commander): i `.TXT` si aprono in NOTEPAD, i `.MD` in MARKDOWN, i `.PIC` e `.LYR` in PAINT, i `.MUS` in MUSIC, che comincia a suonarli. Il programma si cerca sull'unità del file, poi su A:, poi su B:. Se non si trova, appare "NESSUN PROGRAMMA PER QUESTO FILE". Se il programma ha modifiche non salvate, chiede prima.
 
 ## Launcher (PROGRAMMI), F2
 
@@ -58,14 +59,14 @@ Modo 1, due pannelli con elenchi di file: A: a sinistra, B: a destra. Ogni panne
 |---|---|
 | ↑/↓ | scelgono (con SHIFT: una pagina) |
 | TAB, ←/→ | l'altro pannello |
-| RETURN, ENTER | informazioni: dimensione, tipo, indirizzo di caricamento, i primi byte |
+| RETURN, ENTER | apri, come nella Scrivania. Le informazioni (dimensione, tipo, indirizzo di caricamento, i primi byte) con ^I |
 | ^C | copia nell'altro pannello, di qualsiasi dimensione. Se c'è un file con lo stesso nome, chiede prima |
 | ^D | elimina |
 | ^N | rinomina |
 | ^R | rilegge entrambi i dischi |
-| mouse | clic: selezione, di nuovo: informazioni |
+| mouse | clic: selezione, di nuovo: apertura |
 
-**Menu FILE:** AVVIA, INFO SUL FILE, COPIA DI FRONTE, ELIMINA, RINOMINA, RILEGGI I DISCHI, FORMATTA IL DISCO (DATA), ESCI IN BASIC.
+**Menu FILE:** APRI, INFO SUL FILE (^I), COPIA DI FRONTE, ELIMINA, RINOMINA, RILEGGI I DISCHI, FORMATTA IL DISCO (DATA), ESCI IN BASIC.
 
 > FORMATTA IL DISCO cancella tutti i file sul dischetto del pannello attivo. Chiede prima.
 

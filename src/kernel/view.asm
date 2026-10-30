@@ -134,7 +134,7 @@ app_run:
         call fdc_select
         ld hl,file_name
         call view_fetch
-        jp c,sys_error
+        jr c,app_fail
         ld de,"A" * 256 + "V"       ; "VA", and an API we have
         or a
         sbc hl,de
@@ -146,7 +146,7 @@ app_run:
 .placed:
         call ext_call
         ld a,FS_ERR_NO_ROOM
-        jp c,sys_error
+        jr c,app_fail
         ld a,(view_cur)
         cp VIEW_APP
         jr z,.return
@@ -187,6 +187,13 @@ app_run:
         jp view_start
 .bad:
         ld a,FS_ERR_NOT_PROGRAM
+        ; fall through
+; A = error: no file for the next program either
+app_fail:
+        push af
+        xor a
+        ld (app_open),a
+        pop af
         jp sys_error
 
 ; HL = name, on the drive selected: the file into bank 4 -> HL = bytes
@@ -498,6 +505,8 @@ acc_loaded:     db 0
 acc_open:       db 0
 acc_req:        db 0                ; open or close it in the main loop
 acc_ctx         equ #8818           ; 7: the other side's acc_vars
+app_open        equ #B000           ; 13: db 1, drive, name: the file
+                                    ; the next program opens (file_open)
 vw_page:        db VIEW_ADDR >> 8   ; where view_install puts it,
 vw_cfg:         db VIEW_BANK_CFG    ; in that bank
 data_cfg:       db BUF_CFG          ; the data bank (api_drive)
