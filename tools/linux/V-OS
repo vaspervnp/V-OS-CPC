@@ -1,0 +1,21 @@
+#!/bin/sh
+# V-OS - starts CPCEMU as a CPC 6128 with a 512K RAM expansion, an AMX
+# mouse and an M4 board, V-OS in drive A: and VROUVES in drive B:
+# (cpcemu/vos.cfg); V-OS starts by itself (DISC.BAS on drive A:).
+# Put in the package by tools/mklinux.sh.
+HOME_DIR="$(cd "$(dirname "$0")" && pwd)"
+EMU="$HOME_DIR/cpcemu"
+for f in "$EMU/cpcemu" "$EMU/vos.cfg" "$EMU/DISC/VOS.DSK" "$EMU/DISC/VROUVES.DSK"; do
+    if [ ! -f "$f" ]; then
+        echo "V-OS: missing $f" >&2
+        exit 1
+    fi
+done
+if ! ldconfig -p 2>/dev/null | grep -q 'libSDL2-2\.0\.so\.0'; then
+    echo "V-OS: CPCEMU needs the SDL2 library:" >&2
+    echo "  Debian/Ubuntu: sudo apt install libsdl2-2.0-0" >&2
+    echo "  Fedora:        sudo dnf install SDL2" >&2
+    echo "  Arch:          sudo pacman -S sdl2" >&2
+fi
+cd "$EMU" || exit 1
+exec ./cpcemu -c vos.cfg -t 2 "$@"

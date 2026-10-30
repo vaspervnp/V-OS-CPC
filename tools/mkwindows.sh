@@ -21,13 +21,15 @@ mv "$WIN/unzip/"cpcemu-* "$OUT/cpcemu"
 rm -rf "$OUT/cpcemu/DISC/"* "$OUT/cpcemu/DISC/".??*
 find "$OUT" -name .DS_Store -delete
 CFG="$OUT/cpcemu/vos.cfg"
-sed -e 's|^DRIVE_A = .*|DRIVE_A = "./DISC/VOS.DSK"\t;V-OS|' \
+tr -d '\r' < "$OUT/cpcemu/cpcemu0.cfg" |
+    sed -e 's|^DRIVE_A = .*|DRIVE_A = "./DISC/VOS.DSK"\t;V-OS|' \
     -e 's|^DRIVE_B = .*|DRIVE_B = "./DISC/VROUVES.DSK"\t;VROUVES|' \
     -e 's|^MOUSE_ENABLED = .*|MOUSE_ENABLED = 1\t\t;the mouse in the menus\r\nMOUSE_TYPE = 1\t\t\t;and an AMX mouse for the CPC|' \
+    -e 's|^\(KBD_LANGUAGE = .*\)|\1\r\nVKBD_LANGUAGE = 0\t\t;the virtual keyboard: English, so CPCEMU does not ask|' \
     -e 's|^RAM_SIZE = 128\t\t\t;128 KB RAM (up to 576 possible)|RAM_SIZE = 576\t\t\t;a 512K RAM expansion|' \
-    "$OUT/cpcemu/cpcemu0.cfg" > "$CFG"
+    > "$CFG"
 sed -i "s/\r\$//; s/\$/\r/" "$CFG"       # CRLF, as CPCEMU writes it
-grep -q "^RAM_SIZE = 576" "$CFG" && grep -q "^MOUSE_TYPE = 1" "$CFG" && grep -q "VOS.DSK" "$CFG"
+grep -q "^RAM_SIZE = 576" "$CFG" && grep -q "^MOUSE_TYPE = 1" "$CFG" && grep -q "VOS.DSK" "$CFG" && grep -q "^VKBD_LANGUAGE" "$CFG"
 cp "$ROOT/build/vos.dsk" "$OUT/cpcemu/DISC/VOS.DSK"
 cp "$ROOT/build/vrouves.dsk" "$OUT/cpcemu/DISC/VROUVES.DSK"
 printf '10 RUN"VOS"\r\n\032' > "$WIN/DISC.BAS"

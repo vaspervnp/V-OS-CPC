@@ -19,6 +19,7 @@
 | `make shot` | εκκίνηση χωρίς παράθυρο και ένα screenshot |
 | `make docs` | το manual ως PDF: `docs/V-OS.pdf` (ελληνικά) και `docs/V-OS-en.pdf`, `-fr`, `-es`, `-de`, `-it` |
 | `make windows` | το `build/V-OS-windows.zip`: το `V-OS.exe` για Windows, με τον CPCEMU 3.0.2 (CPC 6128, 576K, ποντίκι AMX, κάρτα M4), τη `vos.dsk` στο A: και τη `vrouves.dsk` στο B:. Το V-OS ξεκινά μόνο του. Χρειάζεται WSL και το portable zip του CPCEMU (`CPCEMU_ZIP=…`) |
+| `make linux` | το `build/V-OS-linux.tar.gz`: το script `V-OS` για Linux (x86_64), με τον CPCEMU 2.5 (ο 3.0.2 δεν έχει βγει για Linux) και τις ίδιες ρυθμίσεις και δισκέτες. Χρειάζεται το SDL2 στο σύστημα και το tar.gz του CPCEMU για Linux (`CPCEMU_TGZ=…`) |
 | `make songs` | τα τραγούδια του Arkos Tracker 3 ως αρχεία `.MUS` στο `myapps/music/owndisc` (`tools/mkmusic.py`· χρειάζεται τον Arkos Tracker 3, `ARKOS=…`) |
 | `make new-app NAME=x`, `make app NAME=x` | δικό σου πρόγραμμα (SDK) |
 | `make clean` | σβήνει το `build/` |

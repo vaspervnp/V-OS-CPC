@@ -1,0 +1,26 @@
+V-OS for Linux
+==============
+
+Unpack the archive and run the V-OS script in its folder:
+
+    tar xzf V-OS-linux.tar.gz
+    V-OS/V-OS
+
+It starts CPCEMU 2.5 (cpc-emu.org) as an Amstrad CPC 6128 with a 512K
+RAM expansion, an AMX mouse and an M4 board, with V-OS in drive A: and
+VROUVES in drive B:. V-OS starts by itself. CPCEMU is a 64-bit x86
+program and needs the SDL2 library (Debian/Ubuntu: libsdl2-2.0-0).
+
+- Keys: the CPC's f1-f6, which V-OS uses for its views (f1 Desktop,
+  f2 Launcher, f3 Commander), are the PC's numeric keypad 1-6. COPY
+  is the Alt key next to the space bar.
+- CPCEMU's own keys: F1 help, F7 setup, F8 reset, F12 quit.
+- The mouse is the CPC's AMX mouse. Click in the window to use it.
+- VROUVES, all seven stages: in the Launcher (keypad 2), TAB shows
+  drive B:; RETURN starts it.
+- The discs are cpcemu/DISC/VOS.DSK and VROUVES.DSK; V-OS saves to
+  them. Keep a copy if you want to start afresh. The settings are in
+  cpcemu/vos.cfg.
+
+CPCEMU is freeware, (C) Marco Vieth & Rainer Loritz (cpcemu/note.txt);
+it uses the SDL library (zlib licence). V-OS: the V-OS-CPC project.

@@ -399,6 +399,7 @@ Header με:
 - **PAINT:** `.PIC` 8.192 bytes. `.LYR` 7.686 bytes: 3 × (2.048 pixels και μάσκα 512), μετά η σειρά και η ορατότητα. Η στοίβα του γεμίσματος μοιράζεται το `row_pairs` (64 θέσεις). 12.188 bytes.
 - **MUSIC:** `PlayerAkm.asm` του Arkos Tracker 3.7 (MIT). Το `.MUS` («VM», 1, 0, μήκος, πλήθος, δεδομένα, θέσεις των δεικτών) το φτιάχνει το `mkmusic.py` από δύο εξαγωγές του SongToAkm, στο #4000 και στο #4100. Το πρόγραμμα προσθέτει `song − #4000` στους δείκτες. Το `PLY_AKM_Play` τρέχει με DI και σωσμένα τα IX/IY, και το bit 6 του R7 μένει 0 για το πληκτρολόγιο. `VOS_BACKGROUND` 1.
 - **Windows:** το `mkwindows.sh` βγάζει τον CPCEMU portable στο `build/win/V-OS/cpcemu` και φτιάχνει το `vos.cfg` από το `cpcemu0.cfg`: RAM_SIZE=576, MOUSE_TYPE=1, M4, DRIVE_A/B, και ένα `DISC.BAS` στη `VOS.DSK` για το autostart. Ο CPCEMU δεν τρέχει από διαδρομή `\\wsl.localhost` (exit 53).
+- **Linux:** το `mklinux.sh` κάνει το ίδιο με τον CPCEMU 2.5 για x86_64 (`build/linux/V-OS`, `build/V-OS-linux.tar.gz`), και το script `tools/linux/V-OS` τον τρέχει με `-c vos.cfg -t 2`. Και τα δύο προσθέτουν `VKBD_LANGUAGE = 0` (αλλιώς ο CPCEMU ρωτά για το εικονικό πληκτρολόγιο στην πρώτη εκκίνηση).
 
 **Υλοποίηση M32 (VROUVES, 7 πίστες):**
 - **Πίστες:** το `import_art.py` γράφει τα `owndisc/VROUV1.DAT` ως `VROUV7.DAT`, και το `disc/VROUV1.DAT` για τη `vos.dsk`. Νέα πεδία:
@@ -839,7 +840,7 @@ Header με:
 32. **M30 — SDK για προγράμματα σε assembly:** `sdk/template` (πρόγραμμα με πίνακα relocation, μενού, κουμπί, διάλογο, κείμενα EN/EL, εικονίδιο), `make new-app` και `make app` για τα `myapps/*`, οδηγός και πίνακας του API στο `sdk/README.md`, `make test-sdk` (§7.3). *Έγινε.*
 33. **M31 — VROUVES:** το LET'S GO FOR VROUVES του CPC, πίστα 1, απλοποιημένο, γραμμένο με το SDK (`myapps/vrouves`). Επιπλέον `.asm` και αρχεία `disc/` στα προγράμματα του SDK, `make test-vrouves` (§7.3). *Έγινε.*
 34. **M32 — VROUVES, 7 πίστες:** όλες οι πίστες του πρωτοτύπου με τους αμυντικούς και τη δυσκολία τους, σε δική του δισκέτα (`build/vrouves.dsk`). `owndisc/` στο SDK, `VOS_SELF` στο API, `make test-vrouves` από το B: (§7.3). *Έγινε.*
-35. **M33 — Δεύτερη μονάδα, σκορ, NOTEPAD, PAINT, MUSIC, ABOUT:** TAB στον Launcher για το B:, σκορ και αποθήκευση στο VROUVES, κειμενογράφος, ζωγραφική με επίπεδα, player του Arkos Tracker, ο διάλογος ABOUT με έκδοση και ημερομηνία, `VOS_CAT_EXT` και `VOS_PTR_KEYS` στο API 12, `make windows` με CPCEMU, `sdk/AI.md` (§7.3). *Έγινε.*
+35. **M33 — Δεύτερη μονάδα, σκορ, NOTEPAD, PAINT, MUSIC, ABOUT:** TAB στον Launcher για το B:, σκορ και αποθήκευση στο VROUVES, κειμενογράφος, ζωγραφική με επίπεδα, player του Arkos Tracker, ο διάλογος ABOUT με έκδοση και ημερομηνία, `VOS_CAT_EXT` και `VOS_PTR_KEYS` στο API 12, `make windows` με CPCEMU και `make linux`, `sdk/AI.md` (§7.3). *Έγινε.*
 
 ---
 

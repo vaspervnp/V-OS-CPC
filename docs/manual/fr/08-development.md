@@ -19,6 +19,7 @@ Pour ceux qui travaillent sur V-OS lui-même. Les programmes *pour* V-OS sont d�
 | `make shot` | démarre sans fenêtre et prend une capture d'écran |
 | `make docs` | le manuel en PDF : `docs/V-OS.pdf` (grec) et `docs/V-OS-en.pdf`, `-fr`, `-es`, `-de`, `-it` |
 | `make windows` | `build/V-OS-windows.zip` : `V-OS.exe` pour Windows, avec CPCEMU 3.0.2 (CPC 6128, 576K, souris AMX, carte M4), `vos.dsk` en A: et `vrouves.dsk` en B:. V-OS démarre tout seul. Il faut WSL et le zip portable de CPCEMU (`CPCEMU_ZIP=…`) |
+| `make linux` | `build/V-OS-linux.tar.gz` : le script `V-OS` pour Linux (x86_64), avec CPCEMU 2.5 (la 3.0.2 n'existe pas pour Linux) et les mêmes réglages et disquettes. Il faut SDL2 sur le système et le tar.gz Linux de CPCEMU (`CPCEMU_TGZ=…`) |
 | `make songs` | les morceaux d'Arkos Tracker 3 en fichiers `.MUS` dans `myapps/music/owndisc` (`tools/mkmusic.py` ; il faut Arkos Tracker 3, `ARKOS=…`) |
 | `make new-app NAME=x`, `make app NAME=x` | votre propre programme (SDK) |
 | `make clean` | efface `build/` |

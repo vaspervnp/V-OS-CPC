@@ -33,6 +33,7 @@
 #   make test-vrouves VROUVES (myapps/vrouves) from its disc in B:: defenders built, a wave
 #   make test-sdk    the template built as HELLO, run from the Launcher:
 #                 the box moved, BEEP, its menu and ABOUT dialog
+#   make linux     build/V-OS-linux.tar.gz: V-OS with CPCEMU 2.5 for Linux
 #   make docs      the manual as PDFs: docs/V-OS.pdf (Greek, from
 #                 docs/manual/*.md and sdk/README.md) and docs/V-OS-<code>.pdf
 #                 for en fr es de it (docs/manual/<code>/, sdk/README.<code>.md)
@@ -54,7 +55,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-music songs FORCE test-about test-paint test-notepad windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: linux test-music songs FORCE test-about test-paint test-notepad windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -255,6 +256,14 @@ songs:
 CPCEMU_ZIP ?= $(BUILD)/dl/cpcemu/cpcemu_portable-win32-x86-3.0.2.zip
 windows: $(DSK) $(OWN_DSKS) tools/mkwindows.sh tools/windows/launcher.cs tools/windows/README.txt
 	bash tools/mkwindows.sh $(CPCEMU_ZIP)
+
+# V-OS for Linux (tools/mklinux.sh): build/V-OS-linux.tar.gz, the V-OS
+# script with CPCEMU 2.5 for x86_64 (576K, AMX mouse, M4 board), vos.dsk
+# in A: and vrouves.dsk in B:.
+# CPCEMU_TGZ is its Linux tar.gz, from cpc-emu.org/download.html.
+CPCEMU_TGZ ?= $(BUILD)/dl/cpcemu-linux/cpcemu-linux-x86_64-2.5.tar.gz
+linux: $(DSK) $(OWN_DSKS) tools/mklinux.sh tools/linux/V-OS tools/linux/README.txt
+	bash tools/mklinux.sh $(CPCEMU_TGZ)
 
 # The manual as a PDF (python's user packages: no -I)
 DOC_LANGS := en fr es de it
