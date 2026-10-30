@@ -915,8 +915,10 @@ ui_drop_body:
         inc a
         jr .item
 .drawn:
-        xor a                       ; cursor keys now move the selection
-        ld (ptr_keys_on),a
+        ld hl,ptr_keys_on           ; cursor keys now move the selection;
+        ld a,(hl)                   ; afterwards, what they did before
+        ld (ui_keys_was),a
+        ld (hl),0
         ret
 
 ; A = item -> HL -> its 4 bytes.  Destroys: DE
@@ -1042,7 +1044,7 @@ ui_close_menu:
         ld (ui_open),a
         ld a,b
         call ui_draw_title
-        ld a,1
+        ld a,(ui_keys_was)
         ld (ptr_keys_on),a
         ret
 
@@ -1674,6 +1676,7 @@ uf_h:           db 0
 
 ui_bar:         dw 0
 ui_open:        db UI_NONE
+ui_keys_was:    db 0                ; ptr_keys_on before the menu opened
 ui_sel:         db 0
 ui_title_x:     ds 2 * 8
 ui_title_pad:   db 2

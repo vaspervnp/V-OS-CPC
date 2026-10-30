@@ -387,6 +387,19 @@ Header με:
 - **Δοκιμή:** το `make test-multi`. Το DEMO τρέχει και αλλάζει χρώμα. Με F2 ο Launcher, και τρέχει το PONG. Ξανά στον Launcher, το DEMO συνεχίζει με το ίδιο χρώμα και κλείνει με ^Q. Το PONG συνεχίζει. Το STUDIO δεν ξεκινά και βγαίνει το σφάλμα 13.
 - **Λάθος που βρέθηκε:** το μήνυμα σε μία γραμμή (27 χαρακτήρες) έκανε τον διάλογο φαρδύτερο από την οθόνη σε mode 0. Δεν φαινόταν, και ο βρόχος του περίμενε κουμπί. Βρέθηκε με dump της στοίβας και των μεταβλητών του διαλόγου (`TEST_DUMP`, `TEST_DUMP_AT`).
 
+**Υλοποίηση M33 (δεύτερη μονάδα, σκορ, NOTEPAD, PAINT, MUSIC, ABOUT):**
+- **Launcher:** `ln_drive` (από το `sys_drive`), `ln_other` (TAB, `CMD_DRIVE` 15), `ln_prefix` για το `A: `/`B: ` στη γραμμή της σελίδας. Τα `fdc_select`, `file_select`, `app_request` και το accessory παίρνουν το `ln_drive`. Το `slot_find` συγκρίνει τον οδηγό με το `sys_drive`.
+- **API 12:**
+  - `VOS_CAT_EXT` (#40): με A = οδηγός + #40 και HL → «EXT», το `VOS_CATALOG` συμπιέζει το `FS_CAT` στα αρχεία με αυτή την κατάληξη και διορθώνει το `fc_count`.
+  - `VOS_PTR_KEYS` (2): bit 1 του `VOS_TICKS`, τα βελάκια και το COPY κινούν τον δείκτη (`ptr_keys_on`). Το `view_start` το μηδενίζει. Το μενού το κρατά στο `ui_keys_was` και το επαναφέρει.
+- **ABOUT:** `DLG_ABOUT` στα `lang/*/messages.txt` με «{DATE}». Το `mklng.py` το αντικαθιστά με το `VOS_DATE` ή τη σημερινή μέρα (`%d.%m.%Y`). Το `build/date.txt` αλλάζει μόνο όταν αλλάξει η μέρα, και από αυτό εξαρτώνται τα πακέτα γλωσσών.
+- **Makefile:** τα προγράμματα με `owndisc/` δεν μπαίνουν στη `vos.dsk`. Νέοι στόχοι: `songs`, `test-notepad` (17), `test-paint` (18), `test-about` (19), `test-music` (20). Το `test-vrouves` (16) περνά από τον Launcher με TAB.
+- **VROUVES:** `add_score` ως 9999, `VROUVES.SAV` 51 bytes (πίστα και 5 × όνομα και σκορ), `VOS_INPUT` για το όνομα, `show_board`. Το πρόγραμμα είναι 12.080 bytes.
+- **NOTEPAD:** buffer 4K με LF. Στο φόρτωμα και στο σώσιμο τα CR LF μετατρέπονται μέσω της bank δεδομένων.
+- **PAINT:** `.PIC` 8.192 bytes. `.LYR` 7.686 bytes: 3 × (2.048 pixels και μάσκα 512), μετά η σειρά και η ορατότητα. Η στοίβα του γεμίσματος μοιράζεται το `row_pairs` (64 θέσεις). 12.188 bytes.
+- **MUSIC:** `PlayerAkm.asm` του Arkos Tracker 3.7 (MIT). Το `.MUS` («VM», 1, 0, μήκος, πλήθος, δεδομένα, θέσεις των δεικτών) το φτιάχνει το `mkmusic.py` από δύο εξαγωγές του SongToAkm, στο #4000 και στο #4100. Το πρόγραμμα προσθέτει `song − #4000` στους δείκτες. Το `PLY_AKM_Play` τρέχει με DI και σωσμένα τα IX/IY, και το bit 6 του R7 μένει 0 για το πληκτρολόγιο. `VOS_BACKGROUND` 1.
+- **Windows:** το `mkwindows.sh` βγάζει τον CPCEMU portable στο `build/win/V-OS/cpcemu` και φτιάχνει το `vos.cfg` από το `cpcemu0.cfg`: RAM_SIZE=576, MOUSE_TYPE=1, M4, DRIVE_A/B, και ένα `DISC.BAS` στη `VOS.DSK` για το autostart. Ο CPCEMU δεν τρέχει από διαδρομή `\\wsl.localhost` (exit 53).
+
 **Υλοποίηση M32 (VROUVES, 7 πίστες):**
 - **Πίστες:** το `import_art.py` γράφει τα `owndisc/VROUV1.DAT` ως `VROUV7.DAT`, και το `disc/VROUV1.DAT` για τη `vos.dsk`. Νέα πεδία:
   - `#2E0`: οι αμυντικοί της πίστας (bit n−1 για τον n)
@@ -826,6 +839,7 @@ Header με:
 32. **M30 — SDK για προγράμματα σε assembly:** `sdk/template` (πρόγραμμα με πίνακα relocation, μενού, κουμπί, διάλογο, κείμενα EN/EL, εικονίδιο), `make new-app` και `make app` για τα `myapps/*`, οδηγός και πίνακας του API στο `sdk/README.md`, `make test-sdk` (§7.3). *Έγινε.*
 33. **M31 — VROUVES:** το LET'S GO FOR VROUVES του CPC, πίστα 1, απλοποιημένο, γραμμένο με το SDK (`myapps/vrouves`). Επιπλέον `.asm` και αρχεία `disc/` στα προγράμματα του SDK, `make test-vrouves` (§7.3). *Έγινε.*
 34. **M32 — VROUVES, 7 πίστες:** όλες οι πίστες του πρωτοτύπου με τους αμυντικούς και τη δυσκολία τους, σε δική του δισκέτα (`build/vrouves.dsk`). `owndisc/` στο SDK, `VOS_SELF` στο API, `make test-vrouves` από το B: (§7.3). *Έγινε.*
+35. **M33 — Δεύτερη μονάδα, σκορ, NOTEPAD, PAINT, MUSIC, ABOUT:** TAB στον Launcher για το B:, σκορ και αποθήκευση στο VROUVES, κειμενογράφος, ζωγραφική με επίπεδα, player του Arkos Tracker, ο διάλογος ABOUT με έκδοση και ημερομηνία, `VOS_CAT_EXT` και `VOS_PTR_KEYS` στο API 12, `make windows` με CPCEMU, `sdk/AI.md` (§7.3). *Έγινε.*
 
 ---
 

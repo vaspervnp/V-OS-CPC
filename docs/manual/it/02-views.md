@@ -15,6 +15,8 @@ Gli ultimi due menu sono uguali in tutte le viste e nei programmi:
 | PROGRAMMI (in esecuzione) | F6 | | |
 | CAMBIA LINGUA | ^L | | |
 
+AIUTO > INFORMAZIONI SU V-OS mostra la versione (0.1 beta), la data della compilazione, l'autore (Revive8bit, 2026) e l'architetto (Vasper).
+
 ## Scrivania, F1
 
 Modo 1. Una finestra FILE mostra i file di un'unità come icone, quattro per riga. Il tipo è scritto dentro l'icona e il nome sotto, e un `.VBN` ha accanto un segno di "play". A destra, due icone scelgono A: o B:. La barra del titolo mostra il formato del disco e il numero di file, e lo spazio libero è mostrato in basso.
@@ -35,7 +37,7 @@ Modo 1. Una finestra FILE mostra i file di un'unità come icone, quattro per rig
 
 ## Launcher (PROGRAMMI), F2
 
-Modo 0, 16 colori. Mostra solo i programmi su A: (`.BIN`, `.VBN`, `.BAS`), come riquadri in una griglia 3×3, con le pagine successive sotto. Ogni programma che ha un'icona la mostra sul suo riquadro. Il riquadro selezionato è bianco.
+Modo 0, 16 colori. Mostra solo i programmi di un'unità (`.BIN`, `.VBN`, `.BAS`), all'inizio A:, come riquadri in una griglia 3×3, con le pagine successive sotto. La riga della pagina comincia con l'unità (`A:`, `B:`). Ogni programma che ha un'icona la mostra sul suo riquadro. Il riquadro selezionato è bianco.
 
 | Tasto | Cosa fa |
 |---|---|
@@ -43,9 +45,10 @@ Modo 0, 16 colori. Mostra solo i programmi su A: (`.BIN`, `.VBN`, `.BAS`), come 
 | RETURN, ENTER | avvia il programma. Se è già in esecuzione, riprende da dove era |
 | ^A | lo carica come accessorio di scrivania (COME ACCESSORIO). Poi F5 lo apre |
 | ^R | rilegge il dischetto |
+| TAB | l'altra unità (ALTRA UNITÀ). Un programma avviato da B: torna a B: |
 | mouse | clic: selezione, di nuovo: avvio |
 
-**Menu FILE:** AVVIA, COME ACCESSORIO, RILEGGI I DISCHI, ESCI IN BASIC.
+**Menu FILE:** AVVIA, COME ACCESSORIO, ALTRA UNITÀ, RILEGGI I DISCHI, ESCI IN BASIC.
 
 ## Commander, F3
 

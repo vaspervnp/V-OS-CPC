@@ -15,6 +15,8 @@ Les deux derniers menus sont les mêmes dans toutes les vues et dans les program
 | PROGRAMMES (en cours) | F6 | | |
 | CHANGER DE LANGUE | ^L | | |
 
+AIDE > À PROPOS DE V-OS montre la version (0.1 bêta), la date de compilation, l'auteur (Revive8bit, 2026) et l'architecte (Vasper).
+
 ## Bureau, F1
 
 Mode 1. Une fenêtre FICHIERS montre les fichiers d'un lecteur sous forme d'icônes, quatre par rangée. Le type est écrit dans l'icône et le nom en dessous, et un `.VBN` porte une marque « lecture » à côté. À droite, deux icônes choisissent A: ou B:. La barre de titre indique le format de la disquette et le nombre de fichiers, et l'espace libre s'affiche en bas.
@@ -35,7 +37,7 @@ Mode 1. Une fenêtre FICHIERS montre les fichiers d'un lecteur sous forme d'icô
 
 ## Lanceur (PROGRAMMES), F2
 
-Mode 0, 16 couleurs. Il ne montre que les programmes de A: (`.BIN`, `.VBN`, `.BAS`), sous forme de tuiles dans une grille de 3×3, avec les pages suivantes en dessous. Chaque programme qui a une icône l'affiche sur sa tuile. La tuile sélectionnée est blanche.
+Mode 0, 16 couleurs. Il ne montre que les programmes d'un lecteur (`.BIN`, `.VBN`, `.BAS`), A: au départ, sous forme de tuiles dans une grille de 3×3, avec les pages suivantes en dessous. La ligne de page commence par le lecteur (`A:`, `B:`). Chaque programme qui a une icône l'affiche sur sa tuile. La tuile sélectionnée est blanche.
 
 | Touche | Ce qu'elle fait |
 |---|---|
@@ -43,9 +45,10 @@ Mode 0, 16 couleurs. Il ne montre que les programmes de A: (`.BIN`, `.VBN`, `.BA
 | RETURN, ENTER | lance le programme. S'il tourne déjà, il reprend là où il en était |
 | ^A | le charge comme accessoire de bureau (COMME ACCESSOIRE). F5 l'ouvre ensuite |
 | ^R | relire la disquette |
+| TAB | l'autre lecteur (AUTRE LECTEUR). Un programme lancé depuis B: revient sur B: |
 | souris | clic : sélection, encore : lancement |
 
-**Menu FICHIER :** LANCER, COMME ACCESSOIRE, RELIRE LES DISQUES, QUITTER VERS LE BASIC.
+**Menu FICHIER :** LANCER, COMME ACCESSOIRE, AUTRE LECTEUR, RELIRE LES DISQUES, QUITTER VERS LE BASIC.
 
 ## Commander, F3
 

@@ -35,7 +35,7 @@ Un programa más grande:
 
 - Ponga más archivos `.asm` en su carpeta (p. ej. `art.asm` con sprites) e inclúyalos con `include "art.asm"`. El build los encuentra y vuelve a compilar el programa cuando cambian.
 - Lo que ponga en la subcarpeta `disc/` (p. ej. `disc/LEVEL1.DAT`) va tal cual al disquete, para `VOS_LOAD`.
-- Con una subcarpeta `owndisc/`, el programa tiene además su propio disquete, `build/<nombre>.dsk`, con el `.BIN` y los archivos de `owndisc/`. Se pone en B: y se ejecuta desde el Commander (ARCHIVO > EJECUTAR). La unidad desde la que se inició, para cargar de allí sus archivos, está en `VOS_SELF`: `db unidad`, y luego su nombre (11 bytes).
+- Con una subcarpeta `owndisc/`, el programa tiene además su propio disquete, `build/<nombre>.dsk`, con el `.BIN` y los archivos de `owndisc/`. No va en `vos.dsk`. Se pone en B: y se ejecuta desde el Launcher (TAB, la otra unidad). La unidad desde la que se inició, para cargar de allí sus archivos, está en `VOS_SELF`: `db unidad`, y luego su nombre (11 bytes).
 - Un programa con tabla de reubicación (como los del SDK) puede ocupar hasta 12K. Para lo demás, cargue archivos en el banco de datos.
 
 ## Cómo funciona un programa
@@ -121,12 +121,12 @@ command: ...
 - **Icono:** 16 líneas de 16 caracteres en `icon.txt`. Cada carácter es una tinta en hexadecimal (modo 0, paleta de Programas) o `.` para transparente.
 - **Nombres de archivo** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 bytes, `"NAME    EXT"`. Unidad 0 = A:, 1 = B:.
 
-## La API (versión 11)
+## La API (versión 12)
 
 | Llamada | Entrada → salida | Qué hace |
 |---|---|---|
 | `VOS_EXIT` | — | fin, vuelta a la vista que lo inició |
-| `VOS_TICKS` | A = 1 / 0 | `VE_FRAME` 50 veces por segundo, o ninguno |
+| `VOS_TICKS` | A = 1 / 0 (+ `VOS_PTR_KEYS`) | `VE_FRAME` 50 veces por segundo, o ninguno. Con `VOS_PTR_KEYS` (2) las flechas y COPY también mueven el puntero y hacen clic |
 | `VOS_FRAMES` | → HL (y A bits 16–23) | fotogramas desde el arranque |
 | `VOS_RANDOM` | → A | 0–255 |
 | `VOS_COMMAND` | A = orden | las órdenes comunes de VER y AYUDA |
@@ -146,7 +146,7 @@ command: ...
 | `VOS_INPUT` | A = título, HL → texto, C = máximo → carry si se cancela | introducción de texto (necesita C + 2 bytes) |
 | `VOS_SET_WIDGETS`, `VOS_DRAW_WIDGETS` | HL → botones | |
 | `VOS_MENU_VIEW`, `VOS_MENU_HELP` | → HL | los menús comunes |
-| `VOS_CATALOG` | A = unidad → A = archivos, HL → lista | 16 bytes cada uno: 11 el nombre, en +12 el tamaño en K |
+| `VOS_CATALOG` | A = unidad → A = archivos, HL → lista | 16 bytes cada uno: 11 el nombre, en +12 el tamaño en K. Con A = unidad + `VOS_CAT_EXT` y HL → `"EXT"`, solo los archivos con esa extensión |
 | `VOS_FILE_PICK` | A = título → A = archivo, carry si se cancela | diálogo selector, después de `VOS_CATALOG` |
 | `VOS_LOAD` | A = unidad, HL → nombre, DE = dónde → BC = longitud | |
 | `VOS_SAVE` | A = unidad, HL → nombre, DE = desde, BC = longitud | archivo binario, que sustituye al anterior |
@@ -165,6 +165,8 @@ command: ...
 | `VOS_FIT` | igual → HL, DE | mete una ventana dentro de la pantalla |
 
 Todos los detalles, p. ej. sobre el segundo plano, el accesorio y `VOS_SPLIT`, están en `src/api/vos_api.inc`. Como ejemplos, véanse `apps/demo/demo.asm` (modo 0, movimiento), `apps/clock/clock.asm` (accesorio) y `apps/mixed/mixed.asm` (pantalla mixta). Un juego completo con sprites, una pantalla leída de un archivo y sonido es `myapps/vrouves/`.
+
+Un asistente de IA que escribe un programa debe leer [`AI.md`](AI.md) (en inglés): las mismas reglas, más cortas, con las trampas de RASM y del banco de datos.
 
 ## Pruebas
 

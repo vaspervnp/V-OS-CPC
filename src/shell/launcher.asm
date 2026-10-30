@@ -1,8 +1,8 @@
 ; =====================================================================
 ; launcher.asm - the Launcher view (B)
 ;
-; Mode 0, 16 colours. The programs on drive A: (.BIN, .VBN and .BAS
-; files, not V-OS's own) as a 3 x 3 grid of coloured tiles, more on the
+; Mode 0, 16 colours. The programs on drive A: or B: (.BIN, .VBN and
+; .BAS files, not V-OS's own) as a 3 x 3 grid of coloured tiles, more on the
 ; next pages. The selected tile is white. A program with an icon
 ; (VOS_ICON in src/api/vos_api.inc) shows it on its tile: the first
 ; time a page is drawn, the first sector of each .BIN and .VBN on it is
@@ -11,6 +11,8 @@
 ; takes it up again.
 ;   cursor keys      move (UP/DOWN a row; past the edge, the next page)
 ;   RETURN/ENTER     start the program (src/api/vos_api.inc)
+;   TAB              the other drive (FILE > OTHER DRIVE); it opens on
+;                    the drive of the file selected last (sys_drive)
 ;   ^R read the disc again; mouse: click a tile, again to start it
 ; An overlay (kernel/view.asm).
 ; =====================================================================
@@ -42,6 +44,8 @@ ln_init:
         xor a
         ld (ptr_pen_out),a
         call ptr_clamp
+        ld a,(sys_drive)
+        ld (ln_drive),a
         call ln_draw_screen
         jp ln_load
 
@@ -66,14 +70,21 @@ ln_draw_screen:
         ld de,LN_KEYS_Y
         jp txt_print
 
-; the programs of drive A:, from its catalog
+; FILE > OTHER DRIVE, TAB
+ln_other:
+        ld a,(ln_drive)
+        xor 1
+        ld (ln_drive),a
+        ; fall through
+
+; the programs of drive ln_drive, from its catalog
 ln_load:
         ld hl,ln_icon_st            ; icons: not read yet
         ld de,ln_icon_st + 1
         ld bc,LN_MAX - 1
         ld (hl),0
         ldir
-        xor a
+        ld a,(ln_drive)
         call fdc_select
         call fs_catalog
         ld c,0
@@ -118,7 +129,8 @@ ln_load:
         djnz .file
 .listed:
         ld a,(sys_drive)            ; the program selected in the last view
-        or a
+        ld hl,ln_drive
+        cp (hl)
         jr nz,.remember
         call file_find
         jr c,.remember
@@ -170,7 +182,7 @@ ln_draw_tiles:
         or a
         ld a,MSG_NO_PROGRAMS
         jr z,.message
-        ld de,ln_line               ; "PAGE 1/2"
+        call ln_prefix              ; "A: PAGE 1/2"
         ld a,MSG_PAGE
         call util_msg
         ld a," "
@@ -194,7 +206,9 @@ ln_draw_tiles:
         ld (de),a
         jr .print
 .message:
-        ld de,ln_line
+        push af
+        call ln_prefix
+        pop af
         call util_msg
         xor a
         ld (de),a
@@ -206,6 +220,17 @@ ln_draw_tiles:
         ld de,LN_KEYS_Y - 12
         ld bc,ln_line
         jp txt_print
+
+; "A: " or "B: " -> ln_line, DE after it
+ln_prefix:
+        ld de,ln_line
+        ld a,(ln_drive)
+        add a,"A"
+        call util_char
+        ld a,":"
+        call util_char
+        ld a," "
+        jp util_char
 
 ; HL -> FS_CAT entry -> Z if it is a program: .BIN, .VBN or .BAS, not
 ; VOS.BIN
@@ -568,7 +593,7 @@ ln_remember:
         add hl,hl
         ld de,FS_CAT
         add hl,de
-        xor a
+        ld a,(ln_drive)
         jp file_select
 
 ; ---------------------------------------------------------------------
@@ -606,6 +631,8 @@ ln_event:
         jp z,ln_run
         cp KEY_ENTER
         jp z,ln_run
+        cp KEY_TAB
+        jp z,ln_other
         jr .ui
 .move:
         ld a,(ln_count)
@@ -677,10 +704,10 @@ ln_run:
         jr nz,.load
         ld (app_wake),a
 .load:
-        xor a
+        ld a,(ln_drive)
         jp app_request
 
-; file_name, on drive A:, in a program slot (kernel/ext.asm)?
+; file_name, on sys_drive, in a program slot (kernel/ext.asm)?
 ; -> Z, A = the slot
 ln_slot:
         ld hl,slot_find
@@ -695,7 +722,7 @@ ln_acc:
         or a
         ret z
         call ln_remember
-        xor a
+        ld a,(ln_drive)
         call fdc_select
         ld hl,file_name
         call view_fetch
@@ -746,6 +773,8 @@ ln_command:
         jp z,ln_acc
         cp CMD_REFRESH
         jp z,ln_load
+        cp CMD_DRIVE
+        jp z,ln_other
         jp view_command
 
 ; ---- menus ----------------------------------------------------------
@@ -753,9 +782,10 @@ ln_bar:
         db 3
         dw ln_menu_file, menu_view, menu_help
 ln_menu_file:
-        db MSG_MENU_FILE, 5
+        db MSG_MENU_FILE, 6
         db MSG_ITEM_RUN, CMD_INFO, 0, 0
         db MSG_ITEM_ACC, CMD_ACC, "A", 0
+        db MSG_ITEM_DRIVE, CMD_DRIVE, 0, 0
         db MSG_ITEM_REFRESH, CMD_REFRESH, "R", 0
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_QUIT, CMD_QUIT, "Q", 0
@@ -768,6 +798,7 @@ ln_bas:         db "BAS"
 
 ; ---- state ----------------------------------------------------------
 ln_files:       db 0
+ln_drive:       db 0                ; 0 A:, 1 B:
 ln_err:         db 0
 ln_count:       db 0                ; programs
 ln_sel:         db 0

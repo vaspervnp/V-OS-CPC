@@ -18,7 +18,8 @@ Pour ceux qui travaillent sur V-OS lui-même. Les programmes *pour* V-OS sont d�
 | `make run` | ouvre la disquette dans Caprice32 (`RUN"VOS"`) |
 | `make shot` | démarre sans fenêtre et prend une capture d'écran |
 | `make docs` | le manuel en PDF : `docs/V-OS.pdf` (grec) et `docs/V-OS-en.pdf`, `-fr`, `-es`, `-de`, `-it` |
-| `make windows` | `build/V-OS-windows.zip` : `V-OS.exe` pour Windows, avec Caprice32 (CPC 6128, 576K), `vos.dsk` en A: et `vrouves.dsk` en B:. V-OS démarre tout seul. Il faut WSL et le `cap32-win64.zip` de Caprice32 (`CAP32_ZIP=…`) |
+| `make windows` | `build/V-OS-windows.zip` : `V-OS.exe` pour Windows, avec CPCEMU 3.0.2 (CPC 6128, 576K, souris AMX, carte M4), `vos.dsk` en A: et `vrouves.dsk` en B:. V-OS démarre tout seul. Il faut WSL et le zip portable de CPCEMU (`CPCEMU_ZIP=…`) |
+| `make songs` | les morceaux d'Arkos Tracker 3 en fichiers `.MUS` dans `myapps/music/owndisc` (`tools/mkmusic.py` ; il faut Arkos Tracker 3, `ARKOS=…`) |
 | `make new-app NAME=x`, `make app NAME=x` | votre propre programme (SDK) |
 | `make clean` | efface `build/` |
 
@@ -92,7 +93,11 @@ Les tests lancent V-OS dans Caprice32 sans fenêtre et prennent des captures d'�
 | `test-mines`, `test-bricks` | les jeux |
 | `test-vars` | les 128 variables, SAVE/LOAD VARS |
 | `test-sdk` | le modèle du SDK |
-| `test-vrouves` | VROUVES depuis sa disquette en B:, par le Commander : construction, la vague 1, l'argent |
+| `test-vrouves` | VROUVES depuis sa disquette en B:, par le Lanceur (TAB) : construction, la vague 1, l'argent, HIGH SCORES |
+| `test-notepad` | NOTEPAD : saisie, DEL, le dialogue d'enregistrement, OPEN avec seulement les fichiers `.TXT` |
+| `test-paint` | PAINT : ligne, rectangle, remplissage, les menus, puis les calques (en cacher un) |
+| `test-about` | AIDE > À PROPOS DE V-OS |
+| `test-music` | MUSIC depuis `music.dsk` en B: : un morceau joue, et continue derrière le Lanceur |
 | `test-amsdos`, `test-reboot`, `test-system` | les fichiers V-OS en BASIC, redémarrage, disquette SYSTEM |
 
 **Nouveau script :**

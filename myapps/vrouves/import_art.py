@@ -7,8 +7,7 @@ Run by hand when the original's art changes; its outputs are kept in
 the repo, so building V-OS does not need the original:
   art.asm             the palette and the sprites, as VOS_BLIT draws them:
                       db bytes, rows, then per row (mask, pixels) pairs
-  owndisc/VROUVn.DAT  the seven stages, for the data bank (stage 1, the
-                      Kafenio, also in disc/, for the V-OS disc):
+  owndisc/VROUVn.DAT  the seven stages, for the data bank:
      #000  the map: 20 x 14 cell numbers, row by row
      #118  the cell kinds: 0 grass (build), 1 road, 2 blocked (Psssst
            only), 3 the Kafenio and its yard
@@ -150,14 +149,11 @@ def main():
         lines += sprite_lines(name, rows)
     open(os.path.join(HERE, "art.asm"), "w").write("\n".join(lines) + "\n")
     print(f"art.asm: {len(SPRITES)} sprites")
-    for d in ("disc", "owndisc"):
-        os.makedirs(os.path.join(HERE, d), exist_ok=True)
+    os.makedirs(os.path.join(HERE, "owndisc"), exist_ok=True)
     for k, st in enumerate(g.STAGES):
         data, n = stage_file(k, st, getattr(g, st.waves))
         name = f"VROUV{k + 1}.DAT"
         open(os.path.join(HERE, "owndisc", name), "wb").write(data)
-        if k == 0:
-            open(os.path.join(HERE, "disc", name), "wb").write(data)
         print(f"{name}: {n} cells, {len(data)} bytes")
 
 

@@ -1,0 +1,17 @@
+# MUSIC's texts: NAME | English | Greek (tools/mktexts.py). "|" with no
+# spaces around it starts a new line in a dialog.
+MENU        | MUSIC                 | ΜΟΥΣΙΚΗ
+OPEN        | OPEN...               | ΑΝΟΙΓΜΑ...
+PLAY        | PLAY                  | ΠΑΙΞΙΜΟ
+STOP        | STOP                  | ΣΤΑΜΑΤΗΜΑ
+DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+ABOUT_TEXT  | MUSIC|SONGS OF ARKOS TRACKER|(AKM PLAYER: TARGHAN/|ARKOS, MIT LICENCE)|FOR V-OS, FROM THE SDK | ΜΟΥΣΙΚΗ|ΤΡΑΓΟΥΔΙΑ ARKOS TRACKER|(AKM PLAYER: TARGHAN/|ARKOS, ΑΔΕΙΑ MIT)|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+OPEN_T      | OPEN A SONG           | ΑΝΟΙΓΜΑ ΤΡΑΓΟΥΔΙΟΥ
+NOT_SONG    | NOT A SONG|OF MUSIC   | ΔΕΝ ΕΙΝΑΙ ΤΡΑΓΟΥΔΙ|ΤΟΥ MUSIC
+NO_SONG     | NO SONG: ^O OPENS ONE | ΚΑΝΕΝΑ ΤΡΑΓΟΥΔΙ: ^O
+PLAYING     | PLAYING               | ΠΑΙΖΕΙ
+STOPPED     | STOPPED               | ΣΤΑΜΑΤΗΜΕΝΟ
+HINT        | ^O OPEN  SPACE PLAY/STOP  ^Q BACK | ^O ΑΝΟΙΓΜΑ  SPACE ΠΑΙΞΙΜΟ/ΣΤΟΠ  ^Q ΕΠΙΣΤΡ.
+BEHIND      | IT GOES ON PLAYING BEHIND OTHER PROGRAMS | ΣΥΝΕΧΙΖΕΙ ΝΑ ΠΑΙΖΕΙ ΠΙΣΩ ΑΠΟ ΑΛΛΑ

@@ -183,7 +183,13 @@ bank_copy:
         jr .piece
 
 api_ticks:
+        ld b,a
+        and 1                       ; bit 0: VE_FRAME events
         ld (view_ticks),a
+        ld a,b
+        rrca                        ; bit 1 (VOS_PTR_KEYS): the cursor
+        and 1                       ; keys and COPY drive the pointer
+        ld (ptr_keys_on),a
         ret
 
 api_frames:
@@ -223,8 +229,69 @@ api_menu_help:
         ret
 
 api_catalog:
+        push af
+        push hl
+        and #3F
         call fdc_select
         call fs_catalog
+        pop de                      ; the extension
+        pop bc
+        jr c,.end
+        bit 6,b                     ; VOS_CAT_EXT: only those files
+        jr z,.end
+        push ix
+        ld ix,FS_CAT                ; where the next one kept goes
+        ld hl,FS_CAT
+        ld b,a
+        ld c,0
+        or a
+        jr z,.kept
+.file:
+        push bc
+        push de
+        push hl
+        ld bc,8
+        add hl,bc
+        ld b,3
+.same:
+        ld a,(de)
+        cp (hl)
+        jr nz,.other
+        inc hl
+        inc de
+        djnz .same
+.other:
+        pop hl
+        pop de
+        pop bc
+        jr nz,.next
+        push bc
+        push de
+        push hl
+        push ix
+        pop de
+        ld bc,16
+        ldir
+        push de
+        pop ix
+        pop hl
+        pop de
+        pop bc
+        inc c
+.next:
+        ld a,16
+        add a,l
+        ld l,a
+        jr nc,.carry
+        inc h
+.carry:
+        djnz .file
+.kept:
+        ld a,c
+        ld (fc_count),a
+        pop ix
+        or a
+.end:
         ld hl,FS_CAT
         ret
 

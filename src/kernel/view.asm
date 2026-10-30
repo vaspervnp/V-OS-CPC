@@ -45,6 +45,7 @@ CMD_SAVE        equ 11
 CMD_RUN         equ 12
 CMD_ACC         equ 13              ; Launcher: as the accessory
 CMD_PROGRAMS    equ 14              ; the program switcher
+CMD_DRIVE       equ 15              ; Launcher: the other drive
 CMD_DESKTOP     equ 16              ; CMD_DESKTOP + view number
 CMD_LAUNCHER    equ 17
 CMD_COMMANDER   equ 18
@@ -228,7 +229,8 @@ view_start:
         ld a,(vw_n)
         ld (view_cur),a
         xor a                       ; no frame events, no program texts,
-        ld (view_ticks),a           ; no buttons of the last program
+        ld (view_ticks),a           ; no buttons of the last program,
+        ld (ptr_keys_on),a          ; the cursor keys its own
         ld hl,api_no_texts
         ld (app_texts),hl
         ld hl,ui_no_widgets

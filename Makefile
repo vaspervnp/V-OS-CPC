@@ -54,22 +54,29 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-music songs FORCE test-about test-paint test-notepad windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
 # RASM appends to an existing DSK, so start from a fresh one every time.
 # Include paths in src/vos.asm are relative to src/; the DSK path is
 # relative to the repo root, where make runs.
-$(LANG_KERNEL) $(BUILD)/ENGLISH.MSG &: lang/en/keymap.txt lang/en/messages.txt tools/mklng.py
+# The day of the build, for {DATE} in the texts (the About dialog): the
+# texts are made again on a new day
+$(BUILD)/date.txt: FORCE
+	@mkdir -p $(BUILD)
+	@d=$$(date +%d.%m.%Y); [ "$$(cat $@ 2>/dev/null)" = "$$d" ] || echo $$d > $@
+FORCE:
+
+$(LANG_KERNEL) $(BUILD)/ENGLISH.MSG &: lang/en/keymap.txt lang/en/messages.txt tools/mklng.py $(BUILD)/date.txt
 	$(PYTHON) -I tools/mklng.py kernel lang/en src/lang $(BUILD)/ENGLISH.MSG
 
-$(BUILD)/GREEK.LNG: $(wildcard lang/el/*.txt) lang/en/messages.txt lang/en/keymap.txt tools/mklng.py
+$(BUILD)/GREEK.LNG: $(wildcard lang/el/*.txt) lang/en/messages.txt lang/en/keymap.txt tools/mklng.py $(BUILD)/date.txt
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mklng.py pack lang/el $@ --master lang/en
 
 # French, Spanish, German and Italian share lang/latin1/font.txt
-LATIN_PACK = $(wildcard lang/$(1)/*.txt) lang/latin1/font.txt lang/en/messages.txt lang/en/keymap.txt tools/mklng.py
+LATIN_PACK = $(wildcard lang/$(1)/*.txt) lang/latin1/font.txt lang/en/messages.txt lang/en/keymap.txt tools/mklng.py $(BUILD)/date.txt
 $(BUILD)/FRENCH.LNG: $(call LATIN_PACK,fr)
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mklng.py pack lang/fr $@ --master lang/en
@@ -102,14 +109,18 @@ APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
 # name.asm, texts.txt and icon.txt (and may include more .asm of its
 # own), and becomes build/NAME.BIN, with a relocation table, on
 # build/vos.dsk (not on the test discs), with the files of its disc/
-# folder as they are (its data files); with an owndisc/ folder, also on
-# a disc of its own, build/<name>.dsk, below.
+# folder as they are (its data files); with an owndisc/ folder, on a
+# disc of its own instead, build/<name>.dsk, below.
 #   make new-app NAME=hello   myapps/hello, from sdk/template
 #   make app NAME=hello       build/HELLO.BIN and build/vos.dsk
 upper = $(shell echo $(1) | tr a-z A-Z)
 MYAPPS := $(notdir $(wildcard myapps/*))
 MYAPP_BINS := $(foreach a,$(MYAPPS),$(BUILD)/$(call upper,$(a)).BIN)
 MYAPP_DISC := $(wildcard myapps/*/disc/*)   # their data files, as they are
+# one with a disc of its own (owndisc/, below) is only there
+OWN_APPS := $(patsubst myapps/%/owndisc/,%,$(wildcard myapps/*/owndisc/))
+DSK_MYAPPS := $(foreach a,$(filter-out $(OWN_APPS),$(MYAPPS)),$(BUILD)/$(call upper,$(a)).BIN) \
+              $(foreach a,$(filter-out $(OWN_APPS),$(MYAPPS)),$(wildcard myapps/$(a)/disc/*))
 
 # Icons for the Launcher (VOS_ICON): text in apps/icons, made into
 # assembly by tools/mkicon.py
@@ -214,9 +225,8 @@ $(BUILD)/$(call upper,$(2)).BIN: $(1)/$(2).asm $(wildcard $(1)/*.asm) $(1)/texts
 endef
 $(foreach a,$(MYAPPS),$(eval $(call myapp_rule,myapps/$(a),$(a))))
 
-# One with an owndisc/ folder also gets a disc of its own,
+# One with an owndisc/ folder gets a disc of its own instead,
 # build/<name>.dsk: NAME.BIN and the files of owndisc/, as they are
-OWN_APPS := $(patsubst myapps/%/owndisc/,%,$(wildcard myapps/*/owndisc/))
 OWN_DSKS := $(foreach a,$(OWN_APPS),$(BUILD)/$(a).dsk)
 define own_disc_rule
 $(BUILD)/$(1).dsk: $(BUILD)/$(call upper,$(1)).BIN $(wildcard myapps/$(1)/owndisc/*) tools/dsk_ext.py
@@ -228,12 +238,23 @@ endef
 $(foreach a,$(OWN_APPS),$(eval $(call own_disc_rule,$(a))))
 all: $(OWN_DSKS)
 
+# MUSIC's songs (myapps/music): Arkos Tracker's .aks songs made into .MUS
+# files on build/music.dsk by tools/mkmusic.py and Arkos Tracker's
+# SongToAkm; they are not in the repository (their authors' rights).
+#   make songs ARKOS=path/to/ArkosTracker3 [SONGS=folder or song.aks]
+ARKOS ?= $(BUILD)/dl/arkos/x/ArkosTracker3
+SONGS ?= $(ARKOS)/songs/ArkosTracker3
+songs:
+	$(PYTHON) -I tools/mkmusic.py "$(ARKOS)/tools/SongToAkm" "$(SONGS)" -o myapps/music/owndisc
+	$(MAKE) $(BUILD)/music.dsk
+
 # V-OS for Windows (tools/mkwindows.sh, under WSL): build/V-OS-windows.zip,
-# V-OS.exe with Caprice32 (576K), vos.dsk in A: and vrouves.dsk in B:.
-# CAP32_ZIP is Caprice32's cap32-win64.zip, from its GitHub releases.
-CAP32_ZIP ?= $(BUILD)/win/dl/cap32-win64.zip
+# V-OS.exe with CPCEMU (576K, AMX mouse, M4 board), vos.dsk in A: and
+# vrouves.dsk in B:.
+# CPCEMU_ZIP is its portable zip, from cpc-emu.org/download.html.
+CPCEMU_ZIP ?= $(BUILD)/dl/cpcemu/cpcemu_portable-win32-x86-3.0.2.zip
 windows: $(DSK) $(OWN_DSKS) tools/mkwindows.sh tools/windows/launcher.cs tools/windows/README.txt
-	bash tools/mkwindows.sh $(CAP32_ZIP)
+	bash tools/mkwindows.sh $(CPCEMU_ZIP)
 
 # The manual as a PDF (python's user packages: no -I)
 DOC_LANGS := en fr es de it
@@ -264,12 +285,12 @@ define add_apps
 	for p in $(2); do $(IDSK) $(1) -i $$p -t 1 -c 4000 -e 4000 > /dev/null; done
 endef
 
-$(DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(MYAPP_BINS) $(MYAPP_DISC)
+$(DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(DSK_MYAPPS)
 	@mkdir -p $(BUILD)
 	@rm -f $(DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos -s -sl
 	$(call add_packs,$(DSK))
-	$(call add_apps,$(DSK),$(APPS) $(MYAPP_BINS) $(MYAPP_DISC))
+	$(call add_apps,$(DSK),$(APPS) $(DSK_MYAPPS))
 	$(PYTHON) -I tools/dsk_ext.py $(DSK)
 
 run: $(DSK)
@@ -560,9 +581,9 @@ test-sdk: $(SDK_DSK) $(TEST_DSK_B)
 	ls $(BUILD)/shots/*/*.png
 
 # VROUVES (TEST_SCRIPT=16): myapps/vrouves from its own disc,
-# build/vrouves.dsk, in drive B:, run from the Commander
+# build/vrouves.dsk, in drive B:, run from the Launcher (TAB)
 VROUVES_DSK := $(BUILD)/vos_vrouves.dsk
-VROUVES_SHOTS := 200 280 330 400 450
+VROUVES_SHOTS := 150 200 280 470 700
 $(VROUVES_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
@@ -577,6 +598,86 @@ test-vrouves: $(VROUVES_DSK) $(BUILD)/vrouves.dsk
 	for d in $(VROUVES_SHOTS); do \
 	  cp $(VROUVES_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/vrouves.dsk $(BUILD)/vos_run_b.dsk; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# MUSIC (TEST_SCRIPT=20): myapps/music from build/music.dsk in drive B:
+MUSIC_DSK := $(BUILD)/vos_music.dsk
+MUSIC_SHOTS := 300 380 450 520
+$(MUSIC_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_music -DTEST_SCRIPT=20
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-music: $(MUSIC_DSK) $(BUILD)/music.dsk
+	rm -rf $(BUILD)/shots
+	for d in $(MUSIC_SHOTS); do \
+	  cp $(MUSIC_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/music.dsk $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# V-OS's About dialog (TEST_SCRIPT=19)
+ABOUT_DSK := $(BUILD)/vos_about.dsk
+ABOUT_SHOTS := 200 260
+$(ABOUT_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_about -DTEST_SCRIPT=19
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-about: $(ABOUT_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(ABOUT_SHOTS); do \
+	  cp $(ABOUT_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# PAINT (TEST_SCRIPT=18): myapps/paint, last on the test disc
+PAINT_DSK := $(BUILD)/vos_paint.dsk
+PAINT_SHOTS := 260 330 380 430 480
+$(PAINT_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/PAINT.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_paint -DTEST_SCRIPT=18
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS) $(BUILD)/PAINT.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-paint: $(PAINT_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(PAINT_SHOTS); do \
+	  cp $(PAINT_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# NOTEPAD (TEST_SCRIPT=17): myapps/notepad, last on the test disc
+NOTEPAD_DSK := $(BUILD)/vos_notepad.dsk
+NOTEPAD_SHOTS := 330 430 480 510
+$(NOTEPAD_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/NOTEPAD.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_notepad -DTEST_SCRIPT=17
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS) $(BUILD)/NOTEPAD.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-notepad: $(NOTEPAD_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(NOTEPAD_SHOTS); do \
+	  cp $(NOTEPAD_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  VOS_TIMEOUT=60 snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
 

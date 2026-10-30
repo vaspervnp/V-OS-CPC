@@ -35,7 +35,7 @@ A bigger program:
 
 - Put more `.asm` files in its folder (e.g. `art.asm` with sprites) and bring them in with `include "art.asm"`. The build finds them, and rebuilds the program when they change.
 - Whatever you put in the subfolder `disc/` (e.g. `disc/LEVEL1.DAT`) goes onto the disk as it is, for `VOS_LOAD`.
-- With a subfolder `owndisc/`, the program also gets a disk of its own, `build/<name>.dsk`, with the `.BIN` and the files of `owndisc/`. You put it in B: and run it from the Commander (FILE > RUN). Which drive it was started from, so that it loads its files from there, is in `VOS_SELF`: `db drive`, then its name (11 bytes).
+- With a subfolder `owndisc/`, the program also gets a disk of its own, `build/<name>.dsk`, with the `.BIN` and the files of `owndisc/`. It stays off `vos.dsk`. You put it in B: and run it from the Launcher (TAB, the other drive). Which drive it was started from, so that it loads its files from there, is in `VOS_SELF`: `db drive`, then its name (11 bytes).
 - A program with a relocation table (like those of the SDK) can be up to 12K. For the rest, load files into the data bank.
 
 ## How a program works
@@ -121,12 +121,12 @@ command: ...
 - **Icon:** 16 lines of 16 characters in `icon.txt`. Each character is a pen in hex (mode 0, Launcher palette) or `.` for transparent.
 - **File names** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 bytes, `"NAME    EXT"`. Drive 0 = A:, 1 = B:.
 
-## The API (version 11)
+## The API (version 12)
 
 | Call | Input → output | What it does |
 |---|---|---|
 | `VOS_EXIT` | — | end, back to the view that started it |
-| `VOS_TICKS` | A = 1 / 0 | `VE_FRAME` 50 times a second, or none |
+| `VOS_TICKS` | A = 1 / 0 (+ `VOS_PTR_KEYS`) | `VE_FRAME` 50 times a second, or none. With `VOS_PTR_KEYS` (2) the arrows and COPY also move the pointer and click |
 | `VOS_FRAMES` | → HL (and A bits 16–23) | frames since startup |
 | `VOS_RANDOM` | → A | 0–255 |
 | `VOS_COMMAND` | A = command | the shared commands of VIEW and HELP |
@@ -146,7 +146,7 @@ command: ...
 | `VOS_INPUT` | A = title, HL → text, C = maximum → carry if cancelled | text input (needs C + 2 bytes) |
 | `VOS_SET_WIDGETS`, `VOS_DRAW_WIDGETS` | HL → buttons | |
 | `VOS_MENU_VIEW`, `VOS_MENU_HELP` | → HL | the shared menus |
-| `VOS_CATALOG` | A = drive → A = files, HL → list | 16 bytes each: 11 the name, at +12 the size in K |
+| `VOS_CATALOG` | A = drive → A = files, HL → list | 16 bytes each: 11 the name, at +12 the size in K. With A = drive + `VOS_CAT_EXT` and HL → `"EXT"`, only the files with that extension |
 | `VOS_FILE_PICK` | A = title → A = file, carry if cancelled | picker dialog, after `VOS_CATALOG` |
 | `VOS_LOAD` | A = drive, HL → name, DE = where → BC = length | |
 | `VOS_SAVE` | A = drive, HL → name, DE = from, BC = length | binary file, replacing the old one |
@@ -165,6 +165,8 @@ command: ...
 | `VOS_FIT` | same → HL, DE | brings a window inside the screen |
 
 Full details, e.g. on the background, the accessory and `VOS_SPLIT`, are in `src/api/vos_api.inc`. For examples, see `apps/demo/demo.asm` (mode 0, motion), `apps/clock/clock.asm` (accessory) and `apps/mixed/mixed.asm` (mixed screen). A whole game with sprites, a stage from a file and sound is `myapps/vrouves/`.
+
+An AI assistant writing a program should read [`AI.md`](AI.md): the same rules, shorter, with the traps of RASM and of the data bank.
 
 ## Testing
 

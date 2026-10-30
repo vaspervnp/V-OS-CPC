@@ -45,6 +45,9 @@ DEAD_LAST = 7
 
 MSG_MAX = 159                       # LANG_MSG_MAX in src/kernel/lang.asm
 
+# "{DATE}" in a text: the day of the build (VOS_DATE, else today)
+BUILD_DATE = os.environ.get("VOS_DATE") or __import__("time").strftime("%d.%m.%Y")
+
 
 def fail(msg):
     sys.exit(f"mklng: {msg}")
@@ -140,6 +143,7 @@ def read_messages(path):
         if not m:
             fail(f"{path}:{n}: <ID> <text>")
         ident, body = m.group(1), m.group(2).rstrip()
+        body = body.replace("{DATE}", BUILD_DATE)
         if not re.fullmatch(r"[A-Z][A-Z0-9_]*", ident):
             fail(f"{path}:{n}: ID must be upper case")
         if ident in msgs:

@@ -2,6 +2,8 @@
 # spaces around it starts a new line in a dialog. Mode 0: 24 columns.
 MENU        | VROUVES               | ΒΡΟΥΒΕΣ
 NEW         | NEW GAME              | ΝΕΟ ΠΑΙΧΝΙΔΙ
+CONT        | CONTINUE              | ΣΥΝΕΧΕΙΑ
+SCORES      | HIGH SCORES           | ΚΑΛΥΤΕΡΑ ΣΚΟΡ
 NEXT        | NEXT WAVE             | ΕΠΟΜΕΝΟ ΚΥΜΑ
 PAUSE       | PAUSE                 | ΠΑΥΣΗ
 ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
@@ -27,3 +29,6 @@ MORE        | STAGES 2-7 ARE ON|THE VROUVES DISC | ΟΙ ΠΙΣΤΕΣ 2-7 ΕΙΝ�
 LOSE_T      | DEFEAT                | ΗΤΤΑ
 LOSE        | IT HAS FALLEN!|THE STAGE AGAIN | ΕΠΕΣΕ!|ΞΑΝΑ Η ΠΙΣΤΑ
 LANG        | E                     | G
+SCORE       | SCORE                 | ΣΚΟΡ
+STAGE       | STAGE                 | ΠΙΣΤΑ
+NAME        | YOUR NAME             | ΤΟ ΟΝΟΜΑ ΣΟΥ

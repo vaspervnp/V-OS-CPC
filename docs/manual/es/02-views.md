@@ -15,6 +15,8 @@ Los dos últimos menús son iguales en todas las vistas y en los programas:
 | PROGRAMAS (en marcha) | F6 | | |
 | CAMBIAR DE IDIOMA | ^L | | |
 
+AYUDA > ACERCA DE V-OS muestra la versión (0.1 beta), la fecha de compilación, el autor (Revive8bit, 2026) y el arquitecto (Vasper).
+
 ## Escritorio, F1
 
 Modo 1. Una ventana ARCHIVOS muestra los archivos de una unidad como iconos, cuatro por fila. El tipo va escrito dentro del icono y el nombre debajo, y un `.VBN` lleva al lado una marca de "play". A la derecha, dos iconos eligen A: o B:. La barra de título muestra el formato del disquete y el número de archivos, y el espacio libre se muestra abajo.
@@ -35,7 +37,7 @@ Modo 1. Una ventana ARCHIVOS muestra los archivos de una unidad como iconos, cua
 
 ## Programas, F2
 
-Modo 0, 16 colores. Muestra solo los programas de A: (`.BIN`, `.VBN`, `.BAS`), como baldosas en una cuadrícula de 3×3, con las páginas siguientes debajo. Cada programa que tiene icono lo muestra en su baldosa. La baldosa seleccionada es blanca.
+Modo 0, 16 colores. Muestra solo los programas de una unidad (`.BIN`, `.VBN`, `.BAS`), al principio A:, como baldosas en una cuadrícula de 3×3, con las páginas siguientes debajo. La línea de página empieza con la unidad (`A:`, `B:`). Cada programa que tiene icono lo muestra en su baldosa. La baldosa seleccionada es blanca.
 
 | Tecla | Qué hace |
 |---|---|
@@ -43,9 +45,10 @@ Modo 0, 16 colores. Muestra solo los programas de A: (`.BIN`, `.VBN`, `.BAS`), c
 | RETURN, ENTER | ejecuta el programa. Si ya está en marcha, continúa donde estaba |
 | ^A | lo carga como accesorio de escritorio (COMO ACCESORIO). Después F5 lo abre |
 | ^R | releer el disco |
+| TAB | la otra unidad (OTRA UNIDAD). Un programa iniciado desde B: vuelve a B: |
 | ratón | clic: selecciona, otra vez: ejecuta |
 
-**Menú ARCHIVO:** EJECUTAR, COMO ACCESORIO, RELEER LOS DISCOS, SALIR AL BASIC.
+**Menú ARCHIVO:** EJECUTAR, COMO ACCESORIO, OTRA UNIDAD, RELEER LOS DISCOS, SALIR AL BASIC.
 
 ## Commander, F3
 

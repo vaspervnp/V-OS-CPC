@@ -312,30 +312,187 @@ test_keys:
         dw 3050, 3054 : db 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 20
+; make test-music (-DTEST_SCRIPT=20): MUSIC (myapps/music) from its own
+; disc, build/music.dsk, in drive B:. Expected:
+;   frame  300  F2, 450 TAB  -> the Launcher, drive B: MUSIC
+;   frame  600  RETURN       -> MUSIC: B:, NO SONG, the buttons
+;   frame  750  CONTROL+O    -> the .MUS files of B:
+;   frame  850  RETURN       -> the first, AGANAMEM: PLAYING, the bars
+;                               move with the channels' volumes
+;   frame 1200  F2           -> the Launcher; the song goes on behind it
+;   frame 1400  RETURN       -> MUSIC again, still PLAYING
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  450,  454 : db 8, %00010000   ; TAB: drive B:
+        dw  600,  604 : db 2, %00000100   ; RETURN: MUSIC
+        dw  745,  760 : db 2, %10000000   ; CONTROL
+        dw  750,  754 : db 4, %00000100   ; O
+        dw  850,  854 : db 2, %00000100   ; RETURN: the first song
+        dw 1200, 1204 : db 1, %01000000   ; F2
+        dw 1400, 1404 : db 2, %00000100   ; RETURN: MUSIC again
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 19
+; make test-about (-DTEST_SCRIPT=19): HELP > ABOUT V-OS. Expected:
+;   frame  300  F2           -> the Launcher
+;   frame  400  ESC, 450 480 RIGHT x2, 520 DOWN -> the HELP menu,
+;                               ABOUT V-OS chosen
+;   frame  600  RETURN       -> V-OS 0.1 BETA, the build's date,
+;                               AMSTRAD CPC 6128, REVIVE8BIT, 2026,
+;                               ARCHITECT: VASPER
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  400,  404 : db 8, %00000100   ; ESC: the menus
+        dw  450,  454 : db 0, %00000010   ; RIGHT
+        dw  480,  484 : db 0, %00000010   ; RIGHT: HELP
+        dw  520,  524 : db 0, %00000100   ; DOWN: ABOUT V-OS
+        dw  600,  604 : db 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 18
+; make test-paint (-DTEST_SCRIPT=18): PAINT (myapps/paint), last on the
+; test disc. The cursor keys move the pointer, COPY is its button.
+; Expected:
+;   frame  300  F2, 420-480 DOWN x3, 520-610 RIGHT x4 -> PAINT chosen
+;   frame  660  RETURN       -> PAINT: a white picture, the tools
+;                               (PENCIL on yellow), the 16 colours
+;   frame  800-860 TAB x3    -> red chosen
+;   frame  900-1000 COPY, 920-950 UP held -> a red line upwards
+;   frame 1050  x, TAB       -> BOX, green
+;   frame 1100-1200 COPY, 1110-1145 LEFT held -> a green line (a box
+;                               one pixel high)
+;   frame 1250  f, TAB       -> FILL, yellow
+;   frame 1300  COPY         -> the area under the pointer yellow
+;   frame 1500  ESC, 1550 DOWN, 1600 RETURN -> NEW LAYERS; 1650
+;                               RETURN: YES (not saved) -> 64 x 64, twice
+;                               as big, the layers 3 2 1 (2 chosen)
+;   frame 1700  1, f         -> layer 1, FILL (yellow still)
+;   frame 1750  COPY         -> layer 1 all yellow (a few seconds)
+;   frame 2300  3, x, 2350 TAB -> layer 3, BOX, cyan
+;   frame 2400-2500 COPY, 2410-2450 UP held -> a cyan line (a box one
+;                               pixel wide)
+;   frame 2600  h            -> layer 3 hidden: the line goes
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  420,  424 : db 0, %00000100   ; DOWN
+        dw  450,  454 : db 0, %00000100   ; DOWN
+        dw  480,  484 : db 0, %00000100   ; DOWN
+        dw  520,  524 : db 0, %00000010   ; RIGHT
+        dw  550,  554 : db 0, %00000010   ; RIGHT
+        dw  580,  584 : db 0, %00000010   ; RIGHT
+        dw  610,  614 : db 0, %00000010   ; RIGHT
+        dw  660,  664 : db 2, %00000100   ; RETURN: PAINT
+        dw  800,  804 : db 8, %00010000   ; TAB
+        dw  830,  834 : db 8, %00010000   ; TAB
+        dw  860,  864 : db 8, %00010000   ; TAB: red
+        dw  900, 1000 : db 1, %00000010   ; COPY held
+        dw  920,  950 : db 0, %00000001   ; UP held
+        dw 1050, 1054 : db 7, %10000000   ; x: BOX
+        dw 1070, 1074 : db 8, %00010000   ; TAB: green
+        dw 1100, 1200 : db 1, %00000010   ; COPY held
+        dw 1110, 1145 : db 1, %00000001   ; LEFT held
+        dw 1250, 1254 : db 6, %00100000   ; f: FILL
+        dw 1270, 1274 : db 8, %00010000   ; TAB: yellow
+        dw 1300, 1304 : db 1, %00000010   ; COPY: fill
+        dw 1500, 1504 : db 8, %00000100   ; ESC: the menu
+        dw 1550, 1554 : db 0, %00000100   ; DOWN
+        dw 1600, 1604 : db 2, %00000100   ; RETURN: NEW LAYERS
+        dw 1650, 1654 : db 2, %00000100   ; RETURN: YES, not saved
+        dw 1700, 1704 : db 8, %00000001   ; 1: layer 1
+        dw 1720, 1724 : db 6, %00100000   ; f: FILL
+        dw 1750, 1754 : db 1, %00000010   ; COPY: fill
+        dw 2300, 2304 : db 7, %00000010   ; 3: layer 3
+        dw 2320, 2324 : db 7, %10000000   ; x: BOX
+        dw 2350, 2354 : db 8, %00010000   ; TAB: cyan
+        dw 2400, 2500 : db 1, %00000010   ; COPY held
+        dw 2410, 2450 : db 0, %00000001   ; UP held
+        dw 2600, 2604 : db 5, %00010000   ; h: hide
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 17
+; make test-notepad (-DTEST_SCRIPT=17): NOTEPAD (myapps/notepad), last on
+; the test disc. Expected:
+;   frame  300  F2, 420-480 DOWN x3, 520-610 RIGHT x4 -> NOTEPAD chosen
+;                               (page 2, after CLOCK ... BRICKS)
+;   frame  660  RETURN       -> NOTEPAD: an empty text, the cursor, the
+;                               last line "A:NONAME.TXT  LINE 1 COL 1"
+;   frame  800  h i RETURN v o s -> "hi" and "vos", LINE 2 COL 4, "*"
+;   frame 1000  LEFT x2, 1060 DEL -> "os", the cursor before o
+;   frame 1150  CONTROL+S    -> the name dialog with NONAME
+;   frame 1250-1400 DEL x6, 1430 t, 1480 RETURN -> saved: "A:T.TXT"
+;   frame 1600  CONTROL+N    -> an empty text again
+;   frame 1700  CONTROL+O    -> the files of A:, to open one
+;   frame 1850  ESC          -> no file: the empty text
+test_keys:
+        dw  300,  304 : db 1, %01000000   ; F2
+        dw  420,  424 : db 0, %00000100   ; DOWN
+        dw  450,  454 : db 0, %00000100   ; DOWN
+        dw  480,  484 : db 0, %00000100   ; DOWN
+        dw  520,  524 : db 0, %00000010   ; RIGHT
+        dw  550,  554 : db 0, %00000010   ; RIGHT
+        dw  580,  584 : db 0, %00000010   ; RIGHT
+        dw  610,  614 : db 0, %00000010   ; RIGHT
+        dw  660,  664 : db 2, %00000100   ; RETURN: NOTEPAD
+        dw  800,  804 : db 5, %00010000   ; h
+        dw  830,  834 : db 4, %00001000   ; i
+        dw  860,  864 : db 2, %00000100   ; RETURN
+        dw  890,  894 : db 6, %10000000   ; v
+        dw  920,  924 : db 4, %00000100   ; o
+        dw  950,  954 : db 7, %00010000   ; s
+        dw 1000, 1004 : db 1, %00000001   ; LEFT
+        dw 1030, 1034 : db 1, %00000001   ; LEFT
+        dw 1060, 1064 : db 9, %10000000   ; DEL
+        dw 1145, 1160 : db 2, %10000000   ; CONTROL
+        dw 1150, 1154 : db 7, %00010000   ; S
+        dw 1250, 1254 : db 9, %10000000   ; DEL
+        dw 1280, 1284 : db 9, %10000000   ; DEL
+        dw 1310, 1314 : db 9, %10000000   ; DEL
+        dw 1340, 1344 : db 9, %10000000   ; DEL
+        dw 1370, 1374 : db 9, %10000000   ; DEL
+        dw 1400, 1404 : db 9, %10000000   ; DEL
+        dw 1430, 1434 : db 6, %00001000   ; t
+        dw 1480, 1484 : db 2, %00000100   ; RETURN: save
+        dw 1595, 1610 : db 2, %10000000   ; CONTROL
+        dw 1600, 1604 : db 5, %01000000   ; N
+        dw 1695, 1710 : db 2, %10000000   ; CONTROL
+        dw 1700, 1704 : db 4, %00000100   ; O
+        dw 1850, 1854 : db 8, %00000100   ; ESC
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 16
 ; make test-vrouves (-DTEST_SCRIPT=16): VROUVES (myapps/vrouves) from
 ; its own disc, build/vrouves.dsk, in drive B:. Expected:
-;   frame  300  F3           -> the Commander: A: and B: (VROUVES.BIN,
-;                               VROUV1..7.DAT)
-;   frame  450  TAB          -> the B: panel, VROUVES.BIN selected
-;   frame  520  ESC, 570 RETURN -> FILE > RUN: stage 1, from B:, with
-;                               its name under the HUD; on the bar only
-;                               the Cretan and the Psssst
+;   frame  300  F2           -> the Launcher, drive A:
+;   frame  450  TAB          -> drive B: "B: PAGE 1/1", VROUVES with its
+;                               icon, selected
+;   frame  600  RETURN       -> stage 1, from B:, with its name under
+;                               the HUD; on the bar only the Cretan and
+;                               the Psssst
 ;   frame  800  SPACE        -> a Cretan on the cursor's cell (10, 6)
 ;   frame  850  UP, 880 4, 910 SPACE -> Psssst on (10, 5)
 ;   frame  960  N            -> wave 1: guards come down the road, the
 ;                               keys replace the stage's name
-;   later       the defenders fire, the guards fall, FUNDS grows
+;   frame 1100  ESC, 1130-1220 DOWN x4, 1250 RETURN -> HIGH SCORES:
+;                               the best five over the playfield
+;   frame 1900  ^Q           -> back: the Launcher, still on B:
 test_keys:
-        dw  300,  304 : db 0, %00100000   ; F3: the Commander
+        dw  300,  304 : db 1, %01000000   ; F2: the Launcher
         dw  450,  454 : db 8, %00010000   ; TAB: drive B:
-        dw  520,  524 : db 8, %00000100   ; ESC: the menus
-        dw  570,  574 : db 2, %00000100   ; RETURN: FILE > RUN
+        dw  600,  604 : db 2, %00000100   ; RETURN: VROUVES
         dw  800,  804 : db 5, %10000000   ; SPACE: a Cretan
         dw  850,  854 : db 0, %00000001   ; UP
         dw  880,  884 : db 7, %00000001   ; 4: Psssst
         dw  910,  914 : db 5, %10000000   ; SPACE
         dw  960,  964 : db 5, %01000000   ; N: the first wave
+        dw 1100, 1104 : db 8, %00000100   ; ESC: the menu
+        dw 1130, 1134 : db 0, %00000100   ; DOWN
+        dw 1160, 1164 : db 0, %00000100   ; DOWN
+        dw 1190, 1194 : db 0, %00000100   ; DOWN
+        dw 1220, 1224 : db 0, %00000100   ; DOWN
+        dw 1250, 1254 : db 2, %00000100   ; RETURN: HIGH SCORES
+        dw 1895, 1910 : db 2, %10000000   ; CONTROL
+        dw 1900, 1904 : db 8, %00001000   ; Q
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 15
@@ -932,6 +1089,10 @@ test_keys:
         dw 3395, 3410 : db 2, %10000000   ; CONTROL
         dw 3400, 3404 : db 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
+        ENDIF
+        ENDIF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

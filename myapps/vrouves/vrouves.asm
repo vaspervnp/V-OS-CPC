@@ -6,7 +6,10 @@
 ; Kafenio of Zoniana, and the villagers build defenders beside it to
 ; save its sacks of vrouves. Simplified: the seven stages, each with
 ; ten waves of three invaders and the defenders the original has there;
-; no neighbour bonus, no projectiles in flight, no music.
+; no neighbour bonus, no projectiles in flight, no music. VROUVES.SAV,
+; beside the stages, keeps the furthest stage reached (CONTINUE) and
+; the five best scores (a score: the rewards, and the greens left at
+; each stage won).
 ;
 ; Mode 0, the original's art and palette (art.asm, import_art.py). A
 ; stage, VROUVn.DAT, from the drive the game was run from, is loaded
@@ -18,8 +21,8 @@
 ; drawing the stage's cells there again, then every invader, effect and
 ; the cursor are drawn.
 ;
-;   make app NAME=vrouves     build/VROUVES.BIN, with VROUV1.DAT on the
-;                             V-OS disc and all seven on build/vrouves.dsk
+;   make app NAME=vrouves     build/VROUVES.BIN, on build/vrouves.dsk
+;                             with the seven stages
 ; =====================================================================
 
         include "api/vos_api.inc"
@@ -44,6 +47,7 @@ ST_NAME         equ #2E2            ; in English, then Greek: 0-ended
 ST_NAME_EL      equ #2FB
 ST_HEAD         equ #320            ; what is copied here
 STAGES          equ 7
+CACHE_N         equ 4               ; cells kept ready for VOS_BLIT
 K_GRASS         equ 0
 K_ROAD          equ 1
 K_BLOCK         equ 2
@@ -109,13 +113,17 @@ HUD_WAVE        equ 4
 HUD_CD          equ 8
 HUD_INFO        equ 16
 HUD_BAR         equ 32
-HUD_ALL         equ 63
+HUD_SCORE       equ 64
+HUD_ALL         equ 127
 
 CMD_NEW         equ 1
 CMD_NEXT        equ 2
 CMD_PAUSE       equ 3
 CMD_ABOUT       equ 4
 CMD_BACK        equ 5
+CMD_CONT        equ 6
+CMD_SCORES      equ 7
+SAVE_SIZE       equ 1 + 5 * 10      ; stage reached; 5 x name (8), score
 
 KEY_1           equ 64              ; key numbers (lang/en/keymap.txt)
 KEY_2           equ 65
@@ -160,6 +168,7 @@ init:
         ld (drive),a
         ld a,1
         ld (stage_no),a
+        call load_save
 .again:
         call load_stage
         call c,VOS_ERROR
@@ -196,7 +205,11 @@ redraw:
         ld a,1
         ld (dirty),a
         call draw_tick
-        jp hud_draw
+        call hud_draw
+        ld a,(board)
+        or a
+        ret z
+        jp draw_board
 
 ; stage_no into the data bank, its head here -> carry, A = error
 load_stage:
@@ -216,7 +229,7 @@ load_stage:
         ld bc,ST_HEAD
         call VOS_BANK_GET
         ld hl,cache_tag             ; the cache is empty
-        ld b,8
+        ld b,CACHE_N
 .tag:
         ld (hl),0
         inc hl
@@ -226,14 +239,205 @@ load_stage:
         or a
         ret
 
-; NEW GAME, and after the last stage: stage 1
+; NEW GAME, and after the last stage: stage 1; CONTINUE: the furthest
+; one (stage 1 if it is not on this disc). A new run: no score.
 stage_one:
+        ld a,1
+start_at:
+        ld (stage_no),a
+        ld hl,0
+        ld (score),hl
+        call load_stage
+        jr nc,.ok
         ld a,1
         ld (stage_no),a
         call load_stage
         call c,VOS_ERROR
+.ok:
         call new_game
         jp redraw
+continue:
+        ld a,(save_buf)
+        jr start_at
+
+; the save file -> save_buf; none: stage 1, no scores
+load_save:
+        ld a,(drive)
+        ld hl,save_name
+        ld de,save_buf
+        call VOS_LOAD
+        ret nc
+        ld hl,save_buf
+        ld de,save_buf + 1
+        ld bc,SAVE_SIZE - 1
+        ld (hl),0
+        ldir
+        ld a,1
+        ld (save_buf),a
+        ret
+
+write_save:
+        ld a,(drive)
+        ld hl,save_name
+        ld de,save_buf
+        ld bc,SAVE_SIZE
+        call VOS_SAVE
+        ret nc
+        jp VOS_ERROR
+
+; DE = points: to the score, at most 9999
+add_score:
+        ld hl,(score)
+        add hl,de
+        push hl
+        ld de,-10000
+        add hl,de
+        pop hl
+        jr nc,.ok
+        ld hl,9999
+.ok:
+        ld (score),hl
+        ld a,HUD_SCORE
+        jp hud_set
+
+; the run is over: a score better than the fifth gets a name and a
+; place, is saved, and the best five are shown
+record:
+        ld ix,save_buf + 1 + 4 * 10
+        ld e,(ix + 8)
+        ld d,(ix + 9)
+        ld hl,(score)
+        or a
+        sbc hl,de
+        ret c
+        ret z
+        xor a
+        ld (name_buf),a
+        ld a,T_NAME
+        ld hl,name_buf
+        ld c,8
+        call VOS_INPUT
+        ret c
+        ld ix,save_buf + 1          ; its place: above the first lower one
+        ld b,5
+.find:
+        ld e,(ix + 8)
+        ld d,(ix + 9)
+        ld hl,(score)
+        or a
+        sbc hl,de
+        jr z,.below
+        jr nc,.here
+.below:
+        ld de,10
+        add ix,de
+        djnz .find
+        ret
+.here:
+        push ix                     ; the lower ones down one place
+        pop de
+        ld hl,save_buf + SAVE_SIZE - 10
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        ld a,b
+        or c
+        jr z,.put
+        ld hl,save_buf + SAVE_SIZE - 11
+        ld de,save_buf + SAVE_SIZE - 1
+        lddr
+.put:
+        push ix
+        pop de
+        ld hl,name_buf
+        ld b,8
+.name:
+        ld a,(hl)
+        or a
+        jr z,.pad
+        ld (de),a
+        inc hl
+        inc de
+        djnz .name
+        jr .score
+.pad:
+        ld a," "
+        ld (de),a
+        inc de
+        djnz .pad
+.score:
+        ld hl,(score)
+        ld (ix + 8),l
+        ld (ix + 9),h
+        call write_save
+        ; fall through
+
+; HIGH SCORES: the best five over the playfield, until a key or a click
+show_board:
+        ld a,1
+        ld (board),a
+draw_board:
+        push ix
+        ld ix,board_rect
+        call VOS_RECT
+        ld a,T_SCORES
+        ld hl,40
+        ld de,52
+        ld c,14
+        call label_w
+        ld ix,save_buf + 1
+        ld a,72
+        ld (bd_y),a
+        ld b,5
+.line:
+        push bc
+        push ix                     ; the name, 8 characters
+        pop hl
+        ld de,line
+        ld b,8
+.copy:
+        ld a,(hl)
+        or a
+        jr nz,.char
+        ld a," "
+.char:
+        ld (de),a
+        inc hl
+        inc de
+        djnz .copy
+        xor a
+        ld (de),a
+        ld a,1
+        ld c,0
+        call VOS_COLOURS
+        ld a,(bd_y)
+        ld e,a
+        ld d,0
+        ld hl,40
+        ld bc,line
+        call VOS_PRINT
+        ld l,(ix + 8)               ; the score, if any
+        ld h,(ix + 9)
+        ld a,h
+        or l
+        jr z,.empty
+        ld a,(bd_y)
+        ld c,a
+        ld b,0
+        ld de,112
+        call number
+.empty:
+        ld de,10
+        add ix,de
+        ld hl,bd_y
+        ld a,12
+        add a,(hl)
+        ld (hl),a
+        pop bc
+        djnz .line
+        pop ix
+        ret
 
 new_game:
         ld hl,game_vars
@@ -292,6 +496,19 @@ event:
         jp nz,command
         call VOS_MENU_OPEN
         ret nz
+        ld a,(board)
+        or a
+        jr z,.play
+        ld a,(hl)                   ; the best five shown: a key or a
+        cp VE_KEY_DOWN              ; click closes them
+        jr z,.close
+        cp VE_PTR_DOWN
+        ret nz
+.close:
+        xor a
+        ld (board),a
+        jp redraw
+.play:
         ld a,(hl)
         cp VE_PTR_DOWN
         jp z,click
@@ -344,6 +561,10 @@ keys:           db VK_UP : dw cur_up
 command:
         cp CMD_NEW
         jp z,stage_one
+        cp CMD_CONT
+        jp z,continue
+        cp CMD_SCORES
+        jp z,show_board
         cp CMD_NEXT
         jp z,next_wave
         cp CMD_PAUSE
@@ -685,6 +906,9 @@ frame:
         ld a,(loaded)
         or a
         ret z
+        ld a,(board)
+        or a
+        ret nz
         ld hl,ticks
         inc (hl)
         bit 0,(hl)
@@ -711,23 +935,40 @@ frame:
         cp 2
         ret nz
 .won:                               ; on to the next stage
+        ld a,(hp)                   ; the greens left: points
+        ld e,a
+        ld d,0
+        call add_score
         ld a,(stage_no)
         cp STAGES
         ld hl,dlg_final
-        jr nc,.first
+        jr nc,.over
         ld hl,dlg_win
         call VOS_DIALOG
         ld hl,stage_no
         inc (hl)
         call load_stage
-        jr nc,.again
+        jr c,.more
+        ld a,(stage_no)             ; the furthest stage, saved
+        ld hl,save_buf
+        cp (hl)
+        jr c,.again
+        jr z,.again
+        ld (hl),a
+        call write_save
+        jr .again
+.more:
         ld hl,dlg_more              ; not on this disc
-.first:
+.over:                              ; the run is over
         call VOS_DIALOG
+        call record
         jp stage_one
-.lost:                              ; this stage again
+.lost:                              ; this stage again, a new run
         ld hl,dlg_lose
         call VOS_DIALOG
+        call record
+        ld hl,0
+        ld (score),hl
 .again:
         call new_game
         jp redraw
@@ -1450,6 +1691,7 @@ hurt:
         ld hl,(funds)
         add hl,de
         ld (funds),hl
+        call add_score
         ld (ix + E_TYPE),0
         ld hl,en_count
         dec (hl)
@@ -1981,7 +2223,7 @@ restore:
 ; A = cell -> HL -> its (mask, pixels) pairs, through the cache
 cell_pairs:
         ld c,a
-        and 7
+        and CACHE_N - 1
         ld (cp_slot),a
         ld e,a
         ld d,0
@@ -2092,9 +2334,36 @@ hud_draw:
         call nz,.cd
         bit 5,b
         call nz,.bar
+        bit 6,b
+        call nz,.score
         bit 4,b
         ret z
         jp .info
+; the last row: SCORE nnnn  STAGE n
+.score:
+        push bc
+        ld a,T_SCORE
+        ld hl,0
+        ld de,HUD_Y + 62
+        ld c,6
+        call label_w
+        ld hl,(score)
+        ld de,48
+        ld bc,HUD_Y + 62
+        call number
+        ld a,T_STAGE
+        ld hl,96
+        ld de,HUD_Y + 62
+        ld c,5
+        call label_w
+        ld a,(stage_no)
+        ld l,a
+        ld h,0
+        ld de,136
+        ld bc,HUD_Y + 62
+        call number
+        pop bc
+        ret
 ; row 1: FUNDS nnnn  WAVE nn; row 2: VROUVES nnn  NEXT IN nn / FOES nn
 .funds:
         push bc
@@ -2377,10 +2646,12 @@ number:
 
 bar:            db 3
                 dw menu, 0, 0
-menu:           db T_MENU, 6
+menu:           db T_MENU, 8
                 db T_NEW, CMD_NEW, 0, 0
+                db T_CONT, CMD_CONT, 0, 0
                 db T_NEXT, CMD_NEXT, 0, 0
                 db T_PAUSE, CMD_PAUSE, 0, 0
+                db T_SCORES, CMD_SCORES, 0, 0
                 db T_ABOUT, CMD_ABOUT, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
@@ -2390,6 +2661,9 @@ dlg_final:      db T_WIN_T, T_FINAL, 1, VM_OK
 dlg_more:       db T_WIN_T, T_MORE, 1, VM_OK
 dlg_lose:       db T_LOSE_T, T_LOSE, 1, VM_OK
 stage_name:     db "VROUV1  DAT"      ; the digit is stage_no
+save_name:      db "VROUVES SAV"
+board_rect:     dw 32, 44, 128, 92  ; the best five: x, y, w, h, pen
+                db 0
 
 ; invaders: base hp, hp a wave, speed (x 16), armour, reward, damage, -, -
 etype_tab:      db 6, 3, 20, 0, 3, 4, 0, 0     ; bio-drone
@@ -2424,14 +2698,19 @@ squares:
 loaded:         db 0
 drive:          db 0                ; the game's drive (VOS_SELF)
 stage_no:       db 1                ; 1..STAGES
+score:          dw 0                ; this run's
+board:          db 0                ; the best five shown
+bd_y:           db 0
+save_buf:       ds SAVE_SIZE        ; VROUVES.SAV
+name_buf:       ds 10               ; VOS_INPUT: 8 + 2
 blt:            dw 0, 0             ; VOS_BLIT: x, y, bytes, rows, source,
                 db 0, 0             ; stride
                 dw 0
                 db 0
 rect:           dw 0, 0, 0, 0       ; VOS_RECT: x, y, w, h, pen
                 db 0
-cache_tag:      ds 8                ; cell + 1 in each slot, 0 none
-cache:          ds 8 * 96
+cache_tag:      ds CACHE_N          ; cell + 1 in each slot, 0 none
+cache:          ds CACHE_N * 96
 cell_raw:       ds 48
 cp_slot:        db 0
 lb_w:           db 0

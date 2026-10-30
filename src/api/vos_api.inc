@@ -74,12 +74,14 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 11              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 12              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
                                     ; 9: BACKGROUND, 10: DRAG, FIT,
-                                    ; 11: the language of VOS_TEXTS
+                                    ; 11: the language of VOS_TEXTS,
+                                    ; 12: VOS_CAT_EXT, VOS_SELF,
+                                    ; VOS_PTR_KEYS
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -91,7 +93,10 @@ VOS_API         equ #0108           ; the jump table (after "VOS",0, versions)
 
 ; ---- system ---------------------------------------------------------
 VOS_EXIT        equ VOS_API + 0 * 3     ; back to the view that started it
-VOS_TICKS       equ VOS_API + 1 * 3     ; A = 1: VE_FRAME events, 0: none
+VOS_TICKS       equ VOS_API + 1 * 3     ; A = 1: VE_FRAME events, 0: none;
+                                        ; + VOS_PTR_KEYS: the cursor keys
+                                        ; and COPY drive the pointer too
+VOS_PTR_KEYS    equ 2                   ; (version 12)
 VOS_FRAMES      equ VOS_API + 2 * 3     ; -> HL = frames since boot (50 Hz),
                                         ; A = bits 16..23 (version 7)
 VOS_RANDOM      equ VOS_API + 3 * 3     ; -> A = 0..255
@@ -119,6 +124,8 @@ VOS_MENU_VIEW   equ VOS_API + 22 * 3    ; -> HL = the shared VIEW menu
 VOS_MENU_HELP   equ VOS_API + 23 * 3    ; -> HL = the shared HELP menu
 ; ---- files ----------------------------------------------------------
 VOS_CATALOG     equ VOS_API + 24 * 3    ; A = drive -> A = files, HL -> list
+                                        ; (+ VOS_CAT_EXT, HL -> "EXT": only
+                                        ; those files, version 12)
 VOS_LOAD        equ VOS_API + 25 * 3    ; A = drive, HL = name, DE = to
 VOS_SAVE        equ VOS_API + 26 * 3    ; A = drive, HL = name, DE, BC
 VOS_DELETE      equ VOS_API + 27 * 3    ; A = drive, HL = name
@@ -149,6 +156,8 @@ VOS_BANK_GET    equ VOS_API + 37 * 3    ; HL = source in the data bank,
                                         ; DE = destination, BC = bytes
 VOS_BANK_PUT    equ VOS_API + 38 * 3    ; HL = source, DE = destination
                                         ; in the data bank, BC = bytes
+VOS_CAT_EXT     equ #40                 ; drive + VOS_CAT_EXT: VOS_CATALOG
+                                        ; keeps one extension
 VOS_DATA        equ #80                 ; drive + VOS_DATA: VOS_LOAD and
                                         ; VOS_SAVE use the data bank
 VOS_SELF        equ #8800               ; the program running: db drive,

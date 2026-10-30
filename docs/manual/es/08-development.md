@@ -18,7 +18,8 @@ Para quienes trabajan en el propio V-OS. Los programas *para* V-OS se describen 
 | `make run` | abre el disquete en Caprice32 (`RUN"VOS"`) |
 | `make shot` | arranca sin ventana y hace una captura de pantalla |
 | `make docs` | el manual en PDF: `docs/V-OS.pdf` (griego) y `docs/V-OS-en.pdf`, `-fr`, `-es`, `-de`, `-it` |
-| `make windows` | `build/V-OS-windows.zip`: `V-OS.exe` para Windows, con Caprice32 (CPC 6128, 576K), `vos.dsk` en A: y `vrouves.dsk` en B:. V-OS arranca solo. Hace falta WSL y el `cap32-win64.zip` de Caprice32 (`CAP32_ZIP=…`) |
+| `make windows` | `build/V-OS-windows.zip`: `V-OS.exe` para Windows, con CPCEMU 3.0.2 (CPC 6128, 576K, ratón AMX, tarjeta M4), `vos.dsk` en A: y `vrouves.dsk` en B:. V-OS arranca solo. Hace falta WSL y el zip portable de CPCEMU (`CPCEMU_ZIP=…`) |
+| `make songs` | las canciones de Arkos Tracker 3 como archivos `.MUS` en `myapps/music/owndisc` (`tools/mkmusic.py`; hace falta Arkos Tracker 3, `ARKOS=…`) |
 | `make new-app NAME=x`, `make app NAME=x` | su propio programa (SDK) |
 | `make clean` | borra `build/` |
 
@@ -92,7 +93,11 @@ Las pruebas ejecutan V-OS en Caprice32 sin ventana y hacen capturas de pantalla 
 | `test-mines`, `test-bricks` | los juegos |
 | `test-vars` | las 128 variables, SAVE/LOAD VARS |
 | `test-sdk` | la plantilla del SDK |
-| `test-vrouves` | VROUVES desde su disquete en B:, por el Commander: construir, la oleada 1, el dinero |
+| `test-vrouves` | VROUVES desde su disquete en B:, por el Launcher (TAB): construir, la oleada 1, el dinero, HIGH SCORES |
+| `test-notepad` | NOTEPAD: escribir, DEL, el diálogo de guardar, OPEN solo con archivos `.TXT` |
+| `test-paint` | PAINT: línea, rectángulo, relleno, los menús, y luego las capas (ocultar una) |
+| `test-about` | AYUDA > ACERCA DE V-OS |
+| `test-music` | MUSIC desde `music.dsk` en B:: una canción suena y sigue detrás del Launcher |
 | `test-amsdos`, `test-reboot`, `test-system` | archivos de V-OS en el BASIC, reinicio, disquete SYSTEM |
 
 **Script nuevo:**

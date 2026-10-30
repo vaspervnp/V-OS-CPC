@@ -99,7 +99,8 @@ MSG_COL_RED          equ 95
 MSG_SET_KEYS         equ 96
 MSG_SET_SAVED        equ 97
 MSG_ITEM_ACC         equ 98
-MSG_ITEM_PROGRAMS    equ 99
-MSG_SW_T             equ 100
-MSG_SW_NONE          equ 101
-MSG_COUNT             equ 102
+MSG_ITEM_DRIVE       equ 99
+MSG_ITEM_PROGRAMS    equ 100
+MSG_SW_T             equ 101
+MSG_SW_NONE          equ 102
+MSG_COUNT             equ 103

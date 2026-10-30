@@ -32,4 +32,4 @@ Derselbe Inhalt steht auch als PDF zur Verfügung, in [`docs/V-OS-de.pdf`](../..
 - [`docs/REQUIREMENTS.md`](../../REQUIREMENTS.md): die Anforderungen und der Entwurf, mit den Umsetzungsdetails jedes Meilensteins.
 - [`src/api/vos_api.inc`](../../../src/api/vos_api.inc): die API, mit allen Regeln in Kommentaren.
 
-> Diese Dokumentation beschreibt V-OS bis einschließlich M32. Sie wird mit jedem Meilenstein aktualisiert.
+> Diese Dokumentation beschreibt V-OS bis einschließlich M33. Sie wird mit jedem Meilenstein aktualisiert.

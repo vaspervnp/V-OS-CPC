@@ -15,6 +15,8 @@ Die letzten beiden Menüs sind in allen Ansichten und in Programmen gleich:
 | PROGRAMME (laufende) | F6 | | |
 | SPRACHE WECHSELN | ^L | | |
 
+HILFE > ÜBER V-OS zeigt die Version (0.1 Beta), das Datum des Builds, den Hersteller (Revive8bit, 2026) und den Architekten (Vasper).
+
 ## Schreibtisch, F1
 
 Modus 1. Ein Fenster DATEIEN zeigt die Dateien eines Laufwerks als Symbole, vier pro Reihe. Der Typ steht im Symbol und der Name darunter, und eine `.VBN` hat daneben ein „Play“-Zeichen. Rechts wählen zwei Symbole A: oder B:. Die Titelleiste zeigt das Diskettenformat und die Anzahl der Dateien, und unten wird der freie Platz angezeigt.
@@ -35,7 +37,7 @@ Modus 1. Ein Fenster DATEIEN zeigt die Dateien eines Laufwerks als Symbole, vier
 
 ## Programme, F2
 
-Modus 0, 16 Farben. Zeigt nur die Programme auf A: (`.BIN`, `.VBN`, `.BAS`), als Kacheln in einem 3×3-Raster, mit den weiteren Seiten darunter. Jedes Programm, das ein Symbol hat, zeigt es auf seiner Kachel. Die ausgewählte Kachel ist weiß.
+Modus 0, 16 Farben. Zeigt nur die Programme eines Laufwerks (`.BIN`, `.VBN`, `.BAS`), zuerst A:, als Kacheln in einem 3×3-Raster, mit den weiteren Seiten darunter. Die Seitenzeile beginnt mit dem Laufwerk (`A:`, `B:`). Jedes Programm, das ein Symbol hat, zeigt es auf seiner Kachel. Die ausgewählte Kachel ist weiß.
 
 | Taste | Was sie tut |
 |---|---|
@@ -43,9 +45,10 @@ Modus 0, 16 Farben. Zeigt nur die Programme auf A: (`.BIN`, `.VBN`, `.BAS`), als
 | RETURN, ENTER | startet das Programm. Läuft es bereits, macht es dort weiter, wo es war |
 | ^A | lädt es als Zubehörprogramm (ALS ZUBEHÖR). F5 öffnet es dann |
 | ^R | die Diskette neu lesen |
+| TAB | das andere Laufwerk (ANDERES LAUFWERK). Ein Programm, das von B: gestartet wurde, kehrt zu B: zurück |
 | Maus | Klick: auswählen, noch einmal: starten |
 
-**Menü DATEI:** STARTEN, ALS ZUBEHÖR, DISKETTEN NEU LESEN, ZURÜCK ZU BASIC.
+**Menü DATEI:** STARTEN, ALS ZUBEHÖR, ANDERES LAUFWERK, DISKETTEN NEU LESEN, ZURÜCK ZU BASIC.
 
 ## Commander, F3
 

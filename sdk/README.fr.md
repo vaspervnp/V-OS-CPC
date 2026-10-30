@@ -35,7 +35,7 @@ Un programme plus grand :
 
 - Mettez d'autres fichiers `.asm` dans son dossier (par ex. `art.asm` avec des sprites) et intégrez-les avec `include "art.asm"`. Le build les trouve, et reconstruit le programme quand ils changent.
 - Ce que vous mettez dans le sous-dossier `disc/` (par ex. `disc/LEVEL1.DAT`) va tel quel sur la disquette, pour `VOS_LOAD`.
-- Avec un sous-dossier `owndisc/`, le programme a aussi sa propre disquette, `build/<nom>.dsk`, avec le `.BIN` et les fichiers de `owndisc/`. Vous la mettez en B: et le lancez depuis le Commander (FICHIER > LANCER). Le lecteur d'où il a été lancé, pour y charger ses fichiers, est dans `VOS_SELF` : `db lecteur`, puis son nom (11 octets).
+- Avec un sous-dossier `owndisc/`, le programme a aussi sa propre disquette, `build/<nom>.dsk`, avec le `.BIN` et les fichiers de `owndisc/`. Il ne va pas sur `vos.dsk`. Vous la mettez en B: et le lancez depuis le Lanceur (TAB, l'autre lecteur). Le lecteur d'où il a été lancé, pour y charger ses fichiers, est dans `VOS_SELF` : `db lecteur`, puis son nom (11 octets).
 - Un programme avec une table de relocation (comme ceux du SDK) peut faire jusqu'à 12K. Pour le reste, chargez des fichiers dans la banque de données.
 
 ## Comment fonctionne un programme
@@ -121,12 +121,12 @@ command: ...
 - **Icône :** 16 lignes de 16 caractères dans `icon.txt`. Chaque caractère est une encre en hexadécimal (mode 0, palette du Lanceur) ou `.` pour transparent.
 - **Noms de fichiers** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`) : 11 octets, `"NAME    EXT"`. Lecteur 0 = A:, 1 = B:.
 
-## L'API (version 11)
+## L'API (version 12)
 
 | Appel | Entrée → sortie | Ce qu'il fait |
 |---|---|---|
 | `VOS_EXIT` | — | fin, retour à la vue qui l'a lancé |
-| `VOS_TICKS` | A = 1 / 0 | `VE_FRAME` 50 fois par seconde, ou aucun |
+| `VOS_TICKS` | A = 1 / 0 (+ `VOS_PTR_KEYS`) | `VE_FRAME` 50 fois par seconde, ou aucun. Avec `VOS_PTR_KEYS` (2), les flèches et COPY déplacent aussi le pointeur et cliquent |
 | `VOS_FRAMES` | → HL (et A bits 16–23) | trames depuis le démarrage |
 | `VOS_RANDOM` | → A | 0–255 |
 | `VOS_COMMAND` | A = commande | les commandes communes d'AFFICHAGE et AIDE |
@@ -146,7 +146,7 @@ command: ...
 | `VOS_INPUT` | A = titre, HL → texte, C = maximum → carry si annulé | saisie de texte (demande C + 2 octets) |
 | `VOS_SET_WIDGETS`, `VOS_DRAW_WIDGETS` | HL → boutons | |
 | `VOS_MENU_VIEW`, `VOS_MENU_HELP` | → HL | les menus communs |
-| `VOS_CATALOG` | A = lecteur → A = fichiers, HL → liste | 16 octets chacun : 11 pour le nom, en +12 la taille en K |
+| `VOS_CATALOG` | A = lecteur → A = fichiers, HL → liste | 16 octets chacun : 11 pour le nom, en +12 la taille en K. Avec A = lecteur + `VOS_CAT_EXT` et HL → `"EXT"`, seulement les fichiers de cette extension |
 | `VOS_FILE_PICK` | A = titre → A = fichier, carry si annulé | dialogue de sélection, après `VOS_CATALOG` |
 | `VOS_LOAD` | A = lecteur, HL → nom, DE = où → BC = longueur | |
 | `VOS_SAVE` | A = lecteur, HL → nom, DE = depuis, BC = longueur | fichier binaire, qui remplace l'ancien |
@@ -165,6 +165,8 @@ command: ...
 | `VOS_FIT` | idem → HL, DE | ramène une fenêtre dans l'écran |
 
 Tous les détails, par ex. sur l'arrière-plan, l'accessoire et `VOS_SPLIT`, sont dans `src/api/vos_api.inc`. Pour des exemples, voir `apps/demo/demo.asm` (mode 0, mouvement), `apps/clock/clock.asm` (accessoire) et `apps/mixed/mixed.asm` (écran mixte). Un jeu complet avec des sprites, un niveau lu dans un fichier et du son : `myapps/vrouves/`.
+
+Un assistant IA qui écrit un programme doit lire [`AI.md`](AI.md) (en anglais) : les mêmes règles, plus courtes, avec les pièges de RASM et de la banque de données.
 
 ## Les tests
 

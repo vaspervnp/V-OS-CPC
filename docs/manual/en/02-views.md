@@ -15,6 +15,8 @@ The last two menus are the same in all views and in programs:
 | PROGRAMS (running) | F6 | | |
 | SWITCH LANGUAGE | ^L | | |
 
+HELP > ABOUT V-OS shows the version (0.1 beta), the date of the build, the maker (Revive8bit, 2026) and the architect (Vasper).
+
 ## Desktop, F1
 
 Mode 1. A FILES window shows the files of a drive as icons, four in each row. The type is written inside the icon and the name below it, and a `.VBN` has a "play" mark next to it. On the right, two icons choose A: or B:. The title bar shows the disc format and the number of files, and the free space is shown at the bottom.
@@ -35,7 +37,7 @@ Mode 1. A FILES window shows the files of a drive as icons, four in each row. Th
 
 ## Launcher, F2
 
-Mode 0, 16 colors. Shows only the programs on A: (`.BIN`, `.VBN`, `.BAS`), as tiles in a 3×3 grid, with the next pages below. Every program that has an icon shows it on its tile. The selected tile is white.
+Mode 0, 16 colors. Shows only the programs of one drive (`.BIN`, `.VBN`, `.BAS`), A: at first, as tiles in a 3×3 grid, with the next pages below. The page line starts with the drive (`A:`, `B:`). Every program that has an icon shows it on its tile. The selected tile is white.
 
 | Key | What it does |
 |---|---|
@@ -43,9 +45,10 @@ Mode 0, 16 colors. Shows only the programs on A: (`.BIN`, `.VBN`, `.BAS`), as ti
 | RETURN, ENTER | runs the program. If it is already running, it resumes where it was |
 | ^A | loads it as the desk accessory (AS ACCESSORY). F5 then opens it |
 | ^R | read the disc again |
+| TAB | the other drive (OTHER DRIVE). A program started from B: comes back to B: |
 | mouse | click: select, again: run |
 
-**FILE menu:** RUN, AS ACCESSORY, READ DISCS AGAIN, EXIT TO BASIC.
+**FILE menu:** RUN, AS ACCESSORY, OTHER DRIVE, READ DISCS AGAIN, EXIT TO BASIC.
 
 ## Commander, F3
 
