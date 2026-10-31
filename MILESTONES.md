@@ -4,6 +4,19 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M45 (one character set for every language; version 0.16):**
+- **The V-OS character set** (`tools/voscs.py`): one 8-bit code for all six languages. Codes 128–255 are the Greek ones of ISO 8859-7, as before, and the codes it leaves free or V-OS did not use (#80–#9F and 13 rare signs) now hold À Á Â Ä Ç È É Ê Ë Ì Í Î Ï Ñ Ò Ó Ô Ö Ù Ú Û Ü, their small letters, ß, ¡ and ¿. ´ is written as the Greek tonos and µ as μ; ÿ, Œ and œ are not in it (French lost its ¨ y combination). Before, the Latin packs used Latin-1, whose codes were Greek letters in the Greek pack.
+- **One font in every pack** (`lang/vos/font.txt`, made by `tools/fonts/make_vos_font.py` from the Greek and Latin fonts), with one case table. Whatever pack is loaded, every letter shows: Greek and French in one text, FRANÇAIS and ESPAÑOL in Setup's LANGUAGE in the Greek pack.
+- **Everything in it:** the packs (`charset vos`), the English texts and keyboard (SHIFT+^ now gives £), the program texts (`mktexts.py`, both columns), Studio's blocks (`vbc.py`, `mkvbs.py`). Greek bytes are the same, so no Greek file changed; the Latin packs are rebuilt from their UTF-8 sources; no disc file had Latin-1.
+- **Databases:** a text field over 127 makes the database V-OS (byte 7 of page 0 = 2), in any language. `DB_OPEN` gives A = 1 (THE DATABASE IS IN ANOTHER ALPHABET) only for a database of 0.15 with Latin-1 text; a Greek one of 0.15 has the same codes. `tools/vdb.py dump` shows the fields as text.
+- **Bug found:** the new OPEN check left the carry of a `cp` set, so every OPEN failed (found by `make test-db`).
+- **Tested:**
+  - `make test-charset` (new, Caprice32): a HELLO.TXT with Greek, French, Spanish, German and Italian lines and £ € § ° « » ´ µ, opened in NOTEPAD with the English texts: every letter right. It found the € blank in the Greek font; it is drawn now.
+  - `make test-db`: ASCII leaves the alphabet 0; a record with ΑΘΗΝΑ ÇA GRÜß makes it 2 and OPEN gives 0; a file marked 7 (Greek of 0.15) gives 0, marked 1 (Latin-1) gives 1. The 4000 random calls and the full disc as before, with 5 and 2 cache pages. `make test-db-disc`: a Greek street, then OPEN in French and Greek both 0.
+  - `make test-langs`, `make test-lang` (the packs in Setup, the Greek keyboard), `test-streets`, `test-notepad`, `test-about` (0.16), `test-sysinfo`, `test-input`, `test-calc`, `test-clip`, `test-reader`, `test-markdown`, `test-sdk`, `test-styles`, `test-paint`.
+  - The texts of every program, Studio's blocks and the Greek pack: the same bytes as before (each Greek character checked against ISO 8859-7).
+- **Not tested:** on a real CPC; typing the Latin letters with the French, Spanish and German keyboards in Caprice32 (their combinations are built by the same code from the new table).
+
 **M44 (databases: the engine and its API; STREETS; version 0.15):**
 - **Databases:** a file `NAME.VDB` of 1K pages, as big as the disc allows (up to 255 pages), with up to 8 tables. A table has up to 10 fields of text (up to 255 characters) or a 2-byte number, records of a fixed length, and may have a key field (text up to 64 characters, or a number) with an index, a B+tree: FIND by the first letters, and walks in key order. A record's id is its page and slot.
 - **API 22, `VX_DB`:** `VOS_EXT` with C = `DB_CREATE`, `DB_OPEN`, `DB_CLOSE`, `DB_TABLE`, `DB_USE`, `DB_INFO`, `DB_ADD`, `DB_GET`, `DB_PUT`, `DB_DEL`, `DB_FIND`, `DB_FIRST`, `DB_LAST`, `DB_NEXT`, `DB_PREV`, `DB_COUNT`. One database is open at a time, for the program that opened it. Every call writes its changes to the disc before it returns. 14 new messages, in the six languages.

@@ -239,17 +239,16 @@ def main():
         fail('FIRST/NEXT: %d records, %s' % (len(got), 'out of order' if sorted(got) == sorted(want)
                                               else 'not the right ones'))
     r = ok(mach.call(D['FIND'], de=3, hl=mach.put(text('AGI', 24) + bytes(18))), 'FIND')
-    # the alphabet, with the kernel's lang_code: a Greek street, then
-    # OPEN in French warns, in Greek not
-    mach.poke(sym['LANG_CODE'], b'EL')
+    # the alphabet: a Greek street makes it the V-OS set, which opens
+    # without a word in any language
     rec = bytes([0xC5, 0xD1, 0xCC, 0xCF, 0xD5]).ljust(24, b' ') + text('SYNTAGMA', 16) + (10563).to_bytes(2, 'little')
     r = ok(mach.call(D['ADD'], hl=mach.put(rec)), 'ADD in Greek')
     recs[r[2]] = rec
-    for code, want in ((b'FR', 1), (b'EL', 0)):
+    for code in (b'FR', b'EL'):
         mach.poke(sym['LANG_CODE'], code)
         r = ok(mach.call(D['OPEN'], de=name), 'OPEN in ' + code.decode())
-        if r[1] != want:
-            fail('a Greek database opened in %s: A = %d, not %d' % (code.decode(), r[1], want))
+        if r[1] != 0:
+            fail('a Greek database opened in %s: A = %d, not 0' % (code.decode(), r[1]))
     # the file, from the disc's own directory (the kernel's view of it)
     data = vdb_file(disc_b, 'STREETS VDB')
     problems = vdb.check(data)

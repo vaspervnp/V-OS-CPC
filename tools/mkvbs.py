@@ -32,6 +32,9 @@ import os
 import struct
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import voscs  # noqa: E402,F401  (the codec "vos")
+
 SPR_MAX, TEXT_MAX, TEXT_SIZE, MAX_LINES, COS_MAX = 6, 32, 16, 240, 8
 K = dict(NUM=1, VAR=2, X=3, Y=4, RND=5, KEY=6, TOUCH=7, EDGE=8, CMP=9,
          SPR=10, KEYN=11, BUTTON=12, TEXT=13, COSTUME=14, GROUP=15)
@@ -73,7 +76,7 @@ def words(line):
 
 def slot(word, texts):
     if word.startswith('"'):
-        raw = word[1:-1].encode("iso8859_7")
+        raw = word[1:-1].encode("vos")
         if len(raw) > TEXT_SIZE - 2:
             raise Error(f"{word}: at most {TEXT_SIZE - 2} characters")
         if len(texts) == TEXT_MAX:

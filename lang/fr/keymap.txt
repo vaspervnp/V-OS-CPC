@@ -1,6 +1,6 @@
 # French keyboard: AZERTY, as on the French PC, on the CPC keys. Keys not
 # listed keep the English map (lang/en/keymap.txt). Characters are
-# written in UTF-8 and stored as ISO 8859-1.
+# written in UTF-8 and stored in the V-OS character set (tools/voscs.py).
 #
 # The digits are on SHIFT. The @ key is the circumflex dead key, and
 # SHIFT+@ the diaeresis (^ and ¨ on the PC).
@@ -46,7 +46,6 @@ combo circumflex space ^
 combo diaeresis e ë
 combo diaeresis i ï
 combo diaeresis u ü
-combo diaeresis y ÿ
 combo diaeresis E Ë
 combo diaeresis I Ï
 combo diaeresis U Ü

@@ -239,10 +239,10 @@ VX_COUNT        equ 9
 DB_CREATE       equ 0                   ; DE -> db drive, 11-byte name
                                         ; ("NAME    VDB"): new, open
 DB_OPEN         equ 1                   ; DE -> db drive, name: open ->
-                                        ; A = 1: its text is in another
-                                        ; alphabet than the language in
-                                        ; use (Greek, or Latin-1: FR ES
-                                        ; DE IT): say DB_ERR_ALPHABET
+                                        ; A = 1: its text is Latin-1
+                                        ; (made by V-OS 0.15 in FR ES
+                                        ; DE IT), not the V-OS character
+                                        ; set: say DB_ERR_ALPHABET
 DB_CLOSE        equ 2
 DB_TABLE        equ 3                   ; DE -> a table: name (8), fields
                                         ; (1..10), the key field (0: none,

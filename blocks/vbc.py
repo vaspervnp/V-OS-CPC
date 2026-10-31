@@ -60,7 +60,7 @@ visible, "of": sprite (default: the script's)}; {"frames": true};
 {"costume": true} (its number, from 1); {"item": E, "of": list};
 {"length": list}; {"contains": list, "value": E}.
 Numbers are 16-bit signed; comparisons give 1 or 0. Text is written in
-ISO 8859-7, so Greek works with the Greek pack.
+the V-OS character set (tools/voscs.py), Greek and Latin letters alike.
 
 Windows and buttons, as Studio's (blocks/runtime.asm, RT_UI): window
 draws a window in the middle of the stage and takes away the last one
@@ -82,6 +82,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 import mkicon  # noqa: E402
 import mkreloc  # noqa: E402
+import voscs  # noqa: E402,F401  (the codec "vos")
 STACK_SIZE = 128
 SP_SIZE = 24
 MAX_COSTUME = 128
@@ -657,9 +658,9 @@ class Compiler:
             out.append(f"cnt_{i}:          dw 0")
         for i, text in enumerate(self.strings):
             try:
-                data = text.upper().encode("iso8859_7")
+                data = text.upper().encode("vos")
             except UnicodeEncodeError:
-                raise Error(f"text outside ISO 8859-7: {text}")
+                raise Error(f"text outside the V-OS character set: {text}")
             out.append(f"str_{i}:          db " + ", ".join(str(c) for c in data + b"\0")
                        + f"   ; {text}")
         out += [f"rt_state:        ds SCRIPT_COUNT * ST_SIZE",

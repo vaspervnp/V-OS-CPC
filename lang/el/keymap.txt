@@ -1,6 +1,6 @@
 # Greek keyboard: the Greek PC layout on the CPC keys. Keys not listed keep
 # the English map (lang/en/keymap.txt). Characters are written in UTF-8
-# and stored as ISO 8859-7.
+# and stored in the V-OS character set (tools/voscs.py).
 #
 # Dead keys: "dead:<name>" gives no character; the next key is looked up
 # in the combo lines. A key with no combo is typed as is.

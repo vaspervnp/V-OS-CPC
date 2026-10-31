@@ -44,7 +44,11 @@ FS_ERR_FULL     equ 8               ; (kernel/fs.asm)
 DB_PAGE         equ 1024
 H_PAGES         equ 4               ; page 0
 H_TABLES        equ 6
-H_ALPHABET      equ 7               ; 0: ASCII so far; 1 Latin-1, 7 Greek
+H_ALPHABET      equ 7               ; 0: ASCII so far, 2 V-OS character
+                                    ; set (7 Greek: the same codes; 1
+                                    ; Latin-1, of V-OS 0.15)
+CS_VOS          equ 2
+CS_LATIN1       equ 1
 H_DESC          equ 16
 DB_DESC         equ 124
 T_NAME          equ 0               ; a table: 8 characters
@@ -197,21 +201,16 @@ db_opened:
         ld a,1
         ld (db_is_open),a
         call db_who_set
-        ld hl,0                     ; its alphabet and the language's
-        call pg_get
+        ld hl,0                     ; its alphabet: Latin-1, from
+        call pg_get                 ; V-OS 0.15, is not the V-OS set
         ret c
         ld de,H_ALPHABET
         add hl,de
         ld a,(hl)
-        or a                        ; ASCII: any
-        ret z
-        ld b,a
-        call cs_now
-        cp b
+        xor CS_LATIN1               ; (no carry)
         ld a,0
-        ret z
+        ret nz
         inc a                       ; 1: another alphabet
-        or a
         ret
 .not_db:
         ld a,DB_ERR_NOT_DB
@@ -678,26 +677,8 @@ room_ok:
         or a
         ret
 
-; -> A = the alphabet of the language in use (lang_code): 0 English
-; (ASCII), 7 Greek (ISO 8859-7), 1 the others (ISO 8859-1)
-cs_now:
-        ld hl,(lang_code)
-        ld de,"N" * 256 + "E"
-        or a
-        sbc hl,de
-        ld a,0
-        ret z
-        ld hl,(lang_code)
-        ld de,"L" * 256 + "E"
-        or a
-        sbc hl,de
-        ld a,7
-        ret z
-        ld a,1
-        ret
-
 ; rec has a character over 127 in a text field, and the database has
-; only ASCII so far: it takes the alphabet in use (H_ALPHABET)
+; only ASCII so far: it is in the V-OS character set now (H_ALPHABET)
 cs_mark:
         ld ix,t_new + T_FIELD
         ld hl,rec
@@ -734,10 +715,7 @@ cs_mark:
         ld a,(hl)
         or a
         ret nz
-        push hl
-        call cs_now
-        pop hl
-        ld (hl),a
+        ld (hl),CS_VOS
         call pg_dirty
         or a
         ret
@@ -2244,7 +2222,6 @@ dk_append:      jp TRAP + 15        ; one block more
 db_who:         xor a               ; Z: the program that opened it
                 ret
 db_who_set:     ret
-lang_code:      db "EN"             ; the kernel's (kernel/lang.asm)
 db_in:                              ; HL (program) -> DE, BC bytes
 db_out:                             ; HL -> DE (program)
         ld a,b

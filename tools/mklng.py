@@ -11,8 +11,9 @@
 
   mklng.py pack lang/el build/GREEK.LNG --master lang/en
       A language pack file (.LNG), format below. lang/<xx>/pack.txt
-      gives code, name and charset, and may name a shared font
-      ("font ../latin1/font.txt"; default font.txt).
+      gives code, name and charset ("vos", the V-OS character set of
+      tools/voscs.py, for every pack) and the font, which all of them
+      share ("font ../vos/font.txt"; default font.txt).
 
 .LNG format (little endian, offsets from the start of the file):
    0  "VLNG"            magic
@@ -37,6 +38,9 @@ import argparse
 import os
 import re
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import voscs  # noqa: E402,F401  (registers the codec "vos")
 
 MAX_PACK = 8192                     # LANG_MAX in src/include/memmap.inc
 DEAD_FIRST = 1
@@ -224,8 +228,7 @@ def case_table(charset):
 def build_pack(src, dst, master):
     info = read_pack_info(os.path.join(src, "pack.txt"))
     charset = Charset(info["charset"])
-    ascii_cs = Charset("ascii")
-    base = read_keymap(os.path.join(master, "keymap.txt"), ascii_cs)
+    base = read_keymap(os.path.join(master, "keymap.txt"), Charset("vos"))
     normal, shift, combos = read_keymap(os.path.join(src, "keymap.txt"), charset, base[:2])
     glyphs = read_font(os.path.join(src, info.get("font", "font.txt")))
     ids = list(read_messages(os.path.join(master, "messages.txt")))
@@ -288,8 +291,8 @@ MAX_ENGLISH = 2048                  # EN_MSG_ADDR .. EXT_ADDR, memmap.inc
 
 
 def build_kernel(src, outdir, msg_file):
-    ascii_cs = Charset("ascii")
-    normal, shift, combos = read_keymap(os.path.join(src, "keymap.txt"), ascii_cs)
+    vos_cs = Charset("vos")
+    normal, shift, combos = read_keymap(os.path.join(src, "keymap.txt"), vos_cs)
     if combos:
         fail(f"{src}/keymap.txt: the built-in map cannot have dead keys")
     msgs = read_messages(os.path.join(src, "messages.txt"))
@@ -308,7 +311,7 @@ def build_kernel(src, outdir, msg_file):
     first_string = head + 2 + 2 * len(msgs)
     for ident, text in msgs.items():
         table += (first_string + len(strings)).to_bytes(2, "little")
-        strings += ascii_cs.text(text, f"{src}/messages.txt {ident}") + b"\0"
+        strings += vos_cs.text(text, f"{src}/messages.txt {ident}") + b"\0"
     data = b"VMSG" + bytes([1]) + table + strings
     if len(data) > MAX_ENGLISH:
         fail(f"{msg_file}: {len(data)} bytes, the limit is {MAX_ENGLISH}")

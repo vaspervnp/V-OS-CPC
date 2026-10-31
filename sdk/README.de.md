@@ -113,7 +113,7 @@ command: ...
   - letter: Kurzbefehl CONTROL+Buchstabe, oder 0
 - **Schaltflächen** (`VOS_SET_WIDGETS`, dann `VOS_DRAW_WIDGETS`): `db count`, und für jede Schaltfläche `dw x, y; db Breite in Zeichen, text, command, 0`.
 - **Dialog** (`VOS_DIALOG` → A = Schaltfläche, 0 die erste, ESC ergibt die letzte): `db title, text, Anzahl der Schaltflächen (1–3), button, ...`. Für die Schaltflächen `VM_OK`, `VM_YES` und `VM_NO`.
-- **Texte** (`VOS_TEXTS`): erzeugt von `tools/mktexts.py` aus `texts.txt`, mit Zeilen `NAME | English | Greek`.
+- **Texte** (`VOS_TEXTS`): erzeugt von `tools/mktexts.py` aus `texts.txt`, mit Zeilen `NAME | English | Greek`. Beide Spalten werden in UTF-8 geschrieben und werden zu Bytes des V-OS-Zeichensatzes (`tools/voscs.py`), der Griechisch und die lateinischen Buchstaben von Französisch, Spanisch, Deutsch und Italienisch enthält.
   - Es liefert `T_NAME` (`VT_FIRST` = `#C0` und aufwärts) und die Tabelle `texts:`. Bis zu 64 Texte.
   - Ein `|` ohne Leerzeichen davor und danach beginnt in Dialogen eine neue Zeile.
   - Texte gehen überall dorthin, wo ein „Text“ verlangt wird (Menüs, Schaltflächen, Dialoge). Mit `VOS_MSG` bekommst du ihre Adresse für `VOS_PRINT`.
@@ -174,7 +174,7 @@ command: ...
 
 | Aufruf | Ein → aus |
 |---|---|
-| `DB_CREATE`, `DB_OPEN` | DE → db Laufwerk, 11-Byte-Name (`"STREETS VDB"`); OPEN → A = 1: ein anderes Alphabet |
+| `DB_CREATE`, `DB_OPEN` | DE → db Laufwerk, 11-Byte-Name (`"STREETS VDB"`); OPEN → A = 1: Latin-1 (von V-OS 0.15) |
 | `DB_CLOSE` | |
 | `DB_TABLE` | DE → Name (8), Felder, Schlüsselfeld (0: keins), dann jedes Feld: Name (8), Typ, Länge → A = Tabelle |
 | `DB_USE` | E = die Tabelle, die die Aufrufe unten nutzen |
@@ -186,7 +186,7 @@ command: ...
 | `DB_FIRST`, `DB_LAST`, `DB_NEXT`, `DB_PREV` | HL → Platz für den Datensatz, oder 0 → DE = rid, nach Schlüssel; Carry am Ende |
 | `DB_COUNT` | → HL = Datensätze |
 
-Fehler: Carry und A (`DB_ERR_*`, und die Fehler der Diskette), die `VOS_ERROR` zeigt. Text wird gespeichert, wie er getippt wurde: eine Datenbank übernimmt das Alphabet der aktiven Sprache (Griechisch, oder Latin-1 für Französisch, Spanisch, Deutsch, Italienisch), wenn ein Textfeld zum ersten Mal ein Zeichen über 127 bekommt, und `DB_OPEN` gibt A = 1, wenn das nicht mehr das Alphabet der Sprache ist; zeige dann `DB_ERR_ALPHABET` mit `VOS_ERROR`. Sortieren und FIND vergleichen Bytes: Groß- und Kleinbuchstaben, und solche mit Akzent, sind verschieden. Ein Beispiel ist STREETS (`myapps/streets`), ein Straßenverzeichnis; `tools/vdb.py` zeigt und prüft eine `.VDB`-Datei auf dem PC.
+Fehler: Carry und A (`DB_ERR_*`, und die Fehler der Diskette), die `VOS_ERROR` zeigt. Text wird gespeichert, wie er getippt wurde, im V-OS-Zeichensatz, in allen Sprachen demselben: eine Datenbank kann Griechisch, Französisch und Deutsch zusammen enthalten. Nur eine Datenbank von V-OS 0.15 mit lateinischen Buchstaben (Latin-1) ist anders: `DB_OPEN` gibt dann A = 1; zeige `DB_ERR_ALPHABET` mit `VOS_ERROR`. Sortieren und FIND vergleichen Bytes: Groß- und Kleinbuchstaben, und solche mit Akzent, sind verschieden. Ein Beispiel ist STREETS (`myapps/streets`), ein Straßenverzeichnis; `tools/vdb.py` zeigt und prüft eine `.VDB`-Datei auf dem PC.
 
 Alle Details, z. B. zum Hintergrund, zum Zubehörprogramm und zu `VOS_SPLIT`, stehen in `src/api/vos_api.inc`. Beispiele findest du in `apps/demo/demo.asm` (Modus 0, Bewegung), `apps/clock/clock.asm` (Zubehör) und `apps/mixed/mixed.asm` (gemischter Bildschirm). Ein ganzes Spiel mit Sprites, einem Level aus einer Datei und Ton ist `myapps/vrouves/`.
 

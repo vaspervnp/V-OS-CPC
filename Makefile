@@ -33,6 +33,8 @@
 #                 random calls checked against a model, the file page by page
 #   make test-db-disc DB.SYS with the kernel's file system on a DSK image
 #   make test-streets STREETS from its disc: a new STREETS.VDB, FIND, ADD
+#   make test-charset Greek, French, Spanish, German, Italian in one text
+#                 (the V-OS character set), in NOTEPAD
 #   make test-amsdos  the same script, then AMSDOS in BASIC reads the
 #                 files V-OS wrote (one screenshot)
 #   make test-reboot  the same, then RUN"VOS" with the saved SETUP.CFG
@@ -65,7 +67,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -79,15 +81,15 @@ $(BUILD)/date.txt: FORCE
 	@d=$$(date +%d.%m.%Y); [ "$$(cat $@ 2>/dev/null)" = "$$d" ] || echo $$d > $@
 FORCE:
 
-$(LANG_KERNEL) $(BUILD)/ENGLISH.MSG &: lang/en/keymap.txt lang/en/messages.txt tools/mklng.py src/version.inc $(BUILD)/date.txt
+$(LANG_KERNEL) $(BUILD)/ENGLISH.MSG &: lang/en/keymap.txt lang/en/messages.txt tools/mklng.py tools/voscs.py src/version.inc $(BUILD)/date.txt
 	$(PYTHON) -I tools/mklng.py kernel lang/en src/lang $(BUILD)/ENGLISH.MSG
 
-$(BUILD)/GREEK.LNG: $(wildcard lang/el/*.txt) lang/en/messages.txt lang/en/keymap.txt tools/mklng.py src/version.inc $(BUILD)/date.txt
+$(BUILD)/GREEK.LNG: $(wildcard lang/el/*.txt) lang/vos/font.txt tools/voscs.py lang/en/messages.txt lang/en/keymap.txt tools/mklng.py src/version.inc $(BUILD)/date.txt
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mklng.py pack lang/el $@ --master lang/en
 
-# French, Spanish, German and Italian share lang/latin1/font.txt
-LATIN_PACK = $(wildcard lang/$(1)/*.txt) lang/latin1/font.txt lang/en/messages.txt lang/en/keymap.txt tools/mklng.py src/version.inc $(BUILD)/date.txt
+# every pack has the font of the V-OS character set, lang/vos/font.txt
+LATIN_PACK = $(wildcard lang/$(1)/*.txt) lang/vos/font.txt tools/voscs.py lang/en/messages.txt lang/en/keymap.txt tools/mklng.py src/version.inc $(BUILD)/date.txt
 $(BUILD)/FRENCH.LNG: $(call LATIN_PACK,fr)
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mklng.py pack lang/fr $@ --master lang/en
@@ -788,6 +790,23 @@ test-open: $(OPEN_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN
 	cp $(BUILD)/markdown.dsk $(BUILD)/vos_open_b.dsk
 	iDSK $(BUILD)/vos_open_b.dsk -i $(BUILD)/HELLO.TXT -t 0 > /dev/null
 	for d in $(OPEN_SHOTS); do \
+	  cp $(OPEN_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/vos_open_b.dsk $(BUILD)/vos_run_b.dsk; \
+	  iDSK $(BUILD)/vos_run.dsk -i $(BUILD)/NOTEPAD.BIN -t 1 -c 4000 -e 4000 > /dev/null; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The V-OS character set (as test-open): HELLO.TXT in Greek, French,
+# Spanish, German and Italian together (tools/voscs.py), opened in
+# NOTEPAD with the English texts; check the letters in the last shot
+CHARSET_SHOTS := 400
+test-charset: $(OPEN_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN tools/voscs.py
+	rm -rf $(BUILD)/shots
+	$(PYTHON) -I -c "import sys; sys.path.insert(0, 'tools'); import voscs; \
+	  open('$(BUILD)/HELLO.TXT', 'wb').write('ΕΛΛΗΝΙΚΑ: ΓΕΙΑ ΣΟΥ, ΚΟΣΜΕ! άέήίόύώ ϊϋΐΰ\r\nFRANÇAIS: À BIENTÔT, ÇA VA? être élève\r\nESPAÑOL: ¿QUÉ TAL? ¡OLÉ! niño\r\nDEUTSCH: GRÜßE AUS KÖLN. Straße\r\nITALIANO: È COSÌ, PERCHÉ? città\r\n£ € § ° « » ´ µ\r\n'.encode('vos'))"
+	cp $(BUILD)/markdown.dsk $(BUILD)/vos_open_b.dsk
+	iDSK $(BUILD)/vos_open_b.dsk -i $(BUILD)/HELLO.TXT -t 0 > /dev/null
+	for d in $(CHARSET_SHOTS); do \
 	  cp $(OPEN_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/vos_open_b.dsk $(BUILD)/vos_run_b.dsk; \
 	  iDSK $(BUILD)/vos_run.dsk -i $(BUILD)/NOTEPAD.BIN -t 1 -c 4000 -e 4000 > /dev/null; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \

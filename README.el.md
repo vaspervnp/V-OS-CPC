@@ -69,7 +69,7 @@ blocks/              προγράμματα με blocks: editor.html (Blockly), 
 src/gfx/             γραφικά overscan, κείμενο, γραμματοσειρά (font_ascii.asm παράγεται)
 src/include/         θύρες υλικού, χάρτης μνήμης
 src/lang/            παραγόμενα: αριθμοί μηνυμάτων, αγγλικά κείμενα και πληκτρολόγιο
-lang/                πηγές γλωσσών: en (βασική: ENGLISH.MSG και το πληκτρολόγιο του kernel), el (GREEK.LNG), fr, es, de, it (FRENCH, SPANISH, GERMAN, ITALIAN.LNG), latin1 (το κοινό font τους)
+lang/                πηγές γλωσσών: en (βασική: ENGLISH.MSG και το πληκτρολόγιο του kernel), el (GREEK.LNG), fr, es, de, it (FRENCH, SPANISH, GERMAN, ITALIAN.LNG), vos (το font του συνόλου χαρακτήρων του V-OS, σε κάθε pack)
 tools/               scripts: screenshot στον Caprice32, mkfont.py, mklng.py, mktexts.py, mkicon.py
 docs/                manual/ (η τεκμηρίωση, ανά κεφάλαιο), V-OS.pdf, απαιτήσεις, πρότυπα
 sdk/                 το SDK για προγράμματα σε assembly: οδηγός, API, template/ (πρότυπο προγράμματος)
@@ -80,4 +80,4 @@ myapps/              τα δικά σου προγράμματα (make new-app),
 
 ## Κατάσταση
 
-Το V-OS είναι στο **M44** (έκδοση 0.15 beta· κάθε milestone προσθέτει 0.01). Τι πρόσθεσε κάθε milestone και πώς ελέγχθηκε: [MILESTONES.el.md](MILESTONES.el.md).
+Το V-OS είναι στο **M45** (έκδοση 0.16 beta· κάθε milestone προσθέτει 0.01). Τι πρόσθεσε κάθε milestone και πώς ελέγχθηκε: [MILESTONES.el.md](MILESTONES.el.md).

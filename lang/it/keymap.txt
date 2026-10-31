@@ -1,6 +1,6 @@
 # Italian keyboard: the Italian PC layout on the CPC keys. Keys not
 # listed keep the English map (lang/en/keymap.txt). Characters are
-# written in UTF-8 and stored as ISO 8859-1. No dead keys: the accented
+# written in UTF-8 and stored in the V-OS character set (tools/voscs.py). No dead keys: the accented
 # letters have keys of their own, as on the PC.
 
 key 57 3    £       # 3

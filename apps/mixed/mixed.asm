@@ -272,7 +272,7 @@ t_menu_en:      db "MIXED", 0
 t_back_en:      db "BACK", 0
 t_mode0_en:     db "MODE 0: 16 COLOURS", 0
 t_mode1_en:     db "MODE 1: 4 COLOURS, 384 PX. SPACE: BACK", 0
-; Greek in ISO 8859-7 (the pack's charset)
+; Greek in the V-OS character set (its Greek codes are ISO 8859-7)
 t_menu_el:      db #CC, #C9, #CA, #D4, #C7, 0                       ; ΜΙΚΤΗ
 t_back_el:      db #C5, #D0, #C9, #D3, #D4, #D1, #CF, #D6, #C7, 0   ; ΕΠΙΣΤΡΟΦΗ
 t_mode0_el:     db "MODE 0: 16 ", #D7, #D1, #D9, #CC, #C1, #D4, #C1, 0 ; ΧΡΩΜΑΤΑ

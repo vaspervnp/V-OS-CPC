@@ -5,7 +5,8 @@ usage: vdb.py dump file.vdb      its tables and records
        vdb.py check file.vdb     its pages checked (exit 1 on a problem)
 
 A file of 1K pages. Page 0: "VDB1", dw pages, db tables, db alphabet
-(0 ASCII so far, 1 Latin-1, 7 Greek: ISO 8859-7), and from 16 a
+(0 ASCII so far, 2 the V-OS character set; of V-OS 0.15: 7 Greek, the
+same codes, and 1 Latin-1), and from 16 a
 descriptor of 124 bytes a table: name (8), fields, key field (0: none),
 record length, key offset, key length, key type, dw first data page,
 last data page, index root, records, a page with room; from 24 ten
@@ -16,8 +17,12 @@ prev, next; entries key + rid) and "I" inner pages (dw count, child 0;
 entries key + rid + child). Keys in the index: numbers high byte
 first, rids too (page, slot).
 """
+import os
 import struct
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import voscs  # noqa: E402,F401  (the codec "vos")
 
 PAGE = 1024
 
@@ -31,8 +36,8 @@ def tables(data):
         fields = []
         for f in range(d[8]):
             fd = d[24 + f * 10:34 + f * 10]
-            fields.append((fd[:8].decode('latin-1').rstrip(), fd[8], fd[9]))
-        out.append(dict(name=d[:8].decode('latin-1').rstrip(), fields=fields,
+            fields.append((fd[:8].decode('vos').rstrip(), fd[8], fd[9]))
+        out.append(dict(name=d[:8].decode('vos').rstrip(), fields=fields,
                         key=d[9], reclen=d[10], keyoff=d[11], keylen=d[12],
                         keytype=d[13], first=first, last=last, root=root,
                         count=count, hint=hint))
@@ -149,6 +154,17 @@ def check(data):
     return problems
 
 
+def field_text(rec, t, codec):
+    """A record's fields as text: text decoded, numbers in decimal."""
+    out, at = [], 0
+    for name, typ, length in t['fields']:
+        raw = rec[at:at + length]
+        at += length
+        out.append(str(int.from_bytes(raw, 'little')) if typ == 1
+                   else raw.decode(codec).rstrip())
+    return out
+
+
 def main():
     if len(sys.argv) != 3 or sys.argv[1] not in ('dump', 'check'):
         sys.exit(__doc__)
@@ -158,14 +174,16 @@ def main():
         for p in problems:
             print(p)
         sys.exit(1 if problems else 0)
-    print('alphabet: %s' % {0: 'ASCII so far', 1: 'Latin-1 (ISO 8859-1)', 7: 'Greek (ISO 8859-7)'}
+    print('alphabet: %s' % {0: 'ASCII so far', 2: 'the V-OS character set', 7: 'Greek (V-OS 0.15: the V-OS character set)',
+                          1: 'Latin-1 (V-OS 0.15: not the V-OS character set)'}
           .get(data[7], 'unknown (%d)' % data[7]))
     for ti, t in enumerate(tables(data)):
         print('%d %s: %d records of %d bytes, key %s' % (
             ti, t['name'], t['count'], t['reclen'],
             t['fields'][t['key'] - 1][0] if t['key'] else 'none'))
+        codec = 'latin-1' if data[7] == 1 else 'vos'
         for rid, r in sorted(records(data, t, ti, []).items()):
-            print('  %04x %r' % (rid, r))
+            print('  %04x %s' % (rid, ' | '.join(field_text(r, t, codec))))
 
 
 if __name__ == '__main__':

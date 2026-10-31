@@ -1,5 +1,5 @@
 # French language pack (FRENCH.LNG)
 code    FR
 name    FRANÇAIS
-charset iso8859_1
-font    ../latin1/font.txt
+charset vos
+font    ../vos/font.txt

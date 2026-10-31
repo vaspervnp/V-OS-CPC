@@ -199,7 +199,7 @@ t_colour_en:    db "NEXT COLOUR", 0
 t_back_en:      db "BACK", 0
 t_hello_en:     db "HELLO FROM A PROGRAM!", 0
 t_hint_en:      db "ARROWS STEER  SPACE COL", 0
-; Greek in ISO 8859-7 (the pack's charset)
+; Greek in the V-OS character set (its Greek codes are ISO 8859-7)
 t_menu_el:      db #C5, #D0, #C9, #C4, #C5, #C9, #CE, #C7, 0      ; ΕΠΙΔΕΙΞΗ
 t_colour_el:    db #C1, #CB, #CB, #CF, " ", #D7, #D1, #D9, #CC, #C1, 0 ; ΑΛΛΟ ΧΡΩΜΑ
 t_back_el:      db #C5, #D0, #C9, #D3, #D4, #D1, #CF, #D6, #C7, 0 ; ΕΠΙΣΤΡΟΦΗ

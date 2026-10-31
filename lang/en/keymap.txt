@@ -29,7 +29,7 @@ key 20 none none    # f4
 key 21 none none    # SHIFT
 key 22 \    `
 key 23 none none    # CONTROL
-key 24 ^    none    # shift gives the pound sign, not in ASCII
+key 24 ^    £       # the pound sign: V-OS character set
 key 25 -    =
 key 26 @    |
 key 27 p    P

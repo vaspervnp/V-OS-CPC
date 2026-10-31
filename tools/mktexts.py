@@ -6,19 +6,24 @@ usage: mktexts.py texts.txt out.asm [label]
 Lines: NAME | English | Greek (the table says "EL"), "#" starts a
 comment. A "|" between spaces parts the columns; one inside a text
 (no spaces around it) starts a line in a dialog. Writes T_NAME equ VT_FIRST + n for each, and the table
-"texts:" (or "label:") for VOS_TEXTS, Greek in ISO 8859-7. An empty
+"texts:" (or "label:") for VOS_TEXTS, both columns in the V-OS character
+set (tools/voscs.py: ASCII, Greek and the Latin letters). An empty
 third column uses the English text. A program with more than 64 texts
 keeps a second table and switches to it with VOS_TEXTS.
 """
+import os
 import re
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import voscs  # noqa: E402,F401  (the codec "vos")
 
 
 def data(label, text, codec):
     try:
         raw = text.encode(codec)
     except UnicodeEncodeError:
-        sys.exit(f"mktexts: {text!r} is not {codec}")
+        sys.exit(f"mktexts: {text!r} is not in the V-OS character set")
     return f"{label}: db " + ", ".join(str(b) for b in raw + b"\0") + f"   ; {text}"
 
 
@@ -45,9 +50,9 @@ def main():
     for i, (name, _, el) in enumerate(rows):
         out.append(f"        dw {pre}e_{i}, {pre + 'g_' + str(i) if el else 0}")
     for i, (name, en, el) in enumerate(rows):
-        out.append(data(f"{pre}e_{i}", en, "ascii"))
+        out.append(data(f"{pre}e_{i}", en, "vos"))
         if el:
-            out.append(data(f"{pre}g_{i}", el, "iso8859_7"))
+            out.append(data(f"{pre}g_{i}", el, "vos"))
     open(sys.argv[2], "w", encoding="utf-8").write("\n".join(out) + "\n")
 
 

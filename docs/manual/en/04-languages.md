@@ -23,6 +23,14 @@ The symbols `@ # [ ] { } \ |` are not on the packs' keyboards, because the CPC h
 
 Programs have their own texts in **two languages**: English and, optionally, one more (today, Greek). A program appears in its second language only when the pack is in that language. Otherwise it appears in English. So, with French, Studio appears in English.
 
+## One alphabet for all
+
+All languages write with the same character set, the **V-OS set**, and every pack has all its letters. So a text or a database can mix Greek, French, German, Spanish and Italian, and they show right whatever language is active: in Setup, LANGUAGE shows ΕΛΛΗΝΙΚΑ, FRANÇAIS, ESPAÑOL with their own letters.
+
+Codes 128 to 255 are the Greek ones of ISO 8859-7, as they were, and the codes it leaves free hold À Á Â Ä Ç È É Ê Ë Ì Í Î Ï Ñ Ò Ó Ô Ö Ù Ú Û Ü, their small letters, ß and ¡ ¿. The ´ is written as the Greek tonos (΄) and µ as μ. There is no ÿ, Œ or œ. The table is in `tools/voscs.py`. A Greek text file from a PC (ISO 8859-7) reads as it is; a French or German one in Latin-1 needs converting.
+
+With the English keyboard, SHIFT and `^` gives £.
+
 ## Making a new language
 
 The language sources are in `lang/<code>/`:
@@ -31,4 +39,4 @@ The language sources are in `lang/<code>/`:
 - `keymap.txt`: the keys that differ from the English keyboard.
 - `pack.txt`: the code, the name, the character set and the font.
 
-`tools/mklng.py` turns them into a `.LNG`, and the Makefile puts it on the disk. The Latin packs share the font `lang/latin1/font.txt`.
+`tools/mklng.py` turns them into a `.LNG`, and the Makefile puts it on the disk. All packs have the same font, `lang/vos/font.txt`, and `charset vos`.

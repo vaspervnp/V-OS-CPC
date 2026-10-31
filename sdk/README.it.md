@@ -113,7 +113,7 @@ command: ...
   - letter: scorciatoia CONTROL+lettera, o 0
 - **Pulsanti** (`VOS_SET_WIDGETS`, poi `VOS_DRAW_WIDGETS`): `db count`, e per ogni pulsante `dw x, y; db larghezza in caratteri, text, command, 0`.
 - **Dialogo** (`VOS_DIALOG` → A = pulsante, 0 il primo, ESC dà l'ultimo): `db title, text, numero di pulsanti (1–3), pulsante, ...`. Per i pulsanti, `VM_OK`, `VM_YES` e `VM_NO`.
-- **Testi** (`VOS_TEXTS`): creati da `tools/mktexts.py` a partire da `texts.txt`, con righe `NAME | English | Greek`.
+- **Testi** (`VOS_TEXTS`): creati da `tools/mktexts.py` a partire da `texts.txt`, con righe `NAME | English | Greek`. Le due colonne si scrivono in UTF-8 e diventano byte del set di caratteri di V-OS (`tools/voscs.py`), che contiene il greco e le lettere latine di francese, spagnolo, tedesco e italiano.
   - Dà `T_NAME` (`VT_FIRST` = `#C0` e oltre) e la tabella `texts:`. Fino a 64 testi.
   - Un `|` senza spazi intorno inizia una nuova riga nei dialoghi.
   - I testi vanno dove viene chiesto un "testo" (menu, pulsanti, dialoghi). Con `VOS_MSG` ottieni il loro indirizzo per `VOS_PRINT`.
@@ -174,7 +174,7 @@ command: ...
 
 | Chiamata | Ingresso → uscita |
 |---|---|
-| `DB_CREATE`, `DB_OPEN` | DE → db unità, nome di 11 byte (`"STREETS VDB"`); OPEN → A = 1: un altro alfabeto |
+| `DB_CREATE`, `DB_OPEN` | DE → db unità, nome di 11 byte (`"STREETS VDB"`); OPEN → A = 1: Latin-1 (di V-OS 0.15) |
 | `DB_CLOSE` | |
 | `DB_TABLE` | DE → nome (8), campi, campo chiave (0: nessuno), poi ogni campo: nome (8), tipo, lunghezza → A = tabella |
 | `DB_USE` | E = la tabella che usano le chiamate sotto |
@@ -186,7 +186,7 @@ command: ...
 | `DB_FIRST`, `DB_LAST`, `DB_NEXT`, `DB_PREV` | HL → spazio per il record, o 0 → DE = rid, in ordine di chiave; carry alla fine |
 | `DB_COUNT` | → HL = record |
 
-Errori: carry e A (`DB_ERR_*`, e gli errori del disco), che `VOS_ERROR` mostra. Il testo è tenuto come è scritto: un database prende l'alfabeto della lingua attiva (greco, o Latin-1 per francese, spagnolo, tedesco, italiano) la prima volta che un campo di testo riceve un carattere sopra 127, e `DB_OPEN` dà A = 1 quando quello non è più l'alfabeto della lingua; mostra allora `DB_ERR_ALPHABET` con `VOS_ERROR`. L'ordinamento e FIND confrontano byte: maiuscole e minuscole, e lettere accentate, sono diverse. Un esempio è STREETS (`myapps/streets`), uno stradario; `tools/vdb.py` mostra e controlla un file `.VDB` sul PC.
+Errori: carry e A (`DB_ERR_*`, e gli errori del disco), che `VOS_ERROR` mostra. Il testo è tenuto come è scritto, nel set di caratteri di V-OS, lo stesso in tutte le lingue: un database può avere greco, francese e tedesco insieme. Solo un database di V-OS 0.15 con lettere latine (Latin-1) è diverso: `DB_OPEN` dà allora A = 1; mostra `DB_ERR_ALPHABET` con `VOS_ERROR`. L'ordinamento e FIND confrontano byte: maiuscole e minuscole, e lettere accentate, sono diverse. Un esempio è STREETS (`myapps/streets`), uno stradario; `tools/vdb.py` mostra e controlla un file `.VDB` sul PC.
 
 I dettagli completi, ad es. sul background, sull'accessorio e su `VOS_SPLIT`, sono in `src/api/vos_api.inc`. Per esempi, vedi `apps/demo/demo.asm` (modo 0, movimento), `apps/clock/clock.asm` (accessorio) e `apps/mixed/mixed.asm` (schermo misto). Un gioco intero con sprite, un livello letto da file e suono è `myapps/vrouves/`.
 

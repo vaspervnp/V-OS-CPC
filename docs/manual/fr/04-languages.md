@@ -23,6 +23,14 @@ Les symboles `@ # [ ] { } \ |` ne sont pas sur les claviers des modules, car le 
 
 Les programmes ont leurs propres textes en **deux langues** : l'anglais et, en option, une autre (aujourd'hui, le grec). Un programme n'apparaît dans sa seconde langue que si le module est dans cette langue. Sinon, il apparaît en anglais. Ainsi, en français, Studio apparaît en anglais.
 
+## Un alphabet pour toutes
+
+Toutes les langues écrivent avec le même jeu de caractères, le **jeu de V-OS**, et chaque module a toutes ses lettres. Ainsi un texte ou une base peut mêler grec, français, allemand, espagnol et italien, et tout s'affiche bien quelle que soit la langue active : dans Setup, LANGUAGE montre ΕΛΛΗΝΙΚΑ, FRANÇAIS, ESPAÑOL avec leurs propres lettres.
+
+Les codes 128 à 255 sont ceux du grec en ISO 8859-7, tels quels, et les codes qu'il laisse libres reçoivent À Á Â Ä Ç È É Ê Ë Ì Í Î Ï Ñ Ò Ó Ô Ö Ù Ú Û Ü, leurs minuscules, ß et ¡ ¿. L'accent ´ s'écrit comme le tonos grec (΄) et µ comme μ. Il n'y a pas de ÿ, Œ ni œ. La table est dans `tools/voscs.py`. Un fichier texte grec d'un PC (ISO 8859-7) se lit tel quel ; un fichier français ou allemand en Latin-1 doit être converti.
+
+Avec le clavier anglais, SHIFT et `^` donne £.
+
 ## Créer une nouvelle langue
 
 Les sources des langues se trouvent dans `lang/<code>/` :
@@ -31,4 +39,4 @@ Les sources des langues se trouvent dans `lang/<code>/` :
 - `keymap.txt` : les touches qui diffèrent du clavier anglais.
 - `pack.txt` : le code, le nom, le jeu de caractères et la police.
 
-`tools/mklng.py` les transforme en `.LNG`, et le Makefile le place sur la disquette. Les modules latins partagent la police `lang/latin1/font.txt`.
+`tools/mklng.py` les transforme en `.LNG`, et le Makefile le place sur la disquette. Tous les modules ont la même police, `lang/vos/font.txt`, et `charset vos`.

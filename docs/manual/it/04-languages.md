@@ -23,6 +23,14 @@ I simboli `@ # [ ] { } \ |` non sono sulle tastiere dei pacchetti, perché il CP
 
 I programmi hanno i propri testi in **due lingue**: l'inglese e, facoltativamente, un'altra (oggi il greco). Un programma appare nella sua seconda lingua solo quando il pacchetto è in quella lingua. Altrimenti appare in inglese. Quindi, con il francese, Studio appare in inglese.
 
+## Un alfabeto per tutte
+
+Tutte le lingue scrivono con lo stesso set di caratteri, il **set di V-OS**, e ogni pacchetto ha tutte le sue lettere. Così un testo o un database può mescolare greco, francese, tedesco, spagnolo e italiano, e tutto si vede bene qualunque sia la lingua attiva: in Setup, LANGUAGE mostra ΕΛΛΗΝΙΚΑ, FRANÇAIS, ESPAÑOL con le loro lettere.
+
+I codici da 128 a 255 sono quelli del greco in ISO 8859-7, così come erano, e i codici che lascia liberi contengono À Á Â Ä Ç È É Ê Ë Ì Í Î Ï Ñ Ò Ó Ô Ö Ù Ú Û Ü, le loro minuscole, ß e ¡ ¿. L'accento ´ si scrive come il tonos greco (΄) e µ come μ. Non ci sono ÿ, Œ né œ. La tabella è in `tools/voscs.py`. Un file di testo greco da un PC (ISO 8859-7) si legge così com'è; uno francese o tedesco in Latin-1 va convertito.
+
+Con la tastiera inglese, SHIFT e `^` dà £.
+
 ## Creare una nuova lingua
 
 I sorgenti delle lingue sono in `lang/<code>/`:
@@ -31,4 +39,4 @@ I sorgenti delle lingue sono in `lang/<code>/`:
 - `keymap.txt`: i tasti diversi dalla tastiera inglese.
 - `pack.txt`: il codice, il nome, il set di caratteri e il font.
 
-`tools/mklng.py` li trasforma in un `.LNG`, e il Makefile lo mette sul dischetto. I pacchetti latini condividono il font `lang/latin1/font.txt`.
+`tools/mklng.py` li trasforma in un `.LNG`, e il Makefile lo mette sul dischetto. Tutti i pacchetti hanno lo stesso font, `lang/vos/font.txt`, e `charset vos`.

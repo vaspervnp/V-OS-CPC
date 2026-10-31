@@ -1,6 +1,6 @@
 # German keyboard: QWERTZ, as on the German PC, on the CPC keys. Keys not
 # listed keep the English map (lang/en/keymap.txt). Characters are
-# written in UTF-8 and stored as ISO 8859-1.
+# written in UTF-8 and stored in the V-OS character set (tools/voscs.py).
 #
 # Ü, Ö and Ä are on the @, : and ; keys, ß on -. The ^ key is the acute
 # accent dead key and SHIFT+^ the grave (´ and ` on the PC).

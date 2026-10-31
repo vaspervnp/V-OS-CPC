@@ -17,7 +17,7 @@ the repo, so building V-OS does not need the original:
            0 none), count, interval (25 Hz ticks)
      #2E0  the defenders it has: bit n-1 for type n
      #2E1  toughness: the invaders have the health of this many waves later
-     #2E2  its name in English, #2FB in Greek (ISO 8859-7), 0-ended
+     #2E2  its name in English, #2FB in Greek (V-OS character set), 0-ended
      #400  the cells: 48 bytes each (8 x 12 pixels, 4 bytes a row)
 The original's pens are moved so that the V-OS menu bar (pen 1 white,
 text pen 0 black) looks right; both blacks become pen 0.
@@ -30,6 +30,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(SRC, "tools"))
 os.chdir(SRC)
 import art                                  # noqa: E402
+import voscs                                # noqa: E402,F401
 import gen_assets as g                      # noqa: E402
 
 # original pen -> V-OS pen (k g o r e W B c y R l s t p h n)
@@ -134,7 +135,7 @@ def stage_file(stage_no, st, waves):
     types = UNLOCK[stage_no] if stage_no < len(UNLOCK) else {1, 2, 3, 4, 5, 6}
     out[0x2E0] = sum(1 << (t - 1) for t in types)
     out[0x2E1] = st.toughness
-    for at, text, codec in ((0x2E2, NAMES[stage_no][0], "ascii"), (0x2FB, NAMES[stage_no][1], "iso8859_7")):
+    for at, text, codec in ((0x2E2, NAMES[stage_no][0], "ascii"), (0x2FB, NAMES[stage_no][1], "vos")):
         raw = text.encode(codec)
         assert len(raw) <= 24, text
         out[at:at + len(raw)] = raw

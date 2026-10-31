@@ -18,6 +18,7 @@ import sys
 
 sys.path.insert(0, __import__('os').path.dirname(__file__))
 import vdb
+import voscs  # noqa: F401  (the codec "vos")
 
 TRAP = 0x0040
 CALL = 0x0100                   # db_call is called from here
@@ -325,26 +326,31 @@ def main():
     problems = vdb.check(b''.join(pages))
     if problems:
         fail('the file: ' + '; '.join(problems[:5]))
-    # the alphabet: ASCII text and numbers over 127 leave it 0, so any
-    # language opens it without a word; Greek text makes it Greek
-    lang = sym['LANG_CODE']
-    for code, want in ((b'EL', 0), (b'FR', 0)):
-        e.poke(lang, code)
-        r = ok(e.call(D['OPEN'], de=e.put(b'\x00TEST    VDB')), 'OPEN in ' + code.decode())
+    # the alphabet: ASCII text and numbers over 127 leave it 0; Greek or
+    # Latin text makes it the V-OS character set (2), which opens without a
+    # word; only a Latin-1 file of V-OS 0.15 (1) gives the warning
+    def opened(what, want):
+        r = ok(e.call(D['OPEN'], de=e.put(b'\x00TEST    VDB')), 'OPEN ' + what)
         if r[1] != want:
-            fail('OPEN in %s: A = %d, not %d (ASCII so far)' % (code.decode(), r[1], want))
-    e.poke(lang, b'EL')
+            fail('OPEN %s: A = %d, not %d' % (what, r[1], want))
+    opened('in ASCII', 0)
+    if pages[0][7] != 0:
+        fail('ASCII so far, but the alphabet is %d' % pages[0][7])
     ok(e.call(D['USE'], de=2), 'USE')
-    rec = text('', 30)[:0] + bytes([0xC1, 0xC8, 0xC7, 0xCD, 0xC1]).ljust(30, b' ')   # ΑΘΗΝΑ
-    r = ok(e.call(D['ADD'], hl=e.put(rec)), 'ADD in Greek')
+    rec = 'ΑΘΗΝΑ ÇA GRÜß'.encode('vos').ljust(30, b' ')
+    r = ok(e.call(D['ADD'], hl=e.put(rec)), 'ADD in Greek and Latin')
     tables[2].recs[r[2]] = rec
-    for code, want in ((b'EL', 0), (b'FR', 1), (b'EN', 1), (b'DE', 1)):
-        e.poke(lang, code)
-        r = ok(e.call(D['OPEN'], de=e.put(b'\x00TEST    VDB')), 'OPEN in ' + code.decode())
-        if r[1] != want:
-            fail('a Greek database opened in %s: A = %d, not %d' % (code.decode(), r[1], want))
-    e.poke(lang, b'EN')
-    print('db_check: the alphabet: none for ASCII, Greek after Greek text, a warning in other languages: all right')
+    if pages[0][7] != 2:
+        fail('Greek and Latin text, but the alphabet is %d, not 2' % pages[0][7])
+    opened('in the V-OS set', 0)
+    for old, want in ((7, 0), (1, 1)):
+        ok(e.call(D['CLOSE']), 'CLOSE')
+        pages[0][7] = old
+        opened('with alphabet %d' % old, want)
+    ok(e.call(D['CLOSE']), 'CLOSE')
+    pages[0][7] = 2
+    ok(e.call(D['OPEN'], de=e.put(b'\x00TEST    VDB')), 'OPEN again')
+    print('db_check: the alphabet: none for ASCII, the V-OS set after Greek and Latin text, a warning for Latin-1: all right')
     print('db_check: %d operations (%s), %d pages: all right' % (
         ops, ', '.join('%d %s' % (v, k) for k, v in counts.items()), len(pages)))
 

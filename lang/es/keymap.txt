@@ -1,6 +1,6 @@
 # Spanish keyboard: the Spanish PC layout on the CPC keys. Keys not
 # listed keep the English map (lang/en/keymap.txt). Characters are
-# written in UTF-8 and stored as ISO 8859-1.
+# written in UTF-8 and stored in the V-OS character set (tools/voscs.py).
 #
 # Ñ is on the : key. The ; key is the acute accent dead key and SHIFT+;
 # the diaeresis; the @ key is the grave accent and SHIFT+@ the
