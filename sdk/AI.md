@@ -65,9 +65,9 @@ Rules that are easy to break:
 - Rectangle (`VOS_RECT`, IX →): `dw x, y, w, h; db pen`. Blit (`VOS_BLIT`, IX →): `dw x, y; db bytes, rows; dw source; db stride`, source = (mask, pixels) byte pairs per row; x rounds down to a byte (2 pixels in mode 0, 4 in mode 1).
 - Mode 0 pixels in a byte: left pixel bits 7,3,5,1 (pen bits 0..3), right pixel bits 6,2,4,0. Both pixels in pen p: see `pen_bytes` in `myapps/paint/paint.asm`.
 - File names: 11 bytes `"NAME    EXT"`; drive 0 = A:, 1 = B:.
-- Icon: `icon.txt`, 16 rows of 16 hex pens (Launcher palette) or `.`.
+- Icon: `icon.txt`, 16 rows of 16 hex pens (Launcher palette) or `.`. The Launcher reads it from the disc, so while the program runs the 256 bytes at `VOS_APP_ADDR + VOS_ICON + 2` are free RAM for buffers that need no initial value (`icon_ram` in `myapps/paint`). Use `equ`s based on `VOS_APP_ADDR` so they relocate.
 
-## 5. API versions 12 to 19
+## 5. API versions 12 to 20
 
 - `VOS_SELF` (an address, `#8800`): `db drive, 11-byte name` of the running program. Read it in `init` (A = 0) to load your files from your own drive.
 - `VOS_CATALOG` with `A = drive + VOS_CAT_EXT` and `HL -> "EXT"`: the catalog keeps only that extension; `VOS_FILE_PICK` then lists only those files.
@@ -78,6 +78,7 @@ Rules that are easy to break:
 - The M4 board (version 17): `VX_M4` sends a command packet (HL: db size, dw command, data; size counts the command and the data, including a string's 0) and copies BC bytes of the response to DE (db size, dw command, then the data from +3). The commands are in spinpoint.org/cpc/m4info.txt; HTTP only. The kernel finds the M4 ROM and maps it at `#C000` only while copying, with interrupts off. See `myapps/webget` (C_NETSTAT, C_HTTPGETMEM, C_COPYBUF). Caprice32 has no M4: test the logic in the Python harness, the real thing in CPCEMU.
 - `VX_MEM` (version 18): HL = the RAM in K (128, and 64 for each block of a RAM expansion), DE = the K still free for programs in bank 5 and the expansion banks. `myapps/sysinfo` shows both.
 - `VX_BEHIND` (version 19): DE -> `db drive, 11-byte name` of a file; soon after (in the main loop) the kernel starts the file's program, by type as the Desktop opens it, behind the caller, or finds it running. Its `init` gets A = 3 with the file in `VOS_OPEN`: draw nothing, ask nothing, take the file, call `VOS_BACKGROUND` with A = 1 (`myapps/music`). It goes through the data bank (what the caller kept there is lost) and needs room beside the caller (a RAM expansion, for most). Studio's MUSIC block uses it (`rt_music` in `blocks/runtime.asm`).
+- `VOS_SAVE` with `A = drive + VOS_LOAD_IX` (#40, version 20; with `VOS_DATA` too, from the data bank): the file's header says it loads at IX instead of DE. A CPC screen (`.SCR`, 16K, mode 0 160×200, line L at `(L >> 3) * 80 + (L & 7) * #800`, the palette in the unused bytes from `#07D0`) is saved with IX = #C000; build it in the data bank with `VOS_BANK_PUT` (`export` in `myapps/paint`). RASM's `/` is not integer division in such address sums: use `>>`.
 - Kernel room: the kernel (#0000-#3DFF) and bank 7's extension are full. New kernel code that does not run a program's code goes in `src/kernel/ext2.asm`, in base RAM bank 1 at `EXT2_ADDR` (free after boot), called with `ext2_call`; it may call kernel routines that map banks and come back with `ram_home`. The test scripts live there too (`test_inject` maps it from the interrupt).
 - The clipboard (version 16): `VX_CLIP_PUT` (HL = text, BC = bytes, 1K kept) and `VX_CLIP_GET` (DE = where, BC = room; BC = 0 gives the size in HL). Text uses LF between lines, as NOTEPAD and MARKDOWN keep it. Selection, cut and paste: `sel_range`, `sel_delete`, `do_paste` in `myapps/notepad`. Key events carry the mods at +3: `VMOD_SHIFT`, `VMOD_CONTROL`.
 - `VOS_BACKGROUND` A = 1: you keep getting `VE_FRAME` behind other views and programs; every other call does nothing there (`MUSIC` uses this to keep playing).

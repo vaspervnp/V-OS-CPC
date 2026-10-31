@@ -387,6 +387,13 @@ Header με:
 - **Δοκιμή:** το `make test-multi`. Το DEMO τρέχει και αλλάζει χρώμα. Με F2 ο Launcher, και τρέχει το PONG. Ξανά στον Launcher, το DEMO συνεχίζει με το ίδιο χρώμα και κλείνει με ^Q. Το PONG συνεχίζει. Το STUDIO δεν ξεκινά και βγαίνει το σφάλμα 13.
 - **Λάθος που βρέθηκε:** το μήνυμα σε μία γραμμή (27 χαρακτήρες) έκανε τον διάλογο φαρδύτερο από την οθόνη σε mode 0. Δεν φαινόταν, και ο βρόχος του περίμενε κουμπί. Βρέθηκε με dump της στοίβας και των μεταβλητών του διαλόγου (`TEST_DUMP`, `TEST_DUMP_AT`).
 
+**Υλοποίηση M42 (ΕΞΑΓΩΓΗ .SCR στο PAINT):**
+- **`export` (`paint.asm`):** μηδενίζει τα 128 bytes του `row_pairs` και τα γράφει 128 φορές με `VOS_BANK_PUT` (16K της bank δεδομένων από το #4000). Μετά `scr_at` = `SCR_DATA + (SCR_Y >> 3) * 80 + (SCR_Y & 7) * #800 + SCR_X` (γραμμή 36, byte 8) και `draw_canvas`. Στο `.blit`, αν το H του `scr_at` δεν είναι 0, τα pixels (κάθε δεύτερο byte του `row_pairs`) πάνε ένα ένα με `VOS_BANK_PUT` στο `scr_at`, και το `scr_at` πάει στην επόμενη γραμμή του CPC (H + 8· στην όγδοη L + 80, H adc #C0). Η παλέτα (17 bytes) στο #07D0, το όνομα `fname` με `SCR`, `VOS_SAVE` με A = `fdrive` + `VOS_DATA` + `VOS_LOAD_IX`, DE = #4000, BC = #4000, IX = #C000, και ο διάλογος `dlg_exported`.
+- **`VOS_LOAD_IX` (API 20, `api_save`):** `fs_hdr_load` = DE, ή IX αν το bit 6 του A· το bit σβήνει πριν από το `api_drive`.
+- **`icon_ram`:** `VOS_APP_ADDR + VOS_ICON + 2`, 256 bytes: `row_pairs`/`fstack` (128), `lbuf` (+128), `name_tmp` (+160), `name_in` (+176), `lay_text` (+192, το κενό του γράφεται μαζί με τον αριθμό). Με `equ` πάνω στο `VOS_APP_ADDR`, άρα μετατοπίζονται. Ο Launcher διαβάζει το εικονίδιο από τη δισκέτα (`ln_icon_read`).
+- **Κοινός κώδικας:** `pix_row` (A = γραμμή, DE = βάση: + 32 A) για το `pix_addr` (A = 2y) και το `lay_addr`· `pic_part` για τα δύο `.part`· το `draw_colours` κρατά το IX = `rect` σε όλο τον βρόχο.
+- **Δοκιμή:** στο σενάριο 18, μετά το δεύτερο h: ESC, DOWN ×7, RETURN (ΑΛΛΗ ΜΟΝΑΔΑ), ESC, DOWN ×6, RETURN (ΕΞΑΓΩΓΗ .SCR).
+
 **Υλοποίηση M41 (ΣΤΥΛ, ΜΟΥΣΙΚΗ, δεύτερη επέκταση):**
 - **Blocks:** `OP_STYLE` 39 και `OP_MUSIC` 40 (`OP_COUNT` 41), στο τέλος του `blocks.txt` για να μένουν σωστά τα παλιά `.VBS`. Στο Studio `OP_INFO` 10: σημαίες, 3 κλάσεις, 3 προεπιλογές (είδος, τιμή)· το `insert_block` γράφει το πάνω byte 0. Ο player: `op_style` (κοινός κώδικας με το `op_colour`: `ld a,l : ld (rt_style),a`), `op_music` (`ld a,κείμενο : call rt_music`), `e_ld_a`. Το runtime: το `rt_print` προσθέτει το `rt_style` × 16 (`VOS_BOLD`…) στο μελάνι· το `rt_music` φτιάχνει `drive, "ONOMA   MUS"` στο `rt_song` και καλεί το `VX_BEHIND` μόνο όταν αλλάξει. Με `RT_NO_LISTS` (ο player) οι λίστες λείπουν.
 - **`VX_BEHIND` (API 19):** το `xa_behind` (kernel) γράφει το αρχείο στο `app_open` και `bh_req` = 1. Ο κύριος βρόχος: `ext2_call behind_run`, και `sys_error` σε carry. Το `behind_run` (`ext2.asm`): `bh_begin` (`files_ext.asm`: το μπροστινό πρόγραμμα στο `bh_save` #B800 — `vw_page`…`app_slot`, `cur_base`, `app_drive`, `file_name`, `app_self` — και `ft_open`/`fx_prog` για το πρόγραμμα, `slot_find_a`, `slot_wake` αν τρέχει)· αλλιώς `view_fetch`, `app_place`, `bank_copy`, `slot_own`. Μετά `bh_init` (kernel: η bank του, `init` με A = 3, ξανά η bank 1) και `bh_end` (όλα πίσω, `app_open` = 0). Ένα πρόγραμμα μόνο του στη bank 5 μπροστά: `FS_ERR_NO_ROOM`.
@@ -899,7 +906,7 @@ Header με:
 41. **M39 — Αναγνώστης Markdown από το δίκτυο:** σελίδες `.MD` από τη δισκέτα ή το web με την προεπισκόπηση του MARKDOWN, σύνδεσμοι με TAB/RETURN/DEL: το πρόγραμμα READER, και η μνήμη στο SYSINFO (`VX_MEM`, API 18), `make test-reader` (§7.3). *Έγινε· μια πραγματική σελίδα από M4 δεν ελέγχθηκε.*
 42. **M40 — MARKDOWN:** γραμμές ενωμένες σε παραγράφους, γρηγορότερη κύλιση με σημεία (`ck_tab`), και στο READER. Η έκδοση 0.11, +0.01 σε κάθε milestone (§7.3). *Έγινε.*
 43. **M41 — Studio:** τα blocks ΣΤΥΛ (κείμενο με στυλ) και ΜΟΥΣΙΚΗ (τραγούδι `.MUS` στο παρασκήνιο, με το MUSIC μέσω του `VX_BEHIND`, API 19), η δεύτερη επέκταση του kernel στη bank 1, `make test-styles`, `make test-music-block` (§7.3). Έκδοση 0.12. *Έγινε.*
-44. **M42 — PAINT:** εξαγωγή εικόνας ως `.SCR` του CPC. *Σχεδιάζεται.*
+44. **M42 — PAINT:** εξαγωγή εικόνας ως `.SCR` του CPC (ΕΞΑΓΩΓΗ .SCR, `VOS_LOAD_IX`, API 20), `make test-paint` (§7.3). Έκδοση 0.13. *Έγινε· το αρχείο δεν φορτώθηκε σε BASIC.*
 
 ---
 

@@ -473,9 +473,15 @@ api_drive:
         and #7F
         ret
 
-; A = drive (+ VOS_DATA), HL = name, DE = data, BC = bytes: a binary
-; file
+; A = drive (+ VOS_DATA, + VOS_LOAD_IX), HL = name, DE = data, BC =
+; bytes: a binary file; its header says it loads at DE, or at IX
 api_save:
+        ld (fs_hdr_load),de
+        bit 6,a
+        jr z,.at
+        ld (fs_hdr_load),ix
+        and #BF
+.at:
         push bc
         call api_drive
         push af
@@ -492,7 +498,6 @@ api_save:
         pop bc
         pop de
         pop hl
-        ld (fs_hdr_load),de
         push hl
         ld hl,0
         ld (fs_hdr_exec),hl

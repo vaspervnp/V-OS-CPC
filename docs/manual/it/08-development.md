@@ -96,7 +96,7 @@ I test eseguono V-OS in Caprice32 senza finestra e catturano schermate in `build
 | `test-sdk` | il modello dell'SDK |
 | `test-vrouves` | VROUVES dal suo dischetto in B:, tramite il Launcher (TAB): costruzione, l'ondata 1, i soldi, HIGH SCORES |
 | `test-notepad` | NOTEPAD: scrittura, DEL, il dialogo di salvataggio, OPEN con solo file `.TXT` |
-| `test-paint` | PAINT: linea, rettangolo, riempimento, i menu, poi i livelli (nasconderne uno) |
+| `test-paint` | PAINT: linea, rettangolo, riempimento, i menu, poi i livelli (nasconderne uno), OTHER DRIVE ed EXPORT .SCR su B: ("SAVED AS .SCR") |
 | `test-about` | AIUTO > INFORMAZIONI SU V-OS |
 | `test-music` | MUSIC da `music.dsk` in B:: un brano suona e continua dietro il Launcher |
 | `test-markdown` | MARKDOWN da `markdown.dsk` in B:: apre `README.MD`, la pagina con ^P, una schermata più giù, ritorno al testo |

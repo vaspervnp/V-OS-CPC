@@ -67,6 +67,10 @@ CMD_SAVE_AS     equ VC_APP + 6
 CMD_DRIVE       equ VC_APP + 7
 CMD_ABOUT       equ VC_APP + 8
 CMD_BACK        equ VC_APP + 9
+CMD_EXPORT      equ VC_APP + 10
+SCR_DATA        equ #4000           ; EXPORT: the screen, in the data bank
+SCR_X           equ 8               ; the picture there: bytes from the
+SCR_Y           equ 36              ; left, lines from the top
 
         org VOS_APP_ADDR
         jp init
@@ -74,6 +78,15 @@ CMD_BACK        equ VC_APP + 9
         jp redraw
         db "VA", VOS_API_VERSION
         include "app_icon.asm"      ; VOS_ICON, from icon.txt
+; The Launcher reads the icon from the disc: here, while PAINT runs,
+; its 256 bytes (after "IC") hold the buffers below
+icon_ram        equ VOS_APP_ADDR + VOS_ICON + 2
+row_pairs       equ icon_ram        ; a row to draw: 64 (mask, pixels)
+fstack          equ row_pairs       ; FILL's stack, there too
+lbuf            equ icon_ram + 128  ; a line of text (25 bytes)
+name_tmp        equ icon_ram + 160  ; names (11)
+name_in         equ icon_ram + 176  ; (10)
+lay_text        equ icon_ram + 192  ; "1 OFF": a layer (8)
 
 ; A = 0: a new start, a white picture; 2: back, as it was
 init:
@@ -407,6 +420,8 @@ ptr_at:
         scf
         ret nz
         ld a,l
+; L = screen pixels -> A, E: the picture's; carry if past its end
+pic_part:
         call half
         ld e,a
         ld a,(cw)
@@ -567,20 +582,14 @@ clamp:
         or a
         jr nz,.max
         ld a,l
-        call half
-        ld e,a
-        ld a,(cw)
-        dec a
-        cp e
-        ret c
-        ld a,e
-        ret
-.zero:
-        xor a
-        ret
+        call pic_part
+        ret nc
 .max:
         ld a,(cw)
         dec a
+        ret
+.zero:
+        xor a
         ret
 
 set_tool:
@@ -638,6 +647,8 @@ command:
         jp z,save_pic
         cp CMD_SAVE_AS
         jp z,save_as
+        cp CMD_EXPORT
+        jp z,export
         cp CMD_DRIVE
         jr nz,.not_drive
         ld hl,fdrive
@@ -671,15 +682,19 @@ discard_ok:
 ; ---------------------------------------------------------------------
 ; C = x, B = y -> HL -> its byte in a picture, A = its pixel's bits
 pix_addr:
-        ld l,b
+        ld a,b                      ; + 64 y
+        add a,a
+        ld de,canvas
+        ; fall through
+; A = row, DE = base: + 32 A
+pix_row:
+        ld l,a
         ld h,0
         add hl,hl
         add hl,hl
         add hl,hl
         add hl,hl
         add hl,hl
-        add hl,hl
-        ld de,canvas
         ; fall through
 ; HL = row offset, DE = base -> HL -> the byte of pixel C, A = its bits
 pix_byte:
@@ -735,15 +750,9 @@ lay_addr:
         add hl,de
         ld a,(hl)
         ld (lbit),a
-        ld l,b                      ; the pixel: + 32 y + x / 2
-        ld h,0
-        add hl,hl
-        add hl,hl
-        add hl,hl
-        add hl,hl
-        add hl,hl
-        ld de,(lb_cur)
-        jr pix_byte
+        ld de,(lb_cur)              ; the pixel: + 32 y + x / 2
+        ld a,b
+        jr pix_row
 
 ; C = x, B = y: the colour there, in memory only (BC kept)
 set_px:
@@ -1280,14 +1289,52 @@ draw_canvas:
         cp 64
         jr c,.lrow
         ret
-; A = y: row_pairs there (BC kept)
+; A = y: row_pairs there (BC kept); for EXPORT, its pixels into the
+; data bank at scr_at, the next line after it
 .blit:
         ld (blt + 2),a
         push bc
+        ld hl,(scr_at)
+        ld a,h
+        or a
+        jr nz,.scr
         push ix
         ld ix,blt
         call VOS_BLIT
         pop ix
+        pop bc
+        ret
+.scr:
+        ld hl,row_pairs + 1         ; the pixels, every other byte, to
+        ld de,(scr_at)              ; the data bank, one at a time
+        ld b,64
+.byte:
+        push bc
+        push hl
+        push de
+        ld bc,1
+        call VOS_BANK_PUT
+        pop de
+        inc de
+        pop hl
+        inc hl
+        inc hl
+        pop bc
+        djnz .byte
+        ld hl,(scr_at)              ; the next screen line: + #800, or
+        ld a,h                      ; + 80 - #3800 after the eighth
+        add a,8
+        ld h,a
+        and #38
+        jr nz,.next
+        ld a,l
+        add a,80
+        ld l,a
+        ld a,h
+        adc a,#C0
+        ld h,a
+.next:
+        ld (scr_at),hl
         pop bc
         ret
 
@@ -1348,7 +1395,9 @@ draw_layers:
         pop af
         ld e,a
         add a,"1"
-        ld (lay_text),a
+        ld l,a
+        ld h," "                    ; (lay_text is in icon_ram)
+        ld (lay_text),hl
         ld hl,canvas + L_VIS
         add hl,de
         ld a,(hl)
@@ -1380,6 +1429,8 @@ draw_layers:
 
 ; the 16 colours, a mark on the chosen one
 draw_colours:
+        push ix
+        ld ix,rect
         xor a
 .sw:
         push af
@@ -1397,10 +1448,7 @@ draw_colours:
         ld hl,SW_W
         ld (rect + 4),hl
         ld (rect + 6),hl
-        push ix
-        ld ix,rect
         call VOS_RECT
-        pop ix
         pop af
         push af
         ld hl,colour
@@ -1423,15 +1471,13 @@ draw_colours:
         inc a
 .mark:
         ld (rect + 8),a
-        push ix
-        ld ix,rect
         call VOS_RECT
-        pop ix
 .done:
         pop af
         inc a
         cp 16
         jr c,.sw
+        pop ix
         ret
 
 ; A:NAME.PIC, and "*" if not saved
@@ -1692,6 +1738,59 @@ write:
         ld (modified),a
         jp draw_name
 
+; EXPORT .SCR: the picture (layers: as they show) as a CPC screen, a
+; 16K file that loads at #C000 (mode 0, 160 x 200), in the middle of
+; pen 0, with the palette (16 pens, the border) in the unused bytes at
+; #C7D0; NAME.SCR on fdrive. Built in the data bank by draw_canvas,
+; whose rows go there instead of to the screen meanwhile (scr_at).
+export:
+        ld hl,row_pairs             ; pen 0 everywhere: 128 x 128 bytes
+        ld (hl),0                   ; (row_pairs is free here)
+        ld de,row_pairs + 1
+        ld bc,127
+        ldir
+        ld de,SCR_DATA
+.clear:
+        ld hl,row_pairs
+        ld bc,128
+        push de
+        push bc
+        call VOS_BANK_PUT
+        pop bc
+        pop hl
+        add hl,bc
+        ex de,hl
+        bit 7,d                     ; up to #8000
+        jr z,.clear
+        ld hl,SCR_DATA + (SCR_Y >> 3) * 80 + (SCR_Y & 7) * #800 + SCR_X
+        ld (scr_at),hl
+        call draw_canvas
+        xor a                       ; (H = 0: none)
+        ld (scr_at + 1),a
+        ld hl,palette               ; the palette
+        ld de,SCR_DATA + #07D0
+        ld bc,17
+        call VOS_BANK_PUT
+        ld hl,fname                 ; NAME.SCR
+        ld de,name_tmp
+        ld bc,8
+        ldir
+        ld hl,ext_scr
+        ld c,3
+        ldir
+        ld a,(fdrive)
+        or VOS_DATA + VOS_LOAD_IX
+        ld hl,name_tmp
+        ld de,SCR_DATA
+        ld bc,#4000
+        push ix
+        ld ix,#C000
+        call VOS_SAVE
+        pop ix
+        jp c,VOS_ERROR
+        ld hl,dlg_exported
+        jp VOS_DIALOG
+
 ; ---- data -----------------------------------------------------------
 ; black, white, blue, red, green, yellow, cyan, magenta, orange, grey,
 ; dark red, dark green, dark blue, olive, pink, sky blue; the border
@@ -1707,23 +1806,26 @@ tool_keys:      db "pblxf"
 
 bar:            db 3
                 dw menu, 0, 0
-menu:           db T_MENU, 10
+menu:           db T_MENU, 11
                 db T_NEW, CMD_NEW, 0, 0
                 db T_NEW_L, CMD_NEW_L, 0, 0
                 db T_OPEN, CMD_OPEN, "O", 0
                 db T_OPEN_L, CMD_OPEN_L, 0, 0
                 db T_SAVE, CMD_SAVE, "S", 0
                 db T_SAVE_AS, CMD_SAVE_AS, 0, 0
+                db T_EXPORT, CMD_EXPORT, 0, 0
                 db T_DRIVE, CMD_DRIVE, 0, 0
                 db T_ABOUT, CMD_ABOUT, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
 dlg_about:      db T_MENU, T_ABOUT_TEXT, 1, VM_OK
+dlg_exported:   db T_MENU, T_EXPORTED, 1, VM_OK
 dlg_discard:    db T_MENU, T_DISCARD, 2, VM_YES, VM_NO
 dlg_not_pic:    db T_MENU, T_NOT_PIC, 1, VM_OK
 noname:         db "NONAME  "
-ext_pic:        db "PIC"
+ext_pic:        db "PIC"            ; (ext_now: then "LYR")
 ext_lyr:        db "LYR"
+ext_scr:        db "SCR"
 frame_rect:     dw CX - 2, CY - 2, 132, 132
                 db 0
 sw_frame:       dw 0, SW_Y - 2, 192, SW_W + 4
@@ -1748,11 +1850,9 @@ colour:         db 0                ; black, at first
 col_byte:       db #00
 lab_bg:         db UI_BG
 fdrive:         db 0
+scr_at:         dw 0                ; EXPORT: the next line (0: none)
 open_mode:      db 0
 fname:          ds 11
-name_tmp:       ds 11
-name_in:        ds 10
-lay_text:       db "1 ", 0, 0, 0, 0, 0, 0
 modified:       db 0
 down:           db 0                ; the button is down on the picture
 ev_x:           dw 0
@@ -1782,7 +1882,4 @@ fsp:            dw 0
 cat:            dw 0
 rect:           dw 0, 0, 0, 0
                 db 0
-lbuf:           ds 25
-row_pairs:      ds 128
-fstack          equ row_pairs
 canvas:         ds PIC_SIZE

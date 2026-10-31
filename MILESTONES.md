@@ -4,6 +4,17 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M42 (PAINT exports a CPC screen; version 0.13):**
+- **EXPORT .SCR:** a new item in PAINT's menu saves the picture as a CPC screen, `NAME.SCR` on the picture's drive: 16K that load at #C000, mode 0, 160×200. The picture is in the middle (from byte 8 of line 36), pen 0 around it; with layers, as they show, each pixel twice as big. The palette (16 pens, then the border, in firmware colour numbers) is in the unused bytes from #07D0. A dialog says SAVED AS .SCR.
+- **How:** PAINT clears the data bank, then draws the picture with its usual routine, but each row goes to the data bank's screen line (`scr_at`, the CPC's line order) instead of `VOS_BLIT`.
+- **API 20, `VOS_LOAD_IX`:** `VOS_SAVE` with A = drive + #40 writes IX as the load address in the file's header instead of DE (the data come from DE as before). PAINT saves the data bank's #4000 with IX = #C000.
+- **Room in PAINT:** a program with a relocation table must fit in bank 5's 12K beside the view, and the export made PAINT 176 bytes too big. The Launcher reads a program's icon from the disc, so the icon's 256 bytes are free while the program runs: PAINT's row buffer, FILL's stack, its text line and the names now live there (`icon_ram`). A few routines share their code (`pix_row`, `pic_part`). PAINT is 12287 bytes of 12288. The SDK docs explain the icon trick.
+- **Bugs found:** `ext_scr` put between `ext_pic` and `ext_lyr` gave layer pictures the name `.SCR` (`ext_now` steps from one to the next); `(36 / 8) * 80` is 360 in RASM, not 320 (its `/` is not integer division), which put the picture 40 bytes off. Found with the Python harness, which now compares the whole 16K. And `make docs` never ended on the English PDF: the SDK's `VOS_EXT` table row had grown so tall that MuPDF could not place it where a page break fell, and started the chapter again forever. The `VX_*` calls are now a paragraph after the table, in all six READMEs.
+- **Tested:**
+  - Python Z80 harness with PAINT's build, the API stubbed: EXPORT of a 128×128 picture with a known pattern gives exactly the expected 16K (every picture byte at its screen place, zeros elsewhere, the palette at #07D0), and `VOS_SAVE` gets A = #C0, `NONAME  SCR`, DE = #4000, BC = #4000, IX = #C000; with layers each row comes out twice.
+  - Caprice32: `test-paint` now goes on to OTHER DRIVE (B:, as A: of the test disc is full) and EXPORT .SCR: "SAVED AS .SCR". Also `test-about` (0.13), `test-sysinfo`, `test-notepad`, `test-costume`, `test-vars`, `test-sdk`, `test-calc`.
+- **Not tested:** the file on the disc: Caprice32 does not write a changed disc back when the test ends, so the `.SCR` was not loaded in BASIC. On a real CPC.
+
 **M41 (Studio: text styles and music; version 0.12):**
 - **STYLE *n*:** a new block in LOOKS/SOUND. The PRINT and TEXT that follow are bold (1), italic (2), underlined (4), or those added together; 0 is plain. Also `text_style` for `vbc.py` and the web editor.
 - **MUSIC *"name"*:** plays *name*`.MUS` from the program's disc behind it, with the MUSIC program from A: or B:. It is started only when the name changes, so a MUSIC inside FOREVER does not keep the disc busy. MUSIC goes on after the program ends; F6 brings it to the front. On a 6128 without an expansion there is no room beside a block program: "CLOSE ANOTHER PROGRAM FIRST". Also `music` for `vbc.py` and the web editor.

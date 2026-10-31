@@ -119,10 +119,10 @@ command: ...
   - Texts go wherever a "text" is asked for (menus, buttons, dialogs). With `VOS_MSG` you get their address for `VOS_PRINT`.
 - **Palette** (`VOS_PALETTE`): 17 firmware colors (0–26): 16 pens and the border. In mode 1, pens 0–3 count.
 - **Rectangle** (`VOS_RECT`, IX →): `dw x, y, w, h; db pen`.
-- **Icon:** 16 lines of 16 characters in `icon.txt`. Each character is a pen in hex (mode 0, Launcher palette) or `.` for transparent.
+- **Icon:** 16 lines of 16 characters in `icon.txt`. Each character is a pen in hex (mode 0, Launcher palette) or `.` for transparent. The Launcher reads it from the disc: while the program runs, the 256 bytes after "IC" are free for buffers (PAINT keeps its rows there).
 - **File names** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 bytes, `"NAME    EXT"`. Drive 0 = A:, 1 = B:.
 
-## The API (version 19)
+## The API (version 20)
 
 | Call | Input → output | What it does |
 |---|---|---|
@@ -150,7 +150,7 @@ command: ...
 | `VOS_CATALOG` | A = drive → A = files, HL → list | 16 bytes each: 11 the name, at +12 the size in K. With A = drive + `VOS_CAT_EXT` and HL → `"EXT"`, only the files with that extension |
 | `VOS_FILE_PICK` | A = title → A = file, carry if cancelled | picker dialog, after `VOS_CATALOG` |
 | `VOS_LOAD` | A = drive, HL → name, DE = where → BC = length | |
-| `VOS_SAVE` | A = drive, HL → name, DE = from, BC = length | binary file, replacing the old one |
+| `VOS_SAVE` | A = drive, HL → name, DE = from, BC = length | binary file, replacing the old one. With A + `VOS_LOAD_IX` (#40, version 20) its header says it loads at IX, not at DE (a `.SCR`: IX = #C000) |
 | `VOS_DELETE` | A = drive, HL → name | |
 | `VOS_TEXTS` | HL → text table | the program's texts |
 | `VOS_MENU_OPEN` | → NZ if a menu is open | |
@@ -164,7 +164,9 @@ command: ...
 | `VOS_BACKGROUND` | A = 1 / 0 | keeps running or freezes when behind another |
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → carry: new HL, DE | dragging a window by its title |
 | `VOS_FIT` | same → HL, DE | brings a window inside the screen |
-| `VOS_EXT` | A = a `VX_*` call, BC, DE, HL as it wants → A, HL, C, DE, carry | the calls after the table (version 15): `VX_VERSION` → A = API, HL = V-OS version (BCD). `VX_FREE` C = drive → A = free K. Unknown: carry `VX_CLIP_PUT` HL = text, BC = bytes → the clipboard (up to 1K). `VX_CLIP_GET` DE = where, BC = room → HL = size (version 16). `VX_M4` HL → a command for the M4 board (db size, dw command, data), DE → the response, BC = bytes; carry: no M4 board (version 17). `VX_MEM` → HL = the RAM in K, DE = the K free for programs (version 18). `VX_BEHIND` DE → db drive, 11-byte name of a file: its program (by type) starts behind this one, with `init` A = 3 and the file in `VOS_OPEN` (version 19; MUSIC knows it). |
+| `VOS_EXT` | A = a `VX_*` call, BC, DE, HL as it wants → A, HL, C, DE, carry | the calls after the table (version 15), below |
+
+**The `VOS_EXT` calls:** `VX_VERSION` → A = API, HL = V-OS version (BCD). `VX_FREE` C = drive → A = free K. Unknown: carry `VX_CLIP_PUT` HL = text, BC = bytes → the clipboard (up to 1K). `VX_CLIP_GET` DE = where, BC = room → HL = size (version 16). `VX_M4` HL → a command for the M4 board (db size, dw command, data), DE → the response, BC = bytes; carry: no M4 board (version 17). `VX_MEM` → HL = the RAM in K, DE = the K free for programs (version 18). `VX_BEHIND` DE → db drive, 11-byte name of a file: its program (by type) starts behind this one, with `init` A = 3 and the file in `VOS_OPEN` (version 19; MUSIC knows it).
 
 Full details, e.g. on the background, the accessory and `VOS_SPLIT`, are in `src/api/vos_api.inc`. For examples, see `apps/demo/demo.asm` (mode 0, motion), `apps/clock/clock.asm` (accessory) and `apps/mixed/mixed.asm` (mixed screen). A whole game with sprites, a stage from a file and sound is `myapps/vrouves/`.
 

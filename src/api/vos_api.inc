@@ -81,7 +81,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 19              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 20              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -91,7 +91,8 @@ VOS_API_VERSION equ 19              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; VOS_PTR_KEYS, 13: text styles,
                                     ; 14: VOS_OPEN, 15: VOS_EXT,
                                     ; 16: the clipboard, 17: VX_M4,
-                                    ; 18: VX_MEM, 19: VX_BEHIND, init A = 3
+                                    ; 18: VX_MEM, 19: VX_BEHIND, init A = 3,
+                                    ; 20: VOS_LOAD_IX
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -174,6 +175,10 @@ VOS_CAT_EXT     equ #40                 ; drive + VOS_CAT_EXT: VOS_CATALOG
                                         ; keeps one extension
 VOS_DATA        equ #80                 ; drive + VOS_DATA: VOS_LOAD and
                                         ; VOS_SAVE use the data bank
+VOS_LOAD_IX     equ #40                 ; (20) drive + VOS_LOAD_IX: the
+                                        ; file VOS_SAVE writes says it
+                                        ; loads at IX, not DE (a .SCR:
+                                        ; #C000)
 VOS_SELF        equ #8800               ; the program running: db drive,
                                         ; then its 11-byte name (read it)
 VOS_OPEN        equ #B000               ; (version 14) the file the program
@@ -245,7 +250,9 @@ VX_COUNT        equ 7
 ; Icon (optional): "IC" at +12 (VOS_ICON), then 16 rows of 8 (mask,
 ; pixels) pairs, as VOS_BLIT draws them: 16 x 16 pixels in mode 0, in
 ; the Launcher's palette. The Launcher shows it on the program's tile.
-; tools/mkicon.py makes it from text. Init then starts at +270.
+; tools/mkicon.py makes it from text. Init then starts at +270. The
+; Launcher reads it from the disc: while the program runs, its 256
+; bytes after "IC" are free for buffers (PAINT's icon_ram).
 VOS_ICON        equ 12
 VOS_ICON_SIZE   equ 256
 

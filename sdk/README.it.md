@@ -119,10 +119,10 @@ command: ...
   - I testi vanno dove viene chiesto un "testo" (menu, pulsanti, dialoghi). Con `VOS_MSG` ottieni il loro indirizzo per `VOS_PRINT`.
 - **Palette** (`VOS_PALETTE`): 17 colori del firmware (0–26): 16 penne e il bordo. In modo 1 contano le penne 0–3.
 - **Rettangolo** (`VOS_RECT`, IX →): `dw x, y, w, h; db pen`.
-- **Icona:** 16 righe di 16 caratteri in `icon.txt`. Ogni carattere è una penna in esadecimale (modo 0, palette del Launcher) o `.` per trasparente.
+- **Icona:** 16 righe di 16 caratteri in `icon.txt`. Ogni carattere è una penna in esadecimale (modo 0, palette del Launcher) o `.` per trasparente. Il Launcher la legge dal disco: mentre il programma gira, i 256 byte dopo "IC" sono liberi per dei buffer (PAINT ci tiene le sue righe).
 - **Nomi di file** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 byte, `"NAME    EXT"`. Unità 0 = A:, 1 = B:.
 
-## L'API (versione 19)
+## L'API (versione 20)
 
 | Chiamata | Ingresso → uscita | Cosa fa |
 |---|---|---|
@@ -150,7 +150,7 @@ command: ...
 | `VOS_CATALOG` | A = unità → A = file, HL → elenco | 16 byte ciascuno: 11 il nome, a +12 la dimensione in K. Con A = unità + `VOS_CAT_EXT` e HL → `"EXT"`, solo i file con quell'estensione |
 | `VOS_FILE_PICK` | A = titolo → A = file, carry se annullato | dialogo di scelta, dopo `VOS_CATALOG` |
 | `VOS_LOAD` | A = unità, HL → nome, DE = dove → BC = lunghezza | |
-| `VOS_SAVE` | A = unità, HL → nome, DE = da, BC = lunghezza | file binario, che sostituisce il vecchio |
+| `VOS_SAVE` | A = unità, HL → nome, DE = da, BC = lunghezza | file binario, che sostituisce il vecchio. Con A + `VOS_LOAD_IX` (#40, versione 20) la sua intestazione dice che si carica a IX, non a DE (un `.SCR`: IX = #C000) |
 | `VOS_DELETE` | A = unità, HL → nome | |
 | `VOS_TEXTS` | HL → tabella dei testi | i testi del programma |
 | `VOS_MENU_OPEN` | → NZ se un menu è aperto | |
@@ -164,7 +164,9 @@ command: ...
 | `VOS_BACKGROUND` | A = 1 / 0 | continua a girare o si blocca quando è dietro un altro |
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → carry: nuovi HL, DE | trascinamento di una finestra per il titolo |
 | `VOS_FIT` | come sopra → HL, DE | riporta una finestra dentro lo schermo |
-| `VOS_EXT` | A = una chiamata `VX_*`, BC, DE, HL come vuole → A, HL, C, DE, carry | le chiamate dopo la tabella (versione 15): `VX_VERSION` → A = API, HL = versione di V-OS (BCD). `VX_FREE` C = unità → A = K liberi. Sconosciuta: carry `VX_CLIP_PUT` HL = testo, BC = byte → gli appunti (fino a 1K). `VX_CLIP_GET` DE = dove, BC = spazio → HL = dimensione (versione 16). `VX_M4` HL → un comando per la scheda M4 (db dimensione, dw comando, dati), DE → la risposta, BC = byte; carry: niente scheda M4 (versione 17). `VX_MEM` → HL = la RAM in K, DE = i K liberi per i programmi (versione 18). `VX_BEHIND` DE → db unità, nome di 11 byte di un file: il suo programma (per tipo) parte dietro questo, con `init` A = 3 e il file in `VOS_OPEN` (versione 19; MUSIC lo conosce). |
+| `VOS_EXT` | A = una chiamata `VX_*`, BC, DE, HL come vuole → A, HL, C, DE, carry | le chiamate dopo la tabella (versione 15), sotto |
+
+**Le chiamate di `VOS_EXT`:** `VX_VERSION` → A = API, HL = versione di V-OS (BCD). `VX_FREE` C = unità → A = K liberi. Sconosciuta: carry `VX_CLIP_PUT` HL = testo, BC = byte → gli appunti (fino a 1K). `VX_CLIP_GET` DE = dove, BC = spazio → HL = dimensione (versione 16). `VX_M4` HL → un comando per la scheda M4 (db dimensione, dw comando, dati), DE → la risposta, BC = byte; carry: niente scheda M4 (versione 17). `VX_MEM` → HL = la RAM in K, DE = i K liberi per i programmi (versione 18). `VX_BEHIND` DE → db unità, nome di 11 byte di un file: il suo programma (per tipo) parte dietro questo, con `init` A = 3 e il file in `VOS_OPEN` (versione 19; MUSIC lo conosce).
 
 I dettagli completi, ad es. sul background, sull'accessorio e su `VOS_SPLIT`, sono in `src/api/vos_api.inc`. Per esempi, vedi `apps/demo/demo.asm` (modo 0, movimento), `apps/clock/clock.asm` (accessorio) e `apps/mixed/mixed.asm` (schermo misto). Un gioco intero con sprite, un livello letto da file e suono è `myapps/vrouves/`.
 

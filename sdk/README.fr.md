@@ -119,10 +119,10 @@ command: ...
   - Les textes vont partout où un « texte » est demandé (menus, boutons, dialogues). Avec `VOS_MSG`, vous obtenez leur adresse pour `VOS_PRINT`.
 - **Palette** (`VOS_PALETTE`) : 17 couleurs du firmware (0–26) : 16 encres et la bordure. En mode 1, seules les encres 0–3 comptent.
 - **Rectangle** (`VOS_RECT`, IX →) : `dw x, y, w, h; db pen`.
-- **Icône :** 16 lignes de 16 caractères dans `icon.txt`. Chaque caractère est une encre en hexadécimal (mode 0, palette du Lanceur) ou `.` pour transparent.
+- **Icône :** 16 lignes de 16 caractères dans `icon.txt`. Chaque caractère est une encre en hexadécimal (mode 0, palette du Lanceur) ou `.` pour transparent. Le Lanceur la lit sur la disquette : tant que le programme tourne, les 256 octets après "IC" sont libres pour des tampons (PAINT y garde ses lignes).
 - **Noms de fichiers** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`) : 11 octets, `"NAME    EXT"`. Lecteur 0 = A:, 1 = B:.
 
-## L'API (version 19)
+## L'API (version 20)
 
 | Appel | Entrée → sortie | Ce qu'il fait |
 |---|---|---|
@@ -150,7 +150,7 @@ command: ...
 | `VOS_CATALOG` | A = lecteur → A = fichiers, HL → liste | 16 octets chacun : 11 pour le nom, en +12 la taille en K. Avec A = lecteur + `VOS_CAT_EXT` et HL → `"EXT"`, seulement les fichiers de cette extension |
 | `VOS_FILE_PICK` | A = titre → A = fichier, carry si annulé | dialogue de sélection, après `VOS_CATALOG` |
 | `VOS_LOAD` | A = lecteur, HL → nom, DE = où → BC = longueur | |
-| `VOS_SAVE` | A = lecteur, HL → nom, DE = depuis, BC = longueur | fichier binaire, qui remplace l'ancien |
+| `VOS_SAVE` | A = lecteur, HL → nom, DE = depuis, BC = longueur | fichier binaire, qui remplace l'ancien. Avec A + `VOS_LOAD_IX` (#40, version 20), son en-tête dit qu'il se charge à IX, pas à DE (un `.SCR` : IX = #C000) |
 | `VOS_DELETE` | A = lecteur, HL → nom | |
 | `VOS_TEXTS` | HL → table de textes | les textes du programme |
 | `VOS_MENU_OPEN` | → NZ si un menu est ouvert | |
@@ -164,7 +164,9 @@ command: ...
 | `VOS_BACKGROUND` | A = 1 / 0 | continue à tourner ou se fige quand il est derrière un autre |
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → carry : nouveaux HL, DE | déplacement d'une fenêtre par son titre |
 | `VOS_FIT` | idem → HL, DE | ramène une fenêtre dans l'écran |
-| `VOS_EXT` | A = un appel `VX_*`, BC, DE, HL selon l'appel → A, HL, C, DE, retenue | les appels après la table (version 15) : `VX_VERSION` → A = API, HL = version de V-OS (BCD). `VX_FREE` C = lecteur → A = K libres. Inconnu : retenue `VX_CLIP_PUT` HL = texte, BC = octets → le presse-papiers (jusqu'à 1K). `VX_CLIP_GET` DE = où, BC = place → HL = taille (version 16). `VX_M4` HL → une commande pour la carte M4 (db taille, dw commande, données), DE → la réponse, BC = octets ; retenue : pas de carte M4 (version 17). `VX_MEM` → HL = la RAM en K, DE = les K libres pour les programmes (version 18). `VX_BEHIND` DE → db lecteur, nom de 11 octets d'un fichier : son programme (selon le type) démarre derrière celui-ci, avec `init` A = 3 et le fichier dans `VOS_OPEN` (version 19 ; MUSIC le connaît). |
+| `VOS_EXT` | A = un appel `VX_*`, BC, DE, HL selon l'appel → A, HL, C, DE, retenue | les appels après la table (version 15), ci-dessous |
+
+**Les appels de `VOS_EXT`:** `VX_VERSION` → A = API, HL = version de V-OS (BCD). `VX_FREE` C = lecteur → A = K libres. Inconnu : retenue `VX_CLIP_PUT` HL = texte, BC = octets → le presse-papiers (jusqu'à 1K). `VX_CLIP_GET` DE = où, BC = place → HL = taille (version 16). `VX_M4` HL → une commande pour la carte M4 (db taille, dw commande, données), DE → la réponse, BC = octets ; retenue : pas de carte M4 (version 17). `VX_MEM` → HL = la RAM en K, DE = les K libres pour les programmes (version 18). `VX_BEHIND` DE → db lecteur, nom de 11 octets d'un fichier : son programme (selon le type) démarre derrière celui-ci, avec `init` A = 3 et le fichier dans `VOS_OPEN` (version 19 ; MUSIC le connaît).
 
 Tous les détails, par ex. sur l'arrière-plan, l'accessoire et `VOS_SPLIT`, sont dans `src/api/vos_api.inc`. Pour des exemples, voir `apps/demo/demo.asm` (mode 0, mouvement), `apps/clock/clock.asm` (accessoire) et `apps/mixed/mixed.asm` (écran mixte). Un jeu complet avec des sprites, un niveau lu dans un fichier et du son : `myapps/vrouves/`.
 

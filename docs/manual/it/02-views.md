@@ -15,7 +15,7 @@ Gli ultimi due menu sono uguali in tutte le viste e nei programmi:
 | PROGRAMMI (in esecuzione) | F6 | | |
 | CAMBIA LINGUA | ^L | | |
 
-AIUTO > INFORMAZIONI SU V-OS mostra la versione (0.12 beta; ogni milestone aggiunge 0.01), la data della compilazione, l'autore (Revive8bit, 2026) e l'architetto (Vasper).
+AIUTO > INFORMAZIONI SU V-OS mostra la versione (0.13 beta; ogni milestone aggiunge 0.01), la data della compilazione, l'autore (Revive8bit, 2026) e l'architetto (Vasper).
 
 ## Scrivania, F1
 

@@ -552,6 +552,11 @@ test_keys:
 ;   frame 2400-2500 COPY, 2410-2450 UP held -> a cyan line (a box one
 ;                               pixel wide)
 ;   frame 2600  h            -> layer 3 hidden: the line goes
+;   frame 2700  h            -> shown again
+;   frame 2800  ESC, 2840-3080 DOWN x7, 3150 RETURN -> OTHER DRIVE: B:
+;                               (A: has no room for 16K)
+;   frame 3250  ESC, 3300-3500 DOWN x6, 3600 RETURN -> EXPORT .SCR:
+;                               B:NONAME.SCR, then "SAVED AS .SCR"
 test_keys:
         dw  300 : db   4, 1, %01000000   ; F2
         dw  420 : db   4, 0, %00000100   ; DOWN
@@ -587,6 +592,24 @@ test_keys:
         dw 2400 : db 100, 1, %00000010   ; COPY held
         dw 2410 : db  40, 0, %00000001   ; UP held
         dw 2600 : db   4, 5, %00010000   ; h: hide
+        dw 2700 : db   4, 5, %00010000   ; h: show
+        dw 2800 : db   4, 8, %00000100   ; ESC: the menu
+        dw 2840 : db   4, 0, %00000100   ; DOWN
+        dw 2880 : db   4, 0, %00000100   ; DOWN
+        dw 2920 : db   4, 0, %00000100   ; DOWN
+        dw 2960 : db   4, 0, %00000100   ; DOWN
+        dw 3000 : db   4, 0, %00000100   ; DOWN
+        dw 3040 : db   4, 0, %00000100   ; DOWN
+        dw 3080 : db   4, 0, %00000100   ; DOWN
+        dw 3150 : db   4, 2, %00000100   ; RETURN: OTHER DRIVE (B:)
+        dw 3250 : db   4, 8, %00000100   ; ESC: the menu
+        dw 3300 : db   4, 0, %00000100   ; DOWN
+        dw 3340 : db   4, 0, %00000100   ; DOWN
+        dw 3380 : db   4, 0, %00000100   ; DOWN
+        dw 3420 : db   4, 0, %00000100   ; DOWN
+        dw 3460 : db   4, 0, %00000100   ; DOWN
+        dw 3500 : db   4, 0, %00000100   ; DOWN
+        dw 3600 : db   4, 2, %00000100   ; RETURN: EXPORT .SCR
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 17

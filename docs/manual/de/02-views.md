@@ -15,7 +15,7 @@ Die letzten beiden Menüs sind in allen Ansichten und in Programmen gleich:
 | PROGRAMME (laufende) | F6 | | |
 | SPRACHE WECHSELN | ^L | | |
 
-HILFE > ÜBER V-OS zeigt die Version (0.12 Beta; jeder Meilenstein fügt 0.01 hinzu), das Datum des Builds, den Hersteller (Revive8bit, 2026) und den Architekten (Vasper).
+HILFE > ÜBER V-OS zeigt die Version (0.13 Beta; jeder Meilenstein fügt 0.01 hinzu), das Datum des Builds, den Hersteller (Revive8bit, 2026) und den Architekten (Vasper).
 
 ## Schreibtisch, F1
 

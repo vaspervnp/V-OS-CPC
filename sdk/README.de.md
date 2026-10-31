@@ -119,10 +119,10 @@ command: ...
   - Texte gehen überall dorthin, wo ein „Text“ verlangt wird (Menüs, Schaltflächen, Dialoge). Mit `VOS_MSG` bekommst du ihre Adresse für `VOS_PRINT`.
 - **Palette** (`VOS_PALETTE`): 17 Firmware-Farben (0–26): 16 Stifte und der Rand. In Modus 1 zählen die Stifte 0–3.
 - **Rechteck** (`VOS_RECT`, IX →): `dw x, y, w, h; db pen`.
-- **Symbol:** 16 Zeilen mit 16 Zeichen in `icon.txt`. Jedes Zeichen ist ein Stift in Hex (Modus 0, Palette der Ansicht Programme) oder `.` für transparent.
+- **Symbol:** 16 Zeilen mit 16 Zeichen in `icon.txt`. Jedes Zeichen ist ein Stift in Hex (Modus 0, Palette der Ansicht Programme) oder `.` für transparent. Die Ansicht Programme liest es von der Diskette: solange das Programm läuft, sind die 256 Bytes nach "IC" frei für Puffer (PAINT legt dort seine Zeilen ab).
 - **Dateinamen** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 Bytes, `"NAME    EXT"`. Laufwerk 0 = A:, 1 = B:.
 
-## Die API (Version 19)
+## Die API (Version 20)
 
 | Aufruf | Eingabe → Ausgabe | Was er tut |
 |---|---|---|
@@ -150,7 +150,7 @@ command: ...
 | `VOS_CATALOG` | A = Laufwerk → A = Dateien, HL → Liste | je 16 Bytes: 11 der Name, bei +12 die Größe in K. Mit A = Laufwerk + `VOS_CAT_EXT` und HL → `"EXT"` nur die Dateien mit dieser Endung |
 | `VOS_FILE_PICK` | A = Titel → A = Datei, Carry bei Abbruch | Auswahldialog, nach `VOS_CATALOG` |
 | `VOS_LOAD` | A = Laufwerk, HL → Name, DE = wohin → BC = Länge | |
-| `VOS_SAVE` | A = Laufwerk, HL → Name, DE = ab, BC = Länge | Binärdatei, ersetzt die alte |
+| `VOS_SAVE` | A = Laufwerk, HL → Name, DE = ab, BC = Länge | Binärdatei, ersetzt die alte. Mit A + `VOS_LOAD_IX` (#40, Version 20) sagt ihr Header, dass sie bei IX lädt, nicht bei DE (eine `.SCR`: IX = #C000) |
 | `VOS_DELETE` | A = Laufwerk, HL → Name | |
 | `VOS_TEXTS` | HL → Texttabelle | die Texte des Programms |
 | `VOS_MENU_OPEN` | → NZ, wenn ein Menü offen ist | |
@@ -164,7 +164,9 @@ command: ...
 | `VOS_BACKGROUND` | A = 1 / 0 | läuft weiter oder friert ein, wenn es hinter einem anderen liegt |
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → Carry: neue HL, DE | ein Fenster an seinem Titel verschieben |
 | `VOS_FIT` | dasselbe → HL, DE | holt ein Fenster in den Bildschirm hinein |
-| `VOS_EXT` | A = ein `VX_*`-Aufruf, BC, DE, HL wie er es will → A, HL, C, DE, Carry | die Aufrufe nach der Tabelle (Version 15): `VX_VERSION` → A = API, HL = V-OS-Version (BCD). `VX_FREE` C = Laufwerk → A = freie K. Unbekannt: Carry `VX_CLIP_PUT` HL = Text, BC = Bytes → die Zwischenablage (bis 1K). `VX_CLIP_GET` DE = wohin, BC = Platz → HL = Größe (Version 16). `VX_M4` HL → ein Befehl für die M4-Karte (db Größe, dw Befehl, Daten), DE → die Antwort, BC = Bytes; Carry: keine M4-Karte (Version 17). `VX_MEM` → HL = der RAM in K, DE = die freien K für Programme (Version 18). `VX_BEHIND` DE → db Laufwerk, 11-Byte-Name einer Datei: ihr Programm (nach Typ) startet hinter diesem, mit `init` A = 3 und der Datei in `VOS_OPEN` (Version 19; MUSIC kennt es). |
+| `VOS_EXT` | A = ein `VX_*`-Aufruf, BC, DE, HL wie er es will → A, HL, C, DE, Carry | die Aufrufe nach der Tabelle (Version 15), unten |
+
+**Die Aufrufe von `VOS_EXT`:** `VX_VERSION` → A = API, HL = V-OS-Version (BCD). `VX_FREE` C = Laufwerk → A = freie K. Unbekannt: Carry `VX_CLIP_PUT` HL = Text, BC = Bytes → die Zwischenablage (bis 1K). `VX_CLIP_GET` DE = wohin, BC = Platz → HL = Größe (Version 16). `VX_M4` HL → ein Befehl für die M4-Karte (db Größe, dw Befehl, Daten), DE → die Antwort, BC = Bytes; Carry: keine M4-Karte (Version 17). `VX_MEM` → HL = der RAM in K, DE = die freien K für Programme (Version 18). `VX_BEHIND` DE → db Laufwerk, 11-Byte-Name einer Datei: ihr Programm (nach Typ) startet hinter diesem, mit `init` A = 3 und der Datei in `VOS_OPEN` (Version 19; MUSIC kennt es).
 
 Alle Details, z. B. zum Hintergrund, zum Zubehörprogramm und zu `VOS_SPLIT`, stehen in `src/api/vos_api.inc`. Beispiele findest du in `apps/demo/demo.asm` (Modus 0, Bewegung), `apps/clock/clock.asm` (Zubehör) und `apps/mixed/mixed.asm` (gemischter Bildschirm). Ein ganzes Spiel mit Sprites, einem Level aus einer Datei und Ton ist `myapps/vrouves/`.
 

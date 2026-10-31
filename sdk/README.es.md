@@ -119,10 +119,10 @@ command: ...
   - Los textos van donde se pide un "texto" (menús, botones, diálogos). Con `VOS_MSG` se obtiene su dirección para `VOS_PRINT`.
 - **Paleta** (`VOS_PALETTE`): 17 colores del firmware (0–26): 16 tintas y el borde. En modo 1 cuentan las tintas 0–3.
 - **Rectángulo** (`VOS_RECT`, IX →): `dw x, y, w, h; db pen`.
-- **Icono:** 16 líneas de 16 caracteres en `icon.txt`. Cada carácter es una tinta en hexadecimal (modo 0, paleta de Programas) o `.` para transparente.
+- **Icono:** 16 líneas de 16 caracteres en `icon.txt`. Cada carácter es una tinta en hexadecimal (modo 0, paleta de Programas) o `.` para transparente. Programas lo lee del disco: mientras el programa corre, los 256 bytes después de "IC" quedan libres para búferes (PAINT guarda allí sus filas).
 - **Nombres de archivo** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 bytes, `"NAME    EXT"`. Unidad 0 = A:, 1 = B:.
 
-## La API (versión 19)
+## La API (versión 20)
 
 | Llamada | Entrada → salida | Qué hace |
 |---|---|---|
@@ -150,7 +150,7 @@ command: ...
 | `VOS_CATALOG` | A = unidad → A = archivos, HL → lista | 16 bytes cada uno: 11 el nombre, en +12 el tamaño en K. Con A = unidad + `VOS_CAT_EXT` y HL → `"EXT"`, solo los archivos con esa extensión |
 | `VOS_FILE_PICK` | A = título → A = archivo, carry si se cancela | diálogo selector, después de `VOS_CATALOG` |
 | `VOS_LOAD` | A = unidad, HL → nombre, DE = dónde → BC = longitud | |
-| `VOS_SAVE` | A = unidad, HL → nombre, DE = desde, BC = longitud | archivo binario, que sustituye al anterior |
+| `VOS_SAVE` | A = unidad, HL → nombre, DE = desde, BC = longitud | archivo binario, que sustituye al anterior. Con A + `VOS_LOAD_IX` (#40, versión 20) su cabecera dice que se carga en IX, no en DE (un `.SCR`: IX = #C000) |
 | `VOS_DELETE` | A = unidad, HL → nombre | |
 | `VOS_TEXTS` | HL → tabla de textos | los textos del programa |
 | `VOS_MENU_OPEN` | → NZ si hay un menú abierto | |
@@ -164,7 +164,9 @@ command: ...
 | `VOS_BACKGROUND` | A = 1 / 0 | sigue funcionando o se congela cuando está detrás de otro |
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → carry: nuevos HL, DE | arrastrar una ventana por su título |
 | `VOS_FIT` | igual → HL, DE | mete una ventana dentro de la pantalla |
-| `VOS_EXT` | A = una llamada `VX_*`, BC, DE, HL según la llamada → A, HL, C, DE, acarreo | las llamadas después de la tabla (versión 15): `VX_VERSION` → A = API, HL = versión de V-OS (BCD). `VX_FREE` C = unidad → A = K libres. Desconocida: acarreo `VX_CLIP_PUT` HL = texto, BC = bytes → el portapapeles (hasta 1K). `VX_CLIP_GET` DE = dónde, BC = espacio → HL = tamaño (versión 16). `VX_M4` HL → una orden para la tarjeta M4 (db tamaño, dw orden, datos), DE → la respuesta, BC = bytes; acarreo: no hay tarjeta M4 (versión 17). `VX_MEM` → HL = la RAM en K, DE = los K libres para programas (versión 18). `VX_BEHIND` DE → db unidad, nombre de 11 bytes de un archivo: su programa (por tipo) arranca detrás de este, con `init` A = 3 y el archivo en `VOS_OPEN` (versión 19; MUSIC lo conoce). |
+| `VOS_EXT` | A = una llamada `VX_*`, BC, DE, HL según la llamada → A, HL, C, DE, acarreo | las llamadas después de la tabla (versión 15), abajo |
+
+**Las llamadas de `VOS_EXT`:** `VX_VERSION` → A = API, HL = versión de V-OS (BCD). `VX_FREE` C = unidad → A = K libres. Desconocida: acarreo `VX_CLIP_PUT` HL = texto, BC = bytes → el portapapeles (hasta 1K). `VX_CLIP_GET` DE = dónde, BC = espacio → HL = tamaño (versión 16). `VX_M4` HL → una orden para la tarjeta M4 (db tamaño, dw orden, datos), DE → la respuesta, BC = bytes; acarreo: no hay tarjeta M4 (versión 17). `VX_MEM` → HL = la RAM en K, DE = los K libres para programas (versión 18). `VX_BEHIND` DE → db unidad, nombre de 11 bytes de un archivo: su programa (por tipo) arranca detrás de este, con `init` A = 3 y el archivo en `VOS_OPEN` (versión 19; MUSIC lo conoce).
 
 Todos los detalles, p. ej. sobre el segundo plano, el accesorio y `VOS_SPLIT`, están en `src/api/vos_api.inc`. Como ejemplos, véanse `apps/demo/demo.asm` (modo 0, movimiento), `apps/clock/clock.asm` (accesorio) y `apps/mixed/mixed.asm` (pantalla mixta). Un juego completo con sprites, una pantalla leída de un archivo y sonido es `myapps/vrouves/`.
 
