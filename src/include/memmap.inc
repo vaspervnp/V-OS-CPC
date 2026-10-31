@@ -72,6 +72,9 @@ BUF_CFG         equ #C4
 bh_save         equ #B800           ; 30 bytes: VX_BEHIND's (see above)
 EXT2_CFG        equ RAM_BASE_CFG    ; the second extension (kernel/ext2.asm):
 EXT2_ADDR       equ #4100           ; base RAM bank 1, after the loader
+DB_ADDR         equ #5100           ; the database engine (DB.SYS, loaded by
+DB_CACHE        equ #6C00           ; ext2.asm: db_entry) after it, then its
+DB_SLOTS        equ 5               ; cache: 5 pages of 1K, up to #8000
 BUF_ADDR        equ #4000
 VIEW_BANK_CFG   equ #C5
 VIEW_ADDR       equ #4000

@@ -79,6 +79,41 @@ bh_end:
         ret
 
 ; ---------------------------------------------------------------------
+; VX_DB (kernel/api.asm: xa_db): the database engine, src/db/db.asm.
+; The first time DB.SYS comes from drive A: to DB_ADDR, in this bank;
+; then C = its call, DE, and HL from xa_hl go to it.
+; ---------------------------------------------------------------------
+db_entry:
+        ld a,(db_loaded)
+        or a
+        jr nz,.go
+        push bc
+        push de
+        xor a
+        call fdc_select
+        ld hl,db_sys
+        ld de,DB_ADDR
+        ld c,EXT2_CFG
+        call fs_load
+        pop de
+        pop bc
+        jr c,.none
+        ld a,(DB_ADDR + 3)          ; "DB"
+        cp "D"
+        jr nz,.none
+        ld a,1
+        ld (db_loaded),a
+.go:
+        ld hl,(xa_hl)
+        jp DB_ADDR
+.none:
+        ld a,DB_ERR_NO_SYS
+        scf
+        ret
+db_sys:         db "DB      SYS"
+db_loaded:      db 0
+
+; ---------------------------------------------------------------------
 ; Moving windows (VOS_DRAG, VOS_FIT; kernel/api.asm, ui/ui.asm): a
 ; window is dr_x, dr_y (drag_run takes it in DE), dr_w, dr_h, in pixels
 ; of the current mode.

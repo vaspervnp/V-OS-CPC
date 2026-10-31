@@ -108,6 +108,9 @@ The tests run V-OS in Caprice32 without a window and take screenshots in `build/
 | `test-clip` | the clipboard: selecting with SHIFT, ^C and ^V in NOTEPAD, ^A, ^X, ^V, then ^V in MARKDOWN |
 | `test-webget` | by hand, in the CPCEMU of `make linux` (M4 board; needs a screen and the internet): WEBGET downloads `example.com/index.html`. Close CPCEMU with F12 when SAVED shows, and `INDEX.HTM` is looked for on the disc |
 | `test-reader` | READER from `reader.dsk` in B: opens `INDEX.MD`, TAB selects a link, RETURN opens `ABOUT.MD`, DEL goes back, and an `https://` link gives a message |
+| `test-db` | the database engine in a Z80 emulator (`tools/db_check.py`): thousands of random calls on four tables, checked against a model, the file page by page (`tools/vdb.py`), until the disc is full |
+| `test-db-disc` | `DB.SYS` with the kernel's file system on a DSK image (`tools/db_disc_check.py`) |
+| `test-streets` | STREETS from `streets.dsk` in B:: a new `STREETS.VDB` with 24 streets, finding, a new street |
 | `test-styles` | STYLES.VBN (`blocks/examples/styles.vbt`) from the Commander: plain, bold, italic, underlined and all three, with the STYLE block |
 | `test-music-block` | with 576K: TUNE.VBN (`blocks/examples/tune.vbt`) starts MUSIC (from B:) behind it with AGANAMEM.MUS; F6 shows "> TUNE" and MUSIC, and RETURN brings MUSIC to the front: A:AGANAMEM, PLAYING. With `MBLOCK_RAM=128`: "CLOSE ANOTHER PROGRAM FIRST" |
 | `test-amsdos`, `test-reboot`, `test-system` | V-OS files in BASIC, reboot, SYSTEM disk |

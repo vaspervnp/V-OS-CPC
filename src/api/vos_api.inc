@@ -81,7 +81,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 21              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 22              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -92,7 +92,8 @@ VOS_API_VERSION equ 21              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 14: VOS_OPEN, 15: VOS_EXT,
                                     ; 16: the clipboard, 17: VX_M4,
                                     ; 18: VX_MEM, 19: VX_BEHIND, init A = 3,
-                                    ; 20: VOS_LOAD_IX, 21: VX_DATA
+                                    ; 20: VOS_LOAD_IX, 21: VX_DATA,
+                                    ; 22: VX_DB, databases
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -221,7 +222,80 @@ VX_BEHIND       equ 6                   ; (19) DE -> db drive, 11-byte name
                                         ; behind this one, soon after
 VX_DATA         equ 7                   ; (21) -> A = 1: the data bank is
                                         ; the program's own; 0: bank 4
-VX_COUNT        equ 8
+VX_DB           equ 8                   ; (22) C = DB_* call (below), DE,
+                                        ; HL -> A, DE, HL; carry, A = error
+VX_COUNT        equ 9
+
+; Databases (version 22): VOS_EXT with A = VX_DB, C = one of these. One
+; database is open at a time, for the program that opened it (another
+; one's calls: DB_ERR_IN_USE). It is a file NAME.VDB of 1K pages, up to
+; the disc's room: tables (up to DB_TABLES) of records with fields of
+; text or a number (2 bytes), each table with an index on its key
+; field, if it has one. A record is its fields one after the other (a
+; text field padded as the program likes, e.g. with spaces); its rid
+; is a 16-bit number. Every call writes its changes before it returns.
+; The kernel loads the engine, DB.SYS, from drive A: when it is first
+; needed. HL -> buffers in the program's memory.
+DB_CREATE       equ 0                   ; DE -> db drive, 11-byte name
+                                        ; ("NAME    VDB"): new, open
+DB_OPEN         equ 1                   ; DE -> db drive, name: open ->
+                                        ; A = 1: its text is in another
+                                        ; alphabet than the language in
+                                        ; use (Greek, or Latin-1: FR ES
+                                        ; DE IT): say DB_ERR_ALPHABET
+DB_CLOSE        equ 2
+DB_TABLE        equ 3                   ; DE -> a table: name (8), fields
+                                        ; (1..10), the key field (0: none,
+                                        ; or 1..10), then each field: name
+                                        ; (8), type, length -> A = table,
+                                        ; the one in use
+DB_USE          equ 4                   ; E = table: the one in use
+DB_INFO         equ 5                   ; E = table, HL -> 124 bytes: its
+                                        ; DB_T_* there -> A = tables
+DB_ADD          equ 6                   ; HL -> record -> DE = its rid
+DB_GET          equ 7                   ; DE = rid, HL -> room: it there
+DB_PUT          equ 8                   ; DE = rid, HL -> record: changed
+DB_DEL          equ 9                   ; DE = rid: deleted
+DB_FIND         equ 10                  ; HL -> a key (as in a record), E =
+                                        ; its bytes that count (0: all) ->
+                                        ; DE = the first record with that
+                                        ; key or after it, by key
+DB_FIRST        equ 11                  ; -> DE = rid: by key (no key: in
+DB_LAST         equ 12                  ; the order they were added, more
+DB_NEXT         equ 13                  ; or less); NEXT and PREV from the
+DB_PREV         equ 14                  ; table's cursor, which FIND, FIRST
+                                        ; ... set. HL -> room for the
+                                        ; record too, or 0. Carry, A =
+                                        ; DB_ERR_END: no more
+DB_COUNT        equ 15                  ; -> HL = records in the table
+DB_TEXT         equ 0                   ; field types
+DB_NUMBER       equ 1
+DB_TABLES       equ 8
+DB_FIELDS       equ 10
+DB_KEY_MAX      equ 64                  ; a key field's length at most
+DB_T_NAME       equ 0                   ; DB_INFO: a table's descriptor
+DB_T_FIELDS     equ 8                   ;   (fields), DB_T_KEY, DB_T_RECLEN
+DB_T_KEY        equ 9                   ;   (bytes), DB_T_COUNT (dw), and
+DB_T_RECLEN     equ 10                  ;   from DB_T_FIELD 10 bytes a
+DB_T_COUNT      equ 20                  ;   field: name, type, length
+DB_T_FIELD      equ 24
+DB_ERR_NO_FILE  equ 7                   ; errors (VOS_ERROR shows them): the
+                                        ; disc's FILE NOT FOUND (DB_OPEN),
+DB_ERR_EXISTS   equ 10                  ; NAME ALREADY USED (DB_CREATE)
+DB_ERR_NOT_DB   equ 15                  ; not a database
+DB_ERR_NONE     equ 16                  ; no database open
+DB_ERR_TABLE    equ 17                  ; no such table
+DB_ERR_TABLES   equ 18                  ; no room for another table
+DB_ERR_DEF      equ 19                  ; a table's fields are wrong
+DB_ERR_RID      equ 20                  ; no such record
+DB_ERR_END      equ 21                  ; no more records
+DB_ERR_IN_USE   equ 22                  ; another program's database
+DB_ERR_FULL     equ 23                  ; the database is full (255K)
+DB_ERR_NO_KEY   equ 24                  ; FIND: the table has no key
+DB_ERR_BROKEN   equ 25                  ; its index is damaged
+DB_ERR_BAD      equ 26                  ; no such DB_* call
+DB_ERR_NO_SYS   equ 27                  ; DB.SYS is not on drive A:
+DB_ERR_ALPHABET equ 28                  ; (a warning: DB_OPEN's A = 1)
 
 ; The data bank: 16K more for the program, seen at the same addresses
 ; #4000-#7FFF but never mapped there: the program copies to and from it

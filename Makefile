@@ -29,6 +29,10 @@
 #                 16K texts with a data bank of its own, 4K on a 6128
 #   make test-data   (576K) NOTEPAD with a 15K text, MARKDOWN meanwhile,
 #                 NOTEPAD again: its text kept in its own data bank
+#   make test-db     the database engine in a Z80 emulator: thousands of
+#                 random calls checked against a model, the file page by page
+#   make test-db-disc DB.SYS with the kernel's file system on a DSK image
+#   make test-streets STREETS from its disc: a new STREETS.VDB, FIND, ADD
 #   make test-amsdos  the same script, then AMSDOS in BASIC reads the
 #                 files V-OS wrote (one screenshot)
 #   make test-reboot  the same, then RUN"VOS" with the saved SETUP.CFG
@@ -61,7 +65,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -813,6 +817,44 @@ test-data: $(DATA_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN
 	  cp $(DATA_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/vos_data_b.dsk $(BUILD)/vos_run_b.dsk; \
 	  iDSK $(BUILD)/vos_run.dsk -i $(BUILD)/NOTEPAD.BIN -t 1 -c 4000 -e 4000 > /dev/null; \
 	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_TIMEOUT=90 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The database engine (tools/db_check.py, a Z80 emulator): src/db/db.asm
+# built alone (-DDB_HARNESS), with 5 cache pages and with 2
+test-db:
+	@mkdir -p $(BUILD)/db_test
+	for n in 5 2; do \
+	  $(RASM) src/db/db.asm -I src -DDB_HARNESS=1 -DDB_SLOTS=$$n -o $(BUILD)/db_test/db$$n -s > $(BUILD)/db_test/rasm.log || exit 1; \
+	  $(PYTHON) tools/db_check.py $(BUILD)/db_test/db$$n.bin $(BUILD)/db_test/db$$n.sym 4000 || exit 1; \
+	done
+
+# DB.SYS with the kernel's own file system (tools/db_disc_check.py, a
+# Z80 emulator, the floppy controller on a DSK image): STREETS.VDB on B:
+DB_DISC := $(BUILD)/db_disc
+test-db-disc: $(DSK) $(BUILD)/streets.dsk
+	@rm -rf $(DB_DISC) && mkdir -p $(DB_DISC)
+	cd $(DB_DISC) && iDSK $(abspath $(DSK)) -g VOS.BIN > /dev/null && iDSK $(abspath $(DSK)) -g DB.SYS > /dev/null
+	cp $(BUILD)/streets.dsk $(DB_DISC)/b.dsk
+	$(PYTHON) tools/db_disc_check.py $(DB_DISC)/VOS.BIN $(DB_DISC)/DB.SYS $(BUILD)/vos.sym $(DB_DISC)/b.dsk 600
+
+# STREETS (TEST_SCRIPT=29): myapps/streets from build/streets.dsk in B:
+STREETS_DSK := $(BUILD)/vos_streets.dsk
+STREETS_SHOTS := 400 560 800 840 1260
+$(STREETS_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_streets -DTEST_SCRIPT=29
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS))
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-streets: $(STREETS_DSK) $(BUILD)/streets.dsk
+	rm -rf $(BUILD)/shots
+	for d in $(STREETS_SHOTS); do \
+	  cp $(STREETS_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/streets.dsk $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_TIMEOUT=60 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
 

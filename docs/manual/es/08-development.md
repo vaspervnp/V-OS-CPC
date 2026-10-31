@@ -108,6 +108,9 @@ Las pruebas ejecutan V-OS en Caprice32 sin ventana y hacen capturas de pantalla 
 | `test-clip` | el portapapeles: seleccionar con SHIFT, ^C y ^V en NOTEPAD, ^A, ^X, ^V, y luego ^V en MARKDOWN |
 | `test-webget` | a mano, en el CPCEMU de `make linux` (tarjeta M4; hacen falta una pantalla e internet): WEBGET descarga `example.com/index.html`. Cierre CPCEMU con F12 cuando aparezca SAVED, y se busca `INDEX.HTM` en el disquete |
 | `test-reader` | READER desde `reader.dsk` en B: abre `INDEX.MD`, TAB elige un enlace, RETURN abre `ABOUT.MD`, DEL vuelve, y un enlace `https://` da un mensaje |
+| `test-db` | el motor de bases de datos en un emulador Z80 (`tools/db_check.py`): miles de llamadas al azar en cuatro tablas, comprobadas con un modelo, el archivo página a página (`tools/vdb.py`), hasta llenar el disco |
+| `test-db-disc` | `DB.SYS` con el sistema de archivos del kernel en una imagen DSK (`tools/db_disc_check.py`) |
+| `test-streets` | STREETS desde `streets.dsk` en B:: un `STREETS.VDB` nuevo con 24 calles, búsqueda, una calle nueva |
 | `test-styles` | STYLES.VBN (`blocks/examples/styles.vbt`) desde el Commander: normal, negrita, cursiva, subrayado y los tres, con el bloque STYLE |
 | `test-music-block` | con 576K: TUNE.VBN (`blocks/examples/tune.vbt`) inicia MUSIC (desde B:) detrás de él con AGANAMEM.MUS; F6 muestra "> TUNE" y MUSIC, y RETURN trae MUSIC al frente: A:AGANAMEM, PLAYING. Con `MBLOCK_RAM=128`: "CIERRE PRIMERO OTRO PROGRAMA" |
 | `test-amsdos`, `test-reboot`, `test-system` | archivos de V-OS en el BASIC, reinicio, disquete SYSTEM |

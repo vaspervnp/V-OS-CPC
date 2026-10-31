@@ -122,7 +122,7 @@ command: ...
 - **Icona:** 16 righe di 16 caratteri in `icon.txt`. Ogni carattere è una penna in esadecimale (modo 0, palette del Launcher) o `.` per trasparente. Il Launcher la legge dal disco: mentre il programma gira, i 256 byte dopo "IC" sono liberi per dei buffer (PAINT ci tiene le sue righe).
 - **Nomi di file** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 byte, `"NAME    EXT"`. Unità 0 = A:, 1 = B:.
 
-## L'API (versione 21)
+## L'API (versione 22)
 
 | Chiamata | Ingresso → uscita | Cosa fa |
 |---|---|---|
@@ -166,7 +166,27 @@ command: ...
 | `VOS_FIT` | come sopra → HL, DE | riporta una finestra dentro lo schermo |
 | `VOS_EXT` | A = una chiamata `VX_*`, BC, DE, HL come vuole → A, HL, C, DE, carry | le chiamate dopo la tabella (versione 15), sotto |
 
-**Le chiamate di `VOS_EXT`:** `VX_VERSION` → A = API, HL = versione di V-OS (BCD). `VX_FREE` C = unità → A = K liberi. Sconosciuta: carry `VX_CLIP_PUT` HL = testo, BC = byte → gli appunti (fino a 1K). `VX_CLIP_GET` DE = dove, BC = spazio → HL = dimensione (versione 16). `VX_M4` HL → un comando per la scheda M4 (db dimensione, dw comando, dati), DE → la risposta, BC = byte; carry: niente scheda M4 (versione 17). `VX_MEM` → HL = la RAM in K, DE = i K liberi per i programmi (versione 18). `VX_BEHIND` DE → db unità, nome di 11 byte di un file: il suo programma (per tipo) parte dietro questo, con `init` A = 3 e il file in `VOS_OPEN` (versione 19; MUSIC lo conosce). `VX_DATA` → A = 1 se il banco dati è del programma (espansione di memoria), 0 se è il banco 4 condiviso (versione 21; NOTEPAD tiene così testo fino a 16K).
+**Le chiamate di `VOS_EXT`:** `VX_VERSION` → A = API, HL = versione di V-OS (BCD). `VX_FREE` C = unità → A = K liberi. Sconosciuta: carry `VX_CLIP_PUT` HL = testo, BC = byte → gli appunti (fino a 1K). `VX_CLIP_GET` DE = dove, BC = spazio → HL = dimensione (versione 16). `VX_M4` HL → un comando per la scheda M4 (db dimensione, dw comando, dati), DE → la risposta, BC = byte; carry: niente scheda M4 (versione 17). `VX_MEM` → HL = la RAM in K, DE = i K liberi per i programmi (versione 18). `VX_BEHIND` DE → db unità, nome di 11 byte di un file: il suo programma (per tipo) parte dietro questo, con `init` A = 3 e il file in `VOS_OPEN` (versione 19; MUSIC lo conosce). `VX_DATA` → A = 1 se il banco dati è del programma (espansione di memoria), 0 se è il banco 4 condiviso (versione 21; NOTEPAD tiene così testo fino a 16K). `VX_DB` C = una chiamata `DB_*`, DE, HL → un database (versione 22, sotto).
+
+### Database (versione 22)
+
+`VOS_EXT` con A = `VX_DB` e C = una chiamata `DB_*` lavora su un database: un file `NOME.VDB` di pagine da 1K, grande quanto il disco permette (fino a 255K). Ha fino a 8 tabelle; una tabella ha fino a 10 campi, testo (fino a 255 caratteri) o un numero (2 byte), e può avere un campo chiave (testo fino a 64 caratteri, o un numero) con un indice, perché FIND sia veloce. Un record è i suoi campi uno dopo l'altro; il suo id (rid) è un numero a 16 bit. È aperto un database alla volta, per il programma che lo ha aperto. Ogni chiamata scrive le sue modifiche sul disco prima di tornare. Il kernel carica il motore, `DB.SYS`, dall'unità A: la prima volta.
+
+| Chiamata | Ingresso → uscita |
+|---|---|
+| `DB_CREATE`, `DB_OPEN` | DE → db unità, nome di 11 byte (`"STREETS VDB"`); OPEN → A = 1: un altro alfabeto |
+| `DB_CLOSE` | |
+| `DB_TABLE` | DE → nome (8), campi, campo chiave (0: nessuno), poi ogni campo: nome (8), tipo, lunghezza → A = tabella |
+| `DB_USE` | E = la tabella che usano le chiamate sotto |
+| `DB_INFO` | E = tabella, HL → 124 byte: la sua descrizione → A = tabelle |
+| `DB_ADD` | HL → record → DE = rid |
+| `DB_GET`, `DB_PUT` | DE = rid, HL → il record |
+| `DB_DEL` | DE = rid |
+| `DB_FIND` | HL → chiave come in un record (spazio per un record), E = byte che contano (0: tutti) → DE = il primo record con quella chiave o dopo |
+| `DB_FIRST`, `DB_LAST`, `DB_NEXT`, `DB_PREV` | HL → spazio per il record, o 0 → DE = rid, in ordine di chiave; carry alla fine |
+| `DB_COUNT` | → HL = record |
+
+Errori: carry e A (`DB_ERR_*`, e gli errori del disco), che `VOS_ERROR` mostra. Il testo è tenuto come è scritto: un database prende l'alfabeto della lingua attiva (greco, o Latin-1 per francese, spagnolo, tedesco, italiano) la prima volta che un campo di testo riceve un carattere sopra 127, e `DB_OPEN` dà A = 1 quando quello non è più l'alfabeto della lingua; mostra allora `DB_ERR_ALPHABET` con `VOS_ERROR`. L'ordinamento e FIND confrontano byte: maiuscole e minuscole, e lettere accentate, sono diverse. Un esempio è STREETS (`myapps/streets`), uno stradario; `tools/vdb.py` mostra e controlla un file `.VDB` sul PC.
 
 I dettagli completi, ad es. sul background, sull'accessorio e su `VOS_SPLIT`, sono in `src/api/vos_api.inc`. Per esempi, vedi `apps/demo/demo.asm` (modo 0, movimento), `apps/clock/clock.asm` (accessorio) e `apps/mixed/mixed.asm` (schermo misto). Un gioco intero con sprite, un livello letto da file e suono è `myapps/vrouves/`.
 

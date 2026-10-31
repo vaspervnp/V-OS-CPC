@@ -312,6 +312,45 @@ test_keys:
         dw 3050 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 29
+; make test-streets (-DTEST_SCRIPT=29): STREETS (myapps/streets) from its
+; disc, build/streets.dsk, in B:; DB.SYS on A:. Expected:
+;   frame  300  F2, 450 TAB, 600 RETURN -> STREETS: no STREETS.VDB yet,
+;                               so it makes one, with 24 streets: all of
+;                               them from ADRIANOU, "A NEW INDEX"
+;   frame 2000  A, 2050 G    -> FIND: AG, the three AGIOU ... streets
+;   frame 2200  DEL          -> FIND: A, those from ADRIANOU to ATHINAS
+;   frame 2350  CONTROL+A    -> THE STREET: M A I, RETURN; ITS AREA:
+;                               P L A K A, RETURN; ITS POST CODE: 1 0 5
+;                               5 1, RETURN -> FIND: MAI, MAI PLAKA 10551,
+;                               STREETS IN ALL: 25
+test_keys:
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  450 : db   4, 8, %00010000   ; TAB: drive B:
+        dw  600 : db   4, 2, %00000100   ; RETURN: STREETS
+        dw 2000 : db   4, 8, %00100000   ; A
+        dw 2050 : db   4, 6, %00010000   ; G
+        dw 2200 : db   4, 9, %10000000   ; DEL
+        dw 2345 : db  15, 2, %10000000   ; CONTROL
+        dw 2350 : db   4, 8, %00100000   ; A: ADD A STREET
+        dw 2450 : db   4, 4, %01000000   ; M
+        dw 2480 : db   4, 8, %00100000   ; A
+        dw 2510 : db   4, 4, %00001000   ; I
+        dw 2560 : db   4, 2, %00000100   ; RETURN
+        dw 2650 : db   4, 3, %00001000   ; P
+        dw 2680 : db   4, 4, %00010000   ; L
+        dw 2710 : db   4, 8, %00100000   ; A
+        dw 2740 : db   4, 4, %00100000   ; K
+        dw 2770 : db   4, 8, %00100000   ; A
+        dw 2820 : db   4, 2, %00000100   ; RETURN
+        dw 2900 : db   4, 8, %00000001   ; 1
+        dw 2930 : db   4, 4, %00000001   ; 0
+        dw 2960 : db   4, 6, %00000010   ; 5
+        dw 2990 : db   4, 6, %00000010   ; 5
+        dw 3020 : db   4, 8, %00000001   ; 1
+        dw 3070 : db   4, 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 28
 ; make test-data (-DTEST_SCRIPT=28, 576K): data banks of their own. A:
 ; the test disc with NOTEPAD.BIN, B: markdown.dsk with BIG.TXT (300
@@ -1342,6 +1381,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

@@ -1,0 +1,19 @@
+# STREETS's texts: NAME | English | Greek (tools/mktexts.py). "|" with
+# no spaces around it starts a new line in a dialog.
+MENU        | STREETS               | ΟΔΟΙ
+ADD         | ADD A STREET...       | ΝΕΑ ΟΔΟΣ...
+DELETE      | DELETE THE FIRST      | ΔΙΑΓΡΑΦΗ ΤΗΣ ΠΡΩΤΗΣ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+ABOUT_TEXT  | STREETS|A STREET INDEX IN|A V-OS DATABASE|(VX_DB), FROM THE SDK | ΟΔΟΙ|ΟΔΟΔΕΙΚΤΗΣ ΣΕ ΒΑΣΗ|ΔΕΔΟΜΕΝΩΝ ΤΟΥ V-OS|(VX_DB), ΑΠΟ ΤΟ SDK
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+FIND        | FIND:                 | ΕΥΡΕΣΗ:
+STREET      | STREET                | ΟΔΟΣ
+AREA        | AREA                  | ΠΕΡΙΟΧΗ
+ZIP         | POST CODE             | Τ.Κ.
+COUNT       | STREETS IN ALL:       | ΟΔΟΙ ΣΥΝΟΛΙΚΑ:
+NONE        | NO STREET STARTS SO   | ΚΑΜΙΑ ΟΔΟΣ ΔΕΝ ΑΡΧΙΖΕΙ ΕΤΣΙ
+NEW         | A NEW INDEX: STREETS.VDB | ΝΕΟ ΕΥΡΕΤΗΡΙΟ: STREETS.VDB
+NAME_T      | THE STREET            | Η ΟΔΟΣ
+AREA_T      | ITS AREA              | Η ΠΕΡΙΟΧΗ
+ZIP_T       | ITS POST CODE         | Ο Τ.Κ.
+HINT        | TYPE TO FIND  ^A ADD  ^D DEL  ESC MENU | ΓΡΑΨΕ ΓΙΑ ΕΥΡΕΣΗ  ^A ΝΕΑ  ^D ΔΙΑΓΡ.  ESC ΜΕΝΟΥ

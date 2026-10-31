@@ -122,7 +122,7 @@ command: ...
 - **Symbol:** 16 Zeilen mit 16 Zeichen in `icon.txt`. Jedes Zeichen ist ein Stift in Hex (Modus 0, Palette der Ansicht Programme) oder `.` für transparent. Die Ansicht Programme liest es von der Diskette: solange das Programm läuft, sind die 256 Bytes nach "IC" frei für Puffer (PAINT legt dort seine Zeilen ab).
 - **Dateinamen** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 Bytes, `"NAME    EXT"`. Laufwerk 0 = A:, 1 = B:.
 
-## Die API (Version 21)
+## Die API (Version 22)
 
 | Aufruf | Eingabe → Ausgabe | Was er tut |
 |---|---|---|
@@ -166,7 +166,27 @@ command: ...
 | `VOS_FIT` | dasselbe → HL, DE | holt ein Fenster in den Bildschirm hinein |
 | `VOS_EXT` | A = ein `VX_*`-Aufruf, BC, DE, HL wie er es will → A, HL, C, DE, Carry | die Aufrufe nach der Tabelle (Version 15), unten |
 
-**Die Aufrufe von `VOS_EXT`:** `VX_VERSION` → A = API, HL = V-OS-Version (BCD). `VX_FREE` C = Laufwerk → A = freie K. Unbekannt: Carry `VX_CLIP_PUT` HL = Text, BC = Bytes → die Zwischenablage (bis 1K). `VX_CLIP_GET` DE = wohin, BC = Platz → HL = Größe (Version 16). `VX_M4` HL → ein Befehl für die M4-Karte (db Größe, dw Befehl, Daten), DE → die Antwort, BC = Bytes; Carry: keine M4-Karte (Version 17). `VX_MEM` → HL = der RAM in K, DE = die freien K für Programme (Version 18). `VX_BEHIND` DE → db Laufwerk, 11-Byte-Name einer Datei: ihr Programm (nach Typ) startet hinter diesem, mit `init` A = 3 und der Datei in `VOS_OPEN` (Version 19; MUSIC kennt es). `VX_DATA` → A = 1, wenn die Daten-Bank die eigene ist (Speichererweiterung), 0, wenn es die geteilte Bank 4 ist (Version 21; NOTEPAD hält so Text bis 16K).
+**Die Aufrufe von `VOS_EXT`:** `VX_VERSION` → A = API, HL = V-OS-Version (BCD). `VX_FREE` C = Laufwerk → A = freie K. Unbekannt: Carry `VX_CLIP_PUT` HL = Text, BC = Bytes → die Zwischenablage (bis 1K). `VX_CLIP_GET` DE = wohin, BC = Platz → HL = Größe (Version 16). `VX_M4` HL → ein Befehl für die M4-Karte (db Größe, dw Befehl, Daten), DE → die Antwort, BC = Bytes; Carry: keine M4-Karte (Version 17). `VX_MEM` → HL = der RAM in K, DE = die freien K für Programme (Version 18). `VX_BEHIND` DE → db Laufwerk, 11-Byte-Name einer Datei: ihr Programm (nach Typ) startet hinter diesem, mit `init` A = 3 und der Datei in `VOS_OPEN` (Version 19; MUSIC kennt es). `VX_DATA` → A = 1, wenn die Daten-Bank die eigene ist (Speichererweiterung), 0, wenn es die geteilte Bank 4 ist (Version 21; NOTEPAD hält so Text bis 16K). `VX_DB` C = ein `DB_*`-Aufruf, DE, HL → eine Datenbank (Version 22, unten).
+
+### Datenbanken (Version 22)
+
+`VOS_EXT` mit A = `VX_DB` und C = einem `DB_*`-Aufruf arbeitet mit einer Datenbank: einer Datei `NAME.VDB` aus 1K-Seiten, so groß wie die Diskette erlaubt (bis 255K). Sie hat bis zu 8 Tabellen; eine Tabelle hat bis zu 10 Felder, Text (bis 255 Zeichen) oder eine Zahl (2 Bytes), und kann ein Schlüsselfeld haben (Text bis 64 Zeichen, oder eine Zahl) mit einem Index, damit FIND schnell ist. Ein Datensatz sind seine Felder hintereinander; seine Kennung (rid) ist eine 16-Bit-Zahl. Eine Datenbank ist jeweils offen, für das Programm, das sie geöffnet hat. Jeder Aufruf schreibt seine Änderungen auf die Diskette, bevor er zurückkehrt. Der Kernel lädt die Maschine, `DB.SYS`, beim ersten Mal von Laufwerk A:.
+
+| Aufruf | Ein → aus |
+|---|---|
+| `DB_CREATE`, `DB_OPEN` | DE → db Laufwerk, 11-Byte-Name (`"STREETS VDB"`); OPEN → A = 1: ein anderes Alphabet |
+| `DB_CLOSE` | |
+| `DB_TABLE` | DE → Name (8), Felder, Schlüsselfeld (0: keins), dann jedes Feld: Name (8), Typ, Länge → A = Tabelle |
+| `DB_USE` | E = die Tabelle, die die Aufrufe unten nutzen |
+| `DB_INFO` | E = Tabelle, HL → 124 Bytes: ihre Beschreibung → A = Tabellen |
+| `DB_ADD` | HL → Datensatz → DE = rid |
+| `DB_GET`, `DB_PUT` | DE = rid, HL → der Datensatz |
+| `DB_DEL` | DE = rid |
+| `DB_FIND` | HL → Schlüssel wie im Datensatz (Platz für einen Datensatz), E = zählende Bytes (0: alle) → DE = der erste Datensatz mit diesem Schlüssel oder danach |
+| `DB_FIRST`, `DB_LAST`, `DB_NEXT`, `DB_PREV` | HL → Platz für den Datensatz, oder 0 → DE = rid, nach Schlüssel; Carry am Ende |
+| `DB_COUNT` | → HL = Datensätze |
+
+Fehler: Carry und A (`DB_ERR_*`, und die Fehler der Diskette), die `VOS_ERROR` zeigt. Text wird gespeichert, wie er getippt wurde: eine Datenbank übernimmt das Alphabet der aktiven Sprache (Griechisch, oder Latin-1 für Französisch, Spanisch, Deutsch, Italienisch), wenn ein Textfeld zum ersten Mal ein Zeichen über 127 bekommt, und `DB_OPEN` gibt A = 1, wenn das nicht mehr das Alphabet der Sprache ist; zeige dann `DB_ERR_ALPHABET` mit `VOS_ERROR`. Sortieren und FIND vergleichen Bytes: Groß- und Kleinbuchstaben, und solche mit Akzent, sind verschieden. Ein Beispiel ist STREETS (`myapps/streets`), ein Straßenverzeichnis; `tools/vdb.py` zeigt und prüft eine `.VDB`-Datei auf dem PC.
 
 Alle Details, z. B. zum Hintergrund, zum Zubehörprogramm und zu `VOS_SPLIT`, stehen in `src/api/vos_api.inc`. Beispiele findest du in `apps/demo/demo.asm` (Modus 0, Bewegung), `apps/clock/clock.asm` (Zubehör) und `apps/mixed/mixed.asm` (gemischter Bildschirm). Ein ganzes Spiel mit Sprites, einem Level aus einer Datei und Ton ist `myapps/vrouves/`.
 

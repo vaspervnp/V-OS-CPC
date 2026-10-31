@@ -108,6 +108,9 @@
 | `test-clip` | το πρόχειρο: επιλογή με SHIFT, ^C και ^V στο NOTEPAD, ^A, ^X, ^V, και μετά ^V στο MARKDOWN |
 | `test-webget` | με το χέρι, στον CPCEMU του `make linux` (κάρτα M4, χρειάζεται οθόνη και internet): το WEBGET κατεβάζει το `example.com/index.html`. Κλείσε τον CPCEMU με F12 όταν φανεί το ΣΩΘΗΚΕ, και ψάχνει το `INDEX.HTM` στη δισκέτα |
 | `test-reader` | το READER από το `reader.dsk` στο B: ανοίγει το `INDEX.MD`, το TAB διαλέγει σύνδεσμο, το RETURN ανοίγει το `ABOUT.MD`, το DEL γυρίζει πίσω, και ένας σύνδεσμος `https://` βγάζει μήνυμα |
+| `test-db` | η μηχανή των βάσεων σε εξομοιωτή Z80 (`tools/db_check.py`): χιλιάδες τυχαίες κλήσεις σε τέσσερις πίνακες, ελεγμένες με ένα μοντέλο, το αρχείο σελίδα προς σελίδα (`tools/vdb.py`), ως να γεμίσει η δισκέτα |
+| `test-db-disc` | το `DB.SYS` με το σύστημα αρχείων του kernel σε εικόνα DSK (`tools/db_disc_check.py`) |
+| `test-streets` | STREETS από το `streets.dsk` στο B:: νέο `STREETS.VDB` με 24 δρόμους, εύρεση, νέος δρόμος |
 | `test-styles` | το STYLES.VBN (`blocks/examples/styles.vbt`) από τον Commander: απλά, έντονα, πλάγια, υπογραμμισμένα και όλα μαζί, με το block ΣΤΥΛ |
 | `test-music-block` | με 576K: το TUNE.VBN (`blocks/examples/tune.vbt`) ξεκινά το MUSIC (από το B:) πίσω του με το AGANAMEM.MUS· το F6 δείχνει «> TUNE» και MUSIC, και το RETURN φέρνει μπροστά το MUSIC: A:AGANAMEM, ΠΑΙΖΕΙ. Με `MBLOCK_RAM=128`: «ΚΛΕΙΣΤΕ ΠΡΩΤΑ ΑΛΛΟ ΠΡΟΓΡΑΜΜΑ» |
 | `test-amsdos`, `test-reboot`, `test-system` | τα αρχεία του V-OS στη BASIC, επανεκκίνηση, δισκέτα SYSTEM |

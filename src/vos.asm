@@ -120,6 +120,7 @@ EXT_SIZE        equ ext_end - ext_start
         assert ext_end == EXT_ADDR + EXT_MAX
         assert ext2_image + EXT2_SIZE <= #A000  ; below AMSDOS
         assert loader_end <= EXT2_ADDR
+        assert ext2_end <= DB_ADDR
 
         IFDEF TEST_SCRIPT
         save "VOS.BIN", loader_start, ext2_image + EXT2_SIZE - loader_start, DSK, "build/vos_test.dsk"
@@ -170,4 +171,14 @@ setup_end:
         save "SETUP.OVL", VIEW_ADDR, setup_end - VIEW_ADDR, DSK, "build/vos_test.dsk"
         ELSE
         save "SETUP.OVL", VIEW_ADDR, setup_end - VIEW_ADDR, DSK, "build/vos.dsk"
+        ENDIF
+
+; ---- the database engine: DB.SYS, loaded into base RAM bank 1 -------
+        BANK
+        org DB_ADDR
+        include "db/db.asm"
+        IFDEF TEST_SCRIPT
+        save "DB.SYS", DB_ADDR, db_stop - DB_ADDR, DSK, "build/vos_test.dsk"
+        ELSE
+        save "DB.SYS", DB_ADDR, db_stop - DB_ADDR, DSK, "build/vos.dsk"
         ENDIF

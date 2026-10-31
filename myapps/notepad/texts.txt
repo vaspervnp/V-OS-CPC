@@ -7,7 +7,7 @@ SAVE        | SAVE                  | ΑΠΟΘΗΚΕΥΣΗ
 SAVE_AS     | SAVE AS...            | ΑΠΟΘΗΚΕΥΣΗ ΩΣ...
 DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
 ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
-ABOUT_TEXT  | NOTEPAD|TEXT FILES UP TO 4K|FOR V-OS, MADE|WITH THE SDK | ΣΗΜΕΙΩΜΑΤΑΡΙΟ|ΚΕΙΜΕΝΑ ΩΣ 4K|ΓΙΑ ΤΟ V-OS, ΑΠΟ|ΤΟ SDK
+ABOUT_TEXT  | NOTEPAD|TEXT FILES UP TO 4K,|16K WITH MORE RAM|FOR V-OS, MADE|WITH THE SDK | ΣΗΜΕΙΩΜΑΤΑΡΙΟ|ΚΕΙΜΕΝΑ ΩΣ 4K,|16K ΜΕ ΕΠΕΚΤΑΣΗ|ΓΙΑ ΤΟ V-OS, ΑΠΟ|ΤΟ SDK
 BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
 OPEN_T      | OPEN                  | ΑΝΟΙΓΜΑ
 NAME_T      | FILE NAME             | ΟΝΟΜΑ ΑΡΧΕΙΟΥ
