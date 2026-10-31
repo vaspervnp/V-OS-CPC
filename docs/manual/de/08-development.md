@@ -96,6 +96,8 @@ Die Tests starten V-OS in Caprice32 ohne Fenster und machen Screenshots in `buil
 | `test-sdk` | die SDK-Vorlage |
 | `test-vrouves` | VROUVES von seiner Diskette in B:, über den Launcher (TAB): Bauen, Welle 1, das Geld, HIGH SCORES |
 | `test-notepad` | NOTEPAD: Tippen, DEL, der Speicherdialog, OPEN mit nur `.TXT`-Dateien |
+| `test-notepad-big` | NOTEPADs Textfenster in einem Z80-Emulator (`tools/notepad_check.py`): eine 12K-Datei mit eigener Datenbank, Bewegen, Tippen und SAVE, Text bis 16K, und 4K auf einem 6128 |
+| `test-data` | (576K) NOTEPAD mit 15K Text bis Zeile 33, dazwischen MARKDOWN, dann NOTEPAD zurück zum Anfang: die Zeilen aus seiner eigenen Datenbank |
 | `test-paint` | PAINT: Linie, Rechteck, Füllen, die Menüs, dann die Ebenen (eine ausblenden), OTHER DRIVE und EXPORT .SCR nach B: ("SAVED AS .SCR") |
 | `test-scr` | PAINTs EXPORT .SCR (sein Code in einem Z80-Emulator, `tools/scr_check.py`) wird in BASIC von Diskette geladen, mit der Palette; jedes Pixel des Bildschirms wird geprüft |
 | `test-about` | HILFE > ÜBER V-OS |

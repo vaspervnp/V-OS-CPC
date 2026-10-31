@@ -12,7 +12,7 @@ BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
 OPEN_T      | OPEN                  | ΑΝΟΙΓΜΑ
 NAME_T      | FILE NAME             | ΟΝΟΜΑ ΑΡΧΕΙΟΥ
 DISCARD     | THE CHANGES ARE|NOT SAVED. GO ON? | ΟΙ ΑΛΛΑΓΕΣ ΔΕΝ|ΣΩΘΗΚΑΝ. ΣΥΝΕΧΕΙΑ;
-TOO_BIG     | THE FILE IS|TOO BIG (4K AT MOST) | ΤΟ ΑΡΧΕΙΟ ΕΙΝΑΙ|ΠΟΛΥ ΜΕΓΑΛΟ (ΩΣ 4K)
+TOO_BIG     | THE FILE IS|TOO BIG: 4K AT MOST,|16K WITH MORE RAM | ΤΟ ΑΡΧΕΙΟ ΕΙΝΑΙ|ΠΟΛΥ ΜΕΓΑΛΟ: ΩΣ 4K,|16K ΜΕ ΕΠΕΚΤΑΣΗ
 LINE        | LINE                  | ΓΡΑΜΜΗ
 COL         | COL                   | ΣΤΗΛΗ
 HINT        | ^N NEW  ^O OPEN  ^S SAVE  ESC MENU  ^Q BACK | ^N ΝΕΟ  ^O ΑΝΟΙΓΜΑ  ^S ΣΩΣΙΜΟ  ESC ΜΕΝΟΥ

@@ -4,6 +4,18 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M43 (a data bank of its own for each program; NOTEPAD up to 16K; version 0.14):**
+- **Data banks:** with a RAM expansion each program gets a 16K data bank of its own at its first data call (`VOS_BANK_GET`, `VOS_BANK_PUT`, `VOS_DATA`, `VX_DATA`), while two banks of the expansion are free; bank 4 is copied in, so it starts as before. It keeps what is in it until the program ends, whatever programs and views run meanwhile. On a 6128, and for the accessory, it is still bank 4, shared. SYSINFO counts these banks as used.
+- **API 21, `VX_DATA`:** A = 1 if the data bank is the program's own, 0 if it is bank 4.
+- **NOTEPAD:** with a bank of its own, texts up to 16K (4K on a 6128). It keeps a window of about 2.5K around the cursor in its memory, the text before and after it in the data bank, and moves the window when the cursor or the top of the screen comes near its ends. OPEN and SAVE go through the data bank as before (CR LF on the disc). SELECT ALL takes the window. "TOO BIG" now says 4K, or 16K with more RAM.
+- **Room in the kernel:** the window dragging (VOS_DRAG, VOS_FIT) moved from bank 7 to the second extension, to make room for the data banks; `ext2_call` now keeps the home bank on the stack, as a program started behind another may move a window.
+- **Bugs found:** in NOTEPAD, `sbc` after a branch that left the carry set (one byte too few in SAVE's last piece, and room for 16383 bytes instead of 16384); the window loaded from the wrong place at first. Found with the new Z80 harness.
+- **Tested:**
+  - `make test-notepad-big`: NOTEPAD in a Z80 emulator with the API stubbed. A 12K file is loaded, the cursor goes down 280 lines and up 250, text is typed and RETURN; after every key the whole text, the cursor's place and its line number are checked; SAVE writes exactly the file. A 6K text typed from empty, then on to 16K: typing stops at 16384, and SAVE (with CRs over 16K) says TOO BIG and keeps the text. On a 6128 the 12K file is too big, and a 3K one works as before.
+  - `make test-data` (Caprice32, 576K): NOTEPAD opens a 15K BIG.TXT from B:, goes down until its window moves (its first lines into its data bank), then MARKDOWN opens README.MD meanwhile, then NOTEPAD (F6) goes back up to LINE 0000, every line right. In bank 4 MARKDOWN would have taken their place.
+  - `test-expand`, `test-behind`, `test-drag`, `test-paint` after the kernel change; `test-notepad` and `test-about` (0.14).
+- **Not tested:** on a real CPC with a RAM expansion.
+
 **M42 (PAINT exports a CPC screen; version 0.13):**
 - **EXPORT .SCR:** a new item in PAINT's menu saves the picture as a CPC screen, `NAME.SCR` on the picture's drive: 16K that load at #C000, mode 0, 160×200. The picture is in the middle (from byte 8 of line 36), pen 0 around it; with layers, as they show, each pixel twice as big. The palette (16 pens, then the border, in firmware colour numbers) is in the unused bytes from #07D0. A dialog says SAVED AS .SCR.
 - **How:** PAINT clears the data bank, then draws the picture with its usual routine, but each row goes to the data bank's screen line (`scr_at`, the CPC's line order) instead of `VOS_BLIT`.

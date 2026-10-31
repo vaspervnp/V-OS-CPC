@@ -479,11 +479,11 @@ ui_drag_go:
         ld (dr_x),hl
         ld (dr_w),bc
         ld hl,drag_run              ; (DE goes through, HL and DE come
-        jp ext_call                 ; back)
+        jp ext2_call                ; back)
 
 ui_move:
         ld hl,drag_window
-        jp ext_call
+        jp ext2_call
 
 ; ui_busy - A = MSG_*: a small "please wait" window with that text,
 ; while the disc works. ui_restore takes it away.

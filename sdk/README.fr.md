@@ -100,7 +100,7 @@ command: ...
 ### Règles
 
 - **Registres :** les appels altèrent tous les registres sauf IX. Les arguments vont dans A, BC, DE, HL (IX pour `VOS_RECT` et `VOS_BLIT`). Les résultats reviennent dans A ou HL. En cas d'échec, la retenue (carry) est mise et A = numéro d'erreur, que `VOS_ERROR` affiche.
-- **Mémoire :** ne mettez pas une autre banque en `#4000`, car le programme disparaîtrait sous vos pieds. Pour 16K de plus, il y a la banque de données (`VOS_BANK_GET`, `VOS_BANK_PUT`, `VOS_DATA`). Elle est partagée avec les vues et les autres programmes, et ne garde ses données que tant que le programme tourne.
+- **Mémoire :** ne mettez pas une autre banque en `#4000`, car le programme disparaîtrait sous vos pieds. Pour 16K de plus, il y a la banque de données (`VOS_BANK_GET`, `VOS_BANK_PUT`, `VOS_DATA`). Elle est partagée avec les vues et les autres programmes, et ne garde ses données que tant que le programme tourne. Avec une extension mémoire (API 21), chaque programme reçoit la sienne, qui garde son contenu jusqu'à la fin du programme, quoi qu'il tourne entre-temps ; `VX_DATA` dit laquelle (A = 1 : la sienne).
 - **Coordonnées :** x en pixels du mode (mode 0 : 0–191, mode 1 : 0–383), y de 0 à 258. La barre de menus occupe y 0–11.
 - **RASM :** les étiquettes ne sont pas sensibles à la casse (`BOX` et `box` sont identiques). L'hexadécimal s'écrit avec `#` et non avec `&`.
 
@@ -122,7 +122,7 @@ command: ...
 - **Icône :** 16 lignes de 16 caractères dans `icon.txt`. Chaque caractère est une encre en hexadécimal (mode 0, palette du Lanceur) ou `.` pour transparent. Le Lanceur la lit sur la disquette : tant que le programme tourne, les 256 octets après "IC" sont libres pour des tampons (PAINT y garde ses lignes).
 - **Noms de fichiers** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`) : 11 octets, `"NAME    EXT"`. Lecteur 0 = A:, 1 = B:.
 
-## L'API (version 20)
+## L'API (version 21)
 
 | Appel | Entrée → sortie | Ce qu'il fait |
 |---|---|---|
@@ -166,7 +166,7 @@ command: ...
 | `VOS_FIT` | idem → HL, DE | ramène une fenêtre dans l'écran |
 | `VOS_EXT` | A = un appel `VX_*`, BC, DE, HL selon l'appel → A, HL, C, DE, retenue | les appels après la table (version 15), ci-dessous |
 
-**Les appels de `VOS_EXT`:** `VX_VERSION` → A = API, HL = version de V-OS (BCD). `VX_FREE` C = lecteur → A = K libres. Inconnu : retenue `VX_CLIP_PUT` HL = texte, BC = octets → le presse-papiers (jusqu'à 1K). `VX_CLIP_GET` DE = où, BC = place → HL = taille (version 16). `VX_M4` HL → une commande pour la carte M4 (db taille, dw commande, données), DE → la réponse, BC = octets ; retenue : pas de carte M4 (version 17). `VX_MEM` → HL = la RAM en K, DE = les K libres pour les programmes (version 18). `VX_BEHIND` DE → db lecteur, nom de 11 octets d'un fichier : son programme (selon le type) démarre derrière celui-ci, avec `init` A = 3 et le fichier dans `VOS_OPEN` (version 19 ; MUSIC le connaît).
+**Les appels de `VOS_EXT`:** `VX_VERSION` → A = API, HL = version de V-OS (BCD). `VX_FREE` C = lecteur → A = K libres. Inconnu : retenue `VX_CLIP_PUT` HL = texte, BC = octets → le presse-papiers (jusqu'à 1K). `VX_CLIP_GET` DE = où, BC = place → HL = taille (version 16). `VX_M4` HL → une commande pour la carte M4 (db taille, dw commande, données), DE → la réponse, BC = octets ; retenue : pas de carte M4 (version 17). `VX_MEM` → HL = la RAM en K, DE = les K libres pour les programmes (version 18). `VX_BEHIND` DE → db lecteur, nom de 11 octets d'un fichier : son programme (selon le type) démarre derrière celui-ci, avec `init` A = 3 et le fichier dans `VOS_OPEN` (version 19 ; MUSIC le connaît). `VX_DATA` → A = 1 si la banque de données est celle du programme (extension mémoire), 0 si c'est la banque 4 partagée (version 21 ; NOTEPAD garde ainsi du texte jusqu'à 16K).
 
 Tous les détails, par ex. sur l'arrière-plan, l'accessoire et `VOS_SPLIT`, sont dans `src/api/vos_api.inc`. Pour des exemples, voir `apps/demo/demo.asm` (mode 0, mouvement), `apps/clock/clock.asm` (accessoire) et `apps/mixed/mixed.asm` (écran mixte). Un jeu complet avec des sprites, un niveau lu dans un fichier et du son : `myapps/vrouves/`.
 

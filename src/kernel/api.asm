@@ -81,7 +81,7 @@ api_ext:
         ret
 
 xa_table:       dw xa_version, xa_free, xa_clip_put, xa_clip_get, xa_m4
-                dw xa_mem, xa_behind
+                dw xa_mem, xa_behind, xa_data
         assert $ - xa_table == VX_COUNT * 2
 xa_hl:          dw 0
 
@@ -279,19 +279,19 @@ api_quiet:
         xor a
         ret
 
-; The data bank (bank 4) at #4000-#7FFF, through fs_buf, 512 bytes a
-; time; the program's own bank is vw_cfg. HL = source, DE =
+; The data bank (data_get) at #4000-#7FFF, through fs_buf, 512 bytes
+; a time; the program's own bank is vw_cfg. HL = source, DE =
 ; destination, BC = bytes.
 api_bank_get:                       ; from the data bank
         ld a,(vw_cfg)
         ld (ab_to),a
-        ld a,BUF_CFG
+        call data_get
         ld (ab_from),a
         jr bank_copy
 api_bank_put:                       ; to the data bank
         ld a,(vw_cfg)
         ld (ab_from),a
-        ld a,BUF_CFG
+        call data_get
         ld (ab_to),a
 ; from bank ab_from to bank ab_to, both at #4000-#7FFF
 bank_copy:
@@ -460,17 +460,30 @@ api_load:
         pop bc
         jp fs_load
 
-; A = drive + maybe VOS_DATA -> A = drive, C = the bank's RAM config
+; A = drive + maybe VOS_DATA -> A = drive, C = the bank's RAM config:
+; the program's, or its data bank
 api_drive:
-        push hl
-        ld hl,vw_cfg                ; the program's bank, or data_cfg
         bit 7,a
-        jr z,.bank
-        inc hl
-.bank:
-        ld c,(hl)
-        pop hl
+        push af
+        ld a,(vw_cfg)
+        call nz,data_get
+        ld c,a
+        pop af
         and #7F
+        ret
+
+; -> A = the running program's data bank (data_bank, kernel/ext.asm:
+; bank 4, or one of its own in a RAM expansion); the rest kept
+data_get:
+        push hl
+        push de
+        push bc
+        ld hl,data_bank
+        call ext_call
+        pop bc
+        pop de
+        pop hl
+        ld a,(data_cfg)
         ret
 
 ; A = drive (+ VOS_DATA, + VOS_LOAD_IX), HL = name, DE = data, BC =

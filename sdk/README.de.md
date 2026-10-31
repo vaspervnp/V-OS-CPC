@@ -100,7 +100,7 @@ command: ...
 ### Regeln
 
 - **Register:** Aufrufe verändern alle Register außer IX. Argumente kommen in A, BC, DE, HL (IX für `VOS_RECT` und `VOS_BLIT`). Ergebnisse kommen in A oder HL zurück. Bei einem Fehler ist Carry gesetzt und A = Fehlernummer, die `VOS_ERROR` anzeigt.
-- **Speicher:** Blende keine andere Bank bei `#4000` ein, denn dann verschwindet das Programm unter dir. Für 16K mehr gibt es die Daten-Bank (`VOS_BANK_GET`, `VOS_BANK_PUT`, `VOS_DATA`). Sie wird mit Ansichten und anderen Programmen geteilt und behält ihre Daten nur, solange das Programm läuft.
+- **Speicher:** Blende keine andere Bank bei `#4000` ein, denn dann verschwindet das Programm unter dir. Für 16K mehr gibt es die Daten-Bank (`VOS_BANK_GET`, `VOS_BANK_PUT`, `VOS_DATA`). Sie wird mit Ansichten und anderen Programmen geteilt und behält ihre Daten nur, solange das Programm läuft. Mit einer Speichererweiterung (API 21) bekommt jedes Programm eine eigene, die ihren Inhalt bis zu seinem Ende behält, was auch immer dazwischen läuft; `VX_DATA` sagt, welche gilt (A = 1: eine eigene).
 - **Koordinaten:** x in Pixeln des Modus (Modus 0: 0–191, Modus 1: 0–383), y von 0 bis 258. Die Menüleiste belegt y 0–11.
 - **RASM:** Bei Labels spielt Groß- und Kleinschreibung keine Rolle (`BOX` und `box` sind dasselbe). Hex wird mit `#` geschrieben und nicht mit `&`.
 
@@ -122,7 +122,7 @@ command: ...
 - **Symbol:** 16 Zeilen mit 16 Zeichen in `icon.txt`. Jedes Zeichen ist ein Stift in Hex (Modus 0, Palette der Ansicht Programme) oder `.` für transparent. Die Ansicht Programme liest es von der Diskette: solange das Programm läuft, sind die 256 Bytes nach "IC" frei für Puffer (PAINT legt dort seine Zeilen ab).
 - **Dateinamen** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 Bytes, `"NAME    EXT"`. Laufwerk 0 = A:, 1 = B:.
 
-## Die API (Version 20)
+## Die API (Version 21)
 
 | Aufruf | Eingabe → Ausgabe | Was er tut |
 |---|---|---|
@@ -166,7 +166,7 @@ command: ...
 | `VOS_FIT` | dasselbe → HL, DE | holt ein Fenster in den Bildschirm hinein |
 | `VOS_EXT` | A = ein `VX_*`-Aufruf, BC, DE, HL wie er es will → A, HL, C, DE, Carry | die Aufrufe nach der Tabelle (Version 15), unten |
 
-**Die Aufrufe von `VOS_EXT`:** `VX_VERSION` → A = API, HL = V-OS-Version (BCD). `VX_FREE` C = Laufwerk → A = freie K. Unbekannt: Carry `VX_CLIP_PUT` HL = Text, BC = Bytes → die Zwischenablage (bis 1K). `VX_CLIP_GET` DE = wohin, BC = Platz → HL = Größe (Version 16). `VX_M4` HL → ein Befehl für die M4-Karte (db Größe, dw Befehl, Daten), DE → die Antwort, BC = Bytes; Carry: keine M4-Karte (Version 17). `VX_MEM` → HL = der RAM in K, DE = die freien K für Programme (Version 18). `VX_BEHIND` DE → db Laufwerk, 11-Byte-Name einer Datei: ihr Programm (nach Typ) startet hinter diesem, mit `init` A = 3 und der Datei in `VOS_OPEN` (Version 19; MUSIC kennt es).
+**Die Aufrufe von `VOS_EXT`:** `VX_VERSION` → A = API, HL = V-OS-Version (BCD). `VX_FREE` C = Laufwerk → A = freie K. Unbekannt: Carry `VX_CLIP_PUT` HL = Text, BC = Bytes → die Zwischenablage (bis 1K). `VX_CLIP_GET` DE = wohin, BC = Platz → HL = Größe (Version 16). `VX_M4` HL → ein Befehl für die M4-Karte (db Größe, dw Befehl, Daten), DE → die Antwort, BC = Bytes; Carry: keine M4-Karte (Version 17). `VX_MEM` → HL = der RAM in K, DE = die freien K für Programme (Version 18). `VX_BEHIND` DE → db Laufwerk, 11-Byte-Name einer Datei: ihr Programm (nach Typ) startet hinter diesem, mit `init` A = 3 und der Datei in `VOS_OPEN` (Version 19; MUSIC kennt es). `VX_DATA` → A = 1, wenn die Daten-Bank die eigene ist (Speichererweiterung), 0, wenn es die geteilte Bank 4 ist (Version 21; NOTEPAD hält so Text bis 16K).
 
 Alle Details, z. B. zum Hintergrund, zum Zubehörprogramm und zu `VOS_SPLIT`, stehen in `src/api/vos_api.inc`. Beispiele findest du in `apps/demo/demo.asm` (Modus 0, Bewegung), `apps/clock/clock.asm` (Zubehör) und `apps/mixed/mixed.asm` (gemischter Bildschirm). Ein ganzes Spiel mit Sprites, einem Level aus einer Datei und Ton ist `myapps/vrouves/`.
 

@@ -17,8 +17,8 @@
 ;   #8000  TXT_EXPAND (16 bytes)
 ;   #8800  app_self, app_parent (kernel/view.asm), then acc_ctx
 ;   #9000  bank_buf (kernel/lang.asm)
-;   #9800  moving windows: dr_x ... acc_moved, then bg_id ... bg_base
-;          (kernel/ext.asm)
+;   #9800  moving windows: dr_x ... acc_moved (kernel/ext2.asm), then
+;          bg_id ... bg_base (kernel/ext.asm)
 ;   #A000  where the Desktop's window is (shell/desktop.asm)
 ;   #A800  the program switcher's sw_ and sa_ (kernel/ext.asm)
 ;   #B000  app_open: the file a program is opened for (kernel/view.asm)
@@ -93,6 +93,9 @@ SLOT_DRIVE      equ 2
 SLOT_NAME       equ 3               ; 11
 SLOT_CFG        equ 14              ; RAM config of its bank
 SLOT_FLAGS      equ 15              ; 1: it goes on in the background
+; Record 0 holds no program: its byte id is the RAM config of slot id's
+; own data bank (data_bank, kernel/ext.asm), 0 while it has none.
+SLOT_DATA       equ SLOT_TABLE
 RAM_BASE_CFG    equ #C0             ; RAM config: plain 64K
 
 ; Drawable area. The monitor shows 271 lines; the top 6 and the bottom

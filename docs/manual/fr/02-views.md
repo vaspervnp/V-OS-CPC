@@ -15,7 +15,7 @@ Les deux derniers menus sont les mêmes dans toutes les vues et dans les program
 | PROGRAMMES (en cours) | F6 | | |
 | CHANGER DE LANGUE | ^L | | |
 
-AIDE > À PROPOS DE V-OS montre la version (0.13 bêta ; chaque étape ajoute 0.01), la date de compilation, l'auteur (Revive8bit, 2026) et l'architecte (Vasper).
+AIDE > À PROPOS DE V-OS montre la version (0.14 bêta ; chaque étape ajoute 0.01), la date de compilation, l'auteur (Revive8bit, 2026) et l'architecte (Vasper).
 
 ## Bureau, F1
 

@@ -387,6 +387,15 @@ Header με:
 - **Δοκιμή:** το `make test-multi`. Το DEMO τρέχει και αλλάζει χρώμα. Με F2 ο Launcher, και τρέχει το PONG. Ξανά στον Launcher, το DEMO συνεχίζει με το ίδιο χρώμα και κλείνει με ^Q. Το PONG συνεχίζει. Το STUDIO δεν ξεκινά και βγαίνει το σφάλμα 13.
 - **Λάθος που βρέθηκε:** το μήνυμα σε μία γραμμή (27 χαρακτήρες) έκανε τον διάλογο φαρδύτερο από την οθόνη σε mode 0. Δεν φαινόταν, και ο βρόχος του περίμενε κουμπί. Βρέθηκε με dump της στοίβας και των μεταβλητών του διαλόγου (`TEST_DUMP`, `TEST_DUMP_AT`).
 
+**Υλοποίηση M43 (banks δεδομένων, NOTEPAD ως 16K):**
+- **`SLOT_DATA`:** η εγγραφή 0 του `SLOT_TABLE` (#7F00, bank 7) δεν έχει πρόγραμμα· το byte id της είναι η RAM config της bank δεδομένων της θέσης id, 0 αν δεν έχει. Το `slot_free` το μηδενίζει.
+- **`data_bank` (ext.asm):** για `VOS_BANK_GET`/`PUT` και `VOS_DATA` (`data_get` στο api.asm, μέσω `ext_call`, κρατά HL, DE, BC) → `data_cfg`. Αξεσουάρ ανοιχτό ή `app_slot` = 0: `BUF_CFG`. Αλλιώς το `SLOT_DATA`, ή, αν είναι 0, το `data_free`: οι banks του `bk_list` μετά τη bank 5 που δεν έχουν θέση (`SLOT_CFG` εγγραφής με σελίδα) ούτε είναι ήδη bank δεδομένων (`data_used`, `cpdr` στα 15 bytes)· αν είναι τουλάχιστον δύο, η τελευταία, και `bank_copy` της bank 4 (16K) μέσα της. Αλλιώς `BUF_CFG`.
+- **`slot_alloc`:** παραλείπει banks που είναι bank δεδομένων (`data_used`). Το `xa_mem` τις μετρά με 0 ελεύθερες σελίδες.
+- **`VX_DATA` 7 (`xa_data`):** `data_bank`, A = 1 αν δεν είναι `BUF_CFG`.
+- **Χώρος:** τα `drag_*` (285 bytes) πήγαν στο `ext2.asm`· το `ui_fit`/`ui_drag`/`ui_move` καλούν `ext2_call`, που κρατά πλέον το παλιό `ram_home_cfg` στη στοίβα (`ex (sp),hl`) αντί για το `ext2_home`.
+- **NOTEPAD:** `big` από το `VX_DATA` στο init (A = 0). Κείμενο = `plen` bytes στο `DATA` (με `plines` LF) + το παράθυρο `text`..`tend` + `slen` bytes ως το `DATA + #4000`. Το `win_check` (στην αρχή του `place`) καλεί `win_move` όταν `tend − text > WIN_FULL`, ή `top − text < 256` με `plen`, ή `tend − cur < 1024` με `slen`. `win_flush`: θέσεις σε όλο το κείμενο (`cur_a`, `top_a`, `sel_a`) και το παράθυρο μετά το `plen`. `win_go`: αρχή `cur_a − 1280` (0 χωρίς `big`), `bound` (μεταφορά από το ένα μέρος στο άλλο μέσω του buffer, 4K τη φορά, μετρώντας LF), `FILL` 2560 bytes (όλα χωρίς `big`), δείκτες με `in_win` (το `top` πριν από το παράθυρο: αρχή της γραμμής του δρομέα). `room` = min(χώρος παραθύρου, `BIG_MAX` − σύνολο). Άνοιγμα: `VOS_LOAD` στο `DATA`, `from_file` από το τέλος προς την αρχή (CR έξω, TAB κενό, ό,τι μετά το 26 χάνεται) στο τέλος της bank. Αποθήκευση: `win_flush`, `bound` 0, μέτρημα LF (σύνολο + LF ≤ 16K, αλλιώς ΠΟΛΥ ΜΕΓΑΛΟ), CR LF προς τα εμπρός 2K τη φορά (στο δεύτερο μισό του buffer, γράφεται από την αρχή του), `VOS_SAVE`, και `from_file` + `win_go` ξανά.
+- **Δοκιμές:** `tools/notepad_check.py` (z80, `make test-notepad-big`) και το σενάριο 28 (`make test-data`).
+
 **Υλοποίηση M42 (ΕΞΑΓΩΓΗ .SCR στο PAINT):**
 - **`export` (`paint.asm`):** μηδενίζει τα 128 bytes του `row_pairs` και τα γράφει 128 φορές με `VOS_BANK_PUT` (16K της bank δεδομένων από το #4000). Μετά `scr_at` = `SCR_DATA + (SCR_Y >> 3) * 80 + (SCR_Y & 7) * #800 + SCR_X` (γραμμή 36, byte 8) και `draw_canvas`. Στο `.blit`, αν το H του `scr_at` δεν είναι 0, τα pixels (κάθε δεύτερο byte του `row_pairs`) πάνε ένα ένα με `VOS_BANK_PUT` στο `scr_at`, και το `scr_at` πάει στην επόμενη γραμμή του CPC (H + 8· στην όγδοη L + 80, H adc #C0). Η παλέτα (17 bytes) στο #07D0, το όνομα `fname` με `SCR`, `VOS_SAVE` με A = `fdrive` + `VOS_DATA` + `VOS_LOAD_IX`, DE = #4000, BC = #4000, IX = #C000, και ο διάλογος `dlg_exported`.
 - **`VOS_LOAD_IX` (API 20, `api_save`):** `fs_hdr_load` = DE, ή IX αν το bit 6 του A· το bit σβήνει πριν από το `api_drive`.
@@ -908,6 +917,7 @@ Header με:
 42. **M40 — MARKDOWN:** γραμμές ενωμένες σε παραγράφους, γρηγορότερη κύλιση με σημεία (`ck_tab`), και στο READER. Η έκδοση 0.11, +0.01 σε κάθε milestone (§7.3). *Έγινε.*
 43. **M41 — Studio:** τα blocks ΣΤΥΛ (κείμενο με στυλ) και ΜΟΥΣΙΚΗ (τραγούδι `.MUS` στο παρασκήνιο, με το MUSIC μέσω του `VX_BEHIND`, API 19), η δεύτερη επέκταση του kernel στη bank 1, `make test-styles`, `make test-music-block` (§7.3). Έκδοση 0.12. *Έγινε.*
 44. **M42 — PAINT:** εξαγωγή εικόνας ως `.SCR` του CPC (ΕΞΑΓΩΓΗ .SCR, `VOS_LOAD_IX`, API 20), `make test-paint`, `make test-scr` (§7.3). Έκδοση 0.13. *Έγινε.*
+45. **M43 — Banks δεδομένων:** με επέκταση μνήμης, δική του bank δεδομένων για κάθε πρόγραμμα (`VX_DATA`, API 21)· το NOTEPAD με κείμενο ως 16K, `make test-notepad-big`, `make test-data` (§7.3). Έκδοση 0.14. *Έγινε.*
 
 ---
 

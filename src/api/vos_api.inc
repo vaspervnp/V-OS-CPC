@@ -81,7 +81,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 20              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 21              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -92,7 +92,7 @@ VOS_API_VERSION equ 20              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 14: VOS_OPEN, 15: VOS_EXT,
                                     ; 16: the clipboard, 17: VX_M4,
                                     ; 18: VX_MEM, 19: VX_BEHIND, init A = 3,
-                                    ; 20: VOS_LOAD_IX
+                                    ; 20: VOS_LOAD_IX, 21: VX_DATA
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -219,14 +219,21 @@ VX_BEHIND       equ 6                   ; (19) DE -> db drive, 11-byte name
                                         ; of a file: its program (by type,
                                         ; as the Desktop opens it) starts
                                         ; behind this one, soon after
-VX_COUNT        equ 7
+VX_DATA         equ 7                   ; (21) -> A = 1: the data bank is
+                                        ; the program's own; 0: bank 4
+VX_COUNT        equ 8
 
-; The data bank: 16K more for the program (bank 4), seen at the same
-; addresses #4000-#7FFF but never mapped there: the program copies to
-; and from it (VOS_BANK_GET, VOS_BANK_PUT) or loads and saves files in
-; it (drive + VOS_DATA). At the start it holds a copy of the program's
-; file; it lasts until the program ends. Call these on the kernel's
-; stack (in init and event), not on a stack inside #4000-#7FFF.
+; The data bank: 16K more for the program, seen at the same addresses
+; #4000-#7FFF but never mapped there: the program copies to and from it
+; (VOS_BANK_GET, VOS_BANK_PUT) or loads and saves files in it (drive +
+; VOS_DATA). At the start it holds a copy of the program's file. Call
+; these on the kernel's stack (in init and event), not on a stack
+; inside #4000-#7FFF. On a 6128 it is bank 4, which the kernel uses
+; too: what is there is lost when another program or a view is loaded.
+; With a RAM expansion (version 21) each program gets a bank of its own
+; at its first such call, while two banks are free, with bank 4 copied
+; in: it keeps what is there until the program ends, whatever runs
+; meanwhile. VX_DATA says which (and takes the bank, if it can).
 
 ; VOS_BLIT draws an image, whole bytes of screen memory (2 pixels in
 ; mode 0, 4 in mode 1; x is rounded down to a byte). The source is, per

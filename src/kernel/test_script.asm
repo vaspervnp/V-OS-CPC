@@ -312,6 +312,49 @@ test_keys:
         dw 3050 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 28
+; make test-data (-DTEST_SCRIPT=28, 576K): data banks of their own. A:
+; the test disc with NOTEPAD.BIN, B: markdown.dsk with BIG.TXT (300
+; lines, 15K). NOTEPAD keeps about 50 lines in memory, the rest in its
+; data bank; near line 31 its window moves, and the first lines go
+; there. Expected:
+;   frame  300  F3, 400 TAB, 450 500 DOWN, 600 RETURN -> NOTEPAD with
+;                               BIG.TXT: LINE 0000 at the top
+;   frame  900-2100 DOWN held -> down to about LINE 33 (the key repeats
+;                               slowly, each line scrolls the screen):
+;                               the window moved, LINE 0000-0005 in the
+;                               data bank
+;   frame 2200  F3           -> the Commander; NOTEPAD stays
+;   frame 2300  UP, 2400 RETURN -> MARKDOWN with README.MD (loaded
+;                               through bank 4, into its own data bank)
+;   frame 2800  F6, 2900 RETURN -> NOTEPAD again, the same lines
+;   frame 3100-4300 UP held  -> back up to LINE 0000: the first lines
+;                               come from NOTEPAD's data bank, in order
+;                               (in bank 4 MARKDOWN would have taken
+;                               their place)
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db   4, 8, %00010000   ; TAB: the B: panel
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  500 : db   4, 0, %00000100   ; DOWN: BIG.TXT
+        dw  600 : db   4, 2, %00000100   ; RETURN: NOTEPAD
+        dw  900 : db 240, 0, %00000100   ; DOWN, held
+        dw 1140 : db 240, 0, %00000100
+        dw 1380 : db 240, 0, %00000100
+        dw 1620 : db 240, 0, %00000100
+        dw 1860 : db 240, 0, %00000100
+        dw 2200 : db   4, 0, %00100000   ; F3: the Commander
+        dw 2300 : db   4, 0, %00000001   ; UP: README.MD
+        dw 2400 : db   4, 2, %00000100   ; RETURN: MARKDOWN
+        dw 2800 : db   4, 0, %00010000   ; F6: NOTEPAD selected
+        dw 2900 : db   4, 2, %00000100   ; RETURN: NOTEPAD
+        dw 3100 : db 240, 0, %00000001   ; UP, held
+        dw 3340 : db 240, 0, %00000001
+        dw 3580 : db 240, 0, %00000001
+        dw 3820 : db 240, 0, %00000001
+        dw 4060 : db 240, 0, %00000001
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 27
 ; make test-music-block (-DTEST_SCRIPT=27, 576K): Studio's MUSIC block.
 ; A: the test disc with AGANAMEM.MUS and TUNE.VBN last, B: music.dsk
@@ -1299,6 +1342,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

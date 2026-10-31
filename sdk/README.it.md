@@ -100,7 +100,7 @@ command: ...
 ### Regole
 
 - **Registri:** le chiamate alterano tutti i registri tranne IX. Gli argomenti vanno in A, BC, DE, HL (IX per `VOS_RECT` e `VOS_BLIT`). I risultati tornano in A o HL. In caso di errore, il carry è impostato e A = numero dell'errore, che `VOS_ERROR` mostra.
-- **Memoria:** non mappare un altro banco a `#4000`, perché il programma ti sparirebbe da sotto. Per altri 16K c'è il banco dati (`VOS_BANK_GET`, `VOS_BANK_PUT`, `VOS_DATA`). È condiviso con le viste e con altri programmi, e conserva i suoi dati solo mentre il programma è in esecuzione.
+- **Memoria:** non mappare un altro banco a `#4000`, perché il programma ti sparirebbe da sotto. Per altri 16K c'è il banco dati (`VOS_BANK_GET`, `VOS_BANK_PUT`, `VOS_DATA`). È condiviso con le viste e con altri programmi, e conserva i suoi dati solo mentre il programma è in esecuzione. Con un'espansione di memoria (API 21) ogni programma ne riceve uno suo, che conserva ciò che contiene fino alla fine del programma, qualunque cosa giri nel frattempo; `VX_DATA` dice quale (A = 1: il suo).
 - **Coordinate:** x in pixel del modo (modo 0: 0–191, modo 1: 0–383), y da 0 a 258. La barra dei menu occupa y 0–11.
 - **RASM:** le etichette non distinguono maiuscole e minuscole (`BOX` e `box` sono la stessa). L'esadecimale si scrive con `#` e non con `&`.
 
@@ -122,7 +122,7 @@ command: ...
 - **Icona:** 16 righe di 16 caratteri in `icon.txt`. Ogni carattere è una penna in esadecimale (modo 0, palette del Launcher) o `.` per trasparente. Il Launcher la legge dal disco: mentre il programma gira, i 256 byte dopo "IC" sono liberi per dei buffer (PAINT ci tiene le sue righe).
 - **Nomi di file** (`VOS_LOAD`, `VOS_SAVE`, `VOS_DELETE`, `VOS_RUN`): 11 byte, `"NAME    EXT"`. Unità 0 = A:, 1 = B:.
 
-## L'API (versione 20)
+## L'API (versione 21)
 
 | Chiamata | Ingresso → uscita | Cosa fa |
 |---|---|---|
@@ -166,7 +166,7 @@ command: ...
 | `VOS_FIT` | come sopra → HL, DE | riporta una finestra dentro lo schermo |
 | `VOS_EXT` | A = una chiamata `VX_*`, BC, DE, HL come vuole → A, HL, C, DE, carry | le chiamate dopo la tabella (versione 15), sotto |
 
-**Le chiamate di `VOS_EXT`:** `VX_VERSION` → A = API, HL = versione di V-OS (BCD). `VX_FREE` C = unità → A = K liberi. Sconosciuta: carry `VX_CLIP_PUT` HL = testo, BC = byte → gli appunti (fino a 1K). `VX_CLIP_GET` DE = dove, BC = spazio → HL = dimensione (versione 16). `VX_M4` HL → un comando per la scheda M4 (db dimensione, dw comando, dati), DE → la risposta, BC = byte; carry: niente scheda M4 (versione 17). `VX_MEM` → HL = la RAM in K, DE = i K liberi per i programmi (versione 18). `VX_BEHIND` DE → db unità, nome di 11 byte di un file: il suo programma (per tipo) parte dietro questo, con `init` A = 3 e il file in `VOS_OPEN` (versione 19; MUSIC lo conosce).
+**Le chiamate di `VOS_EXT`:** `VX_VERSION` → A = API, HL = versione di V-OS (BCD). `VX_FREE` C = unità → A = K liberi. Sconosciuta: carry `VX_CLIP_PUT` HL = testo, BC = byte → gli appunti (fino a 1K). `VX_CLIP_GET` DE = dove, BC = spazio → HL = dimensione (versione 16). `VX_M4` HL → un comando per la scheda M4 (db dimensione, dw comando, dati), DE → la risposta, BC = byte; carry: niente scheda M4 (versione 17). `VX_MEM` → HL = la RAM in K, DE = i K liberi per i programmi (versione 18). `VX_BEHIND` DE → db unità, nome di 11 byte di un file: il suo programma (per tipo) parte dietro questo, con `init` A = 3 e il file in `VOS_OPEN` (versione 19; MUSIC lo conosce). `VX_DATA` → A = 1 se il banco dati è del programma (espansione di memoria), 0 se è il banco 4 condiviso (versione 21; NOTEPAD tiene così testo fino a 16K).
 
 I dettagli completi, ad es. sul background, sull'accessorio e su `VOS_SPLIT`, sono in `src/api/vos_api.inc`. Per esempi, vedi `apps/demo/demo.asm` (modo 0, movimento), `apps/clock/clock.asm` (accessorio) e `apps/mixed/mixed.asm` (schermo misto). Un gioco intero con sprite, un livello letto da file e suono è `myapps/vrouves/`.
 

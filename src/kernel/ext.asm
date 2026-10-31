@@ -68,6 +68,8 @@ slot_alloc:
         inc hl
         ld (sa_next),hl
         ld (sa_cfg),a
+        call data_used              ; a program's data in it: no room
+        jr z,.next_bank
         ld e,PROG_ADDR >> 8         ; the first page to try
         cp VIEW_BANK_CFG
         jr z,.from
@@ -144,7 +146,7 @@ slot_alloc:
         ret
 .next_bank:
         ld hl,(sa_next)
-        jr .bank
+        jp .bank
 
 ; -> A = a free record's id, HL = it; carry: none
 slot_new:
@@ -220,15 +222,122 @@ slot_own:
         ldir
         ret
 
-; the program ends: its slot is free
+; the program ends: its slot is free, and its data bank
 slot_free:
         ld hl,app_slot
         ld a,(hl)
         ld (hl),0
         or a
         ret z
+        ld l,a
+        ld h,SLOT_DATA >> 8
+        ld (hl),0
         call slot_ptr
         ld (hl),0
+        ret
+
+; A = a bank's RAM config -> Z: some program's data bank; A, BC kept
+data_used:
+        push bc
+        ld hl,SLOT_DATA + 15
+        ld bc,15
+        cpdr
+        pop bc
+        ret
+
+; ---------------------------------------------------------------------
+; data_bank (VOS_BANK_GET, VOS_BANK_PUT, VOS_DATA: data_get, kernel/
+; api.asm) -> data_cfg: the running program's data bank. With a RAM
+; expansion each program has one of its own from its first such call:
+; a bank of bk_list that no program and no other data use, if another
+; stays free for programs, with bank 4 copied in, so a program finds
+; there what it found before. It keeps it until it ends (slot_free).
+; Else, and for the accessory, bank 4, shared.
+; ---------------------------------------------------------------------
+data_bank:
+        ld c,BUF_CFG
+        ld a,(acc_open)
+        or a
+        jr nz,.set
+        ld a,(app_slot)
+        or a
+        jr z,.set
+        ld l,a
+        ld h,SLOT_DATA >> 8
+        ld a,(hl)
+        or a
+        jr nz,.own
+        push hl
+        call data_free
+        pop hl
+        jr c,.set
+        ld (hl),a                   ; its own now: bank 4 into it
+        ld (ab_to),a
+        ld a,c
+        ld (ab_from),a
+        ld hl,BUF_ADDR
+        ld d,h
+        ld e,l
+        ld bc,#4000
+        call bank_copy
+        ld a,(ab_to)
+.own:
+        ld c,a
+.set:
+        ld a,c
+        ld (data_cfg),a
+        ret
+
+; VX_DATA -> A = 1: the data bank is the program's own, 0: bank 4
+xa_data:
+        call data_bank
+        sub BUF_CFG
+        ret z
+        ld a,1
+        ret
+
+; -> A = a bank of the expansion that no program and no data use; C
+; kept. Carry: fewer than two such banks
+data_free:
+        ld de,0                     ; D = how many, E = the last
+        ld hl,bk_list + 1           ; (bank 5 first)
+.bank:
+        ld a,(hl)
+        or a
+        jr z,.end
+        inc hl
+        push hl
+        push bc
+        ld c,a
+        call data_used
+        jr z,.used
+        ld hl,SLOT_TABLE + SLOT_SIZE
+.rec:
+        ld a,(hl)                   ; a program in it?
+        or a
+        jr z,.rec_next
+        ld a,l
+        or SLOT_CFG
+        ld l,a
+        ld a,c
+        cp (hl)
+        jr z,.used
+.rec_next:
+        ld a,l
+        or SLOT_SIZE - 1
+        ld l,a
+        inc l
+        jr nz,.rec
+        inc d
+        ld e,c
+.used:
+        pop bc
+        pop hl
+        jr .bank
+.end:
+        ld a,d
+        cp 2
+        ld a,e
         ret
 
 ; file_name, on sys_drive (slot_find_a: on drive A), running?
@@ -429,291 +538,6 @@ bg_base         equ #9819
 bg_api          equ GAP0 + 664      ; VOS_API_COUNT * 3 (include/memmap.inc)
         assert lang_msg_buf + LANG_MSG_MAX + 1 <= bg_api
         assert 664 + VOS_API_COUNT * 3 <= GAP_SIZE
-
-; ---------------------------------------------------------------------
-; Moving windows (VOS_DRAG, VOS_FIT; kernel/api.asm, ui/ui.asm): a
-; window is dr_x, dr_y (drag_run takes it in DE), dr_w, dr_h, in pixels
-; of the current mode.
-; drag_run, dr_drag = 0: it is moved onto the screen. dr_drag = 1: if
-; ev_cur is a click on its top 10 rows, it follows the pointer as a
-; dashed outline (drawn with XOR, so drawing it again takes it away)
-; until the button goes up -> carry if it moved, dr_x, dr_y where it
-; is now. Its x is a multiple of 8, and 4 pixels are kept for a shadow.
-; ---------------------------------------------------------------------
-dr_x            equ #9800           ; 19 bytes (include/memmap.inc)
-dr_y            equ #9802
-dr_w            equ #9804
-dr_h            equ #9806
-dr_drag         equ #9807
-dr_nx           equ #9808           ; the outline
-dr_ny           equ #980A
-dr_gx           equ #980C           ; where in the window it was taken
-dr_gy           equ #980E
-dr_col          equ #9810           ; outline: a byte on the line
-acc_moved       equ #9813           ; the accessory moved (kernel/view.asm)
-
-drag_run:
-        ld (dr_y),de
-        ld a,(dr_drag)
-        or a
-        jp z,.fit
-        ld a,(ev_cur)
-        cp EV_PTR_DOWN
-        jp nz,.no
-        ld hl,(ev_cur + 4)          ; x - dr_x < dr_w ?
-        ld de,(dr_x)
-        or a
-        sbc hl,de
-        jr c,.no
-        ld (dr_gx),hl               ; where it was taken
-        ld de,(dr_w)
-        sbc hl,de
-        jr nc,.no
-        ld hl,(ev_cur + 6)          ; y - dr_y < 10 ?
-        ld de,(dr_y)
-        or a
-        sbc hl,de
-        jr c,.no
-        ld (dr_gy),hl
-        ld de,10
-        sbc hl,de
-        jr nc,.no
-        call .start
-        call drag_outline
-.frame:
-        call ptr_update
-        call wait_frame
-.event:
-        call ev_get
-        jr z,.frame
-        cp EV_PTR_UP
-        jr z,.to
-        cp EV_PTR_MOVE
-        jr nz,.event
-.to:
-        push af
-        call drag_outline           ; away from where it was
-        ld hl,(ev_cur + 4)
-        ld de,(dr_gx)
-        call .less
-        ld (dr_nx),hl
-        ld hl,(ev_cur + 6)
-        ld de,(dr_gy)
-        call .less
-        ld (dr_ny),hl
-        call drag_clamp
-        pop af
-        cp EV_PTR_UP
-        jr z,.up
-        call drag_outline
-        jr .event
-.up:
-        ld hl,(dr_nx)
-        ld de,(dr_x)
-        or a
-        sbc hl,de
-        jr nz,.moved
-        ld hl,(dr_ny)
-        ld de,(dr_y)
-        sbc hl,de
-        jr nz,.moved
-.no:
-        or a
-        jr .xy
-.fit:
-        call .start
-        call drag_clamp
-.moved:
-        ld hl,(dr_nx)
-        ld (dr_x),hl
-        ld hl,(dr_ny)
-        ld (dr_y),hl
-        scf
-.xy:
-        ld hl,(dr_x)
-        ld de,(dr_y)
-        ret
-.start:
-        ld hl,(dr_x)
-        ld (dr_nx),hl
-        ld hl,(dr_y)
-        ld (dr_ny),hl
-        ret
-; HL - DE, 0 if below
-.less:
-        or a
-        sbc hl,de
-        ret nc
-        ld hl,0
-        ret
-
-; ui_move: the uw_ window (dialogs) dragged -> carry: it moved, what it
-; covered is back and what it covers now is saved (ui/ui.asm)
-drag_window:
-        ld hl,uw_x                  ; uw_x ... uw_h as dr_x ... dr_h
-        ld de,dr_x
-        ld bc,7
-        ldir
-        ld a,1
-        ld (dr_drag),a
-        ld de,(uw_y)
-        call drag_run
-        ret nc
-        call ui_restore
-        ld hl,dr_x
-        ld de,uw_x
-        ld bc,4
-        ldir
-        call ui_save_window
-        scf
-        ret
-
-; dr_nx, dr_ny: the window on the screen (with a mixed screen, in the
-; mode 0 band if drawn in mode 0)
-drag_clamp:
-        ld hl,(gfx_width)           ; x: at most width - w - 4
-        ld de,(dr_w)
-        or a
-        sbc hl,de
-        ld de,4
-        sbc hl,de
-        jr nc,.x
-        ld hl,0                     ; (wider than that: at 0)
-.x:
-        ex de,hl
-        ld hl,(dr_nx)
-        call .most
-        ld a,l
-        and %11111000
-        ld l,a
-        ld (dr_nx),hl
-        ld bc,UI_BAR_H              ; y: below the menu bar, or from
-                                    ; the top of the band
-        ld hl,GFX_H
-        ld a,(split_on)
-        or a
-        jr z,.band
-        ld a,(gfx_mode)
-        or a
-        jr nz,.band
-        ld hl,(split_y2)
-        ld bc,(split_y1)
-.band:
-        ld a,(dr_h)                 ; to its bottom - h - 4
-        add a,4
-        ld e,a
-        ld d,0
-        or a
-        sbc hl,de
-        ex de,hl
-        ld hl,(dr_ny)
-        call .most
-        push hl
-        or a
-        sbc hl,bc
-        pop hl
-        jr nc,.y
-        ld h,b
-        ld l,c
-.y:
-        ld (dr_ny),hl
-        ret
-; HL = the smaller of HL and DE
-.most:
-        push hl
-        or a
-        sbc hl,de
-        pop hl
-        ret c
-        ex de,hl
-        ret
-
-; the dashed outline at dr_nx, dr_ny: dashes of 4 pixels
-drag_outline:
-        call ptr_hide
-        ld de,(dr_ny)               ; top and bottom
-        call .row                   ; (keeps DE)
-        ld a,(dr_h)
-        dec a
-        ld l,a
-        ld h,0
-        add hl,de
-        ex de,hl
-        call .row
-        ld hl,(dr_nx)               ; left and right
-        call .column
-        ld hl,(dr_nx)
-        ld bc,(dr_w)
-        add hl,bc
-        dec hl
-.column:
-        push hl
-        call gfx_x_to_byte
-        ld (dr_col),hl
-        pop hl
-        ld a,l                      ; its pixel
-        ld hl,gfx_pmask
-        and (hl)
-        ld hl,(gfx_pix)
-        call tbl_a
-        ld c,a
-        ld a,(dr_h)                 ; the rows between the corners
-        sub 2
-        ld b,a
-        ld de,(dr_ny)
-.c_row:
-        inc de
-        ld a,e
-        and 4
-        jr nz,.c_next
-        call .line
-        ld a,c
-        xor (hl)
-        ld (hl),a
-.c_next:
-        djnz .c_row
-        ret
-; DE = y: the bytes of the window's width, every other 4 pixels
-.row:
-        push de
-        ld hl,(dr_nx)
-        call gfx_x_to_byte
-        ld (dr_col),hl
-        ld hl,(dr_w)
-        call gfx_x_to_byte
-        ld b,l
-        pop de
-        call .line
-        ld a,(gfx_mode)             ; 4 pixels: 1 byte in mode 1, 2 in
-        or a                        ; mode 0
-        ld c,1
-        jr nz,.r_byte
-        inc c
-.r_byte:
-        ld a,b
-        and c
-        jr nz,.r_next
-        ld a,(hl)
-        cpl
-        ld (hl),a
-.r_next:
-        inc hl
-        djnz .r_byte
-        ret
-; DE = y -> HL = the byte at dr_col on that line
-.line:
-        push de
-        ld hl,gfx_lines
-        add hl,de
-        add hl,de
-        ld a,(hl)
-        inc hl
-        ld h,(hl)
-        ld l,a
-        ld de,(dr_col)
-        add hl,de
-        pop de
-        ret
 
 ; ---------------------------------------------------------------------
 ; sw_run - the program switcher (F6, or PROGRAMS in the VIEW menu): a

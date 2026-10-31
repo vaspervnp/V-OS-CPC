@@ -391,7 +391,7 @@ xa_free:
 ; VX_MEM -> HL = the RAM in K (128 and 64 for each block of a RAM
 ; expansion), DE = K free for programs: the pages of the banks in
 ; bk_list that no slot holds (in bank 5 from PROG_ADDR; none when a
-; program has it alone, app_slot 0)
+; program has it alone, app_slot 0, or in a program's data bank)
 xa_mem:
         ld hl,0
         ld (xm_free),hl
@@ -415,6 +415,11 @@ xa_mem:
         jr nz,.slots
         ld d,a
 .slots:
+        ld a,e
+        call data_used
+        jr nz,.code
+        ld d,0
+.code:
         ld hl,SLOT_TABLE + SLOT_SIZE
 .rec:
         ld a,(hl)

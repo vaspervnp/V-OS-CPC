@@ -324,17 +324,19 @@ view_keys:
 ; HL = a routine of the second extension (kernel/ext2.asm, in base RAM
 ; bank 1, free after boot): run it with that bank home -> its A, flags
 ext2_call:
-        ld a,(ram_home_cfg)
-        ld (ext2_home),a
-        ld a,EXT2_CFG
+        ld a,(ram_home_cfg)         ; the home bank kept on the stack: a
+        push af                     ; program's init there (bh_init) may
+        ld a,EXT2_CFG               ; move a window (drag_run)
         ld (ram_home_cfg),a
         call ram_select
         call .go
+        ex (sp),hl                  ; H = that bank
         push af
-        ld a,(ext2_home)
+        ld a,h
         ld (ram_home_cfg),a
         call ram_select
         pop af
+        pop hl
         ret
 .go:
         jp (hl)
@@ -555,6 +557,5 @@ app_slot:       db 0                ; the program's slot (kernel/ext.asm;
                                     ; 0: none, it has all of bank 5)
 app_wake:       db 0                ; a slot to run again (Launcher, F6)
 bh_req:         db 0                ; VX_BEHIND asked (behind_run)
-ext2_home:      db 0                ; ext2_call
 ext_home:       db 0                ; ext_call
 rl_pages:       db 0

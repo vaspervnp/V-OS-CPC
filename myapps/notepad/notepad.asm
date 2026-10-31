@@ -3,7 +3,11 @@
 ;
 ; Mode 1, 48 columns, 22 lines on the screen. Up to 4K of text, kept
 ; here with LF between the lines; on the disc the lines end with CR LF
-; (a binary file, through the data bank). The keys type in the V-OS
+; (a binary file, through the data bank). With a RAM expansion the data
+; bank is NOTEPAD's own (VX_DATA, API 21), and the text up to 16K: 4K
+; of it here, a window around the cursor, the rest in the data bank
+; (before the window from #4000, after it up to #7FFF), which moves
+; when the cursor comes near its ends (win_check). The keys type in the V-OS
 ; keyboard's language; the arrows and a click move the cursor, DEL
 ; deletes before it, CLR at it, RETURN starts a line. A line wider than
 ; the screen moves the view sideways, 16 columns at a time.
@@ -24,8 +28,14 @@ ROWS            equ 22
 TOP_Y           equ 14
 STATUS_Y        equ 238
 HINT_Y          equ 249
-TEXT_MAX        equ 4096
+TEXT_MAX        equ 4096            ; the window (all the text on a 6128)
 DATA            equ #4000           ; the file, in the data bank
+BIG_MAX         equ #4000           ; the text, with a data bank of its own
+FILL            equ 2560            ; the window when it moves: from
+WIN_BACK        equ 1280            ; that far before the cursor; again
+WIN_TOP         equ 256             ; when the top of the screen or the
+WIN_LOW         equ 1024            ; cursor comes that near its ends,
+WIN_FULL        equ TEXT_MAX - 1040 ; or it has this much
 KEY_CLR         equ 16
 
 CMD_NEW         equ VC_APP + 1               ; menu items: commands
@@ -67,6 +77,9 @@ init:
         jr z,.back
         ld a,(VOS_SELF)             ; files on its own drive at first
         ld (fdrive),a
+        ld a,VX_DATA                ; the data bank its own: up to 16K
+        call VOS_EXT
+        ld (big),a
         call new_doc
 .back:
         call redraw
@@ -105,6 +118,10 @@ redraw:
         jp status
 
 new_doc:
+        ld hl,0
+        ld (plen),hl
+        ld (slen),hl
+        ld (plines),hl
         ld hl,text
         ld (tend),hl
         ld (cur),hl
@@ -318,11 +335,11 @@ column:
 
 ; A = character: in at the cursor -> carry if the text is full
 insert:
-        ld hl,(tend)
-        ld de,text + TEXT_MAX
-        call same
-        jr z,.full
         push af
+        call room
+        ld a,h
+        or l
+        jr z,.full
         ld hl,(tend)                ; the rest one place on
         ld de,(cur)
         or a
@@ -351,6 +368,7 @@ insert:
         or a
         ret
 .full:
+        pop af
         xor a                       ; a short low note
         ld hl,600
         ld c,10
@@ -620,12 +638,8 @@ do_paste:
         ld a,h
         or l
         ret z
-        ex de,hl
-        ld hl,text + TEXT_MAX       ; the room left
-        push de
-        ld de,(tend)
-        or a
-        sbc hl,de
+        push hl
+        call room                   ; the room left
         pop bc
         push hl
         or a
@@ -719,51 +733,23 @@ load_file:                          ; name_tmp on fdrive
         ld hl,name_tmp
         ld de,DATA
         call VOS_LOAD
-        jp c,VOS_ERROR
-        ld hl,TEXT_MAX
+        jr c,.error
+        ld a,(big)
         or a
-        sbc hl,bc
+        jr nz,.fits
+        ld hl,TEXT_MAX
+        sbc hl,bc                   ; (no carry)
         jr nc,.fits
         ld hl,dlg_big
         jp VOS_DIALOG
 .fits:
-        ld (flen),bc
-        ld a,b
-        or c
-        jr z,.copied
-        ld hl,DATA
-        ld de,text
-        call VOS_BANK_GET
-.copied:
+        call from_file
+        ld hl,0                     ; the window at its start
+        ld (cur_a),hl
+        ld (top_a),hl
         ld hl,text
-        ld de,text
-        ld bc,(flen)
-.char:
-        ld a,b
-        or c
-        jr z,.done
-        ld a,(hl)
-        inc hl
-        dec bc
-        cp 26
-        jr z,.done
-        cp 9                        ; TAB: a space
-        jr nz,.tab
-        ld a," "
-.tab:
-        cp 10
-        jr z,.keep
-        cp 32
-        jr c,.char                  ; CR and other codes out
-.keep:
-        ld (de),a
-        inc de
-        jr .char
-.done:
-        ld (tend),de
-        ld hl,text
-        ld (cur),hl
-        ld (top),hl
+        ld (tend),hl
+        call win_go
         xor a
         ld (left),a
         ld (modified),a
@@ -772,6 +758,13 @@ load_file:                          ; name_tmp on fdrive
         ld de,fname
         ld bc,11
         ldir
+        jp redraw
+.error:                             ; the text in the data bank lost?
+        ld hl,big
+        bit 0,(hl)
+        jp z,VOS_ERROR
+        call VOS_ERROR
+        call new_doc
         jp redraw
 
 ; SAVE: as NONAME it asks for a name first
@@ -843,72 +836,508 @@ save_as:
         ldir
         ; fall through
 
-; the text into the data bank, LF as CR LF, 32 bytes at a time, then
-; to the disc
+; the text into the data bank, LF as CR LF, then to the disc; then the
+; text in the data bank and the window again
 write:
-        ld hl,DATA
-        ld (outp),hl
-        ld hl,text
-        ld de,sbuf
-        ld b,0
-.next:
-        push de
-        ld de,(tend)
-        call same
+        call win_flush
+        ld hl,0                     ; all of it after the window
+        call bound
+        ld hl,0                     ; its LFs: the file has as many CRs
+        ld (nlf),hl
+        call s_start
+        ld hl,(slen)
+.count:
+        ld a,h
+        or l
+        jr z,.counted
+        call chunk
+        sbc hl,bc                   ; (no carry)
+        push hl
+        ex de,hl
+        push hl
+        add hl,bc
+        ex (sp),hl
+        call get
+        ld hl,(nlf)
+        add hl,de
+        ld (nlf),hl
         pop de
-        jr z,.end
+        pop hl
+        jr .count
+.counted:
+        ld hl,(slen)
+        ld de,(nlf)
+        add hl,de
+        ld de,BIG_MAX + 1
+        sbc hl,de                   ; (no carry)
+        jr c,.fits
+        call win_go
+        ld hl,dlg_big
+        jp VOS_DIALOG
+.fits:
+        ld hl,DATA                  ; 2K at a time: read into the
+        ld (outp),hl                ; buffer's second half, written
+        call s_start                ; with CRs from its start
+        ld hl,(slen)
+.piece:
+        ld a,h
+        or l
+        jr z,.save
+        ld bc,2048
+        push hl
+        sbc hl,bc                   ; (no carry)
+        pop hl
+        jr nc,.most
+        ld b,h
+        ld c,l
+.most:
+        or a
+        sbc hl,bc
+        push hl
+        push bc
+        push de
+        ex de,hl
+        ld de,text + 2048
+        call VOS_BANK_GET
+        pop hl
+        pop bc
+        push bc
+        add hl,bc
+        ex (sp),hl                  ; the next piece's start kept
+        ld b,h
+        ld c,l
+        ld hl,text + 2048
+        ld de,text
+.char:
         ld a,(hl)
         inc hl
         cp 10
         jr nz,.put
         ld a,13
-        call .byte
-        ld a,10
-.put:
-        call .byte
-        jr .next
-.byte:
         ld (de),a
         inc de
-        inc b
+        ld a,10
+.put:
+        ld (de),a
+        inc de
+        dec bc
         ld a,b
-        cp 32
-        ret c
-.flush:
-        push hl
-        ld c,b
-        ld b,0
-        ld a,c
+        or c
+        jr nz,.char
+        ex de,hl                    ; DE..: the piece, with CRs
+        ld de,text
         or a
-        jr z,.empty
+        sbc hl,de
+        ld b,h
+        ld c,l
         ld hl,(outp)
         push hl
         add hl,bc
         ld (outp),hl
         pop de
-        ld hl,sbuf
-        call VOS_BANK_PUT
-.empty:
+        call put
+        pop de
         pop hl
-        ld de,sbuf
-        ld b,0
-        ret
-.end:
-        call .flush
+        jr .piece
+.save:
         ld hl,(outp)
         ld de,DATA
         or a
         sbc hl,de
         ld b,h
         ld c,l
+        push bc
         ld a,(fdrive)
         or VOS_DATA
         ld hl,fname
         call VOS_SAVE
+        pop bc
+        push af
+        call from_file              ; the text and the window again
+        call win_go
+        pop af
         jp c,VOS_ERROR
         xor a
         ld (modified),a
         jp status
+
+; ---------------------------------------------------------------------
+; the text in the data bank: plen bytes before the window from DATA,
+; plines LFs among them; slen bytes after it, up to DATA + #4000
+; ---------------------------------------------------------------------
+; -> HL = how many more characters fit
+room:
+        ld hl,text + TEXT_MAX
+        ld de,(tend)
+        or a
+        sbc hl,de
+        ld a,(big)
+        or a
+        ret z
+        ex de,hl                    ; and in the data bank
+        ld hl,BIG_MAX - TEXT_MAX    ; (+ DE first: it never goes below
+        ld bc,(plen)                ; 0 on the way)
+        add hl,de
+        or a
+        sbc hl,bc
+        ld bc,(slen)
+        or a
+        sbc hl,bc
+        push hl
+        or a
+        sbc hl,de
+        pop hl
+        ret c
+        ex de,hl
+        ret
+
+; the window moves when the screen's top or the cursor comes near its
+; ends, with more text there, or when it is nearly full (place)
+win_check:
+        ld a,(big)
+        or a
+        ret z
+        ld hl,(tend)
+        ld de,text + WIN_FULL
+        or a
+        sbc hl,de
+        jr nc,win_move
+        ld hl,(plen)
+        ld a,h
+        or l
+        jr z,.end
+        ld hl,(top)
+        ld de,text + WIN_TOP
+        sbc hl,de                   ; (no carry)
+        jr c,win_move
+.end:
+        ld hl,(slen)
+        ld a,h
+        or l
+        ret z
+        ld hl,(tend)
+        ld de,(cur)
+        or a
+        sbc hl,de
+        ld de,WIN_LOW
+        sbc hl,de
+        ret nc
+win_move:
+        call win_flush
+        call win_go
+        jp redo_all
+
+; the window into the data bank, after the text before it; cur_a,
+; top_a, sel_a: where cur, top and sel are in all of the text
+win_flush:
+        ld hl,(cur)
+        call whole
+        ld (cur_a),hl
+        ld hl,(top)
+        call whole
+        ld (top_a),hl
+        ld hl,(sel)
+        call whole
+        ld (sel_a),hl
+        ld hl,(tend)
+        ld de,text
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        push bc
+        ex de,hl
+        call lf_count
+        ld hl,(plines)
+        add hl,de
+        ld (plines),hl
+        pop bc
+        ld hl,(plen)
+        push hl
+        add hl,bc
+        ld (plen),hl
+        pop hl
+        ld de,DATA
+        add hl,de
+        ex de,hl
+        call put
+        ld hl,text
+        ld (tend),hl
+        ret
+
+; HL -> in the window -> HL = where in all of the text
+whole:
+        ld de,text
+        or a
+        sbc hl,de
+        ld de,(plen)
+        add hl,de
+        ret
+
+; the window again around cur_a (win_flush, from_file): from WIN_BACK
+; before it, FILL bytes (all of the text on a 6128); cur, top and sel
+; there
+win_go:
+        ld hl,0
+        ld bc,TEXT_MAX
+        ld a,(big)
+        or a
+        jr z,.from
+        ld hl,(cur_a)
+        ld de,WIN_BACK
+        sbc hl,de                   ; (no carry)
+        jr nc,.back
+        ld hl,0
+.back:
+        ld bc,FILL
+.from:
+        ld (win_a),hl
+        push bc
+        call bound
+        pop bc
+        ld hl,(slen)                ; as much as there is
+        push hl
+        sbc hl,bc                   ; (no carry)
+        pop hl
+        jr nc,.most
+        ld b,h
+        ld c,l
+.most:
+        push bc                     ; from the start of what is after
+        call s_start
+        ex de,hl
+        pop bc
+        push bc
+        call get
+        ld hl,(slen)
+        pop bc
+        or a
+        sbc hl,bc
+        ld (slen),hl
+        ld hl,text
+        add hl,bc
+        ld (tend),hl
+        ld hl,(cur_a)
+        call in_win
+        ld (cur),hl
+        ld hl,(sel_a)
+        call in_win
+        ld (sel),hl
+        ld hl,(top_a)
+        call in_win
+        jr nc,.top
+        ld hl,(cur)                 ; it was before the window
+        call line_begin
+.top:
+        ld (top),hl
+        ret
+
+; HL = where in all of the text -> HL -> it in the window, or its start
+; (carry: before it) or its end
+in_win:
+        ld de,(win_a)
+        or a
+        sbc hl,de
+        jr c,.before
+        ld de,text
+        add hl,de
+        ex de,hl
+        ld hl,(tend)
+        sbc hl,de
+        ex de,hl
+        ret nc
+        ld hl,(tend)
+        or a
+        ret
+.before:
+        ld hl,text
+        ret
+
+; the boundary between the text before the window and after it moves
+; to HL, through the buffer (empty: win_flush first)
+bound:
+        ld (bnd),hl
+.again:
+        ld hl,(plen)
+        ld de,(bnd)
+        or a
+        sbc hl,de
+        ret z
+        jr c,.forward
+        call chunk                  ; the last bytes before it go after
+        ld hl,(plen)
+        sbc hl,bc                   ; (no carry)
+        ld (plen),hl
+        ld de,DATA
+        add hl,de
+        push bc
+        call get
+        ld hl,(plines)
+        or a
+        sbc hl,de
+        ld (plines),hl
+        pop bc
+        ld hl,(slen)
+        add hl,bc
+        ld (slen),hl
+        call s_start
+        call put
+        jr .again
+.forward:
+        ld hl,(bnd)                 ; the first bytes after it go before
+        ld de,(plen)
+        or a
+        sbc hl,de
+        call chunk
+        call s_start
+        ex de,hl
+        push bc
+        call get
+        ld hl,(plines)
+        add hl,de
+        ld (plines),hl
+        pop bc
+        ld hl,(slen)
+        or a
+        sbc hl,bc
+        ld (slen),hl
+        ld hl,(plen)
+        push hl
+        add hl,bc
+        ld (plen),hl
+        pop hl
+        ld de,DATA
+        add hl,de
+        ex de,hl
+        call put
+        jr .again
+
+; HL = bytes -> BC = as many as the buffer takes (no carry)
+chunk:
+        ld bc,TEXT_MAX
+        push hl
+        or a
+        sbc hl,bc
+        pop hl
+        ret nc
+        ld b,h
+        ld c,l
+        or a
+        ret
+
+; -> DE = the start of what is after the window
+s_start:
+        ld hl,DATA + #4000
+        ld de,(slen)
+        or a
+        sbc hl,de
+        ex de,hl
+        ret
+
+; HL -> in the data bank, BC = bytes: into the buffer -> DE = their LFs
+get:
+        ld de,text
+        push bc
+        call VOS_BANK_GET
+        pop bc
+        ld hl,text
+        ; fall through
+; HL -> bytes, BC = how many -> DE = the LFs among them
+lf_count:
+        ld de,0
+        ld a,b
+        or c
+        ret z
+        ld a,10
+.find:
+        cpir
+        ret nz
+        inc de
+        jp pe,.find
+        ret
+
+; DE -> in the data bank, BC = bytes: there from the buffer
+put:
+        ld hl,text
+        jp VOS_BANK_PUT
+
+; the file in the data bank (BC bytes from DATA) -> all of it after the
+; window (none before): no CR or other codes, TAB a space, nothing from
+; the end-of-file mark (26) on. Read from its end, a buffer at a time,
+; and written from the end of the bank down.
+from_file:
+        ld hl,DATA
+        add hl,bc
+        ld (inp),hl
+        ld hl,DATA + #4000
+        ld (outp),hl
+.piece:
+        ld hl,(inp)
+        ld de,DATA
+        or a
+        sbc hl,de
+        jr z,.done
+        call chunk
+        ld hl,(inp)
+        sbc hl,bc                   ; (no carry)
+        ld (inp),hl
+        push bc
+        ld de,text
+        call VOS_BANK_GET
+        pop bc
+        ld hl,text - 1
+        add hl,bc
+        ld (bend),hl
+        ld d,h
+        ld e,l
+.char:
+        ld a,(hl)
+        dec hl
+        cp 26                       ; the end: nothing after it
+        jr nz,.not_end
+        ld de,DATA + #4000
+        ld (outp),de
+        ld de,(bend)
+        jr .next
+.not_end:
+        cp 9
+        jr nz,.tab
+        ld a," "
+.tab:
+        cp 10
+        jr z,.keep
+        cp 32
+        jr c,.next
+.keep:
+        ld (de),a
+        dec de
+.next:
+        dec bc
+        ld a,b
+        or c
+        jr nz,.char
+        ld hl,(bend)                ; DE + 1 ..: what the piece gives
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        inc de
+        ld hl,(outp)
+        sbc hl,bc                   ; (no carry)
+        ld (outp),hl
+        ex de,hl
+        call VOS_BANK_PUT
+        jr .piece
+.done:
+        ld hl,DATA + #4000
+        ld de,(outp)
+        or a
+        sbc hl,de
+        ld (slen),hl
+        ld hl,0
+        ld (plen),hl
+        ld (plines),hl
+        ret
 
 ; ---------------------------------------------------------------------
 ; the text and the screen
@@ -971,6 +1400,7 @@ line_next:
 ; where the cursor is: cur_ls, cur_col, cur_row; top and left move to
 ; keep it on the screen (then everything is drawn again)
 place:
+        call win_check
         ld hl,(cur)
         call line_begin
         ld (cur_ls),hl
@@ -1270,7 +1700,8 @@ status:
         call print_label
         ld hl,text                  ; the line: LFs before the cursor
         ld de,(cur)
-        ld bc,1
+        ld bc,(plines)
+        inc bc
 .count:
         call same
         jr z,.counted
@@ -1424,8 +1855,18 @@ cur_col:        db 0
 click_r:        db 0
 click_c:        db 0
 cat:            dw 0
-flen:           dw 0
 outp:           dw 0
-sbuf:           ds 32
+big:            db 0                ; 1: a data bank of its own (VX_DATA)
+plen:           dw 0                ; the text before the window,
+slen:           dw 0                ; after it (in the data bank)
+plines:         dw 0                ; the LFs before it
+cur_a:          dw 0                ; win_flush: cur, top, sel in all
+top_a:          dw 0                ; of the text
+sel_a:          dw 0
+win_a:          dw 0                ; win_go: where the window starts
+bnd:            dw 0
+inp:            dw 0
+bend:           dw 0
+nlf:            dw 0
 line:           ds COLS + 1
 text:           ds TEXT_MAX

@@ -51,7 +51,7 @@ Rules that are easy to break:
 
 - A program with a relocation table (the SDK default) gets **at most 12K** (48 pages from `#5000`), **code and data together**. Its `ds` buffers are inside the file, so they count, and the `.BIN` on disc is that big too. It is the code without the table that must fit: check `build/myapp_<name>/lo.bin` ≤ 12288.
 - All data must be labels in your own bytes. Never use fixed addresses in `#4000–#7FFF`. Absolute addresses are fixed up by the table; `label & 255` or other halves of an address break relocation (`mkreloc.py` stops with an error).
-- **The data bank** (16K, bank 4): `VOS_BANK_GET` / `VOS_BANK_PUT` (HL from, DE to, BC bytes, both addresses `#4000–#7FFF` of that bank), `VOS_LOAD` / `VOS_SAVE` with `drive + VOS_DATA`. It is **shared**: views and other programs overwrite it while you are behind them. Use it only for things you can load again (e.g. a level file, reloaded in `init` with A = 2), never as the only copy of the user's work.
+- **The data bank** (16K, bank 4): `VOS_BANK_GET` / `VOS_BANK_PUT` (HL from, DE to, BC bytes, both addresses `#4000–#7FFF` of that bank), `VOS_LOAD` / `VOS_SAVE` with `drive + VOS_DATA`. It is **shared**: views and other programs overwrite it while you are behind them. Use it only for things you can load again (e.g. a level file, reloaded in `init` with A = 2), never as the only copy of the user's work. With a RAM expansion (API 21) each program has a data bank of its own instead, taken at its first data call (while two banks are free), which keeps its contents until the program ends: `VOS_EXT` with `A = VX_DATA` returns A = 1 then, 0 for the shared bank 4. Rely on the bank only after A = 1.
 - The screen is not yours to read; keep your own copy of anything you need to redraw.
 
 ## 4. Data formats
@@ -67,7 +67,7 @@ Rules that are easy to break:
 - File names: 11 bytes `"NAME    EXT"`; drive 0 = A:, 1 = B:.
 - Icon: `icon.txt`, 16 rows of 16 hex pens (Launcher palette) or `.`. The Launcher reads it from the disc, so while the program runs the 256 bytes at `VOS_APP_ADDR + VOS_ICON + 2` are free RAM for buffers that need no initial value (`icon_ram` in `myapps/paint`). Use `equ`s based on `VOS_APP_ADDR` so they relocate.
 
-## 5. API versions 12 to 20
+## 5. API versions 12 to 21
 
 - `VOS_SELF` (an address, `#8800`): `db drive, 11-byte name` of the running program. Read it in `init` (A = 0) to load your files from your own drive.
 - `VOS_CATALOG` with `A = drive + VOS_CAT_EXT` and `HL -> "EXT"`: the catalog keeps only that extension; `VOS_FILE_PICK` then lists only those files.
@@ -79,6 +79,7 @@ Rules that are easy to break:
 - `VX_MEM` (version 18): HL = the RAM in K (128, and 64 for each block of a RAM expansion), DE = the K still free for programs in bank 5 and the expansion banks. `myapps/sysinfo` shows both.
 - `VX_BEHIND` (version 19): DE -> `db drive, 11-byte name` of a file; soon after (in the main loop) the kernel starts the file's program, by type as the Desktop opens it, behind the caller, or finds it running. Its `init` gets A = 3 with the file in `VOS_OPEN`: draw nothing, ask nothing, take the file, call `VOS_BACKGROUND` with A = 1 (`myapps/music`). It goes through the data bank (what the caller kept there is lost) and needs room beside the caller (a RAM expansion, for most). Studio's MUSIC block uses it (`rt_music` in `blocks/runtime.asm`).
 - `VOS_SAVE` with `A = drive + VOS_LOAD_IX` (#40, version 20; with `VOS_DATA` too, from the data bank): the file's header says it loads at IX instead of DE. A CPC screen (`.SCR`, 16K, mode 0 160×200, line L at `(L >> 3) * 80 + (L & 7) * #800`, the palette in the unused bytes from `#07D0`) is saved with IX = #C000; build it in the data bank with `VOS_BANK_PUT` (`export` in `myapps/paint`). RASM's `/` is not integer division in such address sums: use `>>`.
+- `VX_DATA` (version 21): -> A = 1 if the data bank is the program's own (a RAM expansion; it keeps its contents while other programs and views run), 0 if it is the shared bank 4. NOTEPAD uses it to keep up to 16K of text: a 4K window in its memory, the rest in the bank (`myapps/notepad`, `win_go`).
 - Kernel room: the kernel (#0000-#3DFF) and bank 7's extension are full. New kernel code that does not run a program's code goes in `src/kernel/ext2.asm`, in base RAM bank 1 at `EXT2_ADDR` (free after boot), called with `ext2_call`; it may call kernel routines that map banks and come back with `ram_home`. The test scripts live there too (`test_inject` maps it from the interrupt).
 - The clipboard (version 16): `VX_CLIP_PUT` (HL = text, BC = bytes, 1K kept) and `VX_CLIP_GET` (DE = where, BC = room; BC = 0 gives the size in HL). Text uses LF between lines, as NOTEPAD and MARKDOWN keep it. Selection, cut and paste: `sel_range`, `sel_delete`, `do_paste` in `myapps/notepad`. Key events carry the mods at +3: `VMOD_SHIFT`, `VMOD_CONTROL`.
 - `VOS_BACKGROUND` A = 1: you keep getting `VE_FRAME` behind other views and programs; every other call does nothing there (`MUSIC` uses this to keep playing).
