@@ -4,6 +4,17 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M47 (DATABASE, a small Access; version 0.18):**
+- **DATABASE** (`myapps/database`, on A:): databases of any shape, without writing a program. ^N makes a new `NAME.VDB` on the drive in use (^W the other one), ^O opens one, and a `.VDB` opens in it from the Desktop and the Commander. ^T makes a table: its name, then its fields (a name, TEXT up to 40 characters or NUMBER 0–65535), up to ten, and whether the first one is its key. Text fields are `DB_ALPHA`, so the key sorts and finds without case or accents.
+- **The list:** a record a row, the fields in columns as many as fit, their names above. UP and DOWN choose a record and scroll, LEFT and RIGHT go a screen; TAB goes to the next table. With a key, typing goes to the first record that starts so (FIND: on the first line), DEL takes a letter back. RECORDS: n below, or what was just done (SAVED, DELETED).
+- **The form:** RETURN opens the chosen record, a field a row; RETURN changes the field in a dialog (a number is checked), ^S saves it (^A starts a new one, which ^S adds), ^B goes back without saving, ^D deletes after a YES.
+- **Bug found:** a routine that finds a field's description took the register that held where its new value goes, so values were written into the table's description: the form showed nothing and the field names broke. Found by the new Z80 harness.
+- **Tested:**
+  - `make test-database-z80` (new): DATABASE in a Z80 emulator with the V-OS calls stubbed, the screen read back as text and the database a model of the engine in Python: a database and a table with a text key and a number; ZOE, anna, bob, Ελένη, Élodie added in the form and listed anna, bob, Élodie, ZOE, Ελένη; FIND by "EL" and "ελ"; bob's age changed, 70000 refused, bob deleted; 40 more records: DOWN through all 44 one by one, UP back, a screen on and back; a second table without a key, TAB between them.
+  - `make test-database` (new, Caprice32): ^W, ^N CLUB on B:, the table PALS with NAME (TEXT 12, its key) and AGE (NUMBER), ZOE 31, anna 28, bob 40 from the form, the list in key order, FIND b, bob changed to 41, SAVED.
+  - Again: `test-db`, `test-utf8`, `test-notepad-big`, `test-about` (0.18), `test-sysinfo`, `test-sdk`, `test-notepad`, `test-streets`, `test-open`, `test-langs`, `test-kbds`, `test-charset`, `test-reader`, `test-calc`.
+- **Not tested:** on a real CPC; a table with ten fields; opening a `.VDB` from the Desktop (the same path as the other types).
+
 **M46 (mixed languages: keyboards, sorting without accents, UTF-8; version 0.17):**
 - **All the keyboards:** every pack now holds the keyboards of all five packs (format 2 of `.LNG`, about 5K each). With Setup's new KEYBOARDS line at ALL SIX, CONTROL+SHIFT goes EN → the pack's → the other four → EN; at EN + PACK (the default) it works as before. The menu bar shows the keyboard in use (EN, ΕΛ, FR, ES, DE, IT). So one types French with the French keyboard while V-OS is in Greek. SETUP.CFG is version 3 (version 2 is still read).
 - **Databases without case or accents:** a field of the new type `DB_ALPHA` is text, but its index ignores case and accents in every language: ΕΛΕΝΗ, Ελένη and ελένη, Élodie and ELODIE are the same key, for sorting and FIND; the record keeps what was typed. STREETS makes its names `DB_ALPHA` (a STREETS.VDB of 0.15 stays as it was).

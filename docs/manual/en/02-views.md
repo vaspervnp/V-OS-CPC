@@ -34,7 +34,7 @@ Mode 1. A FILES window shows the files of a drive as icons, four in each row. Th
 
 - **FILE menu:** OPEN, FILE INFO (^I), COPY TO OTHER DRIVE, DELETE, RENAME, READ DISCS AGAIN, EXIT TO BASIC.
 - **The FILES window** can be dragged by its title and stays there, even when you switch view.
-- **Opening by type** (also in the Commander): `.TXT` files open in NOTEPAD, `.MD` in MARKDOWN, `.PIC` and `.LYR` in PAINT, `.MUS` in MUSIC, which starts playing them. The program is looked for on the file's drive, then on A:, then on B:. If it is not found, "NO PROGRAM FOR THIS FILE" is shown. If the program has unsaved changes, it asks first.
+- **Opening by type** (also in the Commander): `.TXT` files open in NOTEPAD, `.MD` in MARKDOWN, `.PIC` and `.LYR` in PAINT, `.MUS` in MUSIC, `.VDB` in DATABASE, which starts playing them. The program is looked for on the file's drive, then on A:, then on B:. If it is not found, "NO PROGRAM FOR THIS FILE" is shown. If the program has unsaved changes, it asks first.
 
 ## Launcher, F2
 

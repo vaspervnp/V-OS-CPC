@@ -1,0 +1,41 @@
+# DATABASE's texts: NAME | English | Greek (tools/mktexts.py). "|" with
+# no spaces around it starts a new line in a dialog.
+MENU        | DATABASE              | ΒΑΣΗ
+NEW_DB      | NEW DATABASE...       | ΝΕΑ ΒΑΣΗ...
+OPEN_DB     | OPEN A DATABASE...    | ΑΝΟΙΓΜΑ ΒΑΣΗΣ...
+NEW_TABLE   | NEW TABLE...          | ΝΕΟΣ ΠΙΝΑΚΑΣ...
+ADD         | ADD A RECORD          | ΝΕΑ ΕΓΓΡΑΦΗ
+DELETE      | DELETE THE RECORD     | ΔΙΑΓΡΑΦΗ ΕΓΓΡΑΦΗΣ
+SAVE        | SAVE THE RECORD       | ΑΠΟΘΗΚΕΥΣΗ ΕΓΓΡΑΦΗΣ
+LIST        | BACK TO THE LIST      | ΠΙΣΩ ΣΤΗ ΛΙΣΤΑ
+DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+ABOUT_TEXT  | DATABASE|TABLES, RECORDS, A FORM|ON A V-OS DATABASE|(VX_DB), FROM THE SDK | ΒΑΣΗ|ΠΙΝΑΚΕΣ, ΕΓΓΡΑΦΕΣ, ΦΟΡΜΑ|ΣΕ ΒΑΣΗ ΤΟΥ V-OS|(VX_DB), ΑΠΟ ΤΟ SDK
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+NONE_OPEN   | NO DATABASE: ^N NEW ONE, ^O OPEN ONE | ΚΑΜΙΑ ΒΑΣΗ: ^N ΝΕΑ, ^O ΑΝΟΙΓΜΑ
+NO_TABLE    | NO TABLE YET: ^T NEW TABLE | ΚΑΝΕΝΑΣ ΠΙΝΑΚΑΣ: ^T ΝΕΟΣ ΠΙΝΑΚΑΣ
+EMPTY       | NO RECORDS: ^A ADDS ONE | ΚΑΜΙΑ ΕΓΓΡΑΦΗ: ^A ΝΕΑ ΕΓΓΡΑΦΗ
+FIND        | FIND:                 | ΕΥΡΕΣΗ:
+COUNT       | RECORDS:              | ΕΓΓΡΑΦΕΣ:
+TABLE       | TABLE                 | ΠΙΝΑΚΑΣ
+NEW_REC     | NEW RECORD            | ΝΕΑ ΕΓΓΡΑΦΗ
+REC         | RECORD                | ΕΓΓΡΑΦΗ
+HINT_LIST   | ARROWS  RETURN FORM  TAB TABLE  ESC MENU | ΒΕΛΑΚΙΑ  RETURN ΦΟΡΜΑ  TAB ΠΙΝΑΚΑΣ  ESC ΜΕΝΟΥ
+HINT_FORM   | UP DOWN  RETURN CHANGE  ^S SAVE  ^B LIST | ΠΑΝΩ ΚΑΤΩ  RETURN ΑΛΛΑΓΗ  ^S ΑΠΟΘ.  ^B ΛΙΣΤΑ
+DB_NAME_T   | THE NEW DATABASE      | Η ΝΕΑ ΒΑΣΗ
+TABLE_T     | THE NEW TABLE         | Ο ΝΕΟΣ ΠΙΝΑΚΑΣ
+FIELD_T     | A FIELD (NONE: NO MORE) | ΠΕΔΙΟ (ΚΑΝΕΝΑ: ΤΕΛΟΣ)
+TYPE_T      | THE FIELD             | ΤΟ ΠΕΔΙΟ
+TYPE_TEXT   | TEXT OR NUMBER?       | ΚΕΙΜΕΝΟ Ή ΑΡΙΘΜΟΣ;
+TEXT        | TEXT                  | ΚΕΙΜΕΝΟ
+NUMBER      | NUMBER                | ΑΡΙΘΜΟΣ
+CANCEL      | CANCEL                | ΑΚΥΡΟ
+LEN_T       | ITS LENGTH (1-40)     | ΜΗΚΟΣ (1-40)
+KEY_TEXT    | SORT AND FIND|BY THE FIRST FIELD? | ΤΑΞΙΝΟΜΗΣΗ ΚΑΙ|ΕΥΡΕΣΗ ΜΕ ΤΟ ΠΡΩΤΟ ΠΕΔΙΟ;
+VALUE_T     | THE NEW VALUE         | Η ΝΕΑ ΤΙΜΗ
+NOT_NUM     | A NUMBER|FROM 0 TO 65535 | ΕΝΑΣ ΑΡΙΘΜΟΣ|ΑΠΟ 0 ΩΣ 65535
+DEL_Q       | DELETE THIS RECORD?   | ΔΙΑΓΡΑΦΗ ΤΗΣ ΕΓΓΡΑΦΗΣ;
+NO_FILES    | NO DATABASE (.VDB)|ON THIS DRIVE | ΚΑΜΙΑ ΒΑΣΗ (.VDB)|ΣΕ ΑΥΤΗ ΤΗ ΜΟΝΑΔΑ
+PICK_T      | OPEN A DATABASE       | ΑΝΟΙΓΜΑ ΒΑΣΗΣ
+SAVED       | SAVED                 | ΑΠΟΘΗΚΕΥΤΗΚΕ
+DELETED     | DELETED               | ΔΙΑΓΡΑΦΗΚΕ

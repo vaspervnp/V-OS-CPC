@@ -111,6 +111,8 @@ Les tests lancent V-OS dans Caprice32 sans fenêtre et prennent des captures d'�
 | `test-db` | le moteur de bases de données dans un émulateur Z80 (`tools/db_check.py`) : des milliers d'appels au hasard sur quatre tables, vérifiés par un modèle, le fichier page par page (`tools/vdb.py`), jusqu'à remplir la disquette |
 | `test-db-disc` | `DB.SYS` avec le système de fichiers du noyau sur une image DSK (`tools/db_disc_check.py`) |
 | `test-streets` | STREETS depuis `streets.dsk` en B: : un nouveau `STREETS.VDB` avec 24 rues, recherche, une nouvelle rue |
+| `test-database-z80` | DATABASE dans un émulateur Z80, la base en Python et l'écran en texte : deux tables, 47 enregistrements par le formulaire, l'ordre sans casse ni accents, la recherche, un changement, une suppression, le défilement |
+| `test-database` | DATABASE dans Caprice32 : une nouvelle base en B:, une table, trois enregistrements par le formulaire, la liste, la recherche, un changement |
 | `test-kbds` | CLAVIERS : LES SIX dans Setup, puis dans NOTEPAD les touches `:` et Z avec chaque clavier : `:z`, `:ζ`, `mw`, `ñz`, `öy`, `òz` |
 | `test-charset`, `test-reader-utf8` | des fichiers UTF-8 en grec, français, espagnol, allemand et italien dans NOTEPAD et dans READER |
 | `test-utf8` | le code de `VX_UTF8` dans un émulateur Z80, face à `tools/voscs.py` |

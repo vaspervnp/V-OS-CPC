@@ -34,7 +34,7 @@ Modo 1. Una ventana ARCHIVOS muestra los archivos de una unidad como iconos, cua
 
 - **Menú ARCHIVO:** ABRIR, INFO DEL ARCHIVO (^I), COPIAR A LA OTRA UNIDAD, BORRAR, RENOMBRAR, RELEER LOS DISCOS, SALIR AL BASIC.
 - **La ventana ARCHIVOS** se puede arrastrar por su título y se queda ahí, incluso al cambiar de vista.
-- **Abrir según el tipo** (también en el Commander): los `.TXT` se abren en NOTEPAD, los `.MD` en MARKDOWN, los `.PIC` y `.LYR` en PAINT, los `.MUS` en MUSIC, que empieza a tocarlos. El programa se busca en la unidad del archivo, luego en A: y luego en B:. Si no se encuentra, aparece "NINGÚN PROGRAMA PARA ESTE ARCHIVO". Si el programa tiene cambios sin guardar, pregunta primero.
+- **Abrir según el tipo** (también en el Commander): los `.TXT` se abren en NOTEPAD, los `.MD` en MARKDOWN, los `.PIC` y `.LYR` en PAINT, los `.MUS` en MUSIC, los `.VDB` en DATABASE, que empieza a tocarlos. El programa se busca en la unidad del archivo, luego en A: y luego en B:. Si no se encuentra, aparece "NINGÚN PROGRAMA PARA ESTE ARCHIVO". Si el programa tiene cambios sin guardar, pregunta primero.
 
 ## Programas, F2
 

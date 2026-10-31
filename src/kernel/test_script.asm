@@ -312,6 +312,122 @@ test_keys:
         dw 3050 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 31
+; make test-database (-DTEST_SCRIPT=31): DATABASE (myapps/database), last
+; on the test disc, its database on B:. Expected:
+;   frame  300  F2, 420-480 DOWN x3, 520-610 RIGHT x4, 660 RETURN ->
+;                               DATABASE: "NO DATABASE"
+;   frame  900  CONTROL+W    -> drive B:
+;   frame 1000  CONTROL+N, club RETURN -> B:CLUB.VDB; from 1930 NEW
+;                               TABLE: pals, fields name (TEXT, 12), age
+;                               (NUMBER), NAME its key -> from 4520 the
+;                               list: NO RECORDS
+;   frame 4520 on, three times: CONTROL+A, the form, NAME ZOE, anna,
+;                               bob, AGE 31, 28, 40, CONTROL+S -> from
+;                               10380 the list in key order without
+;                               case: anna 28, bob 40, ZOE 31
+;   frame 10380 b            -> FIND: b, the list from bob
+;   frame 10720 RETURN, AGE 41, CONTROL+S -> bob 41, SAVED (12240)
+test_keys:
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  420 : db   4, 0, %00000100   ; DOWN
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  480 : db   4, 0, %00000100   ; DOWN
+        dw  520 : db   4, 0, %00000010   ; RIGHT
+        dw  550 : db   4, 0, %00000010   ; RIGHT
+        dw  580 : db   4, 0, %00000010   ; RIGHT
+        dw  610 : db   4, 0, %00000010   ; RIGHT
+        dw  660 : db   4, 2, %00000100   ; RETURN: DATABASE
+        dw  895 : db  15, 2, %10000000   ; CONTROL
+        dw  900 : db   4, 7, %00001000   ; W: drive B:
+        dw 1035 : db  15, 2, %10000000   ; CONTROL
+        dw 1040 : db   4, 5, %01000000   ; N: NEW DATABASE
+        dw 1230 : db   4, 7, %01000000   ; c
+        dw 1270 : db   4, 4, %00010000   ; l
+        dw 1310 : db   4, 5, %00000100   ; u
+        dw 1350 : db   4, 6, %01000000   ; b
+        dw 1390 : db   4, 2, %00000100   ; RETURN: CLUB.VDB on B:
+        dw 1930 : db   4, 3, %00001000   ; p
+        dw 1970 : db   4, 8, %00100000   ; a
+        dw 2010 : db   4, 4, %00010000   ; l
+        dw 2050 : db   4, 7, %00010000   ; s
+        dw 2090 : db   4, 2, %00000100   ; RETURN: table PALS
+        dw 2280 : db   4, 5, %01000000   ; n
+        dw 2320 : db   4, 8, %00100000   ; a
+        dw 2360 : db   4, 4, %01000000   ; m
+        dw 2400 : db   4, 7, %00000100   ; e
+        dw 2440 : db   4, 2, %00000100   ; RETURN: a field NAME
+        dw 2630 : db   4, 2, %00000100   ; RETURN: TEXT
+        dw 2820 : db   4, 8, %00000001   ; 1
+        dw 2860 : db   4, 8, %00000010   ; 2
+        dw 2900 : db   4, 2, %00000100   ; RETURN: 12 long
+        dw 3090 : db   4, 8, %00100000   ; a
+        dw 3130 : db   4, 6, %00010000   ; g
+        dw 3170 : db   4, 7, %00000100   ; e
+        dw 3210 : db   4, 2, %00000100   ; RETURN: a field AGE
+        dw 3400 : db   4, 0, %00000010   ; RIGHT: NUMBER
+        dw 3500 : db   4, 2, %00000100   ; RETURN
+        dw 3690 : db   4, 2, %00000100   ; RETURN: no more fields
+        dw 3880 : db   4, 2, %00000100   ; RETURN: YES, NAME its key
+        dw 4515 : db  15, 2, %10000000   ; CONTROL
+        dw 4520 : db   4, 8, %00100000   ; A: ADD A RECORD
+        dw 4760 : db   4, 2, %00000100   ; RETURN: NAME
+        dw 4945 : db  15, 2, %00100000   ; SHIFT
+        dw 4950 : db   4, 8, %10000000   ; Z
+        dw 4985 : db  15, 2, %00100000   ; SHIFT
+        dw 4990 : db   4, 4, %00000100   ; O
+        dw 5025 : db  15, 2, %00100000   ; SHIFT
+        dw 5030 : db   4, 7, %00000100   ; E
+        dw 5070 : db   4, 2, %00000100   ; RETURN
+        dw 5260 : db   4, 0, %00000100   ; DOWN: AGE
+        dw 5360 : db   4, 2, %00000100   ; RETURN
+        dw 5550 : db   4, 7, %00000010   ; 3
+        dw 5590 : db   4, 8, %00000001   ; 1
+        dw 5630 : db   4, 2, %00000100   ; RETURN
+        dw 5815 : db  15, 2, %10000000   ; CONTROL
+        dw 5820 : db   4, 7, %00010000   ; S: SAVE
+        dw 6455 : db  15, 2, %10000000   ; CONTROL
+        dw 6460 : db   4, 8, %00100000   ; A: ADD A RECORD
+        dw 6700 : db   4, 2, %00000100   ; RETURN: NAME
+        dw 6890 : db   4, 8, %00100000   ; a
+        dw 6930 : db   4, 5, %01000000   ; n
+        dw 6970 : db   4, 5, %01000000   ; n
+        dw 7010 : db   4, 8, %00100000   ; a
+        dw 7050 : db   4, 2, %00000100   ; RETURN
+        dw 7240 : db   4, 0, %00000100   ; DOWN: AGE
+        dw 7340 : db   4, 2, %00000100   ; RETURN
+        dw 7530 : db   4, 8, %00000010   ; 2
+        dw 7570 : db   4, 5, %00000001   ; 8
+        dw 7610 : db   4, 2, %00000100   ; RETURN
+        dw 7795 : db  15, 2, %10000000   ; CONTROL
+        dw 7800 : db   4, 7, %00010000   ; S: SAVE
+        dw 8435 : db  15, 2, %10000000   ; CONTROL
+        dw 8440 : db   4, 8, %00100000   ; A: ADD A RECORD
+        dw 8680 : db   4, 2, %00000100   ; RETURN: NAME
+        dw 8870 : db   4, 6, %01000000   ; b
+        dw 8910 : db   4, 4, %00000100   ; o
+        dw 8950 : db   4, 6, %01000000   ; b
+        dw 8990 : db   4, 2, %00000100   ; RETURN
+        dw 9180 : db   4, 0, %00000100   ; DOWN: AGE
+        dw 9280 : db   4, 2, %00000100   ; RETURN
+        dw 9470 : db   4, 7, %00000001   ; 4
+        dw 9510 : db   4, 4, %00000001   ; 0
+        dw 9550 : db   4, 2, %00000100   ; RETURN
+        dw 9735 : db  15, 2, %10000000   ; CONTROL
+        dw 9740 : db   4, 7, %00010000   ; S: SAVE
+        dw 10380 : db   4, 6, %01000000   ; b
+        dw 10720 : db   4, 2, %00000100   ; RETURN: bob in the form
+        dw 10960 : db   4, 0, %00000100   ; DOWN: AGE
+        dw 11060 : db   4, 2, %00000100   ; RETURN
+        dw 11250 : db   4, 9, %10000000   ; DEL
+        dw 11290 : db   4, 9, %10000000   ; DEL
+        dw 11330 : db   4, 7, %00000001   ; 4
+        dw 11370 : db   4, 8, %00000001   ; 1
+        dw 11410 : db   4, 2, %00000100   ; RETURN
+        dw 11595 : db  15, 2, %10000000   ; CONTROL
+        dw 11600 : db   4, 7, %00010000   ; S: SAVE
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 30
 ; make test-kbds (-DTEST_SCRIPT=30): the keyboards of all the packs,
 ; NOTEPAD last on the test disc, the Greek pack. Expected:
@@ -1446,6 +1562,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF
