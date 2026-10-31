@@ -393,6 +393,7 @@ Header με:
 - **`icon_ram`:** `VOS_APP_ADDR + VOS_ICON + 2`, 256 bytes: `row_pairs`/`fstack` (128), `lbuf` (+128), `name_tmp` (+160), `name_in` (+176), `lay_text` (+192, το κενό του γράφεται μαζί με τον αριθμό). Με `equ` πάνω στο `VOS_APP_ADDR`, άρα μετατοπίζονται. Ο Launcher διαβάζει το εικονίδιο από τη δισκέτα (`ln_icon_read`).
 - **Κοινός κώδικας:** `pix_row` (A = γραμμή, DE = βάση: + 32 A) για το `pix_addr` (A = 2y) και το `lay_addr`· `pic_part` για τα δύο `.part`· το `draw_colours` κρατά το IX = `rect` σε όλο τον βρόχο.
 - **Δοκιμή:** στο σενάριο 18, μετά το δεύτερο h: ESC, DOWN ×7, RETURN (ΑΛΛΗ ΜΟΝΑΔΑ), ESC, DOWN ×6, RETURN (ΕΞΑΓΩΓΗ .SCR).
+- **`test-scr`:** το `tools/scr_check.py make` τρέχει το `export` (από το `paint.sym` του RASM με `-s`) στο πακέτο `z80` με εικόνα-μοτίβο (λωρίδες και των 16 πενών) και τα `VOS_BANK_PUT`/`VOS_SAVE` σε stubs, και γράφει το `PICTURE.SCR`· το iDSK το βάζει σε δισκέτα (τύπος 1, #C000). Το `cap32_scr_check.sh` γράφει στη BASIC `MODE 0:LOAD…:INK…:BORDER…:WHILE 1:WEND` και τραβά screenshot· το `scr_check.py check` βρίσκει την οθόνη μέσα στο περίγραμμα και συγκρίνει κάθε pixel 160×200 με το χρώμα firmware της πένας του (επίπεδα 0/1/2 ανά RGB).
 
 **Υλοποίηση M41 (ΣΤΥΛ, ΜΟΥΣΙΚΗ, δεύτερη επέκταση):**
 - **Blocks:** `OP_STYLE` 39 και `OP_MUSIC` 40 (`OP_COUNT` 41), στο τέλος του `blocks.txt` για να μένουν σωστά τα παλιά `.VBS`. Στο Studio `OP_INFO` 10: σημαίες, 3 κλάσεις, 3 προεπιλογές (είδος, τιμή)· το `insert_block` γράφει το πάνω byte 0. Ο player: `op_style` (κοινός κώδικας με το `op_colour`: `ld a,l : ld (rt_style),a`), `op_music` (`ld a,κείμενο : call rt_music`), `e_ld_a`. Το runtime: το `rt_print` προσθέτει το `rt_style` × 16 (`VOS_BOLD`…) στο μελάνι· το `rt_music` φτιάχνει `drive, "ONOMA   MUS"` στο `rt_song` και καλεί το `VX_BEHIND` μόνο όταν αλλάξει. Με `RT_NO_LISTS` (ο player) οι λίστες λείπουν.
@@ -906,7 +907,7 @@ Header με:
 41. **M39 — Αναγνώστης Markdown από το δίκτυο:** σελίδες `.MD` από τη δισκέτα ή το web με την προεπισκόπηση του MARKDOWN, σύνδεσμοι με TAB/RETURN/DEL: το πρόγραμμα READER, και η μνήμη στο SYSINFO (`VX_MEM`, API 18), `make test-reader` (§7.3). *Έγινε· μια πραγματική σελίδα από M4 δεν ελέγχθηκε.*
 42. **M40 — MARKDOWN:** γραμμές ενωμένες σε παραγράφους, γρηγορότερη κύλιση με σημεία (`ck_tab`), και στο READER. Η έκδοση 0.11, +0.01 σε κάθε milestone (§7.3). *Έγινε.*
 43. **M41 — Studio:** τα blocks ΣΤΥΛ (κείμενο με στυλ) και ΜΟΥΣΙΚΗ (τραγούδι `.MUS` στο παρασκήνιο, με το MUSIC μέσω του `VX_BEHIND`, API 19), η δεύτερη επέκταση του kernel στη bank 1, `make test-styles`, `make test-music-block` (§7.3). Έκδοση 0.12. *Έγινε.*
-44. **M42 — PAINT:** εξαγωγή εικόνας ως `.SCR` του CPC (ΕΞΑΓΩΓΗ .SCR, `VOS_LOAD_IX`, API 20), `make test-paint` (§7.3). Έκδοση 0.13. *Έγινε· το αρχείο δεν φορτώθηκε σε BASIC.*
+44. **M42 — PAINT:** εξαγωγή εικόνας ως `.SCR` του CPC (ΕΞΑΓΩΓΗ .SCR, `VOS_LOAD_IX`, API 20), `make test-paint`, `make test-scr` (§7.3). Έκδοση 0.13. *Έγινε.*
 
 ---
 

@@ -97,6 +97,7 @@ The tests run V-OS in Caprice32 without a window and take screenshots in `build/
 | `test-vrouves` | VROUVES from its disc in B:, through the Launcher (TAB): building, wave 1, the funds, HIGH SCORES |
 | `test-notepad` | NOTEPAD: typing, DEL, the save dialog, OPEN with only `.TXT` files |
 | `test-paint` | PAINT: line, box, fill, the menus, then the layers (hiding one), OTHER DRIVE and EXPORT .SCR to B: ("SAVED AS .SCR") |
+| `test-scr` | PAINT's EXPORT .SCR (its code in a Z80 emulator, `tools/scr_check.py`) loaded in BASIC from a disc, with the palette; every pixel of the screen checked |
 | `test-about` | HELP > ABOUT V-OS |
 | `test-music` | MUSIC from `music.dsk` in B:: a song plays, and goes on behind the Launcher |
 | `test-markdown` | MARKDOWN from `markdown.dsk` in B:: `README.MD` opened, the page with ^P, a screen down, back to the text |

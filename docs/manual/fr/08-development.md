@@ -97,6 +97,7 @@ Les tests lancent V-OS dans Caprice32 sans fenêtre et prennent des captures d'�
 | `test-vrouves` | VROUVES depuis sa disquette en B:, par le Lanceur (TAB) : construction, la vague 1, l'argent, HIGH SCORES |
 | `test-notepad` | NOTEPAD : saisie, DEL, le dialogue d'enregistrement, OPEN avec seulement les fichiers `.TXT` |
 | `test-paint` | PAINT : ligne, rectangle, remplissage, les menus, puis les calques (en cacher un), OTHER DRIVE et EXPORT .SCR vers B: ("SAVED AS .SCR") |
+| `test-scr` | l'EXPORT .SCR de PAINT (son code dans un émulateur Z80, `tools/scr_check.py`) chargé en BASIC depuis une disquette, avec la palette ; chaque pixel de l'écran est vérifié |
 | `test-about` | AIDE > À PROPOS DE V-OS |
 | `test-music` | MUSIC depuis `music.dsk` en B: : un morceau joue, et continue derrière le Lanceur |
 | `test-markdown` | MARKDOWN depuis `markdown.dsk` en B: : `README.MD` ouvert, la page avec ^P, un écran plus bas, retour au texte |

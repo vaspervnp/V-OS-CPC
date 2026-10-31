@@ -23,6 +23,8 @@
 #   make test-bricks BRICKS, a block game: the bat moved, bricks hit
 #   make test-lang   English at boot, Greek saved in Setup, then V-OS
 #                 again starts in Greek (TEST_SCRIPT=3)
+#   make test-scr    PAINT's EXPORT .SCR (run in a Z80 emulator, tools/scr_check.py)
+#                 loaded in BASIC from a disc, and every pixel checked
 #   make test-amsdos  the same script, then AMSDOS in BASIC reads the
 #                 files V-OS wrote (one screenshot)
 #   make test-reboot  the same, then RUN"VOS" with the saved SETUP.CFG
@@ -55,7 +57,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-notepad windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -843,6 +845,20 @@ test-paint: $(PAINT_DSK) $(TEST_DSK_B)
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
+
+# EXPORT .SCR: PAINT's export code makes PICTURE.SCR in a Z80 emulator
+# (pip package z80, so not python -I), BASIC loads it in Caprice32 with
+# the inks from &C7D0, and the screenshot is checked pixel by pixel.
+SCR_TEST := $(BUILD)/scr_test
+test-scr: $(BUILD)/PAINT.BIN
+	@mkdir -p $(SCR_TEST)
+	$(RASM) myapps/paint/paint.asm -I src -I $(BUILD)/myapp_paint -I myapps/paint -o $(SCR_TEST)/paint -s > $(SCR_TEST)/rasm.log
+	$(PYTHON) tools/scr_check.py make $(SCR_TEST)/paint.bin $(SCR_TEST)/paint.sym $(SCR_TEST)/PICTURE.SCR
+	rm -rf $(SCR_TEST)/scr.dsk $(SCR_TEST)/shots
+	iDSK $(SCR_TEST)/scr.dsk -n > /dev/null
+	iDSK $(SCR_TEST)/scr.dsk -i $(SCR_TEST)/PICTURE.SCR -t 1 -c C000 -e C000 > /dev/null
+	snap run --shell caprice32.launcher -c "bash $(abspath tools/cap32_scr_check.sh) $(abspath $(SCR_TEST))/scr.dsk $(abspath $(SCR_TEST))/shots"
+	$(PYTHON) tools/scr_check.py check $(SCR_TEST)/shots/*.png
 
 # NOTEPAD (TEST_SCRIPT=17): myapps/notepad, last on the test disc
 NOTEPAD_DSK := $(BUILD)/vos_notepad.dsk

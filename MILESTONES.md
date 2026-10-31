@@ -13,7 +13,8 @@ What each milestone added, the bugs found on the way, and what was tested and wh
 - **Tested:**
   - Python Z80 harness with PAINT's build, the API stubbed: EXPORT of a 128×128 picture with a known pattern gives exactly the expected 16K (every picture byte at its screen place, zeros elsewhere, the palette at #07D0), and `VOS_SAVE` gets A = #C0, `NONAME  SCR`, DE = #4000, BC = #4000, IX = #C000; with layers each row comes out twice.
   - Caprice32: `test-paint` now goes on to OTHER DRIVE (B:, as A: of the test disc is full) and EXPORT .SCR: "SAVED AS .SCR". Also `test-about` (0.13), `test-sysinfo`, `test-notepad`, `test-costume`, `test-vars`, `test-sdk`, `test-calc`.
-- **Not tested:** the file on the disc: Caprice32 does not write a changed disc back when the test ends, so the `.SCR` was not loaded in BASIC. On a real CPC.
+  - After M42, `make test-scr`: Caprice32 does not write a changed disc back, so `tools/scr_check.py` runs PAINT's export code in the Z80 emulator, and the `.SCR` it makes goes on a disc with iDSK. BASIC loads it with `MODE 0:LOAD"PICTURE.SCR",&C000`, sets the 16 inks and the border from &C7D0, and all 160×200 pixels of the screenshot have the right colour.
+- **Not tested:** on a real CPC.
 
 **M41 (Studio: text styles and music; version 0.12):**
 - **STYLE *n*:** a new block in LOOKS/SOUND. The PRINT and TEXT that follow are bold (1), italic (2), underlined (4), or those added together; 0 is plain. Also `text_style` for `vbc.py` and the web editor.
