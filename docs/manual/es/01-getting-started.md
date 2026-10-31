@@ -44,7 +44,7 @@ V-OS usa toda la pantalla (overscan): 384×272 píxeles en modo 1 (4 colores) o 
 | CONTROL+letra | los atajos de los menús (p. ej. ^Q, ^L) |
 | CONTROL+L | cambio de idioma (VER > CAMBIAR DE IDIOMA) |
 | CONTROL+K | el diálogo con las teclas (AYUDA > TECLAS) |
-| CONTROL+SHIFT | cambia el teclado entre el inglés y el del idioma del paquete |
+| CONTROL+SHIFT | cambia el teclado: inglés, el del paquete y, con TECLADOS: LOS SEIS en Setup, los de los otros idiomas |
 | TAB, SHIFT+TAB | mueven el foco entre los botones. RETURN, ENTER o SPACE pulsan el botón que tiene el foco |
 
 F1–F6 son las teclas f1–f6 del teclado numérico del CPC.

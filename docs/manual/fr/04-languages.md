@@ -15,7 +15,7 @@ V-OS parle six langues. L'anglais est intégré. Les cinq autres sont des **modu
 
 - **Durablement :** dans les Réglages (F4), la ligne LANGUE fait défiler toutes les langues. Chacune se charge aussitôt depuis A:, et tout l'écran est redessiné dans cette langue. Enregistrer (^S) la conserve aussi pour le démarrage suivant.
 - **Rapidement :** CONTROL+L (AFFICHAGE > CHANGER DE LANGUE) bascule entre l'anglais et la langue du module chargé.
-- **Clavier seul :** CONTROL+SHIFT bascule le clavier entre l'anglais et celui du module. La barre de menus indique à droite lequel est actif (EN, ΕΛ, FR, …).
+- **Clavier seul :** CONTROL+SHIFT change le clavier. La barre de menus indique à droite lequel est actif (EN, ΕΛ, FR, …). Avec CLAVIERS de Setup sur EN + LANGUE, il va entre l'anglais et celui du module ; sur LES SIX, il passe par tous : EN, celui du module, les quatre autres, puis EN. Vous pouvez ainsi taper du français avec le clavier français pendant que le système est en grec. Chaque module contient les claviers de tous.
 
 Les symboles `@ # [ ] { } \ |` ne sont pas sur les claviers des modules, car le CPC n'a pas de touche AltGr. Tapez-les avec le clavier anglais.
 
@@ -30,6 +30,8 @@ Toutes les langues écrivent avec le même jeu de caractères, le **jeu de V-OS*
 Les codes 128 à 255 sont ceux du grec en ISO 8859-7, tels quels, et les codes qu'il laisse libres reçoivent À Á Â Ä Ç È É Ê Ë Ì Í Î Ï Ñ Ò Ó Ô Ö Ù Ú Û Ü, leurs minuscules, ß et ¡ ¿. L'accent ´ s'écrit comme le tonos grec (΄) et µ comme μ. Il n'y a pas de ÿ, Œ ni œ. La table est dans `tools/voscs.py`. Un fichier texte grec d'un PC (ISO 8859-7) se lit tel quel ; un fichier français ou allemand en Latin-1 doit être converti.
 
 Avec le clavier anglais, SHIFT et `^` donne £.
+
+Les fichiers en **UTF-8**, d'un PC ou du web, sont ouverts par NOTEPAD et READER, qui les mettent dans le jeu de V-OS ; ce qu'il n'a pas (du chinois, par exemple) devient `?`. Sur le PC, `tools/voscv.py` convertit des fichiers vers et depuis V-OS (UTF-8, Latin-1 et d'autres) et dit ce qu'est un fichier (`check`).
 
 ## Créer une nouvelle langue
 

@@ -44,7 +44,7 @@ V-OS utilise tout l'écran (overscan) : 384×272 pixels en mode 1 (4 couleurs) o
 | CONTROL+lettre | les raccourcis des menus (par ex. ^Q, ^L) |
 | CONTROL+L | changer de langue (AFFICHAGE > CHANGER DE LANGUE) |
 | CONTROL+K | le dialogue des touches (AIDE > TOUCHES) |
-| CONTROL+SHIFT | bascule le clavier entre l'anglais et la langue du module |
+| CONTROL+SHIFT | change le clavier : anglais, celui du module et, avec CLAVIERS : LES SIX dans Setup, ceux des autres langues |
 | TAB, SHIFT+TAB | déplacent le focus entre les boutons. RETURN, ENTER ou ESPACE appuient sur le bouton qui a le focus |
 
 F1–F6 sont les touches f1–f6 du pavé numérique du CPC.

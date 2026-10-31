@@ -44,7 +44,7 @@ V-OS uses the whole screen (overscan): 384×272 pixels in mode 1 (4 colors) or 1
 | CONTROL+letter | the menu shortcuts (e.g. ^Q, ^L) |
 | CONTROL+L | switch language (VIEW > SWITCH LANGUAGE) |
 | CONTROL+K | the dialog with the keys (HELP > KEYS) |
-| CONTROL+SHIFT | switches the keyboard between English and the language of the pack |
+| CONTROL+SHIFT | switches the keyboard: English, the pack's, and, with KEYBOARDS: ALL SIX in Setup, the other languages' |
 | TAB, SHIFT+TAB | move the focus between buttons. RETURN, ENTER or SPACE press the button that has the focus |
 
 F1–F6 are the f1–f6 keys on the CPC's numeric keypad.

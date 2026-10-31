@@ -33,8 +33,13 @@
 #                 random calls checked against a model, the file page by page
 #   make test-db-disc DB.SYS with the kernel's file system on a DSK image
 #   make test-streets STREETS from its disc: a new STREETS.VDB, FIND, ADD
+#   make test-kbds   Setup's KEYBOARDS: ALL SIX, then NOTEPAD typed with
+#                 each keyboard in turn (CONTROL+SHIFT)
 #   make test-charset Greek, French, Spanish, German, Italian in one text
-#                 (the V-OS character set), in NOTEPAD
+#                 file in UTF-8, in NOTEPAD: the V-OS character set
+#   make test-reader-utf8 READER with an INDEX.MD in UTF-8
+#   make test-utf8   VX_UTF8's code (src/kernel/utf8.asm) in a Z80
+#                 emulator, against tools/voscs.py
 #   make test-amsdos  the same script, then AMSDOS in BASIC reads the
 #                 files V-OS wrote (one screenshot)
 #   make test-reboot  the same, then RUN"VOS" with the saved SETUP.CFG
@@ -67,7 +72,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -84,12 +89,22 @@ FORCE:
 $(LANG_KERNEL) $(BUILD)/ENGLISH.MSG &: lang/en/keymap.txt lang/en/messages.txt tools/mklng.py tools/voscs.py src/version.inc $(BUILD)/date.txt
 	$(PYTHON) -I tools/mklng.py kernel lang/en src/lang $(BUILD)/ENGLISH.MSG
 
-$(BUILD)/GREEK.LNG: $(wildcard lang/el/*.txt) lang/vos/font.txt tools/voscs.py lang/en/messages.txt lang/en/keymap.txt tools/mklng.py src/version.inc $(BUILD)/date.txt
+# the V-OS letters without case or accent, for DB_ALPHA keys in DB.SYS
+src/db/fold.inc: tools/voscs.py
+	$(PYTHON) -I tools/voscs.py fold > $@
+# and the Unicode of the V-OS codes, for VX_UTF8 (kernel/utf8.asm)
+src/kernel/utf8.inc: tools/voscs.py
+	$(PYTHON) -I tools/voscs.py utf8 > $@
+
+# every pack has the keyboards of all the packs (CONTROL+SHIFT, Setup's
+# KEYBOARDS)
+LANG_KBDS := $(wildcard lang/*/keymap.txt lang/*/pack.txt)
+$(BUILD)/GREEK.LNG: $(wildcard lang/el/*.txt) $(LANG_KBDS) lang/vos/font.txt tools/voscs.py lang/en/messages.txt lang/en/keymap.txt tools/mklng.py src/version.inc $(BUILD)/date.txt
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mklng.py pack lang/el $@ --master lang/en
 
 # every pack has the font of the V-OS character set, lang/vos/font.txt
-LATIN_PACK = $(wildcard lang/$(1)/*.txt) lang/vos/font.txt tools/voscs.py lang/en/messages.txt lang/en/keymap.txt tools/mklng.py src/version.inc $(BUILD)/date.txt
+LATIN_PACK = $(wildcard lang/$(1)/*.txt) $(LANG_KBDS) lang/vos/font.txt tools/voscs.py lang/en/messages.txt lang/en/keymap.txt tools/mklng.py src/version.inc $(BUILD)/date.txt
 $(BUILD)/FRENCH.LNG: $(call LATIN_PACK,fr)
 	@mkdir -p $(BUILD)
 	$(PYTHON) -I tools/mklng.py pack lang/fr $@ --master lang/en
@@ -228,7 +243,7 @@ $(BUILD)/MINES.VBN $(BUILD)/MINES.VBS &: blocks/examples/mines.vbt tools/mkvbs.p
 # texts and icon go to $(BUILD)/myapp_$(2), where the source includes
 # them from
 define myapp_rule
-$(BUILD)/$(call upper,$(2)).BIN: $(1)/$(2).asm $(wildcard $(1)/*.asm) $(1)/texts.txt $(1)/icon.txt src/api/vos_api.inc tools/mkreloc.py tools/mktexts.py tools/mkicon.py
+$(BUILD)/$(call upper,$(2)).BIN: $(1)/$(2).asm $(wildcard $(1)/*.asm) $(1)/texts.txt $(1)/icon.txt $(wildcard src/api/*) tools/mkreloc.py tools/mktexts.py tools/mkicon.py
 	@mkdir -p $(BUILD)/myapp_$(2)
 	$(PYTHON) -I tools/mktexts.py $(1)/texts.txt $(BUILD)/myapp_$(2)/app_texts.asm
 	$(PYTHON) -I tools/mkicon.py $(1)/icon.txt $(BUILD)/myapp_$(2)/app_icon.asm
@@ -662,6 +677,29 @@ test-reader: $(READER_DSK) $(BUILD)/reader.dsk
 	done
 	ls $(BUILD)/shots/*/*.png
 
+# READER with a page in UTF-8 (as test-reader): INDEX.MD in Greek,
+# French, Spanish, German and Italian, as a PC writes it
+test-reader-utf8: $(READER_DSK) $(BUILD)/reader.dsk tools/voscs.py
+	rm -rf $(BUILD)/shots
+	cp $(BUILD)/reader.dsk $(BUILD)/reader_utf8.dsk
+	$(PYTHON) -I -c "open('$(BUILD)/INDEX.MD', 'wb').write('# ΚΑΛΩΣ ΗΡΘΑΤΕ, BIENVENUE\r\n\r\nΜια σελίδα σε **UTF-8**, όπως τη γράφει ένα PC: ελληνικά, français (à bientôt, ça va?), español (¿qué tal, niño?), Deutsch (Grüße aus Köln) und italiano (è così).\r\n\r\n- “Εισαγωγικά” – παύλες — € £ °\r\n'.encode('utf-8'))"
+	iDSK $(BUILD)/reader_utf8.dsk -r INDEX.MD > /dev/null
+	iDSK $(BUILD)/reader_utf8.dsk -i $(BUILD)/INDEX.MD -t 0 > /dev/null
+	for d in 290; do \
+	  cp $(READER_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/reader_utf8.dsk $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The UTF-8 code of VX_UTF8 (src/kernel/utf8.asm; tools/utf8_check.py, a
+# Z80 emulator): texts in
+# many languages, in pieces of every size, against tools/voscs.py
+test-utf8:
+	@mkdir -p $(BUILD)/utf8_test
+	printf '        org #4000\n        include "kernel/utf8.asm"\n' > $(BUILD)/utf8_test/t.asm
+	$(RASM) $(BUILD)/utf8_test/t.asm -I src -I src/kernel -o $(BUILD)/utf8_test/t -s > $(BUILD)/utf8_test/rasm.log
+	$(PYTHON) tools/utf8_check.py $(BUILD)/utf8_test/t.bin $(BUILD)/utf8_test/t.sym
+
 # WEBGET and the M4 board (TEST_SCRIPT=25), in CPCEMU for Linux (the
 # package of make linux, with its M4), by hand: it needs a screen and the
 # internet. When WEBGET says SAVED, close CPCEMU with F12; it writes the
@@ -797,13 +835,14 @@ test-open: $(OPEN_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN
 	ls $(BUILD)/shots/*/*.png
 
 # The V-OS character set (as test-open): HELLO.TXT in Greek, French,
-# Spanish, German and Italian together (tools/voscs.py), opened in
-# NOTEPAD with the English texts; check the letters in the last shot
+# Spanish, German and Italian together, written in UTF-8 as on a PC,
+# opened in NOTEPAD with the English texts: into the V-OS set
+# (VX_UTF8); check the letters in the last shot
 CHARSET_SHOTS := 400
 test-charset: $(OPEN_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN tools/voscs.py
 	rm -rf $(BUILD)/shots
 	$(PYTHON) -I -c "import sys; sys.path.insert(0, 'tools'); import voscs; \
-	  open('$(BUILD)/HELLO.TXT', 'wb').write('ΕΛΛΗΝΙΚΑ: ΓΕΙΑ ΣΟΥ, ΚΟΣΜΕ! άέήίόύώ ϊϋΐΰ\r\nFRANÇAIS: À BIENTÔT, ÇA VA? être élève\r\nESPAÑOL: ¿QUÉ TAL? ¡OLÉ! niño\r\nDEUTSCH: GRÜßE AUS KÖLN. Straße\r\nITALIANO: È COSÌ, PERCHÉ? città\r\n£ € § ° « » ´ µ\r\n'.encode('vos'))"
+	  open('$(BUILD)/HELLO.TXT', 'wb').write(('ΕΛΛΗΝΙΚΑ: ΓΕΙΑ ΣΟΥ, ΚΟΣΜΕ! άέήίόύώ ϊϋΐΰ\r\nFRANÇAIS: À BIENTÔT, ÇA VA? être élève\r\nESPAÑOL: ¿QUÉ TAL? ¡OLÉ! niño\r\nDEUTSCH: GRÜßE AUS KÖLN. Straße\r\nITALIANO: È COSÌ, PERCHÉ? città\r\n£ € § ° « » ´ µ\r\n' * 3).encode('utf-8'))"
 	cp $(BUILD)/markdown.dsk $(BUILD)/vos_open_b.dsk
 	iDSK $(BUILD)/vos_open_b.dsk -i $(BUILD)/HELLO.TXT -t 0 > /dev/null
 	for d in $(CHARSET_SHOTS); do \
@@ -856,6 +895,27 @@ test-db-disc: $(DSK) $(BUILD)/streets.dsk
 	cd $(DB_DISC) && iDSK $(abspath $(DSK)) -g VOS.BIN > /dev/null && iDSK $(abspath $(DSK)) -g DB.SYS > /dev/null
 	cp $(BUILD)/streets.dsk $(DB_DISC)/b.dsk
 	$(PYTHON) tools/db_disc_check.py $(DB_DISC)/VOS.BIN $(DB_DISC)/DB.SYS $(BUILD)/vos.sym $(DB_DISC)/b.dsk 600
+
+# The keyboards of all the packs (TEST_SCRIPT=30): Setup's KEYBOARDS,
+# then NOTEPAD with each keyboard in turn (CONTROL+SHIFT)
+KBDS_DSK := $(BUILD)/vos_kbds.dsk
+KBDS_SHOTS := 200 230 520 700
+$(KBDS_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/NOTEPAD.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_kbds -DTEST_SCRIPT=30
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS) $(BUILD)/NOTEPAD.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-kbds: $(KBDS_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(KBDS_SHOTS); do \
+	  cp $(KBDS_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
 
 # STREETS (TEST_SCRIPT=29): myapps/streets from build/streets.dsk in B:
 STREETS_DSK := $(BUILD)/vos_streets.dsk

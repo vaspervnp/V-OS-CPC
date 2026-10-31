@@ -111,6 +111,9 @@ Les tests lancent V-OS dans Caprice32 sans fenêtre et prennent des captures d'�
 | `test-db` | le moteur de bases de données dans un émulateur Z80 (`tools/db_check.py`) : des milliers d'appels au hasard sur quatre tables, vérifiés par un modèle, le fichier page par page (`tools/vdb.py`), jusqu'à remplir la disquette |
 | `test-db-disc` | `DB.SYS` avec le système de fichiers du noyau sur une image DSK (`tools/db_disc_check.py`) |
 | `test-streets` | STREETS depuis `streets.dsk` en B: : un nouveau `STREETS.VDB` avec 24 rues, recherche, une nouvelle rue |
+| `test-kbds` | CLAVIERS : LES SIX dans Setup, puis dans NOTEPAD les touches `:` et Z avec chaque clavier : `:z`, `:ζ`, `mw`, `ñz`, `öy`, `òz` |
+| `test-charset`, `test-reader-utf8` | des fichiers UTF-8 en grec, français, espagnol, allemand et italien dans NOTEPAD et dans READER |
+| `test-utf8` | le code de `VX_UTF8` dans un émulateur Z80, face à `tools/voscs.py` |
 | `test-styles` | STYLES.VBN (`blocks/examples/styles.vbt`) depuis le Commander : normal, gras, italique, souligné et les trois, avec le bloc STYLE |
 | `test-music-block` | avec 576K : TUNE.VBN (`blocks/examples/tune.vbt`) lance MUSIC (depuis B:) derrière lui avec AGANAMEM.MUS ; F6 montre « > TUNE » et MUSIC, et RETURN met MUSIC devant : A:AGANAMEM, PLAYING. Avec `MBLOCK_RAM=128` : « FERMEZ D'ABORD UN AUTRE PROGRAMME » |
 | `test-amsdos`, `test-reboot`, `test-system` | les fichiers V-OS en BASIC, redémarrage, disquette SYSTEM |

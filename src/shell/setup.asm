@@ -3,7 +3,7 @@
 ;
 ; Mode 1. One row per setting (kernel/setup.asm): view at boot,
 ; language, key repeat delay and speed, AMX mouse and how it is read,
-; desk colour. Changes apply at once. LANGUAGE goes through English and
+; desk colour, the keyboards CONTROL+SHIFT goes through. Changes apply at once. LANGUAGE goes through English and
 ; each language pack, which is loaded from A: at once (st_lang).
 ;   UP/DOWN          choose a setting
 ;   LEFT/RIGHT       change it (also a click on the row)
@@ -16,7 +16,7 @@ ST_Y            equ 30
 ST_W            equ 320
 ST_ROW_H        equ 16
 ST_ROWS_Y       equ ST_Y + 18
-ST_COUNT        equ CFG_PACK        ; rows: the settings before CFG_PACK
+ST_COUNT        equ 8               ; rows: the settings but CFG_PACK
 ST_H            equ 18 + ST_COUNT * ST_ROW_H + 6
 ST_VALUE_X      equ ST_X + 184
 ST_STATUS_Y     equ ST_Y + ST_H + 12
@@ -422,7 +422,7 @@ st_menu_file:
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_QUIT, CMD_QUIT, "Q", 0
 
-; one row per setting, in CFG_* order
+; one row per setting, in CFG_* order (CFG_PACK goes with CFG_LANG)
 st_rows:
         db MSG_SET_VIEW, CFG_VIEW, 4
         db MSG_VW_DESKTOP, VIEW_DESKTOP, MSG_VW_LAUNCHER, VIEW_LAUNCHER
@@ -439,6 +439,8 @@ st_rows:
         db MSG_VAL_PULSES, 0, MSG_VAL_LEVELS, 1, 0, 0, 0, 0
         db MSG_SET_DESK, CFG_DESK, 4
         db MSG_COL_BLUE, 1, MSG_COL_BLACK, 0, MSG_COL_GREEN, 9, MSG_COL_RED, 3
+        db MSG_SET_KBDS, CFG_KBDS, 2
+        db MSG_VAL_KB_PACK, 0, MSG_VAL_KB_ALL, 1, 0, 0, 0, 0
 
 ; ---- state ----------------------------------------------------------
 st_sel:         db 0

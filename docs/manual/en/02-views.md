@@ -83,6 +83,7 @@ Mode 1. One line for each setting. Changes take effect at once. When saved (RETU
 | AMX MOUSE | ON, OFF |
 | AMX READING | PULSES or LEVELS: how the mouse is read. If the pointer does not move properly, try the other one |
 | DESK COLOUR | BLUE, BLACK, GREEN, RED |
+| KEYBOARDS | EN + PACK, ALL SIX (the ones CONTROL+SHIFT goes through) |
 
 | Key | What it does |
 |---|---|

@@ -83,6 +83,7 @@ Modus 1. Eine Zeile für jede Einstellung. Änderungen wirken sofort. Beim Speic
 | AMX-MAUS | AN, AUS |
 | AMX-LESEART | IMPULSE oder PEGEL: wie die Maus gelesen wird. Bewegt sich der Zeiger nicht richtig, versuche die andere |
 | HINTERGRUND | BLAU, SCHWARZ, GRÜN, ROT |
+| TASTATUREN | EN + SPRACHE, ALLE SECHS (die CONTROL+SHIFT durchgeht) |
 
 | Taste | Was sie tut |
 |---|---|

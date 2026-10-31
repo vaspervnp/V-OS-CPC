@@ -105,6 +105,8 @@ ev_get:
         and EV_COUNT - 1
         ld (ev_tail),a
         ld a,(ev_cur)
+        cp EV_LANG
+        call z,kbd_load             ; (keeps A)
         cp EV_PTR_MOVE
         jr nz,.done
         xor a

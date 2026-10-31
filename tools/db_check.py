@@ -6,10 +6,11 @@ usage: db_check.py db.bin db.sym [operations [seed]]
 Runs src/db/db.asm, built with -DDB_HARNESS (at DB_ADDR, with its
 symbols), in a Z80 emulator (the z80 package). Its disc calls are
 traps here: a database file is a list of 1K pages, on a disc of 178
-blocks. A program's memory is plain RAM. Four tables (a text key, a
-number key, none, a 64-byte text key) get thousands of random ADDs, PUTs, DELs, GETs,
-FINDs, and walks with FIRST/NEXT and LAST/PREV, each checked against a
-model in Python; the database is opened again on the way and at the
+blocks. A program's memory is plain RAM. Five tables (a text key, a
+number key, none, a 64-byte text key, a DB_ALPHA key: names in any case
+and accents, sorted and found without them) get thousands of random
+ADDs, PUTs, DELs, GETs, FINDs, and walks with FIRST/NEXT and LAST/PREV,
+each checked against a model in Python; the database is opened again on the way and at the
 end, its file checked page by page (vdb.py), then filled with 64-byte
 keys until it is full (an index of several levels). Exits 1 on the first difference.
 """
@@ -160,6 +161,8 @@ class Table:
         k = r[self.keyoff:self.keyoff + self.keylen]
         if self.keytype == 1:
             k = k[::-1]
+        elif self.keytype == 2:
+            k = vdb.fold(k)
         return (k, rid)
 
     def sorted(self):
@@ -203,6 +206,14 @@ STREETS = ['ERMOU', 'STADIOU', 'PANEPISTIMIOU', 'AKADIMIAS', 'SOLONOS',
            'AIOLOU', 'KOLOKOTRONI', 'SKOUFA', 'VASILISSIS SOFIAS', 'IPPOKRATOUS']
 
 
+# DB_ALPHA keys: names in any case, with and without accents
+NAMES = ['Élodie', 'ELODIE', 'elodie', 'Ángel', 'angel', 'Ñandú', 'NANDU',
+         'Müller', 'MULLER', 'Straße', 'STRASSE', 'Çelik', 'celik', 'Zoë',
+         'ΆΓΓΕΛΟΣ', 'αγγελος', 'Αγγελος', 'ΕΛΕΝΗ', 'ελένη', 'Ελένη', 'ΣΩΚΡΑΤΗΣ',
+         'σωκράτης', 'Ϊρις', 'ΐρις', 'ΏΡΑ', 'ώρα', 'Adam', 'adam', 'Βασίλης',
+         'ΒΑΣΙΛΗΣ', 'Èric', 'eric', 'Ìsola', 'Òscar', 'Úrsula', 'ursula']
+
+
 def text(s, n):
     return s.encode()[:n].ljust(n, b' ')
 
@@ -212,6 +223,8 @@ def make_record(t, rnd):
     for n, typ, l in t.fields:
         if typ == 1:
             out += rnd.randrange(65536 if rnd.random() < .5 else 40).to_bytes(2, 'little')
+        elif typ == 2:
+            out += rnd.choice(NAMES).encode('vos')[:l].ljust(l, b' ')
         else:
             s = rnd.choice(STREETS) + ('' if rnd.random() < .6 else ' %d' % rnd.randrange(300))
             out += text(s, l)
@@ -243,7 +256,8 @@ def main():
     tables = [Table('STREETS', [('NAME', 0, 24), ('AREA', 0, 16), ('ZIP', 1, 2)], 1),
               Table('NUMBERS', [('VALUE', 1, 2), ('TEXT', 0, 5)], 1),
               Table('LOG', [('LINE', 0, 30)], 0),
-              Table('LONG', [('N', 1, 2), ('KEY', 0, 64)], 2)]
+              Table('LONG', [('N', 1, 2), ('KEY', 0, 64)], 2),
+              Table('NAMES', [('NAME', 2, 12), ('AGE', 1, 2)], 1)]
     for i, t in enumerate(tables):
         r = ok(e.call(D['TABLE'], de=e.put(t.definition())), 'TABLE %d' % i)
         if r[1] != i:
@@ -296,6 +310,10 @@ def main():
                 s = rnd.choice(STREETS)[:rnd.randrange(1, 6)]
                 key, n = text(s, t.keylen), len(s)
                 prefix = key[:n]
+            elif t.keytype == 2:                # any case, any accents
+                s = rnd.choice(NAMES)[:rnd.randrange(1, 6)].encode('vos')
+                key, n = s.ljust(t.keylen, b' '), len(s)
+                prefix = vdb.fold(key[:n])
             else:
                 v = rnd.randrange(65536 if rnd.random() < .3 else 40)
                 key, n = v.to_bytes(2, 'little'), 0
@@ -326,16 +344,16 @@ def main():
     problems = vdb.check(b''.join(pages))
     if problems:
         fail('the file: ' + '; '.join(problems[:5]))
-    # the alphabet: ASCII text and numbers over 127 leave it 0; Greek or
-    # Latin text makes it the V-OS character set (2), which opens without a
+    # the alphabet: Greek or Latin text (the NAMES table, DB_ALPHA) makes
+    # it the V-OS character set (2), which opens without a
     # word; only a Latin-1 file of V-OS 0.15 (1) gives the warning
     def opened(what, want):
         r = ok(e.call(D['OPEN'], de=e.put(b'\x00TEST    VDB')), 'OPEN ' + what)
         if r[1] != want:
             fail('OPEN %s: A = %d, not %d' % (what, r[1], want))
-    opened('in ASCII', 0)
-    if pages[0][7] != 0:
-        fail('ASCII so far, but the alphabet is %d' % pages[0][7])
+    opened('after the NAMES', 0)
+    if pages[0][7] != 2:
+        fail('the NAMES have accented letters, but the alphabet is %d' % pages[0][7])
     ok(e.call(D['USE'], de=2), 'USE')
     rec = 'ΑΘΗΝΑ ÇA GRÜß'.encode('vos').ljust(30, b' ')
     r = ok(e.call(D['ADD'], hl=e.put(rec)), 'ADD in Greek and Latin')
@@ -350,7 +368,7 @@ def main():
     ok(e.call(D['CLOSE']), 'CLOSE')
     pages[0][7] = 2
     ok(e.call(D['OPEN'], de=e.put(b'\x00TEST    VDB')), 'OPEN again')
-    print('db_check: the alphabet: none for ASCII, the V-OS set after Greek and Latin text, a warning for Latin-1: all right')
+    print('db_check: the alphabet: the V-OS set after Greek and Latin text, a warning for Latin-1: all right')
     print('db_check: %d operations (%s), %d pages: all right' % (
         ops, ', '.join('%d %s' % (v, k) for k, v in counts.items()), len(pages)))
 

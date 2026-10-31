@@ -743,6 +743,10 @@ load_file:                          ; name_tmp on fdrive
         ld hl,dlg_big
         jp VOS_DIALOG
 .fits:
+        ld hl,DATA                  ; UTF-8 into the V-OS set
+        ld e,VOS_DATA
+        ld a,VX_UTF8
+        call VOS_EXT                ; -> BC (as it was before API 23)
         call from_file
         ld hl,0                     ; the window at its start
         ld (cur_a),hl

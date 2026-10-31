@@ -70,7 +70,7 @@ src/gfx/             overscan graphics, text, font (font_ascii.asm is generated)
 src/include/         hardware ports, memory map
 src/lang/            generated: message numbers, English texts and keyboard
 lang/                language sources: en (base: ENGLISH.MSG and the kernel keyboard), el (GREEK.LNG), fr, es, de, it (FRENCH, SPANISH, GERMAN, ITALIAN.LNG), vos (the font of the V-OS character set, in every pack)
-tools/               scripts: screenshot in Caprice32, mkfont.py, mklng.py, mktexts.py, mkicon.py
+tools/               scripts: screenshot in Caprice32, mkfont.py, mklng.py, mktexts.py, mkicon.py, voscs.py (the V-OS character set), voscv.py (files to and from it), vdb.py (databases)
 docs/                manual/ (the documentation, by chapter), V-OS.pdf, requirements, templates
 sdk/                 the SDK for programs in assembly: guide, API, template/ (program template)
 myapps/              your own programs (make new-app), which go into build/vos.dsk
@@ -80,4 +80,4 @@ Hex numbers in the code are written with `#` (e.g. `#C000`), because RASM reads 
 
 ## Status
 
-V-OS is at **M45** (version 0.16 beta; each milestone adds 0.01). What each milestone added and how it was tested: [MILESTONES.md](MILESTONES.md).
+V-OS is at **M46** (version 0.17 beta; each milestone adds 0.01). What each milestone added and how it was tested: [MILESTONES.md](MILESTONES.md).

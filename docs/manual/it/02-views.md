@@ -83,6 +83,7 @@ Modo 1. Una riga per ogni impostazione. Le modifiche hanno effetto subito. Quand
 | MOUSE AMX | SÌ, NO |
 | LETTURA AMX | IMPULSI o LIVELLI: come viene letto il mouse. Se il puntatore non si muove bene, prova l'altro |
 | COLORE SFONDO | BLU, NERO, VERDE, ROSSO |
+| TASTIERE | EN + LINGUA, TUTTE SEI (quelle che CONTROL+SHIFT percorre) |
 
 | Tasto | Cosa fa |
 |---|---|

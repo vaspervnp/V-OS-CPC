@@ -13,14 +13,22 @@ window, after it), the cursor's place and its line number must be
 what they should; then SAVE must write the file with the change. A new
 text of 6K is typed, which makes the window move as it fills. On a
 6128 (no bank of its own) the same file is too big, and a small one is
-loaded, edited and saved. Exits 1 on the first difference.
+loaded, edited and saved. Files in UTF-8 (12K, and 3K on a 6128), in
+many languages, must come into the V-OS character set (VX_UTF8, as
+tools/voscs.py; the kernel's own code is checked by make test-utf8),
+and be saved so. Exits 1 on the first
+difference.
 """
+import os
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import voscs  # noqa: E402,F401  (the codec "vos")
 
 API = 0x0108
 CALLS = 43
 LOAD, SAVE, BANK_GET, BANK_PUT, EXT = 25, 26, 37, 38, 42
-VX_DATA = 7
+VX_DATA, VX_UTF8 = 7, 9
 VE_KEY_DOWN = 1
 VK_UP, VK_DOWN, VK_RETURN = 0, 2, 18
 CMD_SAVE = 32 + 3
@@ -80,6 +88,19 @@ class Notepad:
                 assert m.a & 0x80 and m.de == 0x4000
                 self.saved = bytes(self.bank[:m.bc])
                 m.a = 0
+                m.f &= ~1
+            elif n == EXT and m.a == VX_UTF8:      # as kernel/utf8.asm does
+                assert m.e & 0x80 and m.hl == 0x4000
+                data = bytes(self.bank[:m.bc])
+                try:
+                    text = data.decode('utf-8') if max(data, default=0) > 127 else None
+                except UnicodeDecodeError:
+                    text = None
+                m.a = 0
+                if text is not None:
+                    out = text.replace('\ufeff', '').encode('vos', errors='replace')
+                    self.bank[:len(out)] = out
+                    m.bc, m.a = len(out), 1
                 m.f &= ~1
             elif n == EXT:
                 m.a = self.big if m.a == VX_DATA else 0
@@ -170,6 +191,26 @@ def run(prog, sym, big, n_lines):
           % ('own data bank' if big else '6128', len(text), moves * 2))
 
 
+def utf8(prog, sym, big, n_lines):
+    """A UTF-8 file: loaded into the V-OS set, then saved so."""
+    np = Notepad(prog, sym, big)
+    np.call('INIT', a=0)
+    words = ['Γειά σου κόσμε', 'À bientôt, ça va?', '¿Qué tal, niño?',
+             'Grüße aus Köln', 'È così, città', '“quotes” – € £ ° «»']
+    lines = ['%04d %s' % (i, words[i % len(words)] * (1 + i % 3)) for i in range(n_lines)]
+    file = ('\ufeff' + '\r\n'.join(lines) + '\r\n').encode('utf-8')
+    np.disc[b'UTF8    TXT'] = file
+    np.m.set_memory_block(np.sym['NAME_TMP'], b'UTF8    TXT')
+    np.call('LOAD_FILE')
+    text = ('\n'.join(lines) + '\n').encode('vos')
+    check(np, text, 0, 'UTF-8 loaded')
+    np.call('COMMAND', a=CMD_SAVE)
+    if np.saved != text.replace(b'\n', b'\r\n'):
+        sys.exit('notepad_check: the UTF-8 file saved wrong')
+    print('notepad_check: %s: a UTF-8 file of %d bytes, %d in the V-OS set, SAVE: all right'
+          % ('own data bank' if big else '6128', len(file), len(text)))
+
+
 def typing(prog, sym):
     """A new text typed, 6K: the window fills and moves as it goes."""
     np = Notepad(prog, sym, 1)
@@ -218,6 +259,8 @@ def main():
     run(prog, sym, 1, 300)          # 12K: the window moves
     run(prog, sym, 0, 300)          # too big on a 6128
     run(prog, sym, 0, 60)           # 3K on a 6128
+    utf8(prog, sym, 1, 240)         # 12K of UTF-8: pieces of 4K
+    utf8(prog, sym, 0, 60)          # 3K on a 6128
     typing(prog, sym)
 
 

@@ -10,7 +10,8 @@ same codes, and 1 Latin-1), and from 16 a
 descriptor of 124 bytes a table: name (8), fields, key field (0: none),
 record length, key offset, key length, key type, dw first data page,
 last data page, index root, records, a page with room; from 24 ten
-fields of name (8), type (0 text, 1 a 2-byte number), length. Data
+fields of name (8), type (0 text, 1 a 2-byte number, 2 text whose
+index is without case or accents), length. Data
 pages "D": table, dw next, db used, from 8 slots of a used byte and a
 record; rid = page * 256 + slot. Index pages: "L" leaves (dw count,
 prev, next; entries key + rid) and "I" inner pages (dw count, child 0;
@@ -79,7 +80,15 @@ def entry(t, rec, rid):
     k = rec[t['keyoff']:t['keyoff'] + t['keylen']]
     if t['keytype'] == 1:
         k = k[::-1]
+    elif t['keytype'] == 2:                     # DB_ALPHA: folded
+        k = fold(k)
     return k + bytes([rid >> 8, rid & 255])
+
+
+def fold(k):
+    """A DB_ALPHA key as the index keeps it: without case or accents."""
+    return bytes(voscs.fold(c) if c >= 128 else ord(chr(c).upper()) if 97 <= c <= 122 else c
+                 for c in k)
 
 
 def index(data, t, ti, problems):

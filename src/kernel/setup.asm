@@ -1,8 +1,9 @@
 ; =====================================================================
 ; setup.asm - settings kept in A:SETUP.CFG
 ;
-; File: "VCFG", version 2, then CFG_COUNT bytes in the order below
-; (a version 1 file is not read: the defaults).
+; File: "VCFG", version 3, then CFG_COUNT bytes in the order below
+; (version 2 has no CFG_KBDS: it stays 0; a version 1 file is not read:
+; the defaults).
 ; cfg_load (boot) reads it, if there is one, and applies it; the Setup
 ; view (shell/setup.asm) changes cfg_data, calls cfg_apply to see the
 ; change at once, and cfg_save to keep it.
@@ -16,7 +17,9 @@ CFG_AMX         equ 4               ; AMX mouse on
 CFG_AMX_LEVELS  equ 5               ; AMX: count levels, not edges
 CFG_DESK        equ 6               ; ink of the mode 1 desk
 CFG_PACK        equ 7               ; the pack: LANG_PACKS (kernel/ext.asm)
-CFG_COUNT       equ 8
+CFG_KBDS        equ 8               ; CONTROL+SHIFT: 0 English and the
+                                    ; pack's keyboard, 1 all (lang.asm)
+CFG_COUNT       equ 9
 CFG_SIZE        equ 5 + CFG_COUNT
 
 cfg_load:
@@ -34,7 +37,7 @@ cfg_load:
         call bank_get
         ld hl,cfg_head
         ld de,cfg_magic
-        ld b,5
+        ld b,4
 .magic:
         ld a,(de)
         cp (hl)
@@ -42,8 +45,16 @@ cfg_load:
         inc hl
         inc de
         djnz .magic
-        ld de,cfg_data
+        ld a,(hl)                   ; the version
+        inc hl
         ld bc,CFG_COUNT
+        cp 3
+        jr z,.copy
+        cp 2
+        jr nz,.apply
+        dec c                       ; no CFG_KBDS
+.copy:
+        ld de,cfg_data
         ldir
 .apply:
         ld a,(cfg_data + CFG_VIEW)
@@ -98,7 +109,7 @@ cfg_save:
         jp fs_save
 
 cfg_file:       db "SETUP   CFG"
-cfg_magic:      db "VCFG", 2
-cfg_data:       db VIEW_DESKTOP, 0, 25, 3, 1, 0, 1, 0  ; English, and the
+cfg_magic:      db "VCFG", 3
+cfg_data:       db VIEW_DESKTOP, 0, 25, 3, 1, 0, 1, 0, 0 ; English, and the
                                                     ; Greek pack, at first
 cfg_head:       ds CFG_SIZE

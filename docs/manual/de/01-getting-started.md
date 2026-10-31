@@ -44,7 +44,7 @@ V-OS nutzt den ganzen Bildschirm (Overscan): 384×272 Pixel in Modus 1 (4 Farben
 | CONTROL+Buchstabe | die Kurzbefehle der Menüs (z. B. ^Q, ^L) |
 | CONTROL+L | Sprache wechseln (ANSICHT > SPRACHE WECHSELN) |
 | CONTROL+K | der Dialog mit den Tasten (HILFE > TASTEN) |
-| CONTROL+SHIFT | schaltet die Tastatur zwischen Englisch und der Sprache des Sprachpakets um |
+| CONTROL+SHIFT | wechselt die Tastatur: Englisch, die des Pakets und, mit TASTATUREN: ALLE SECHS in Setup, die der anderen Sprachen |
 | TAB, SHIFT+TAB | bewegen den Fokus zwischen den Schaltflächen. RETURN, ENTER oder SPACE drücken die Schaltfläche, die den Fokus hat |
 
 F1–F6 sind die Tasten f1–f6 auf dem Ziffernblock des CPC.

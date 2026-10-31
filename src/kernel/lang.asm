@@ -10,8 +10,12 @@
 ; (kernel/ext.asm).
 ;
 ; lang_ui    0 = English texts, 1 = pack texts (lang_msg)
-; lang_input 0 = English keyboard, 1 = pack keyboard; CONTROL+SHIFT
-;            toggles it and posts EV_LANG
+; lang_input 0 = English keyboard, 1 = the pack's keyboard, 2.. the
+;            other packs' keyboards (in the pack too, LNG_KBDS);
+;            CONTROL+SHIFT goes to the next and posts EV_LANG; ev_get
+;            then copies that keyboard into lang_keymap (kbd_load).
+;            Setup's KEYBOARDS (CFG_KBDS): 0 English and the pack's,
+;            1 all of them
 ;
 ; Font, case, keymap and combos are copied into the video RAM gaps
 ; (always mapped), because the text routines and the keyboard interrupt
@@ -25,7 +29,8 @@ LNG_KEYMAP      equ 12
 LNG_COMBOS      equ 14
 LNG_MSGS        equ 16
 LNG_SIZE        equ 18
-LNG_NAME        equ 20
+LNG_NAME        equ 20              ; 10 bytes
+LNG_KBDS        equ 30
 LANG_COMBOS_MAX equ 32
 LANG_MSG_MAX    equ 151             ; its buffers end by GAP + 664
 
@@ -147,8 +152,19 @@ lang_toggle_input:
         ld a,(lang_loaded)
         or a
         ret z
+        ld a,(cfg_data + CFG_KBDS)
+        or a
+        ld a,2
+        jr z,.count
+        ld a,(lang_kbn)
+.count:
+        ld b,a
         ld a,(lang_input)
-        xor 1
+        inc a
+        cp b
+        jr c,.next
+        xor a
+.next:
         ld (lang_input),a
         xor a
         ld (kbd_dead),a
@@ -157,6 +173,16 @@ lang_toggle_input:
         ld c,0
         ld a,EV_LANG
         jp ev_post
+
+; ev_get, at an EV_LANG: lang_input's keyboard into lang_keymap and
+; lang_combos (kb_load, kernel/ext.asm, in bank 7; called directly
+; when the extension is running already). Keeps A = EV_LANG.
+kbd_load:
+        ld hl,kb_load
+        ld a,(ram_home_cfg)
+        cp LANG_BANK_CFG
+        jp nz,ext_call
+        jp (hl)
 
 ; ---------------------------------------------------------------------
 ; lang_other_case - A = character -> A = the other case if it is a
@@ -215,6 +241,7 @@ bank_buf        equ #9000           ; 32 bytes (include/memmap.inc)
 lang_loaded:    db 0
 lang_ui:        db 0
 lang_input:     db 0
+lang_kbn:       db 2                ; keyboards: 1 + the pack's (lang_init)
 lang_code:      db "EN"
 lang_name:      ds 13               ; 12 + a zero
 lm_id:          db 0
@@ -229,3 +256,4 @@ lang_font_hi    equ GAP1            ; glyphs 192..255
 lang_case       equ GAP2            ; 128 * 2
 lang_keymap     equ GAP2 + 256      ; 160
 lang_combos     equ GAP2 + 416      ; LANG_COMBOS_MAX * 3 + 1
+kbd_code        equ GAP2 + 514      ; 2: the code of lang_input's keyboard

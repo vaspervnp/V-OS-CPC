@@ -81,7 +81,7 @@ api_ext:
         ret
 
 xa_table:       dw xa_version, xa_free, xa_clip_put, xa_clip_get, xa_m4
-                dw xa_mem, xa_behind, xa_data, xa_db
+                dw xa_mem, xa_behind, xa_data, xa_db, xa_utf8
         assert $ - xa_table == VX_COUNT * 2
 xa_hl:          dw 0
 
@@ -90,6 +90,16 @@ xa_hl:          dw 0
 xa_db:
         ld hl,db_entry
         jp ext2_call
+
+; VX_UTF8: HL (xa_hl) -> text, BC, E (kernel/ext2.asm: u8_entry). B
+; goes as D and comes back in H: ext2_call's ram_select takes B
+xa_utf8:
+        ld d,b
+        ld hl,u8_entry
+        call ext2_call
+        ld b,h
+        ld c,l
+        ret
 
 ; VX_BEHIND: DE -> db drive, name: the file in app_open, and the main
 ; loop starts its program behind this one (kernel/ext2.asm, behind_run)

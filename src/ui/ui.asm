@@ -722,7 +722,8 @@ ui_title_body:
         ld a,(ut_w)
         ret
 
-; keyboard language at the right end of the bar: "EN" or the pack code
+; keyboard language at the right end of the bar: "EN" or the code of
+; the keyboard in use (kbd_code)
 ui_draw_indicator:
         ld b,1
         ld hl,ui_ind_body
@@ -735,7 +736,7 @@ ui_ind_body:
         ld a,(lang_input)
         or a
         jr z,.code
-        ld hl,lang_code
+        ld hl,kbd_code
 .code:
         ld de,ind_text
         ldi

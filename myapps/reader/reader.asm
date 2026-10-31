@@ -737,9 +737,14 @@ load_web:
         ld bc,(flen)
         ; fall through
 
-; BC = bytes at text: without CR and other codes, TAB a space, up to
-; the end-of-file mark (26) -> tend; no carry
+; BC = bytes at text: from UTF-8 into the V-OS set if it is UTF-8
+; (VX_UTF8), then without CR and other codes, TAB a space, up to the
+; end-of-file mark (26) -> tend; no carry
 clean:
+        ld hl,text
+        ld e,0
+        ld a,VX_UTF8
+        call VOS_EXT                ; -> BC (as it was before API 23)
         ld hl,text
         ld de,text
 .char:

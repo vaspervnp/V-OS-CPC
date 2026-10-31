@@ -397,3 +397,125 @@ drag_outline:
         add hl,de
         pop de
         ret
+
+; ---------------------------------------------------------------------
+; VX_UTF8 (kernel/api.asm: xa_utf8): HL (xa_hl) -> text, C and D =
+; bytes, E = 0 in the program's memory, VOS_DATA in its data bank. All
+; of it is looked at, a piece at a time through u8_buf; if it is UTF-8,
+; it is made V-OS in place, each piece cut at a whole character -> HL =
+; bytes now, A = 1; else A = 0, HL = bytes as before, the text
+; untouched.
+; ---------------------------------------------------------------------
+U8_PIECE        equ 256
+
+u8_entry:
+        ld b,d
+        ld hl,(xa_hl)
+        ld (u8_at),hl
+        ld (u8_len),bc
+        ld a,(vw_cfg)
+        bit 7,e
+        call nz,data_get
+        ld (u8_cfg),a
+        call u8_start
+        call u8_begin
+.look:
+        call u8_in
+        jr z,.looked
+        push bc
+        ld hl,u8_buf
+        call u8_check
+        pop bc
+        call u8_on
+        jr .look
+.looked:
+        call u8_is
+        ld hl,(u8_len)
+        or a
+        ret z
+        call u8_begin
+.conv:
+        call u8_in
+        jr z,.done
+        ld hl,(u8_rem)
+        or a
+        sbc hl,bc
+        jr z,.whole                 ; the last piece
+        ld hl,u8_buf
+        call u8_cut
+.whole:
+        push bc
+        call u8_on
+        pop bc
+        ld hl,u8_buf
+        call u8_conv
+        push bc
+        ld a,EXT2_CFG
+        ld (ab_from),a
+        ld a,(u8_cfg)
+        ld (ab_to),a
+        ld hl,u8_buf
+        ld de,(u8_wr)
+        call bank_copy
+        pop bc
+        ld hl,(u8_wr)
+        add hl,bc
+        ld (u8_wr),hl
+        jr .conv
+.done:
+        ld hl,(u8_wr)
+        ld de,(u8_at)
+        or a
+        sbc hl,de
+        ld a,1
+        or a
+        ret
+; from the start: u8_rd, u8_wr, u8_rem
+u8_begin:
+        ld hl,(u8_at)
+        ld (u8_rd),hl
+        ld (u8_wr),hl
+        ld hl,(u8_len)
+        ld (u8_rem),hl
+        ret
+; the next piece from u8_rd into u8_buf -> BC = its bytes; Z: none left
+u8_in:
+        ld hl,(u8_rem)
+        ld a,h
+        or l
+        ret z
+        ld bc,U8_PIECE
+        sbc hl,bc                   ; (no carry)
+        jr nc,.full
+        ld bc,(u8_rem)
+.full:
+        push bc
+        ld a,(u8_cfg)
+        ld (ab_from),a
+        ld a,EXT2_CFG
+        ld (ab_to),a
+        ld hl,(u8_rd)
+        ld de,u8_buf
+        call bank_copy
+        pop bc
+        or 1
+        ret
+; BC bytes taken: u8_rd on, u8_rem down
+u8_on:
+        ld hl,(u8_rd)
+        add hl,bc
+        ld (u8_rd),hl
+        ld hl,(u8_rem)
+        or a
+        sbc hl,bc
+        ld (u8_rem),hl
+        ret
+
+        include "utf8.asm"
+u8_at:          dw 0
+u8_len:         dw 0
+u8_rd:          dw 0
+u8_wr:          dw 0
+u8_rem:         dw 0
+u8_cfg:         db 0
+u8_buf:         ds U8_PIECE

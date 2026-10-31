@@ -44,7 +44,7 @@ V-OS usa tutto lo schermo (overscan): 384×272 pixel in modo 1 (4 colori) o 192�
 | CONTROL+lettera | le scorciatoie dei menu (ad es. ^Q, ^L) |
 | CONTROL+L | cambia lingua (VISTA > CAMBIA LINGUA) |
 | CONTROL+K | il dialogo con i tasti (AIUTO > TASTI) |
-| CONTROL+SHIFT | passa la tastiera dall'inglese alla lingua del pacchetto e viceversa |
+| CONTROL+SHIFT | cambia la tastiera: inglese, quella del pacchetto e, con TASTIERE: TUTTE SEI in Setup, quelle delle altre lingue |
 | TAB, SHIFT+TAB | spostano il focus tra i pulsanti. RETURN, ENTER o SPAZIO premono il pulsante che ha il focus |
 
 F1–F6 sono i tasti f1–f6 del tastierino numerico del CPC.

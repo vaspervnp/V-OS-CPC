@@ -312,6 +312,71 @@ test_keys:
         dw 3050 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 30
+; make test-kbds (-DTEST_SCRIPT=30): the keyboards of all the packs,
+; NOTEPAD last on the test disc, the Greek pack. Expected:
+;   frame  300  F4, 400-580 DOWN x7 -> Setup, KEYBOARDS: EN + PACK
+;   frame  650  RIGHT        -> KEYBOARDS: ALL SIX
+;   frame  750  F2, 870-930 DOWN x3, 970-1060 RIGHT x4, 1110 RETURN ->
+;                               NOTEPAD
+;   frame 1300 on: the : and Z keys, RETURN, then CONTROL+SHIFT, seven
+;                               times: the lines ":z" (EN), ":ζ" (ΕΛ),
+;                               "mw" (FR), "ñz" (ES), "öy" (DE), "òz"
+;                               (IT), ":z" (EN again)
+test_keys:
+        dw  300 : db   4, 2, %00010000   ; F4
+        dw  400 : db   4, 0, %00000100   ; DOWN
+        dw  430 : db   4, 0, %00000100   ; DOWN
+        dw  460 : db   4, 0, %00000100   ; DOWN
+        dw  490 : db   4, 0, %00000100   ; DOWN
+        dw  520 : db   4, 0, %00000100   ; DOWN
+        dw  550 : db   4, 0, %00000100   ; DOWN
+        dw  580 : db   4, 0, %00000100   ; DOWN: KEYBOARDS
+        dw  650 : db   4, 0, %00000010   ; RIGHT: ALL SIX
+        dw  750 : db   4, 1, %01000000   ; F2
+        dw  870 : db   4, 0, %00000100   ; DOWN
+        dw  900 : db   4, 0, %00000100   ; DOWN
+        dw  930 : db   4, 0, %00000100   ; DOWN
+        dw  970 : db   4, 0, %00000010   ; RIGHT
+        dw 1000 : db   4, 0, %00000010   ; RIGHT
+        dw 1030 : db   4, 0, %00000010   ; RIGHT
+        dw 1060 : db   4, 0, %00000010   ; RIGHT
+        dw 1110 : db   4, 2, %00000100   ; RETURN: NOTEPAD
+        dw 1300 : db   4, 3, %00100000   ; : key (EN)
+        dw 1330 : db   4, 8, %10000000   ; Z key
+        dw 1360 : db   4, 2, %00000100   ; RETURN
+        dw 1395 : db  15, 2, %10000000   ; CONTROL, then
+        dw 1400 : db   4, 2, %00100000   ; SHIFT: the next keyboard
+        dw 1450 : db   4, 3, %00100000   ; : key (ΕΛ)
+        dw 1480 : db   4, 8, %10000000   ; Z key
+        dw 1510 : db   4, 2, %00000100   ; RETURN
+        dw 1545 : db  15, 2, %10000000   ; CONTROL, then
+        dw 1550 : db   4, 2, %00100000   ; SHIFT: the next keyboard
+        dw 1600 : db   4, 3, %00100000   ; : key (FR)
+        dw 1630 : db   4, 8, %10000000   ; Z key
+        dw 1660 : db   4, 2, %00000100   ; RETURN
+        dw 1695 : db  15, 2, %10000000   ; CONTROL, then
+        dw 1700 : db   4, 2, %00100000   ; SHIFT: the next keyboard
+        dw 1750 : db   4, 3, %00100000   ; : key (ES)
+        dw 1780 : db   4, 8, %10000000   ; Z key
+        dw 1810 : db   4, 2, %00000100   ; RETURN
+        dw 1845 : db  15, 2, %10000000   ; CONTROL, then
+        dw 1850 : db   4, 2, %00100000   ; SHIFT: the next keyboard
+        dw 1900 : db   4, 3, %00100000   ; : key (DE)
+        dw 1930 : db   4, 8, %10000000   ; Z key
+        dw 1960 : db   4, 2, %00000100   ; RETURN
+        dw 1995 : db  15, 2, %10000000   ; CONTROL, then
+        dw 2000 : db   4, 2, %00100000   ; SHIFT: the next keyboard
+        dw 2050 : db   4, 3, %00100000   ; : key (IT)
+        dw 2080 : db   4, 8, %10000000   ; Z key
+        dw 2110 : db   4, 2, %00000100   ; RETURN
+        dw 2145 : db  15, 2, %10000000   ; CONTROL, then
+        dw 2150 : db   4, 2, %00100000   ; SHIFT: the next keyboard
+        dw 2200 : db   4, 3, %00100000   ; : key (EN)
+        dw 2230 : db   4, 8, %10000000   ; Z key
+        dw 2260 : db   4, 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 29
 ; make test-streets (-DTEST_SCRIPT=29): STREETS (myapps/streets) from its
 ; disc, build/streets.dsk, in B:; DB.SYS on A:. Expected:
@@ -1381,6 +1446,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

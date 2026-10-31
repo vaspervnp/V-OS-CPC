@@ -111,6 +111,9 @@
 | `test-db` | η μηχανή των βάσεων σε εξομοιωτή Z80 (`tools/db_check.py`): χιλιάδες τυχαίες κλήσεις σε τέσσερις πίνακες, ελεγμένες με ένα μοντέλο, το αρχείο σελίδα προς σελίδα (`tools/vdb.py`), ως να γεμίσει η δισκέτα |
 | `test-db-disc` | το `DB.SYS` με το σύστημα αρχείων του kernel σε εικόνα DSK (`tools/db_disc_check.py`) |
 | `test-streets` | STREETS από το `streets.dsk` στο B:: νέο `STREETS.VDB` με 24 δρόμους, εύρεση, νέος δρόμος |
+| `test-kbds` | ΠΛΗΚΤΡΟΛΟΓΙΑ: ΚΑΙ ΤΑ ΕΞΙ στο Setup, μετά στο NOTEPAD τα πλήκτρα `:` και Z με κάθε πληκτρολόγιο: `:z`, `:ζ`, `mw`, `ñz`, `öy`, `òz` |
+| `test-charset`, `test-reader-utf8` | αρχεία UTF-8 στα ελληνικά, γαλλικά, ισπανικά, γερμανικά και ιταλικά στο NOTEPAD και στο READER |
+| `test-utf8` | ο κώδικας του `VX_UTF8` σε εξομοιωτή Z80, απέναντι στο `tools/voscs.py` |
 | `test-styles` | το STYLES.VBN (`blocks/examples/styles.vbt`) από τον Commander: απλά, έντονα, πλάγια, υπογραμμισμένα και όλα μαζί, με το block ΣΤΥΛ |
 | `test-music-block` | με 576K: το TUNE.VBN (`blocks/examples/tune.vbt`) ξεκινά το MUSIC (από το B:) πίσω του με το AGANAMEM.MUS· το F6 δείχνει «> TUNE» και MUSIC, και το RETURN φέρνει μπροστά το MUSIC: A:AGANAMEM, ΠΑΙΖΕΙ. Με `MBLOCK_RAM=128`: «ΚΛΕΙΣΤΕ ΠΡΩΤΑ ΑΛΛΟ ΠΡΟΓΡΑΜΜΑ» |
 | `test-amsdos`, `test-reboot`, `test-system` | τα αρχεία του V-OS στη BASIC, επανεκκίνηση, δισκέτα SYSTEM |

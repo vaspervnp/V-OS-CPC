@@ -81,7 +81,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 22              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 23              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -93,7 +93,7 @@ VOS_API_VERSION equ 22              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 16: the clipboard, 17: VX_M4,
                                     ; 18: VX_MEM, 19: VX_BEHIND, init A = 3,
                                     ; 20: VOS_LOAD_IX, 21: VX_DATA,
-                                    ; 22: VX_DB, databases
+                                    ; 22: VX_DB, databases, 23: VX_UTF8
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -224,7 +224,13 @@ VX_DATA         equ 7                   ; (21) -> A = 1: the data bank is
                                         ; the program's own; 0: bank 4
 VX_DB           equ 8                   ; (22) C = DB_* call (below), DE,
                                         ; HL -> A, DE, HL; carry, A = error
-VX_COUNT        equ 9
+VX_UTF8         equ 9                   ; (23) HL -> text, BC = bytes, E =
+                                        ; 0 in the program, VOS_DATA in its
+                                        ; data bank: if it is UTF-8, into
+                                        ; the V-OS character set there ->
+                                        ; BC = bytes now, A = 1; A = 0: not
+                                        ; UTF-8, as it was
+VX_COUNT        equ 10
 
 ; Databases (version 22): VOS_EXT with A = VX_DB, C = one of these. One
 ; database is open at a time, for the program that opened it (another
@@ -270,6 +276,8 @@ DB_PREV         equ 14                  ; table's cursor, which FIND, FIRST
 DB_COUNT        equ 15                  ; -> HL = records in the table
 DB_TEXT         equ 0                   ; field types
 DB_NUMBER       equ 1
+DB_ALPHA        equ 2                   ; text; as a key, sorted and found
+                                        ; without case or accents
 DB_TABLES       equ 8
 DB_FIELDS       equ 10
 DB_KEY_MAX      equ 64                  ; a key field's length at most

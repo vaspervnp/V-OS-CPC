@@ -96,6 +96,7 @@ SET_RATE    ΤΑΧΥΤ. ΕΠΑΝΑΛΗΨΗΣ
 SET_AMX     ΠΟΝΤΙΚΙ AMX
 SET_AMX_MODE ΑΝΑΓΝΩΣΗ AMX
 SET_DESK    ΧΡΩΜΑ ΦΟΝΤΟΥ
+SET_KBDS    ΠΛΗΚΤΡΟΛΟΓΙΑ
 VW_DESKTOP  ΕΠΙΦΑΝΕΙΑ
 VW_LAUNCHER ΠΡΟΓΡΑΜΜΑΤΑ
 VW_COMMANDER COMMANDER
@@ -109,6 +110,8 @@ VAL_ON      ΝΑΙ
 VAL_OFF     ΟΧΙ
 VAL_PULSES  ΠΑΛΜΟΙ
 VAL_LEVELS  ΣΤΑΘΜΕΣ
+VAL_KB_PACK EN + ΓΛΩΣΣΑ
+VAL_KB_ALL  ΚΑΙ ΤΑ ΕΞΙ
 COL_BLUE    ΜΠΛΕ
 COL_BLACK   ΜΑΥΡΟ
 COL_GREEN   ΠΡΑΣΙΝΟ

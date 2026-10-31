@@ -83,6 +83,7 @@ Modo 1. Una línea para cada ajuste. Los cambios se aplican al momento. Al guard
 | RATÓN AMX | SÍ, NO |
 | LECTURA AMX | PULSOS o NIVELES: cómo se lee el ratón. Si el puntero no se mueve bien, pruebe el otro |
 | COLOR DEL FONDO | AZUL, NEGRO, VERDE, ROJO |
+| TECLADOS | EN + IDIOMA, LOS SEIS (los que recorre CONTROL+SHIFT) |
 
 | Tecla | Qué hace |
 |---|---|

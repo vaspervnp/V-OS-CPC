@@ -906,9 +906,9 @@ lang_init:
         ret c
         ld a,LANG_BANK_CFG
         call ram_select
-        ld hl,LANG_BANK_ADDR        ; magic "VLNG"
+        ld hl,LANG_BANK_ADDR        ; magic "VLNG", version 2
         ld de,lang_magic
-        ld b,4
+        ld b,5
 .magic:
         ld a,(de)
         cp (hl)
@@ -946,8 +946,12 @@ lang_init:
         ldir
         ld hl,LANG_BANK_ADDR + LNG_NAME
         ld de,lang_name
-        ld bc,12
+        ld bc,10
         ldir
+        call kb_first               ; its keyboards: 1 + their count
+        ld a,(hl)
+        inc a
+        ld (lang_kbn),a
         ld a,1                      ; English until SETUP.CFG chooses
         ld (lang_loaded),a          ; the pack's language (cfg_apply)
 .bad:
@@ -961,7 +965,45 @@ lang_init:
         ldir
         ret
 
-lang_magic:     db "VLNG"
+; HL -> the pack's keyboards block (LNG_KBDS): db count, then entries
+kb_first:
+        ld hl,(LANG_BANK_ADDR + LNG_KBDS)
+        ld de,LANG_BANK_ADDR
+        add hl,de
+        ret
+
+; kbd_load (kernel/lang.asm): the keyboard lang_input names (1 = the
+; pack's own, entry 0) into lang_keymap, lang_combos and kbd_code.
+; -> A = EV_LANG. Destroys: BC, DE, HL
+KB_ENTRY        equ 2 + 160 + LANG_COMBOS_MAX * 3
+kb_load:
+        ld a,(lang_input)
+        or a
+        jr z,.done                  ; English: the kernel's map
+        ld b,a
+        call kb_first
+        inc hl
+        ld de,KB_ENTRY
+        jr .skip
+.step:
+        add hl,de
+.skip:
+        djnz .step
+        ld de,kbd_code
+        ldi
+        ldi
+        ld de,lang_keymap           ; and lang_combos after it
+        ld bc,160 + LANG_COMBOS_MAX * 3
+        ldir
+        xor a
+        ld (lang_combos + LANG_COMBOS_MAX * 3),a
+        ld (kbd_dead),a
+.done:
+        ld a,EV_LANG
+        ret
+        assert lang_combos == lang_keymap + 160
+
+lang_magic:     db "VLNG", 2
 ; the packs, as CFG_PACK numbers them (Setup's LANGUAGE)
 LANG_PACKS      equ 5
 lang_pack_names: db "GREEK   FRENCH  SPANISH GERMAN  ITALIAN "

@@ -3,11 +3,11 @@
 ; the SDK): an example of VOS_EXT, VX_DB (API 22).
 ;
 ; Mode 1. Its streets are in STREETS.VDB on its own drive: a table of
-; records of name (24 characters, the key), area (16) and post code (a
-; number). The first time it makes the file, with some streets of
-; Athens. Typing finds: the streets whose names start with what was
-; typed (DB_FIND with that many bytes, then DB_NEXT), DEL takes a
-; letter back.
+; records of name (24 characters, the key: DB_ALPHA, so in any case and
+; with or without accents), area (16) and post code (a number). The
+; first time it makes the file, with some streets of Athens. Typing
+; finds: the streets whose names start with what was typed (DB_FIND
+; with that many bytes, then DB_NEXT), DEL takes a letter back.
 ;   STREETS menu: ADD A STREET ^A, DELETE THE FIRST ^D, ABOUT, BACK ^Q
 ;   make app NAME=streets     build/STREETS.BIN, build/streets.dsk
 ; =====================================================================
@@ -683,7 +683,7 @@ dlg_about:      db T_MENU, T_ABOUT_TEXT, 1, VM_OK
 db_file:        db 0, "STREETS VDB"
 ; the table: name, fields, the key field, then each field
 table:          db "STREETS ", 3, 1
-                db "NAME    ", DB_TEXT, NAME_LEN
+                db "NAME    ", DB_ALPHA, NAME_LEN
                 db "AREA    ", DB_TEXT, AREA_LEN
                 db "ZIP     ", DB_NUMBER, 2
 ; some streets of Athens: name, area, post code (examples)

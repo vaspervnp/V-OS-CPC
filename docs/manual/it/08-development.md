@@ -111,6 +111,9 @@ I test eseguono V-OS in Caprice32 senza finestra e catturano schermate in `build
 | `test-db` | il motore dei database in un emulatore Z80 (`tools/db_check.py`): migliaia di chiamate a caso su quattro tabelle, controllate con un modello, il file pagina per pagina (`tools/vdb.py`), finché il disco è pieno |
 | `test-db-disc` | `DB.SYS` con il file system del kernel su un'immagine DSK (`tools/db_disc_check.py`) |
 | `test-streets` | STREETS da `streets.dsk` in B:: un nuovo `STREETS.VDB` con 24 vie, ricerca, una nuova via |
+| `test-kbds` | TASTIERE: TUTTE SEI in Setup, poi in NOTEPAD i tasti `:` e Z con ogni tastiera: `:z`, `:ζ`, `mw`, `ñz`, `öy`, `òz` |
+| `test-charset`, `test-reader-utf8` | file UTF-8 in greco, francese, spagnolo, tedesco e italiano in NOTEPAD e in READER |
+| `test-utf8` | il codice di `VX_UTF8` in un emulatore Z80, rispetto a `tools/voscs.py` |
 | `test-styles` | STYLES.VBN (`blocks/examples/styles.vbt`) dal Commander: normale, grassetto, corsivo, sottolineato e tutti e tre, con il blocco STYLE |
 | `test-music-block` | con 576K: TUNE.VBN (`blocks/examples/tune.vbt`) avvia MUSIC (da B:) dietro di sé con AGANAMEM.MUS; F6 mostra "> TUNE" e MUSIC, e RETURN porta MUSIC davanti: A:AGANAMEM, PLAYING. Con `MBLOCK_RAM=128`: "CHIUDI PRIMA UN ALTRO PROGRAMMA" |
 | `test-amsdos`, `test-reboot`, `test-system` | file di V-OS in BASIC, riavvio, dischetto SYSTEM |

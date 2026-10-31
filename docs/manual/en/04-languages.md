@@ -15,7 +15,7 @@ V-OS speaks six languages. English is built in. The other five are **language pa
 
 - **Permanently:** in Setup (F4), the LANGUAGE line cycles through all the languages. Each one loads from A: at once, and the whole screen is redrawn in it. Saving (^S) keeps it for the next startup too.
 - **Quickly:** CONTROL+L (VIEW > SWITCH LANGUAGE) switches between English and the language of the pack that is loaded.
-- **Keyboard only:** CONTROL+SHIFT switches the keyboard between the English one and the pack's. The menu bar shows on the right which one is active (EN, ΕΛ, FR, …).
+- **Keyboard only:** CONTROL+SHIFT switches the keyboard. The menu bar shows on the right which one is active (EN, ΕΛ, FR, …). With Setup's KEYBOARDS at EN + PACK it goes between the English one and the pack's; at ALL SIX it goes through all of them: EN, the pack's, the other four, and EN again. So you can type French with the French keyboard while the system is in Greek. Every pack holds the keyboards of all of them.
 
 The symbols `@ # [ ] { } \ |` are not on the packs' keyboards, because the CPC has no AltGr. Type them with the English keyboard.
 
@@ -30,6 +30,8 @@ All languages write with the same character set, the **V-OS set**, and every pac
 Codes 128 to 255 are the Greek ones of ISO 8859-7, as they were, and the codes it leaves free hold À Á Â Ä Ç È É Ê Ë Ì Í Î Ï Ñ Ò Ó Ô Ö Ù Ú Û Ü, their small letters, ß and ¡ ¿. The ´ is written as the Greek tonos (΄) and µ as μ. There is no ÿ, Œ or œ. The table is in `tools/voscs.py`. A Greek text file from a PC (ISO 8859-7) reads as it is; a French or German one in Latin-1 needs converting.
 
 With the English keyboard, SHIFT and `^` gives £.
+
+Files in **UTF-8**, from a PC or the web, are opened by NOTEPAD and READER, which turn them into the V-OS set; what it has not (Chinese, say) becomes `?`. On the PC, `tools/voscv.py` converts files to and from V-OS (UTF-8, Latin-1 and others) and says what a file is (`check`).
 
 ## Making a new language
 

@@ -83,6 +83,7 @@ Mode 1. Une ligne par réglage. Les changements prennent effet tout de suite. Un
 | SOURIS AMX | OUI, NON |
 | LECTURE AMX | IMPULSIONS ou NIVEAUX : la façon de lire la souris. Si le pointeur ne bouge pas correctement, essayez l'autre |
 | COULEUR DU BUREAU | BLEU, NOIR, VERT, ROUGE |
+| CLAVIERS | EN + LANGUE, LES SIX (ceux que CONTROL+SHIFT parcourt) |
 
 | Touche | Ce qu'elle fait |
 |---|---|

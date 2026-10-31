@@ -231,7 +231,8 @@ db_name_in:
         jp db_in
 
 ; DE -> a table: name (8), fields (1..10), the key field (0: none,
-; 1..10), then each field: name (8), type (DB_TEXT, DB_NUMBER), length
+; 1..10), then each field: name (8), type (DB_TEXT, DB_NUMBER,
+; DB_ALPHA: text with an index without case or accents), length
 ; (a number: 2; a key: up to 64) -> A = its number, the table in use
 dc_new_table:
         ex de,hl
@@ -273,7 +274,7 @@ dc_new_table:
         ld e,0                      ; the record's length so far
 .field:
         ld a,(ix + F_TYPE)
-        cp DB_NUMBER + 1
+        cp DB_ALPHA + 1
         jp nc,.bad
         ld d,(ix + F_LEN)
         ld a,d
@@ -1209,9 +1210,21 @@ e_make:
         jr .rid
 .text:
         ld a,(tv_keylen)
-        ld c,a
+        ld b,a
+        ld a,(tv_keytype)
+        cp DB_ALPHA
+        jr z,.fold
+        ld c,b
         ld b,0
         ldir
+        jr .rid
+.fold:                              ; without case or accents
+        ld a,(hl)
+        call fold_a
+        ld (de),a
+        inc hl
+        inc de
+        djnz .fold
 .rid:
         ld a,(rid + 1)
         ld (de),a
@@ -1219,6 +1232,30 @@ e_make:
         ld a,(rid)
         ld (de),a
         ret
+
+; A = a V-OS character -> A = its letter without case or accent
+; (fold.inc, from tools/voscs.py); others as they are
+fold_a:
+        cp 128
+        jr nc,.high
+        cp "a"
+        ret c
+        cp "z" + 1
+        ret nc
+        sub "a" - "A"
+        ret
+.high:
+        push hl
+        push de
+        ld e,a
+        ld d,0
+        ld hl,fold_tab - 128
+        add hl,de
+        ld a,(hl)
+        pop de
+        pop hl
+        ret
+        include "fold.inc"
 
 ; entry -> e_old; e_swap: the two change places
 e_keep:

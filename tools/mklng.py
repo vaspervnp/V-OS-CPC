@@ -17,7 +17,7 @@
 
 .LNG format (little endian, offsets from the start of the file):
    0  "VLNG"            magic
-   4  db 1              format version
+   4  db 2              format version
    5  db "EL"           language code
    7  db 0
    8  dw font           128 glyphs for codes 128..255, 8 bytes each,
@@ -28,10 +28,15 @@
   16  dw messages       dw count, dw offset[count] (0 = not translated),
                         zero-terminated strings
   18  dw size           whole file
-  20  db name[12]       language name in the pack's charset, zero padded
+  20  db name[10]       language name in the pack's charset, zero padded
+  30  dw keyboards      db count, then for each: db code[2], keymap (160),
+                        combos (LANG_COMBOS_MAX x 3, zero padded): the
+                        pack's own first, then the other packs' in
+                        PACK_ORDER (CONTROL+SHIFT goes through them)
   32  data
 
 Keymap codes 1..7 are dead keys (numbered in order of first use).
+A pack has at most LANG_COMBOS_MAX combinations (src/kernel/lang.asm).
 The kernel loads the pack into bank 7, so it must not exceed 16K.
 """
 import argparse
@@ -225,11 +230,36 @@ def case_table(charset):
     return out
 
 
+LANG_COMBOS_MAX = 32                # src/kernel/lang.asm
+PACK_ORDER = ["el", "fr", "es", "de", "it"]  # lang_pack_names, kernel/ext.asm
+
+
+def keyboard(src, base):
+    """A pack's keyboard entry: code, keymap, padded combos."""
+    info = read_pack_info(os.path.join(src, "pack.txt"))
+    normal, shift, combos = read_keymap(os.path.join(src, "keymap.txt"),
+                                        Charset(info["charset"]), base)
+    if len(combos) > LANG_COMBOS_MAX:
+        fail(f"{src}/keymap.txt: {len(combos)} combos, at most {LANG_COMBOS_MAX}")
+    combo = b"".join(bytes(c) for c in combos)
+    return (info["code"].encode("ascii") + bytes(normal) + bytes(shift)
+            + combo.ljust(LANG_COMBOS_MAX * 3, b"\0"))
+
+
 def build_pack(src, dst, master):
     info = read_pack_info(os.path.join(src, "pack.txt"))
     charset = Charset(info["charset"])
     base = read_keymap(os.path.join(master, "keymap.txt"), Charset("vos"))
     normal, shift, combos = read_keymap(os.path.join(src, "keymap.txt"), charset, base[:2])
+    if len(combos) > LANG_COMBOS_MAX:
+        fail(f"{src}/keymap.txt: {len(combos)} combos, at most {LANG_COMBOS_MAX}")
+    own = os.path.basename(os.path.normpath(src))
+    root = os.path.dirname(os.path.normpath(src))
+    others = [os.path.join(root, d) for d in PACK_ORDER
+              if d != own and os.path.exists(os.path.join(root, d, "pack.txt"))]
+    kbds = bytearray([1 + len(others)])
+    for d in [src] + others:
+        kbds += keyboard(d, base[:2])
     glyphs = read_font(os.path.join(src, info.get("font", "font.txt")))
     ids = list(read_messages(os.path.join(master, "messages.txt")))
     msgs = read_messages(os.path.join(src, "messages.txt"))
@@ -259,25 +289,26 @@ def build_pack(src, dst, master):
             strings += charset.text(msgs[ident], f"{src}/messages.txt {ident}") + b"\0"
         else:
             table += b"\0\0"
-    size = first_string + len(strings)
+    off_kbds = first_string + len(strings)
+    size = off_kbds + len(kbds)
     if size > MAX_PACK:
         fail(f"{dst}: {size} bytes, the limit is {MAX_PACK}")
 
     name = charset.text(info["name"], f"{src}/pack.txt name")
-    if len(name) > 12:
-        fail(f"{src}/pack.txt: name longer than 12 characters")
+    if len(name) > 10:
+        fail(f"{src}/pack.txt: name longer than 10 characters")
     header = bytearray(b"VLNG")
-    header += bytes([1]) + info["code"].encode("ascii") + b"\0"
+    header += bytes([2]) + info["code"].encode("ascii") + b"\0"
     for value in (off_font, off_case, off_keymap, off_combos, off_msgs, size):
         header += value.to_bytes(2, "little")
-    header += name.ljust(12, b"\0")
+    header += name.ljust(10, b"\0") + off_kbds.to_bytes(2, "little")
     assert len(header) == head
-    data = header + font + case + keymap + combo + table + strings
+    data = header + font + case + keymap + combo + table + strings + kbds
     assert len(data) == size
     with open(dst, "wb") as f:
         f.write(data)
     print(f"mklng: {dst}: {size} bytes, {len(msgs)}/{len(ids)} messages, "
-          f"{len(combos)} combos")
+          f"{len(combos)} combos, {kbds[0]} keyboards")
 
 
 def asm_bytes(data, per_line=16):
