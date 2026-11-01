@@ -85,7 +85,7 @@ Las pruebas ejecutan V-OS en Caprice32 sin ventana y hacen capturas de pantalla 
 | Objetivo | Qué prueba |
 |---|---|
 | `test-input` | teclas, Studio: bloques, archivos, ejecución |
-| `test-calc` | CALC con clics, luego `CALC.VBS` en Studio |
+| `test-calc` | CALC con clics, luego `CALC.VBS` en Studio y su título en inglés y en francés (^T) |
 | `test-costume` | disfraz en Studio, ejecución, reapertura |
 | `test-acc` | el reloj como accesorio de escritorio |
 | `test-multi`, `test-switch`, `test-expand`, `test-behind` | varios programas, F6, ampliación de memoria, segundo plano |
@@ -100,6 +100,7 @@ Las pruebas ejecutan V-OS en Caprice32 sin ventana y hacen capturas de pantalla 
 | `test-notepad-big` | la ventana de texto de NOTEPAD en un emulador Z80 (`tools/notepad_check.py`): un archivo de 12K con su propio banco de datos, mover, escribir y SAVE, texto hasta 16K, y 4K en un 6128 |
 | `test-data` | (576K) NOTEPAD con un texto de 15K hasta la línea 33, MARKDOWN mientras tanto, y NOTEPAD de vuelta al principio: las líneas desde su propio banco de datos |
 | `test-paint` | PAINT: línea, rectángulo, relleno, los menús, y luego las capas (ocultar una), OTHER DRIVE y EXPORT .SCR a B: ("SAVED AS .SCR") |
+| `test-paint-big` | PAINT en toda la pantalla (576K): líneas, la ventana movida por sus barras (un clic y un arrastre), su posición, guardada como `B:NONAME.SCR` y abierta de nuevo |
 | `test-scr` | el EXPORT .SCR de PAINT (su código en un emulador Z80, `tools/scr_check.py`) cargado en BASIC desde un disco, con la paleta; se comprueba cada píxel de la pantalla |
 | `test-about` | AYUDA > ACERCA DE V-OS |
 | `test-music` | MUSIC desde `music.dsk` en B:: una canción suena y sigue detrás del Launcher |

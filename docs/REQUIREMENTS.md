@@ -387,6 +387,18 @@ Header με:
 - **Δοκιμή:** το `make test-multi`. Το DEMO τρέχει και αλλάζει χρώμα. Με F2 ο Launcher, και τρέχει το PONG. Ξανά στον Launcher, το DEMO συνεχίζει με το ίδιο χρώμα και κλείνει με ^Q. Το PONG συνεχίζει. Το STUDIO δεν ξεκινά και βγαίνει το σφάλμα 13.
 - **Λάθος που βρέθηκε:** το μήνυμα σε μία γραμμή (27 χαρακτήρες) έκανε τον διάλογο φαρδύτερο από την οθόνη σε mode 0. Δεν φαινόταν, και ο βρόχος του περίμενε κουμπί. Βρέθηκε με dump της στοίβας και των μεταβλητών του διαλόγου (`TEST_DUMP`, `TEST_DUMP_AT`).
 
+**Υλοποίηση M52 (το PAINT σε όλη την οθόνη):**
+- **`myapps/paint/paint.asm`:** `big` (από το `VX_DATA` στην αρχή), `pw`, `ph` (160×200, 128×128 ή 64×64), `vx`, `vy` (το παράθυρο, `vx` ζυγό), `sdrag`. Η γραμμή-cache: `rbuf` (80 bytes), `rc_y`, `rc_dirty`· `rc_load`, `rc_flush`, `rc_none`, `row_addr` (#4000 + #800 (y and 7) + 80 (y / 8) στη bank δεδομένων, ή `canvas` + 64 y), `row_len`. Το `pix_addr` της εικόνας δείχνει μέσα στο `rbuf`· το `set_px` σημειώνει την αλλαγή. `ev_pic`, `view_pic`, `view_part` (θέση στο παράθυρο → στην εικόνα), `bar_at`, `bar_move`, `scroll_to` (A × μέγεθος / 128, με `mul8`), `scale` (A × 128 / μέγεθος, με `div_hl_c`), `draw_bars`, `show_pos`, `num3`. Το `write` σώζει την οθόνη με `VOS_DATA + VOS_LOAD_IX` (IX = #C000)· το `load_file` κρατά στη bank ένα αρχείο 16000–16384 bytes, και βάζει ένα `.PIC` στις γραμμές της πάνω αριστερά.
+- **`kernel/files_ext.asm`:** `"SCR"` → PAINT στο `ft_open`.
+- **Makefile:** `TEST_APPS` (το `APPS` χωρίς `.VBS`) και `add_test_packs` (ENGLISH.MSG, GREEK.LNG) για τις δισκέτες ενός προγράμματος· `test-paint-big` (σενάριο 33, 576K, `VOS_TIMEOUT=90`).
+
+**Υλοποίηση M51 (τα κείμενα του Studio σε έξι γλώσσες):**
+- **Kernel:** το `xa_lang` (`kernel/ext.asm`, στην επέκταση της bank 7, 2 bytes στον μόνιμο kernel για τη θέση του στο `xa_table`): `"EN"` όταν το `lang_ui` είναι 0, αλλιώς το `lang_code` του pack.
+- **`blocks/player.asm`:** δέχεται `VBS` 3 και 4· το `pl_lang`, πριν από όλα, βρίσκει μετά τα κοστούμια τις γλώσσες, ρωτά το `VX_LANG` (carry σε παλιό V-OS: τίποτα) και αντιγράφει όσα κείμενα δεν είναι κενά της γλώσσας που ταιριάζει πάνω στα κείμενα του `vbs_data`.
+- **`apps/studio/studio.asm`:** `tr_lang` (0 ή 1–6, `tr_codes`), `tr_used`· στη bank δεδομένων στο `TR_BANK` (#7200) η εικόνα του αρχείου (έξι φορές dw κωδικός και 512 bytes), στο `TR_MARK` (#71FE) "TR" (κάθε φόρτωση του kernel στη bank 4 αρχίζει από #4000, οπότε φτάνει εκεί πρώτα). `tr_text` (για το `render_slot` και το `edit_text`), `tr_ready` (κενές γλώσσες με τους κωδικούς τους στο πρώτο κείμενο), `tr_forget` (ένα νέο κείμενο κενό παντού), `tr_put` (ΑΠΟΘΗΚΕΥΣΗ), `tr_load` (ΑΝΟΙΓΜΑ), `bank_move` (64 bytes τη φορά μέσω του `lbuf`). Το `write_file` συναρμολογεί στο `LOAD_AT` της bank δεδομένων και σώζει με `VOS_DATA`· το `run_bin` φορτώνει το `.VBS` μετά τον player. Το `new_prog` κρατά μόνο το κεφάλι, το αντικείμενο 1 και τις γραμμές· το `prog_new` μηδενίζει τα υπόλοιπα.
+- **`tools/mkvbs.py`:** έκδοση 4, `LANG`, και οι έξι γλώσσες με τη σειρά όταν υπάρχει μία.
+- **Δοκιμές:** στο σενάριο 2 τρία CONTROL+T (3250, 3600, 3700), `CALC_SHOTS` +1070 +1180· το `COSTUME_DSK` με το `COSTUME_APPS`.
+
 **Υλοποίηση M50 (η σελίδα, mode 2):**
 - **`src/gfx/gfx.asm`:** το `gfx_mode2` (shift 3, pixel mask 7, pen mask 1, πλάτος 768) με τους πίνακες `gfx_pix2`, `gfx_lmask2`, `gfx_rmask2` (το 8ο byte του, #FF, είναι το πρώτο του `gfx_lmask2`), `gfx_fill2`· το `gfx_params_for` διαλέγει ανάμεσα σε τρία. Το `txt_char` στο mode 2 γράφει ένα byte ανά γραμμή: bg xor ((fg xor bg) and bits), μετά το `txt_row` (τα στυλ). Το `gfx_set_mode` κρύβει πρώτα τον pointer (`ptr_hide`), ώστε το save-under να επιστρέψει με τη γεωμετρία του παλιού mode.
 - **`src/ui/ui.asm`:** το `ui_set_mode` μετακινεί το x του pointer κατά τη διαφορά των modes (×2 ανά βήμα πάνω, ÷2 κάτω) και έχει το `ui_pens_mode2` (επιφάνεια, μπάρα 0· κείμενο, επιλογή, σκιά, πλαίσιο 1) με σκιά 8 pixels δεξιά.
@@ -982,6 +994,8 @@ Header με:
 
 51. **M49 — Πραγματικές δισκέτες:** το V-OS σε δύο δισκέτες που χωρούν σε δισκέτα 3" (180K): η `vos.dsk` με το σύστημα στο A: και η `apps.dsk` με τα προγράμματα στο B:, ο έλεγχος `tools/dsk_ext.py --fit`, τα πακέτα με την `APPS.DSK` στο B:, `make test-apps` (§7.3). Έκδοση 0.20. *Έγινε.*
 52. **M50 — Η σελίδα (mode 2):** mode 2 στον kernel (`VOS_MODE` με A = 2, API 25: γραφικά, κείμενο, pointer, μενού και διάλογοι), η σελίδα (^M) στα NOTEPAD, MARKDOWN, READER και SHEET, προγράμματα με πίνακα relocation πάνω από 12K μόνα τους στο #4000, `make test-notepad`, `test-markdown`, `test-reader`, `test-sheet`, `test-sheet-z80` με τη σελίδα (§7.3). Έκδοση 0.21. *Έγινε.*
+53. **M51 — Τα προγράμματα του Studio σε έξι γλώσσες:** μετάφραση των κειμένων ενός προγράμματος του Studio σε EN EL FR ES DE IT (`.VBS` έκδοση 4, `VX_LANG`, API 26), ΓΛΩΣΣΑ ΚΕΙΜΕΝ. (^T) στο Studio, `LANG` στο `.vbt`, CALC και MINES μεταφρασμένα, `make test-calc`, `test-mines`, `test-costume` (§7.3). Έκδοση 0.22. *Έγινε.*
+54. **M52 — Το PAINT σε όλη την οθόνη:** εικόνα 160×200 χωρίς overscan στη δική του bank δεδομένων (`.SCR` των 16K), παράθυρο 128×128 με μπάρες κύλισης (κλικ και σύρσιμο), οι συντεταγμένες του pointer και του παραθύρου, 128×128 χωρίς επέκταση μνήμης, `make test-paint`, `test-paint-big`, `test-scr` (§7.3). Έκδοση 0.23. *Έγινε.*
 ---
 
 ## 12. Αποφάσεις

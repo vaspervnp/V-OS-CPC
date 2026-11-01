@@ -1,15 +1,25 @@
 ; =====================================================================
 ; paint.asm - PAINT, a drawing program for V-OS (made with the SDK)
 ;
-; Mode 0, 16 colours. Two kinds of picture, in the same 8K here:
-;   a picture   128 x 128 pixels, two a byte as on the screen (.PIC,
-;               8192 bytes)
-;   layers      64 x 64 pixels shown twice as big, in three layers.
+; Mode 0, 16 colours. Two kinds of picture:
+;   a picture   the CPC's whole screen, 160 x 200 pixels without the
+;               overscan, in the data bank as a screen is (lines of 80
+;               bytes, two pixels a byte, 8 blocks of #800): saved as a
+;               .SCR that loads at #C000, the palette in its unused
+;               bytes at #C7D0. That needs a data bank of PAINT's own
+;               (a memory expansion, VX_DATA); without one, 128 x 128
+;               here (.PIC, 8192 bytes; EXPORT makes it a .SCR)
+;   layers      64 x 64 pixels shown twice as big, in three layers,
+;               in the same 8K here.
 ;               Each has its pixels (2048 bytes) and a mask (512: a bit
 ;               a pixel, 0 where it lets the ones below show); then the
 ;               order of the layers, from the bottom, and which are
 ;               shown (.LYR, 7686 bytes). A pixel no layer shows is
 ;               white.
+; The window shows 128 x 128 of it; the bars on its right and under it
+; show which part, and move it (a click, or the button held down: the
+; window's middle goes there). Under the colours: where the pointer is
+; in the picture, and the window's top left (VIEW).
 ; The pointer draws: the AMX mouse, or the cursor keys with COPY as its
 ; button. The tools, on the right (or P B L X F):
 ;   PENCIL, BRUSH (3 x 3)  draw while the button is down
@@ -35,16 +45,22 @@ L_ORDER         equ 3 * LAYER       ; 3 layers, from the bottom
 L_VIS           equ L_ORDER + 3     ; 1: shown
 LYR_SIZE        equ L_VIS + 3
 ERASE           equ 16              ; the colour after the 16
-CX              equ 4               ; the picture on the screen
+CX              equ 0               ; the window on the screen
 CY              equ 16
+VW              equ 128             ; its size, in screen pixels
+VH              equ 128
+BAR_W           equ 4               ; the scroll bars: their width
+VBAR_X          equ CX + VW + 2
+HBAR_Y          equ CY + VH + 2
 TOOL_X          equ 136
 TOOL_Y          equ 20
 TOOL_STEP       equ 16
 LAY_Y           equ 110             ; the layers, from the top
 LAY_STEP        equ 12
-SW_Y            equ 150             ; the colours
+SW_Y            equ 154             ; the colours
 SW_W            equ 12
-NAME_Y          equ 168
+NAME_Y          equ 170
+POS_Y           equ 180             ; the pointer's place, the window's
 HINT_Y          equ 228
 UI_BG           equ 9               ; pens: grey around the picture
 SEL_BG          equ 5               ; yellow under the chosen tool
@@ -68,7 +84,9 @@ CMD_DRIVE       equ VC_APP + 7
 CMD_ABOUT       equ VC_APP + 8
 CMD_BACK        equ VC_APP + 9
 CMD_EXPORT      equ VC_APP + 10
-SCR_DATA        equ #4000           ; EXPORT: the screen, in the data bank
+SCR_DATA        equ #4000           ; the screen, in the data bank (EXPORT,
+                                    ; or the picture itself)
+SCR_SIZE        equ #4000
 SCR_X           equ 8               ; the picture there: bytes from the
 SCR_Y           equ 36              ; left, lines from the top
 
@@ -110,6 +128,11 @@ init:
         jr z,.back
         ld a,(VOS_SELF)
         ld (fdrive),a
+        ld a,VX_DATA                ; a data bank of its own: the whole
+        call VOS_EXT                ; screen
+        jr c,.small
+        ld (big),a
+.small:
         call new_pic
 .back:
         call redraw
@@ -153,10 +176,12 @@ redraw:
         call VOS_RECT
         pop ix
         call draw_canvas
+        call draw_bars
         call draw_tools
         call draw_layers
         call draw_colours
         call draw_name
+        call show_pos
         ld a,(lmode)                ; the keys
         or a
         jr z,.hints
@@ -177,13 +202,37 @@ redraw:
         ld c,24
         jp print_lab
 
-; a white picture, NONAME.PIC
+; a white picture, NONAME.PIC (or .SCR)
 new_pic:
+        call rc_none
+        ld a,(big)
+        or a
+        jr z,.small
+        ld hl,row_pairs             ; the screen in the data bank
+        ld de,row_pairs + 1
+        ld bc,127
+        ld (hl),#C0
+        ldir
+        ld de,SCR_DATA
+.fill:
+        push de
+        ld hl,row_pairs
+        ld bc,128
+        call VOS_BANK_PUT
+        pop hl
+        ld de,128
+        add hl,de
+        ex de,hl
+        bit 7,d                     ; up to #8000
+        jr z,.fill
+        jr .white
+.small:
         ld hl,canvas
         ld de,canvas + 1
         ld bc,PIC_SIZE - 1
         ld (hl),#C0                 ; pen 1 in both pixels
         ldir
+.white:
         xor a
         ; fall through
 
@@ -191,11 +240,19 @@ new_pic:
 set_mode:
         ld (lmode),a
         or a
-        ld a,128
+        ld hl,64 * 256 + 64         ; layers
+        jr nz,.size
+        ld hl,128 * 256 + 128
+        ld a,(big)
+        or a
         jr z,.size
-        ld a,64
+        ld hl,200 * 256 + 160       ; the whole screen
 .size:
-        ld (cw),a
+        ld (pw),hl
+        xor a                       ; the window at the top left
+        ld (vx),a
+        ld (vy),a
+        ld (sdrag),a
         ld a,(colour)               ; no eraser for a picture
         cp ERASE
         jr c,.colour
@@ -237,17 +294,20 @@ new_layers:
         ldir
         ld a,1
         ld (cl),a
-        jr set_mode
+        jp set_mode
 
-; -> HL -> "PIC" or "LYR"
+; -> HL -> "PIC", "SCR" (the whole screen) or "LYR"
 ext_now:
-        ld hl,ext_pic
+        ld hl,ext_lyr
         ld a,(lmode)
         or a
+        ret nz
+pic_ext:
+        ld hl,ext_pic
+        ld a,(big)
+        or a
         ret z
-        inc hl
-        inc hl
-        inc hl
+        ld hl,ext_scr
         ret
 
 ; ---------------------------------------------------------------------
@@ -399,18 +459,32 @@ ptr_at:
         inc hl
         ld b,(hl)
         ld (ev_y),bc
+        ; fall through
+; ev_x, ev_y -> C = x, B = y in the picture; carry if not in the window
+ev_pic:
         ld hl,(ev_x)
         ld de,CX
         call .part
         ret c
-        ld c,a
+        ld hl,vx
+        call view_pic
+        push af
         ld hl,(ev_y)
         ld de,CY
         call .part
-        ret c
+        jr c,.out
+        ld hl,vy
+        call view_pic
         ld b,a
+        pop af
+        ld c,a
+        or a
         ret
-; HL - DE, in the picture's pixels -> A; carry if outside
+.out:
+        pop af
+        scf
+        ret
+; HL - DE -> A, in the window; carry if outside
 .part:
         or a
         sbc hl,de
@@ -420,14 +494,14 @@ ptr_at:
         scf
         ret nz
         ld a,l
-; L = screen pixels -> A, E: the picture's; carry if past its end
-pic_part:
+        cp VW
+        ccf
+        ret
+
+; A = place in the window, HL -> vx or vy -> A = in the picture
+view_pic:
         call half
-        ld e,a
-        ld a,(cw)
-        dec a
-        cp e
-        ld a,e
+        add a,(hl)
         ret
 
 ; A = screen pixels -> the picture's (half of them with layers)
@@ -442,7 +516,7 @@ half:
 
 ptr_down:
         call ptr_at
-        jr c,.outside
+        jr c,.bar
         ld a,c
         ld (x0),a
         ld (lnx),a
@@ -459,7 +533,9 @@ ptr_down:
         cp T_LINE_
         ret nc                      ; LINE, BOX: when it comes up
         jp dot
-.outside:
+.bar:
+        call bar_at                 ; a scroll bar?
+        ret nc
         ld hl,(ev_y)                ; a colour?
         ld de,SW_Y
         or a
@@ -519,15 +595,20 @@ ptr_down:
         ld a,(hl)
         jp choose
 
-; the button down: PENCIL and BRUSH draw from where they were
+; the pointer's place shown; a scroll bar held follows it; the button
+; down: PENCIL and BRUSH draw from where they were
 ptr_move:
+        call ptr_at
+        call show_pos
+        ld a,(sdrag)
+        or a
+        jp nz,bar_move
         ld a,(down)
         or a
         ret z
         ld a,(tool)
         cp T_LINE_
         ret nc
-        call ptr_at
         call clamp
         ld a,c
         ld (lnx1),a
@@ -542,6 +623,8 @@ ptr_move:
 
 ; the button up: LINE and BOX end here
 ptr_up:
+        xor a
+        ld (sdrag),a
         ld a,(down)
         or a
         ret z
@@ -563,18 +646,24 @@ ptr_up:
         ld (lny),a
         jp line
 
-; C = x, B = y (from ptr_at, maybe outside): into the picture
+; C = x, B = y (ev_x, ev_y, maybe outside): the nearest in the window
 clamp:
         ld hl,(ev_x)
         ld de,CX
-        call .part
+        call view_part
+        ld hl,vx
+        call view_pic
         ld c,a
         ld hl,(ev_y)
         ld de,CY
-        call .part
+        call view_part
+        ld hl,vy
+        call view_pic
         ld b,a
         ret
-.part:
+
+; HL - DE -> A, 0 to VW - 1 (the window is square)
+view_part:
         or a
         sbc hl,de
         jr c,.zero
@@ -582,14 +671,329 @@ clamp:
         or a
         jr nz,.max
         ld a,l
-        call pic_part
-        ret nc
+        cp VW
+        ret c
 .max:
-        ld a,(cw)
-        dec a
+        ld a,VW - 1
         ret
 .zero:
         xor a
+        ret
+
+; ---------------------------------------------------------------------
+; the scroll bars and the window
+; ---------------------------------------------------------------------
+; ev_x, ev_y on a bar: it is held (sdrag 1 the one on the right, 2 the
+; one below) and the window moves; else carry
+bar_at:
+        ld hl,(ev_y)                ; below?
+        ld de,HBAR_Y
+        or a
+        sbc hl,de
+        jr c,.right
+        ld a,h
+        or a
+        jr nz,.right
+        ld a,l
+        cp BAR_W
+        jr nc,.right
+        ld hl,(ev_x)
+        ld a,h
+        or a
+        jr nz,.right
+        ld a,l
+        cp CX + VW
+        ld a,2
+        jr c,.held
+.right:
+        ld hl,(ev_x)
+        ld de,VBAR_X
+        or a
+        sbc hl,de
+        ret c
+        ld a,h
+        or a
+        scf
+        ret nz
+        ld a,l
+        cp BAR_W
+        ccf
+        ret c
+        ld hl,(ev_y)
+        ld de,CY
+        or a
+        sbc hl,de
+        ret c
+        ld a,h
+        or a
+        scf
+        ret nz
+        ld a,l
+        cp VH
+        ccf
+        ret c
+        ld a,1
+.held:
+        ld (sdrag),a
+        call bar_move
+        or a
+        ret
+
+; the bar held: the window's middle where the pointer is along it
+bar_move:
+        ld a,(sdrag)
+        dec a
+        jr nz,.below
+        ld hl,(ev_y)
+        ld de,CY
+        call view_part
+        ld hl,ph
+        ld d,(hl)
+        ld hl,vy
+        jr .move
+.below:
+        ld hl,(ev_x)
+        ld de,CX
+        call view_part
+        ld hl,pw
+        ld d,(hl)
+        ld hl,vx
+.move:
+        call scroll_to
+        ret z
+        call draw_canvas
+        call draw_bars
+        jp show_pos
+
+; A = place on a bar (0..127), D = the picture's size that way, HL ->
+; vx or vy: there, so that the window's middle is at A (even, and
+; inside the picture) -> NZ if it moved
+scroll_to:
+        push hl
+        ld e,a
+        ld a,VW                     ; the part the bar shows, by half
+        call scale
+        srl a
+        ld b,a
+        ld a,e
+        sub b
+        jr nc,.from
+        xor a
+.from:
+        ld e,d                      ; A * size / 128
+        call mul8
+        add hl,hl
+        ld c,h
+        ld a,d                      ; at most size - 128
+        sub VW
+        jr nc,.most
+        xor a
+.most:
+        cp c
+        jr nc,.in
+        ld c,a
+.in:
+        res 0,c
+        pop hl
+        ld a,c
+        cp (hl)
+        ret z
+        ld (hl),a
+        ret
+
+; A = a place in the picture, D = its size -> A = on a bar, A * 128 /
+; D, at most 128 (D kept)
+scale:
+        ld h,a
+        ld l,0
+        srl h
+        rr l
+        ld c,d
+        call div_hl_c
+        ld a,h
+        or a
+        jr nz,.most
+        ld a,l
+        cp VW + 1
+        ret c
+.most:
+        ld a,VW
+        ret
+
+; HL = HL / C (C not 0); B lost
+div_hl_c:
+        ld b,16
+        xor a
+.bit:
+        add hl,hl
+        rla
+        jr c,.sub
+        cp c
+        jr c,.next
+.sub:
+        sub c
+        inc l
+.next:
+        djnz .bit
+        ret
+
+; HL = A * E (DE kept); B lost
+mul8:
+        push de
+        ld d,0
+        ld hl,0
+        ld b,8
+.bit:
+        add hl,hl
+        rla
+        jr nc,.next
+        add hl,de
+.next:
+        djnz .bit
+        pop de
+        ret
+
+; the bars: grey, and yellow the part of the picture the window shows
+draw_bars:
+        push ix
+        ld ix,rect
+        ld hl,VBAR_X                ; on the right: the rows
+        ld de,CY
+        ld bc,BAR_W + VH * 256
+        call .track
+        ld a,(ph)
+        ld d,a
+        ld a,(vy)
+        call scale
+        add a,CY
+        ld (rect + 2),a
+        ld a,VW
+        call scale
+        ld (rect + 6),a
+        call .part
+        ld hl,CX                    ; below: the columns
+        ld de,HBAR_Y
+        ld bc,VW + BAR_W * 256
+        call .track
+        ld a,(pw)
+        ld d,a
+        ld a,(vx)
+        call scale
+        add a,CX
+        ld (rect),a
+        ld a,VW
+        call scale
+        ld (rect + 4),a
+        call .part
+        pop ix
+        ret
+; HL = x, DE = y, C = width, B = height: the track
+.track:
+        ld (rect),hl
+        ld (rect + 2),de
+        ld a,c
+        ld (rect + 4),a
+        ld a,b
+        ld (rect + 6),a
+        xor a
+        ld (rect + 5),a
+        ld (rect + 7),a
+        ld a,UI_BG
+        ld (rect + 8),a
+        jp VOS_RECT
+.part:
+        ld a,SEL_BG
+        ld (rect + 8),a
+        jp VOS_RECT
+
+; under the colours: the pointer's place in the picture ("---,---" off
+; the window) and the window's top left
+show_pos:
+        call ev_pic
+        ld de,lbuf
+        jr c,.off
+        ld a,c
+        call num3
+        ld a,","
+        ld (de),a
+        inc de
+        ld a,b
+        call num3
+        jr .view
+.off:
+        ld hl,no_pos
+        ld bc,7
+        ldir
+.view:
+        ld a," "
+        ld (de),a
+        inc de
+        ld (de),a
+        inc de
+        push de
+        ld a,T_VIEW
+        call VOS_MSG
+        pop de
+.word:
+        ld a,(hl)
+        or a
+        jr z,.at
+        ld (de),a
+        inc hl
+        inc de
+        jr .word
+.at:
+        ld a," "
+        ld (de),a
+        inc de
+        ld a,(vx)
+        call num3
+        ld a,","
+        ld (de),a
+        inc de
+        ld a,(vy)
+        call num3
+        ld b,3                      ; over what was longer
+.pad:
+        ld a," "
+        ld (de),a
+        inc de
+        djnz .pad
+        xor a
+        ld (de),a
+        ld hl,0
+        ld de,POS_Y
+        ld bc,lbuf
+        jp print_at
+
+; A -> three digits at DE (BC kept)
+num3:
+        push bc
+        ld b,"0" - 1
+.hundreds:
+        inc b
+        sub 100
+        jr nc,.hundreds
+        add a,100
+        ld c,a
+        ld a,b
+        ld (de),a
+        inc de
+        ld a,c
+        ld b,"0" - 1
+.tens:
+        inc b
+        sub 10
+        jr nc,.tens
+        add a,"0" + 10
+        ld c,a
+        ld a,b
+        ld (de),a
+        inc de
+        ld a,c
+        ld (de),a
+        inc de
+        pop bc
         ret
 
 set_tool:
@@ -680,13 +1084,121 @@ discard_ok:
 ; ---------------------------------------------------------------------
 ; the pixels
 ; ---------------------------------------------------------------------
+; The picture is read and written a row at a time, through rbuf
+; (rc_y: which, rc_dirty: changed since; rc_flush writes it back).
 ; C = x, B = y -> HL -> its byte in a picture, A = its pixel's bits
 pix_addr:
-        ld a,b                      ; + 64 y
+        call rc_load
+        ld hl,0
+        ld de,rbuf
+        jp pix_byte
+
+; B = row -> HL -> it in the picture: the screen in the data bank
+; (#4000 + #800 (y and 7) + 80 (y / 8)), or canvas + 64 y
+row_addr:
+        ld a,(big)
+        or a
+        jr z,.small
+        ld a,b
+        rrca
+        rrca
+        rrca
+        and 31
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld d,h
+        ld e,l
+        add hl,hl
+        add hl,hl
+        add hl,de
+        ld a,b
+        and 7
         add a,a
+        add a,a
+        add a,a
+        add a,SCR_DATA >> 8
+        add a,h
+        ld h,a
+        ret
+.small:
+        ld l,b
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
         ld de,canvas
-        ; fall through
-; A = row, DE = base: + 32 A
+        add hl,de
+        ret
+
+; -> BC = a row's bytes
+row_len:
+        ld bc,64
+        ld a,(big)
+        or a
+        ret z
+        ld c,80
+        ret
+
+; B = row: in rbuf, the one there written back first (BC kept)
+rc_load:
+        ld a,(rc_y)
+        cp b
+        ret z
+        push bc
+        call rc_flush
+        pop bc
+        push bc
+        ld a,b
+        ld (rc_y),a
+        call row_addr
+        ld de,rbuf
+        call row_len
+        ld a,(big)
+        or a
+        jr z,.ram
+        call VOS_BANK_GET
+        pop bc
+        ret
+.ram:
+        ldir
+        pop bc
+        ret
+
+; rbuf back to its row, if it changed
+rc_flush:
+        ld a,(rc_dirty)
+        or a
+        ret z
+        xor a
+        ld (rc_dirty),a
+        ld a,(rc_y)
+        ld b,a
+        call row_addr
+        ex de,hl
+        ld hl,rbuf
+        call row_len
+        ld a,(big)
+        or a
+        jp nz,VOS_BANK_PUT
+        ldir
+        ret
+
+; no row in rbuf (the picture is new)
+rc_none:
+        ld a,#FF
+        ld (rc_y),a
+        xor a
+        ld (rc_dirty),a
+        ret
+
+; A = row, DE = base: + 32 A (layers)
 pix_row:
         ld l,a
         ld h,0
@@ -761,6 +1273,10 @@ set_px:
         or a
         jr nz,.layer
         call pix_addr
+        ld e,a
+        ld a,1
+        ld (rc_dirty),a
+        ld a,e
 .put:
         ld e,a
         cpl
@@ -886,32 +1402,44 @@ cur_code:
 ; ---------------------------------------------------------------------
 ; C = x, B = y: a pixel, if in the picture, in memory and on the screen
 put:
-        ld a,(cw)
-        ld d,a
-        ld a,c
-        cp d
-        ret nc
-        ld a,b
-        cp d
-        ret nc
+        ld a,(pw)
+        dec a
+        cp c
+        ret c
+        ld a,(ph)
+        dec a
+        cp b
+        ret c
         call set_px
         push bc
         ld a,(lmode)
         or a
-        jr nz,.big
-        ld a,c
+        jr nz,.lay
+        ld a,c                      ; on the screen, if in the window
+        ld hl,vx
+        sub (hl)
+        jr c,.out
+        cp VW
+        jr nc,.out
         add a,CX
-        ld l,a
-        ld h,0
+        ld c,a
         ld a,b
+        ld hl,vy
+        sub (hl)
+        jr c,.out
+        cp VH
+        jr nc,.out
         add a,CY
         ld e,a
         ld d,0
+        ld l,c
+        ld h,d
         ld a,(colour)
         call VOS_PLOT
+.out:
         pop bc
         ret
-.big:
+.lay:
         call comp                   ; 2 x 2 on the screen: one byte, two
         ld e,a                      ; rows
         srl a
@@ -1115,7 +1643,7 @@ fill:
         ld a,c
         ld (fxl),a
 .right:
-        ld a,(cw)
+        ld a,(pw)
         dec a
         cp c
         jr z,.rset
@@ -1143,7 +1671,7 @@ fill:
         call .scan
         inc b
 .below:
-        ld a,(cw)
+        ld a,(ph)
         dec a
         cp b
         jr z,.next
@@ -1223,18 +1751,38 @@ fpop:
 ; ---------------------------------------------------------------------
 ; the screen
 ; ---------------------------------------------------------------------
-; the picture, a row at a time (VOS_BLIT: mask and pixels); layers:
-; each pixel a byte, each row twice
+; the part of the picture in the window, a row at a time (VOS_BLIT:
+; mask and pixels); layers: each pixel a byte, each row twice
 draw_canvas:
         ld a,(lmode)
         or a
         jr nz,.layers
-        ld hl,canvas
-        ld b,0
+        call rc_flush               ; (rbuf is used here)
+        call rc_none
+        ld a,(vy)
+        ld b,a                      ; B: the picture's row, C: the window's
+        ld c,0
 .row:
         push bc
+        call row_addr
+        ld a,(vx)
+        srl a
+        ld e,a
+        ld d,0
+        add hl,de
+        ld de,rbuf
+        ld bc,VW / 2
+        ld a,(big)
+        or a
+        jr z,.ram
+        call VOS_BANK_GET
+        jr .got
+.ram:
+        ldir
+.got:
+        ld hl,rbuf
         ld de,row_pairs
-        ld b,64
+        ld b,VW / 2
 .pair:
         ld a,#FF
         ld (de),a
@@ -1245,14 +1793,13 @@ draw_canvas:
         inc hl
         djnz .pair
         pop bc
-        push hl
-        ld a,b
+        ld a,c
         add a,CY
         call .blit
-        pop hl
         inc b
-        ld a,b
-        cp 128
+        inc c
+        ld a,c
+        cp VH
         jr c,.row
         ret
 .layers:
@@ -1587,8 +2134,8 @@ print_at:
 ; ---------------------------------------------------------------------
 ; files
 ; ---------------------------------------------------------------------
-; B = 0 OPEN a .PIC, 1 OPEN LAYERS a .LYR of fdrive, through the data
-; bank, if of its size
+; B = 0 OPEN a picture (.SCR, or .PIC without a data bank of its own),
+; 1 OPEN LAYERS a .LYR of fdrive, through the data bank, if of its size
 open:
         push bc
         call discard_ok
@@ -1596,10 +2143,9 @@ open:
         ret nz
         ld a,b
         ld (open_mode),a
-        ld hl,ext_pic
-        or a
-        jr z,.ext
         ld hl,ext_lyr
+        or a
+        call z,pic_ext
 .ext:
         ld a,(fdrive)
         or VOS_CAT_EXT
@@ -1622,35 +2168,94 @@ open:
         ld de,name_tmp
         ld bc,11
         ldir
+; A screen (16000 to 16384 bytes) stays in the data bank where it was
+; loaded, as the picture; a .PIC (8192) there goes to its top left, on
+; white; .PIC and .LYR are kept here (canvas). The name keeps the type
+; the picture is saved as.
 load_file:                          ; name_tmp on fdrive, open_mode
         ld a,(fdrive)
         or VOS_DATA
         ld hl,name_tmp
-        ld de,#4000
+        ld de,SCR_DATA
         call VOS_LOAD
         jp c,VOS_ERROR
         ld a,(open_mode)
-        ld hl,PIC_SIZE
         or a
-        jr z,.size
         ld hl,LYR_SIZE
+        jr nz,.size
+        ld a,(big)
+        or a
+        jr z,.pic
+        ld h,b                      ; a screen?
+        ld l,c
+        ld de,16000
+        or a
+        sbc hl,de
+        jr c,.pic
+        ld de,SCR_SIZE - 16000 + 1
+        sbc hl,de
+        jr nc,.bad
+        call rc_none
+        xor a
+        jr .mode
+.pic:
+        ld hl,PIC_SIZE
 .size:
         push hl
         or a
         sbc hl,bc
         pop bc
-        ld hl,dlg_not_pic
-        jp nz,VOS_DIALOG
-        ld hl,#4000
+        jr nz,.bad
+        ld hl,SCR_DATA
         ld de,canvas
         call VOS_BANK_GET
         ld a,(open_mode)
+        or a
+        jr nz,.mode
+        ld a,(big)
+        or a
+        jr z,.mode
+        call new_pic                ; a .PIC on the whole screen
+        ld b,0
+.row:
+        call rc_load
+        ld l,b
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,canvas
+        add hl,de
+        ld de,rbuf
+        push bc
+        ld bc,64
+        ldir
+        pop bc
+        ld a,1
+        ld (rc_dirty),a
+        inc b
+        bit 7,b
+        jr z,.row
+        call rc_flush
+        xor a
+.mode:
         call set_mode
         ld hl,name_tmp
         ld de,fname
-        ld bc,11
+        ld bc,8
+        ldir
+        push de
+        call ext_now
+        pop de
+        ld c,3
         ldir
         jp redraw
+.bad:
+        ld hl,dlg_not_pic
+        jp VOS_DIALOG
 
 ; SAVE: as NONAME it asks for a name first
 save_pic:
@@ -1723,16 +2328,36 @@ save_as:
         ; fall through
 
 write:
+        call rc_flush
         ld bc,PIC_SIZE
         ld a,(lmode)
         or a
+        jr nz,.layers
+        ld a,(big)
+        or a
         jr z,.size
+        ld hl,palette               ; the whole screen: a .SCR, with the
+        ld de,SCR_DATA + #07D0      ; palette in its unused bytes
+        ld bc,17
+        call VOS_BANK_PUT
+        ld a,(fdrive)
+        or VOS_DATA + VOS_LOAD_IX
+        ld hl,fname
+        ld de,SCR_DATA
+        ld bc,SCR_SIZE
+        push ix
+        ld ix,#C000
+        call VOS_SAVE
+        pop ix
+        jr .saved
+.layers:
         ld bc,LYR_SIZE
 .size:
         ld a,(fdrive)
         ld hl,fname
         ld de,canvas
         call VOS_SAVE
+.saved:
         jp c,VOS_ERROR
         xor a
         ld (modified),a
@@ -1744,6 +2369,13 @@ write:
 ; #C7D0; NAME.SCR on fdrive. Built in the data bank by draw_canvas,
 ; whose rows go there instead of to the screen meanwhile (scr_at).
 export:
+        ld a,(lmode)                ; the whole screen: a .SCR already
+        or a
+        jr nz,.build
+        ld a,(big)
+        or a
+        jp nz,save_pic
+.build:
         ld hl,row_pairs             ; pen 0 everywhere: 128 x 128 bytes
         ld (hl),0                   ; (row_pairs is free here)
         ld de,row_pairs + 1
@@ -1823,10 +2455,11 @@ dlg_exported:   db T_MENU, T_EXPORTED, 1, VM_OK
 dlg_discard:    db T_MENU, T_DISCARD, 2, VM_YES, VM_NO
 dlg_not_pic:    db T_MENU, T_NOT_PIC, 1, VM_OK
 noname:         db "NONAME  "
-ext_pic:        db "PIC"            ; (ext_now: then "LYR")
+ext_pic:        db "PIC"
 ext_lyr:        db "LYR"
 ext_scr:        db "SCR"
-frame_rect:     dw CX - 2, CY - 2, 132, 132
+no_pos:         db "---,---"
+frame_rect:     dw CX, CY - 2, VBAR_X + BAR_W + 2 - CX, HBAR_Y + BAR_W + 2 - CY + 2
                 db 0
 sw_frame:       dw 0, SW_Y - 2, 192, SW_W + 4
                 db 0
@@ -1843,7 +2476,14 @@ dot_pairs:      db #FF, 0, #FF, 0
         include "app_texts.asm"     ; texts, from texts.txt
 
 lmode:          db 0                ; 0 a picture, 1 layers
-cw:             db 128              ; its width and height
+big:            db 0                ; 1: the whole screen (data bank)
+pw:             db 128              ; its width and height
+ph:             db 128
+vx:             db 0                ; the window's top left in it
+vy:             db 0
+sdrag:          db 0                ; a scroll bar held: 1 right, 2 below
+rc_y:           db #FF              ; the row in rbuf (#FF: none)
+rc_dirty:       db 0
 cl:             db 1                ; the layer drawn on
 tool:           db T_PENCIL_
 colour:         db 0                ; black, at first
@@ -1882,4 +2522,5 @@ fsp:            dw 0
 cat:            dw 0
 rect:           dw 0, 0, 0, 0
                 db 0
+rbuf:           ds 80               ; a row of the picture
 canvas:         ds PIC_SIZE

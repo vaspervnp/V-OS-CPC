@@ -322,6 +322,80 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 33
+; make test-paint-big (-DTEST_SCRIPT=33, 576K): PAINT on the whole
+; screen, 160 x 200, its window moved by the scroll bars. Expected:
+;   frame  300  F2, 420-480 DOWN x3, 520-610 RIGHT x4, 660 RETURN ->
+;                               PAINT: NONAME.SCR, the bars' yellow
+;                               parts at the top and the left
+;   frame  800-860 TAB x3    -> red
+;   (the pointer is placed and COPY clicks)
+;   frame  910-990 COPY held, RIGHT held from 20,40 -> a red line,
+;                               picture row 24
+;   frame 1100  click on the right bar near its bottom -> VIEW 000,072:
+;                               the line gone up out of the window
+;   frame 1300  click on the bar below at its right -> VIEW 032,072
+;   frame 1460-1540 COPY held, UP held from 60,100 -> a red line up
+;                               from 92,156
+;   frame 1610-1730 COPY held on the right bar, UP held -> dragged up:
+;                               VIEW 032,000, the first line again
+;   frame 1750  the pointer at 60,50, 1760 RIGHT -> its place, 09x,034
+;   frame 1900  ESC, 1940-2180 DOWN x7, 2250 RETURN -> OTHER DRIVE (B:)
+;   frame 2400  CONTROL+S, 2550 RETURN -> B:NONAME.SCR saved
+;   frame 2750  CONTROL+O, 2900 RETURN -> NONAME.SCR opened again: the
+;                               window at the top left, the first line
+test_keys:
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  420 : db   4, 0, %00000100   ; DOWN
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  480 : db   4, 0, %00000100   ; DOWN
+        dw  520 : db   4, 0, %00000010   ; RIGHT
+        dw  550 : db   4, 0, %00000010   ; RIGHT
+        dw  580 : db   4, 0, %00000010   ; RIGHT
+        dw  610 : db   4, 0, %00000010   ; RIGHT
+        dw  660 : db   4, 2, %00000100   ; RETURN: PAINT
+        dw  800 : db   4, 8, %00010000   ; TAB
+        dw  830 : db   4, 8, %00010000   ; TAB
+        dw  860 : db   4, 8, %00010000   ; TAB: red
+        dw  900 : db   1, #80, 1         ; COPY is the left button
+        dw  900 : db   5, #81, 10        ; x 20, y 40
+        dw  900 : db   5, #82, 40
+        dw  910 : db  80, 1, %00000010   ; COPY held
+        dw  920 : db  50, 0, %00000010   ; RIGHT held: a red line
+        dw 1050 : db 100, #81, 65        ; the bar on the right (x 130)
+        dw 1050 : db 100, #82, 140       ; near its bottom
+        dw 1100 : db   4, 1, %00000010   ; COPY
+        dw 1250 : db 100, #81, 60        ; the bar below (y 147), at x 120
+        dw 1250 : db 100, #82, 147
+        dw 1300 : db   4, 1, %00000010   ; COPY
+        dw 1450 : db   5, #81, 30        ; x 60, y 100
+        dw 1450 : db   5, #82, 100
+        dw 1460 : db  80, 1, %00000010   ; COPY held
+        dw 1470 : db  40, 0, %00000001   ; UP held: a red line up
+        dw 1600 : db   5, #81, 65        ; the bar on the right again
+        dw 1600 : db   5, #82, 140
+        dw 1610 : db 120, 1, %00000010   ; COPY held on it
+        dw 1620 : db 100, 0, %00000001   ; UP held: dragged up
+        dw 1750 : db   5, #81, 30        ; the pointer at 60, 50
+        dw 1750 : db   5, #82, 50
+        dw 1760 : db   4, 0, %00000010   ; RIGHT: it moves, its place shown
+        dw 1900 : db   4, 8, %00000100   ; ESC: the menu
+        dw 1940 : db   4, 0, %00000100   ; DOWN
+        dw 1980 : db   4, 0, %00000100   ; DOWN
+        dw 2020 : db   4, 0, %00000100   ; DOWN
+        dw 2060 : db   4, 0, %00000100   ; DOWN
+        dw 2100 : db   4, 0, %00000100   ; DOWN
+        dw 2140 : db   4, 0, %00000100   ; DOWN
+        dw 2180 : db   4, 0, %00000100   ; DOWN
+        dw 2250 : db   4, 2, %00000100   ; RETURN: OTHER DRIVE (B:)
+        dw 2395 : db  15, 2, %10000000   ; CONTROL
+        dw 2400 : db   4, 7, %00010000   ; S: the name, NONAME
+        dw 2550 : db   4, 2, %00000100   ; RETURN: B:NONAME.SCR
+        dw 2745 : db  15, 2, %10000000   ; CONTROL
+        dw 2750 : db   4, 4, %00000100   ; O: the .SCR files of B:
+        dw 2900 : db   4, 2, %00000100   ; RETURN: NONAME.SCR
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 32
 ; make test-sheet (-DTEST_SCRIPT=32): SHEET (myapps/sheet), last on the
 ; test disc, CALC.SYS on A:, the sheet saved on B:. Expected:
@@ -1647,6 +1721,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

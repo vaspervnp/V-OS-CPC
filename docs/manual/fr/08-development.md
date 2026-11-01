@@ -85,7 +85,7 @@ Les tests lancent V-OS dans Caprice32 sans fenêtre et prennent des captures d'�
 | Cible | Ce qu'elle teste |
 |---|---|
 | `test-input` | touches, Studio : blocs, fichiers, exécution |
-| `test-calc` | CALC avec des clics, puis `CALC.VBS` dans Studio |
+| `test-calc` | CALC avec des clics, puis `CALC.VBS` dans Studio et son titre en anglais et en français (^T) |
 | `test-costume` | costume dans Studio, exécution, réouverture |
 | `test-acc` | l'horloge comme accessoire de bureau |
 | `test-multi`, `test-switch`, `test-expand`, `test-behind` | plusieurs programmes, F6, extension mémoire, arrière-plan |
@@ -100,6 +100,7 @@ Les tests lancent V-OS dans Caprice32 sans fenêtre et prennent des captures d'�
 | `test-notepad-big` | la fenêtre de texte de NOTEPAD dans un émulateur Z80 (`tools/notepad_check.py`) : un fichier de 12K avec sa propre banque de données, déplacements, saisie et SAVE, texte jusqu'à 16K, et 4K sur un 6128 |
 | `test-data` | (576K) NOTEPAD avec un texte de 15K jusqu'à la ligne 33, MARKDOWN entre-temps, puis NOTEPAD de retour au début : les lignes depuis sa propre banque de données |
 | `test-paint` | PAINT : ligne, rectangle, remplissage, les menus, puis les calques (en cacher un), OTHER DRIVE et EXPORT .SCR vers B: ("SAVED AS .SCR") |
+| `test-paint-big` | PAINT sur tout l'écran (576K) : des lignes, la fenêtre déplacée par ses barres (un clic et un glissement), sa position, enregistrée en `B:NONAME.SCR` et rouverte |
 | `test-scr` | l'EXPORT .SCR de PAINT (son code dans un émulateur Z80, `tools/scr_check.py`) chargé en BASIC depuis une disquette, avec la palette ; chaque pixel de l'écran est vérifié |
 | `test-about` | AIDE > À PROPOS DE V-OS |
 | `test-music` | MUSIC depuis `music.dsk` en B: : un morceau joue, et continue derrière le Lanceur |

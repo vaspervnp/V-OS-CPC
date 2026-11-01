@@ -4,6 +4,33 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M52 (PAINT on the whole screen; version 0.23):**
+- **The whole screen:** PAINT's picture is the CPC's own screen, 160×200 pixels in mode 0 without the overscan, kept in PAINT's data bank laid out as the screen is (8 blocks of #800, lines of 80 bytes). It is saved as a 16K `.SCR` that loads at #C000, with the palette in its unused bytes at #C7D0, so BASIC and other CPC programs load it too; OPEN lists the `.SCR` files, and a `.SCR` opens in PAINT from the Desktop. A `.PIC` of 128×128 opens at the top left of a white screen.
+- **The window and its bars:** the window shows 128×128 of the picture. A bar on its right and one under it show which part (yellow on grey); a click on a bar puts the window's middle there, and with the button held it follows the pointer. The window moves by two pixels across, so that a byte stays a byte.
+- **Coordinates:** under the colours, where the pointer is in the picture ("---,---" off the window) and VIEW, the window's top left.
+- **Without a memory expansion** the data bank is bank 4, which the kernel uses for files and programs, so the picture stays 128×128 in PAINT itself, as before (`.PIC`), with the same window, bars and coordinates. Layers are as they were.
+- **How:** the picture is read and written a row at a time through an 80-byte buffer (the row changed is written back when another is needed, and before it is drawn or saved); the tools and FILL work on it as before.
+- **Test discs:** the CALC and MINES of M51 pushed the last program on the test discs past block 179, which V-OS cannot read (PAINT: NOT A V-OS PROGRAM). The discs of one program (NOTEPAD, SHEET, DATABASE, PAINT, WEBGET, the SDK's template) now leave out the Studio sources and the FR, ES, DE and IT packs; NOTEPAD's test now saves its file (it used to say DISC FULL).
+- **Tested:**
+  - `make test-paint` (128K): line, box, fill, the layers, OTHER DRIVE, the menu: the 128×128 picture in the new layout, the bars full, the coordinates (095,041 VIEW 000,000).
+  - `make test-paint-big` (576K, new): NONAME.SCR; a red line with RIGHT held (095,024); a click near the bottom of the right bar: VIEW 000,072; a click at the right of the bar below: VIEW 032,072; a line upwards there; the right bar dragged: VIEW 032,056; saved as B:NONAME.SCR and opened again: the window at the top left, both lines.
+  - `make test-scr`: EXPORT of the 128×128 picture, all 160×200 pixels right.
+  - `make test-notepad`: as in M50, and its file now saved.
+- **Not tested:** a `.SCR` made by another CPC program; FILL and BOX on the whole screen.
+
+**M51 (Studio programs in six languages; version 0.22):**
+- **Texts in every language:** a Studio program's texts (windows, buttons, TEXT, LABEL) can have a translation in each of V-OS's six languages, and the program shows them in the language V-OS is in when it starts. CALC is called CALCULATOR in English, CALCULATRICE in French, CALCULADORA in Spanish, RECHNER in German, CALCOLATRICE in Italian; MINES is translated into all of them.
+- **`VX_LANG`** (API 26): the code of the language V-OS shows ("EN", "EL", ...), for any program.
+- **The `.VBS`, version 4:** after the costumes, the texts in EN EL FR ES DE IT (all six, about 3K, or none). VBRUN puts those of V-OS's language in place of the program's own; an empty one keeps its own. Versions 1 to 3 still open.
+- **Studio:** EDIT > TEXT LANGUAGE (^T) goes through the six languages and back to the program's own texts; the panel shows the code beside the name (CALC FR). In a language, the text slots show and change the texts in it (a text with none shows its own). The translations stay in the data bank, with a mark that tells if something else wrote over them (then only they are lost, never the program); SAVE puts the program and them together there and saves from it; RUN loads the `.VBS` just saved after the player. Studio had 6 bytes free: the new program (NEW) no longer keeps its 552 empty bytes, which made room. `.VBS` files of up to 9K open.
+- **`tools/mkvbs.py`:** `LANG FR`, then lines `"text" "translation"`.
+- **Test discs:** test-costume has a disc of its own with DEMO, MIXED, STUDIO and VBRUN.SYS: the others are full, so Studio could not save there (DISC FULL).
+- **Tested:**
+  - `make test-calc`: the calculator, with V-OS in English, is called CALCULATOR (12 + 3 = 15); in Studio, ^T: WINDOW "CALCULATOR" and CALC EN, then EL, then "CALCULATRICE" and CALC FR.
+  - `make test-mines`: MINES (version 4, English as before).
+  - `make test-costume`: SAVE and RUN of a version 4 program, and Studio opening it again with its costume.
+- **Not tested:** saving a program with translations from Studio on the CPC (the test discs have no room); a program's texts in another language when V-OS itself changes language while it runs (they are chosen when it starts).
+
 **M50 (the page: mode 2 for text and SHEET; version 0.21):**
 - **Mode 2 in the kernel** (API 25): `VOS_MODE` with A = 2 gives 768×259 pixels in two pens, 96 columns of text. Plot, rectangles, images, text with its styles, the pointer, menus and dialogs all work in it, from a third table of pixel masks beside those of modes 0 and 1. In mode 2 the menus and dialogs draw in pen 1 on pen 0 (black on white with the programs' palette), and the pointer is edged in pen 1 and filled with pen 0, so it shows on both. Its moves go twice as far, as the screen is twice as wide.
 - **Room in the kernel:** the resident kernel had 8 bytes free. Buffers that are always written before they are read (the pointer's save-under, the menu titles' places, the file list's line, the current event, the dialog's buttons, the file names of FILE) moved into the unused video RAM after the language's tables (GAP1 and GAP6): 184 bytes. The kernel now ends at #3DCB.

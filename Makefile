@@ -24,6 +24,7 @@
 #   make test-bricks BRICKS, a block game: the bat moved, bricks hit
 #   make test-lang   English at boot, Greek saved in Setup, then V-OS
 #                 again starts in Greek (TEST_SCRIPT=3)
+#   make test-paint-big PAINT on the whole screen (576K): the bars, .SCR
 #   make test-scr    PAINT's EXPORT .SCR (run in a Z80 emulator, tools/scr_check.py)
 #                 loaded in BASIC from a disc, and every pixel checked
 #   make test-notepad-big NOTEPAD's text window in a Z80 emulator: 12K and
@@ -85,7 +86,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -136,6 +137,11 @@ $(BUILD)/ITALIAN.LNG: $(call LATIN_PACK,it)
 define add_packs
 	for p in $(PACKS); do $(IDSK) $(1) -i $$p -t 1 -c 8000 -e 8000 > /dev/null; done
 endef
+# English and Greek only, for the test discs of one program (TEST_APPS)
+TEST_PACKS := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG
+define add_test_packs
+	for p in $(TEST_PACKS); do $(IDSK) $(1) -i $$p -t 1 -c 8000 -e 8000 > /dev/null; done
+endef
 
 # Programs (apps/): each is assembled on its own, with only the API
 # include, and goes on the disc as a binary loading at #4000.
@@ -152,6 +158,10 @@ SYS_APPS := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/STUDIO.BIN \
 DISC_APPS := $(filter-out $(SYS_APPS),$(APPS))
 APPS_DSK := $(BUILD)/apps.dsk
 APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
+# the test discs whose program comes after them: without the Studio
+# sources (the Launcher does not list them), so that it stays inside
+# the 180 blocks V-OS reads
+TEST_APPS := $(filter-out %.VBS,$(APPS))
 
 # Your own programs (sdk/README.md): each folder myapps/name holds
 # name.asm, texts.txt and icon.txt (and may include more .asm of its
@@ -410,7 +420,7 @@ test-input: $(TEST_DSK) $(TEST_DSK_B)
 # then Studio with CALC.VBS (src/kernel/test_script.asm, TEST_SCRIPT=2).
 # src/vos.asm writes test builds to $(TEST_DSK): the image is moved.
 CALC_DSK := $(BUILD)/vos_calc.dsk
-CALC_SHOTS := 200 420 840 960
+CALC_SHOTS := 200 420 840 960 1070 1180
 $(CALC_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
@@ -451,16 +461,19 @@ test-lang: $(LANG_DSK) $(TEST_DSK_B)
 	ls $(BUILD)/shots/*/*.png
 
 # A costume drawn in Studio (TEST_SCRIPT=4): the editor, the stage,
-# the program running, and opened again
+# the program running, and opened again. Only Studio and what comes
+# before it in the Launcher, so that there is room to save (the other
+# test discs are full)
 COSTUME_DSK := $(BUILD)/vos_costume.dsk
 COSTUME_SHOTS := 400 440 600 800
-$(COSTUME_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+COSTUME_APPS := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/STUDIO.BIN $(BUILD)/VBRUN.SYS
+$(COSTUME_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(COSTUME_APPS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_costume -DTEST_SCRIPT=4
 	mv $(TEST_DSK) $@
 	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS))
+	$(call add_apps,$@,$(COSTUME_APPS))
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-costume: $(COSTUME_DSK) $(TEST_DSK_B)
@@ -632,8 +645,8 @@ $(SDK_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/TEMPLATE.BIN
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_sdk -DTEST_SCRIPT=15
 	mv $(TEST_DSK) $@
-	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS) $(BUILD)/TEMPLATE.BIN)
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(TEST_APPS) $(BUILD)/TEMPLATE.BIN)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-sdk: $(SDK_DSK) $(TEST_DSK_B)
@@ -780,10 +793,10 @@ $(WEBGET_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/WEBGET.BIN
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_webget -DTEST_SCRIPT=25
 	mv $(TEST_DSK) $@
-	$(call add_packs,$@)
+	$(call add_test_packs,$@)
 	printf '10 RUN"VOS"\r\n\032' > $(BUILD)/DISC.BAS
 	iDSK $@ -i $(BUILD)/DISC.BAS -t 0 > /dev/null
-	$(call add_apps,$@,$(APPS) $(BUILD)/WEBGET.BIN)
+	$(call add_apps,$@,$(TEST_APPS) $(BUILD)/WEBGET.BIN)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-webget: $(WEBGET_DSK)
@@ -996,8 +1009,8 @@ $(DATABASE_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/DATABASE.BI
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_database -DTEST_SCRIPT=31
 	mv $(TEST_DSK) $@
-	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS) $(BUILD)/DATABASE.BIN)
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(TEST_APPS) $(BUILD)/DATABASE.BIN)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-database: $(DATABASE_DSK) $(TEST_DSK_B)
@@ -1017,8 +1030,8 @@ $(SHEET_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/SHEET.BIN
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_sheet -DTEST_SCRIPT=32
 	mv $(TEST_DSK) $@
-	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS) $(BUILD)/SHEET.BIN)
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(TEST_APPS) $(BUILD)/SHEET.BIN)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-sheet: $(SHEET_DSK) $(TEST_DSK_B)
@@ -1038,8 +1051,8 @@ $(KBDS_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/NOTEPAD.BIN
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_kbds -DTEST_SCRIPT=30
 	mv $(TEST_DSK) $@
-	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS) $(BUILD)/NOTEPAD.BIN)
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(TEST_APPS) $(BUILD)/NOTEPAD.BIN)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-kbds: $(KBDS_DSK) $(TEST_DSK_B)
@@ -1126,8 +1139,8 @@ $(PAINT_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/PAINT.BIN
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_paint -DTEST_SCRIPT=18
 	mv $(TEST_DSK) $@
-	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS) $(BUILD)/PAINT.BIN)
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(TEST_APPS) $(BUILD)/PAINT.BIN)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-paint: $(PAINT_DSK) $(TEST_DSK_B)
@@ -1135,6 +1148,28 @@ test-paint: $(PAINT_DSK) $(TEST_DSK_B)
 	for d in $(PAINT_SHOTS); do \
 	  cp $(PAINT_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# PAINT on the whole screen (TEST_SCRIPT=33, 576K: a data bank of its
+# own): lines, the window moved by its bars, saved as B:NONAME.SCR and
+# opened again
+PAINTB_DSK := $(BUILD)/vos_paint_big.dsk
+PAINTB_SHOTS := 300 380 430 520 800 880 950
+$(PAINTB_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/PAINT.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_paint_big -DTEST_SCRIPT=33
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(TEST_APPS) $(BUILD)/PAINT.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-paint-big: $(PAINTB_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(PAINTB_SHOTS); do \
+	  cp $(PAINTB_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_TIMEOUT=90 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
 
@@ -1160,8 +1195,8 @@ $(NOTEPAD_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/NOTEPAD.BIN
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_notepad -DTEST_SCRIPT=17
 	mv $(TEST_DSK) $@
-	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS) $(BUILD)/NOTEPAD.BIN)
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(TEST_APPS) $(BUILD)/NOTEPAD.BIN)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-notepad: $(NOTEPAD_DSK) $(TEST_DSK_B)

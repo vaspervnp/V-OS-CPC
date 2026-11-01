@@ -80,4 +80,4 @@ Hex numbers in the code are written with `#` (e.g. `#C000`), because RASM reads 
 
 ## Status
 
-V-OS is at **M50** (version 0.21 beta; each milestone adds 0.01). What each milestone added and how it was tested: [MILESTONES.md](MILESTONES.md).
+V-OS is at **M52** (version 0.23 beta; each milestone adds 0.01). What each milestone added and how it was tested: [MILESTONES.md](MILESTONES.md).
