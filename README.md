@@ -15,7 +15,7 @@ A graphical operating system for the Amstrad CPC 6128, written in Z80 assembly.
 You need [RASM](https://github.com/EdouardBERGE/rasm), [iDSK](https://github.com/cpcsdk/idsk), Python 3 and GNU make (4.3 or newer). For testing you need Caprice32 (snap).
 
 ```bash
-make          # build/vos.dsk
+make          # build/vos.dsk (A:) and build/apps.dsk (B:)
 make run      # start in Caprice32 with RUN"VOS"
 make shot     # start without a window and take a screenshot
 make test-input  # key script with discs in A: and B:, screenshots in build/shots/<delay>
@@ -43,7 +43,7 @@ Your own programs in assembly, with the V-OS API (guide and list of calls: [sdk/
 
 ```bash
 make new-app NAME=hello   # myapps/hello from the SDK template
-make app NAME=hello       # build/HELLO.BIN, and into build/vos.dsk
+make app NAME=hello       # build/HELLO.BIN, and into build/apps.dsk
 ```
 
 Programs with blocks: open `blocks/editor.html` in a browser, make the program, save the `.vbp` and compile it:
@@ -73,11 +73,11 @@ lang/                language sources: en (base: ENGLISH.MSG and the kernel keyb
 tools/               scripts: screenshot in Caprice32, mkfont.py, mklng.py, mktexts.py, mkicon.py, voscs.py (the V-OS character set), voscv.py (files to and from it), vdb.py (databases)
 docs/                manual/ (the documentation, by chapter), V-OS.pdf, requirements, templates
 sdk/                 the SDK for programs in assembly: guide, API, template/ (program template)
-myapps/              your own programs (make new-app), which go into build/vos.dsk
+myapps/              your own programs (make new-app), which go into build/apps.dsk
 ```
 
 Hex numbers in the code are written with `#` (e.g. `#C000`), because RASM reads `&` as AND.
 
 ## Status
 
-V-OS is at **M48** (version 0.19 beta; each milestone adds 0.01). What each milestone added and how it was tested: [MILESTONES.md](MILESTONES.md).
+V-OS is at **M49** (version 0.20 beta; each milestone adds 0.01). What each milestone added and how it was tested: [MILESTONES.md](MILESTONES.md).

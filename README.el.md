@@ -15,7 +15,7 @@
 Απαιτούνται [RASM](https://github.com/EdouardBERGE/rasm), [iDSK](https://github.com/cpcsdk/idsk), Python 3 και GNU make (4.3 ή νεότερο). Για δοκιμή χρειάζεται ο Caprice32 (snap).
 
 ```bash
-make          # build/vos.dsk
+make          # build/vos.dsk (A:) και build/apps.dsk (B:)
 make run      # εκκίνηση στον Caprice32 με RUN"VOS"
 make shot     # εκκίνηση χωρίς παράθυρο και screenshot
 make test-input  # σενάριο πλήκτρων με δισκέτες στα A: και B:, screenshots στο build/shots/<καθυστέρηση>
@@ -43,7 +43,7 @@ make docs        # τα PDF του manual: docs/V-OS.pdf (ελληνικά) κα
 
 ```bash
 make new-app NAME=hello   # myapps/hello από το πρότυπο του SDK
-make app NAME=hello       # build/HELLO.BIN, και στη build/vos.dsk
+make app NAME=hello       # build/HELLO.BIN, και στη build/apps.dsk
 ```
 
 Προγράμματα με blocks: άνοιξε το `blocks/editor.html` σε browser, φτιάξε το πρόγραμμα, αποθήκευσε το `.vbp` και μεταγλώττισέ το:
@@ -73,11 +73,11 @@ lang/                πηγές γλωσσών: en (βασική: ENGLISH.MSG κ
 tools/               scripts: screenshot στον Caprice32, mkfont.py, mklng.py, mktexts.py, mkicon.py, voscs.py (το σύνολο χαρακτήρων του V-OS), voscv.py (αρχεία από και προς αυτό), vdb.py (βάσεις)
 docs/                manual/ (η τεκμηρίωση, ανά κεφάλαιο), V-OS.pdf, απαιτήσεις, πρότυπα
 sdk/                 το SDK για προγράμματα σε assembly: οδηγός, API, template/ (πρότυπο προγράμματος)
-myapps/              τα δικά σου προγράμματα (make new-app), που μπαίνουν στη build/vos.dsk
+myapps/              τα δικά σου προγράμματα (make new-app), που μπαίνουν στη build/apps.dsk
 ```
 
 Τα hex στον κώδικα γράφονται με `#` (π.χ. `#C000`), γιατί η RASM διαβάζει το `&` ως AND.
 
 ## Κατάσταση
 
-Το V-OS είναι στο **M48** (έκδοση 0.19 beta· κάθε milestone προσθέτει 0.01). Τι πρόσθεσε κάθε milestone και πώς ελέγχθηκε: [MILESTONES.el.md](MILESTONES.el.md).
+Το V-OS είναι στο **M49** (έκδοση 0.20 beta· κάθε milestone προσθέτει 0.01). Τι πρόσθεσε κάθε milestone και πώς ελέγχθηκε: [MILESTONES.el.md](MILESTONES.el.md).

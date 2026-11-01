@@ -14,11 +14,11 @@
 
 | Εντολή | Τι κάνει |
 |---|---|
-| `make` | `build/vos.dsk`: ο kernel, οι όψεις, οι γλώσσες, όλα τα προγράμματα και τα `myapps/*` |
+| `make` | `build/vos.dsk` (A:): ο kernel, οι όψεις, οι γλώσσες, τα DEMO, MIXED, STUDIO, CLOCK και οι πηγές `.VBS`· `build/apps.dsk` (B:): τα άλλα προγράμματα και τα `myapps/*`· και η δισκέτα κάθε προγράμματος με `owndisc/`. Αν ένα αρχείο δεν χωρά σε πραγματική δισκέτα (180K), σταματά με λάθος |
 | `make run` | ανοίγει τη δισκέτα στον Caprice32 (`RUN"VOS"`) |
 | `make shot` | εκκίνηση χωρίς παράθυρο και ένα screenshot |
 | `make docs` | το manual ως PDF: `docs/V-OS.pdf` (ελληνικά) και `docs/V-OS-en.pdf`, `-fr`, `-es`, `-de`, `-it` |
-| `make windows` | το `build/V-OS-windows.zip`: το `V-OS.exe` για Windows, με τον CPCEMU 3.0.2 (CPC 6128, 576K, ποντίκι AMX, κάρτα M4), τη `vos.dsk` στο A: και τη `vrouves.dsk` στο B:. Το V-OS ξεκινά μόνο του. Χρειάζεται WSL και το portable zip του CPCEMU (`CPCEMU_ZIP=…`) |
+| `make windows` | το `build/V-OS-windows.zip`: το `V-OS.exe` για Windows, με τον CPCEMU 3.0.2 (CPC 6128, 576K, ποντίκι AMX, κάρτα M4), τη `vos.dsk` στο A:, την `apps.dsk` στο B: και τις δισκέτες των προγραμμάτων δίπλα τους. Το V-OS ξεκινά μόνο του. Χρειάζεται WSL και το portable zip του CPCEMU (`CPCEMU_ZIP=…`) |
 | `make linux` | το `build/V-OS-linux.tar.gz`: το script `V-OS` για Linux (x86_64), με τον CPCEMU 2.5 (ο 3.0.2 δεν έχει βγει για Linux) και τις ίδιες ρυθμίσεις και δισκέτες. Χρειάζεται το SDL2 στο σύστημα και το tar.gz του CPCEMU για Linux (`CPCEMU_TGZ=…`) |
 | `make songs` | τα τραγούδια του Arkos Tracker 3 ως αρχεία `.MUS` στο `myapps/music/owndisc` (`tools/mkmusic.py`· χρειάζεται τον Arkos Tracker 3, `ARKOS=…`) |
 | `make new-app NAME=x`, `make app NAME=x` | δικό σου πρόγραμμα (SDK) |
@@ -94,6 +94,7 @@
 | `test-mines`, `test-bricks` | τα παιχνίδια |
 | `test-vars` | οι 128 μεταβλητές, SAVE/LOAD VARS |
 | `test-sdk` | το πρότυπο του SDK |
+| `test-apps` | οι δύο δισκέτες όπως δίνονται, η `vos.dsk` (με τα πλήκτρα του test) στο A: και η `apps.dsk` στο B:: ο Launcher δείχνει το B: και το PONG τρέχει από εκεί |
 | `test-vrouves` | το VROUVES από τη δισκέτα του στο B:, μέσω Launcher (TAB): χτίσιμο, το κύμα 1, τα λεφτά, ΚΑΛΥΤΕΡΑ ΣΚΟΡ |
 | `test-notepad` | NOTEPAD: πληκτρολόγηση, DEL, ο διάλογος αποθήκευσης, ΑΝΟΙΓΜΑ μόνο με αρχεία `.TXT` |
 | `test-notepad-big` | το παράθυρο κειμένου του NOTEPAD σε εξομοιωτή Z80 (`tools/notepad_check.py`): αρχείο 12K με δική του bank δεδομένων, κίνηση, πληκτρολόγηση και ΑΠΟΘΗΚΕΥΣΗ, κείμενο ως 16K, και 4K σε 6128 |

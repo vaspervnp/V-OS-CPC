@@ -1,11 +1,11 @@
 #!/bin/sh
 # V-OS - starts CPCEMU as a CPC 6128 with a 512K RAM expansion, an AMX
-# mouse and an M4 board, V-OS in drive A: and VROUVES in drive B:
+# mouse and an M4 board, V-OS in drive A: and its programs in drive B:
 # (cpcemu/vos.cfg); V-OS starts by itself (DISC.BAS on drive A:).
 # Put in the package by tools/mklinux.sh.
 HOME_DIR="$(cd "$(dirname "$0")" && pwd)"
 EMU="$HOME_DIR/cpcemu"
-for f in "$EMU/cpcemu" "$EMU/vos.cfg" "$EMU/DISC/VOS.DSK" "$EMU/DISC/VROUVES.DSK"; do
+for f in "$EMU/cpcemu" "$EMU/vos.cfg" "$EMU/DISC/VOS.DSK" "$EMU/DISC/APPS.DSK"; do
     if [ ! -f "$f" ]; then
         echo "V-OS: missing $f" >&2
         exit 1

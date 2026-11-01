@@ -3,7 +3,7 @@
 ## What you need
 
 - An Amstrad CPC 6128 or an emulator of it. V-OS is tested on Caprice32.
-- The V-OS disc in drive A:, that is, the `build/vos.dsk` that `make` builds.
+- The V-OS disc in drive A:, that is, the `build/vos.dsk` that `make` builds, and the programs' disc, `build/apps.dsk`, in B:.
 - Optionally:
   - an AMX mouse
   - a second drive (B:)

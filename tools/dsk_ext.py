@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Make a disc image a complete Extended DSK, in place.
 
-usage: dsk_ext.py file.dsk
+usage: dsk_ext.py [--fit] file.dsk
 
 RASM writes an Extended DSK with 42 tracks whose last two are unformatted
 (size 0). Some emulators write such images back badly (TerraCPC found that
@@ -9,6 +9,11 @@ WinAPE kept only the written track of a standard DSK), so every track is
 formatted here: 9 sectors of 512 bytes filled with #E5, with the sector IDs
 of track 0 (#C1-#C9 for DATA). A standard ("MV - CPC") image is converted
 first. Per-sector lengths are set as the Extended format wants them.
+
+A real 3" disc has 40 tracks: 180 blocks of 1K (DATA), 171 (SYSTEM).
+iDSK puts files beyond them on the extra tracks, which work in an
+emulator only. A file there is a warning; with --fit (the discs given
+out) an error.
 """
 import sys
 
@@ -40,9 +45,47 @@ def formatted(template, number):
     return bytes(t)
 
 
+def sector(track, sid):
+    """-> the bytes of sector sid in a track block, or None."""
+    pos = 0x100
+    for i in range(track[0x15]):
+        e = 0x18 + i * 8
+        length = track[e + 6] | track[e + 7] << 8
+        if track[e + 2] == sid:
+            return track[pos:pos + length]
+        pos += length
+    return None
+
+
+def beyond(tracks):
+    """-> (names of the files with blocks past a real disc, its blocks)."""
+    first = tracks[0][0x18 + 2]
+    system = first == 0x41
+    dtrack, base, last = (2, 0x41, 171) if system else (0, 0xC1, 180)
+    if len(tracks) <= dtrack or not tracks[dtrack]:
+        return [], last
+    d = b''.join(sector(tracks[dtrack], base + i) or b'' for i in range(4))
+    names = set()
+    for e in range(0, len(d) - 31, 32):
+        x = d[e:e + 32]
+        if x[0] < 16 and any(b >= last for b in x[16:32] if b):
+            n = bytes(c & 127 for c in x[1:12]).decode('ascii')
+            names.add(n[:8].strip() + '.' + n[8:].strip())
+    return sorted(names), last
+
+
 def main():
-    path = sys.argv[1]
+    args = sys.argv[1:]
+    fit = '--fit' in args
+    path = [a for a in args if a != '--fit'][0]
     tracks = tracks_of(open(path, 'rb').read())
+    names, last = beyond(tracks)
+    if names:
+        text = (f'dsk_ext: {path}: past block {last - 1}, the end of a '
+                f'real disc: {", ".join(names)}')
+        if fit:
+            sys.exit(text)
+        print('warning: ' + text, file=sys.stderr)
     template = tracks[0]
     if template[:10] != b'Track-Info':
         sys.exit('dsk_ext: track 0 is not formatted')

@@ -1,5 +1,6 @@
 # V-OS build
-#   make          assemble build/vos.dsk
+#   make          assemble build/vos.dsk (the system, drive A:) and
+#                 build/apps.dsk (the programs, drive B:)
 #   make run      boot it in Caprice32 (RUN"VOS")
 #   make shot     boot headless and save a screenshot
 #   make test-input  build/vos_test.dsk (drive A) and build/vos_b.dsk
@@ -58,6 +59,8 @@
 #                 from sdk/template (sdk/README.md)
 #   make app NAME=hello       it as build/HELLO.BIN, on build/vos.dsk
 #   make test-vrouves VROUVES (myapps/vrouves) from its disc in B:: defenders built, a wave
+#   make test-apps   the two discs given out, build/vos.dsk with the test
+#                 keys in A: and build/apps.dsk in B:: PONG run from B:
 #   make test-sdk    the template built as HELLO, run from the Launcher:
 #                 the box moved, BEEP, its menu and ABOUT dialog
 #   make linux     build/V-OS-linux.tar.gz: V-OS with CPCEMU 2.5 for Linux
@@ -82,7 +85,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -141,16 +144,23 @@ APPS    := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/STUDIO.BIN $(BUILD)/PON
            $(BUILD)/CALC.VBN $(BUILD)/CALC.VBS $(BUILD)/CLOCK.BIN $(BUILD)/TICKER.VBN \
            $(BUILD)/TICKER.VBS $(BUILD)/VBRUN.SYS $(BUILD)/MINES.VBN $(BUILD)/MINES.VBS \
            $(BUILD)/BRICKS.VBN
+# A real disc holds 180K, not all of them: the system disc, build/vos.dsk,
+# has the system's programs and the VB sources (Studio opens them on A:);
+# the VB programs go on build/apps.dsk, for B:, with your own programs.
+SYS_APPS := $(BUILD)/DEMO.BIN $(BUILD)/MIXED.BIN $(BUILD)/STUDIO.BIN \
+            $(BUILD)/CLOCK.BIN $(BUILD)/VBRUN.SYS $(filter %.VBS,$(APPS))
+DISC_APPS := $(filter-out $(SYS_APPS),$(APPS))
+APPS_DSK := $(BUILD)/apps.dsk
 APP_SOURCES := $(shell find apps -name '*.asm') src/api/vos_api.inc
 
 # Your own programs (sdk/README.md): each folder myapps/name holds
 # name.asm, texts.txt and icon.txt (and may include more .asm of its
 # own), and becomes build/NAME.BIN, with a relocation table, on
-# build/vos.dsk (not on the test discs), with the files of its disc/
+# build/apps.dsk (not on the test discs), with the files of its disc/
 # folder as they are (its data files); with an owndisc/ folder, on a
 # disc of its own instead, build/<name>.dsk, below.
 #   make new-app NAME=hello   myapps/hello, from sdk/template
-#   make app NAME=hello       build/HELLO.BIN and build/vos.dsk
+#   make app NAME=hello       build/HELLO.BIN and build/apps.dsk
 upper = $(shell echo $(1) | tr a-z A-Z)
 MYAPPS := $(notdir $(wildcard myapps/*))
 MYAPP_BINS := $(foreach a,$(MYAPPS),$(BUILD)/$(call upper,$(a)).BIN)
@@ -271,7 +281,7 @@ $(BUILD)/$(1).dsk: $(BUILD)/$(call upper,$(1)).BIN $(wildcard myapps/$(1)/owndis
 	@rm -f $$@
 	$(IDSK) $$@ -n > /dev/null
 	$$(call add_apps,$$@,$(BUILD)/$(call upper,$(1)).BIN $(wildcard myapps/$(1)/owndisc/*))
-	$(PYTHON) -I tools/dsk_ext.py $$@
+	$(PYTHON) -I tools/dsk_ext.py --fit $$@
 endef
 $(foreach a,$(OWN_APPS),$(eval $(call own_disc_rule,$(a))))
 all: $(OWN_DSKS)
@@ -287,19 +297,19 @@ songs:
 	$(MAKE) $(BUILD)/music.dsk
 
 # V-OS for Windows (tools/mkwindows.sh, under WSL): build/V-OS-windows.zip,
-# V-OS.exe with CPCEMU (576K, AMX mouse, M4 board), vos.dsk in A: and
-# vrouves.dsk in B:.
+# V-OS.exe with CPCEMU (576K, AMX mouse, M4 board), vos.dsk in A:,
+# apps.dsk in B: and the programs' own discs beside them.
 # CPCEMU_ZIP is its portable zip, from cpc-emu.org/download.html.
 CPCEMU_ZIP ?= $(BUILD)/dl/cpcemu/cpcemu_portable-win32-x86-3.0.2.zip
-windows: $(DSK) $(OWN_DSKS) tools/mkwindows.sh tools/windows/launcher.cs tools/windows/README.txt
+windows: $(DSK) $(APPS_DSK) $(OWN_DSKS) tools/mkwindows.sh tools/windows/launcher.cs tools/windows/README.txt
 	bash tools/mkwindows.sh $(CPCEMU_ZIP)
 
 # V-OS for Linux (tools/mklinux.sh): build/V-OS-linux.tar.gz, the V-OS
 # script with CPCEMU 2.5 for x86_64 (576K, AMX mouse, M4 board), vos.dsk
-# in A: and vrouves.dsk in B:.
+# in A:, apps.dsk in B: and the programs' own discs beside them.
 # CPCEMU_TGZ is its Linux tar.gz, from cpc-emu.org/download.html.
 CPCEMU_TGZ ?= $(BUILD)/dl/cpcemu-linux/cpcemu-linux-x86_64-2.5.tar.gz
-linux: $(DSK) $(OWN_DSKS) tools/mklinux.sh tools/linux/V-OS tools/linux/README.txt
+linux: $(DSK) $(APPS_DSK) $(OWN_DSKS) tools/mklinux.sh tools/linux/V-OS tools/linux/README.txt
 	bash tools/mklinux.sh $(CPCEMU_TGZ)
 
 # The manual as a PDF (python's user packages: no -I)
@@ -325,22 +335,30 @@ new-app:
 
 app:
 	@test -d "myapps/$(NAME)" || { echo "make app NAME=name, for a folder in myapps (make new-app NAME=name)"; exit 1; }
-	$(MAKE) $(BUILD)/$(call upper,$(NAME)).BIN $(DSK) $(if $(wildcard myapps/$(NAME)/owndisc),$(BUILD)/$(NAME).dsk)
+	$(MAKE) $(BUILD)/$(call upper,$(NAME)).BIN $(DSK) $(APPS_DSK) $(if $(wildcard myapps/$(NAME)/owndisc),$(BUILD)/$(NAME).dsk)
 
 define add_apps
 	for p in $(2); do $(IDSK) $(1) -i $$p -t 1 -c 4000 -e 4000 > /dev/null; done
 endef
 
-$(DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(DSK_MYAPPS)
+$(DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(SYS_APPS)
 	@mkdir -p $(BUILD)
 	@rm -f $(DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos -s -sl
 	$(call add_packs,$(DSK))
-	$(call add_apps,$(DSK),$(APPS) $(DSK_MYAPPS))
-	$(PYTHON) -I tools/dsk_ext.py $(DSK)
+	$(call add_apps,$(DSK),$(SYS_APPS))
+	$(PYTHON) -I tools/dsk_ext.py --fit $(DSK)
 
-run: $(DSK)
-	$(CAP32) -a 'run"vos\n' $(abspath $(DSK))
+$(APPS_DSK): $(DISC_APPS) $(DSK_MYAPPS) tools/dsk_ext.py
+	@mkdir -p $(BUILD)
+	@rm -f $@
+	$(IDSK) $@ -n > /dev/null
+	$(call add_apps,$@,$(DISC_APPS) $(DSK_MYAPPS))
+	$(PYTHON) -I tools/dsk_ext.py --fit $@
+all: $(APPS_DSK)
+
+run: $(DSK) $(APPS_DSK)
+	$(CAP32) -a 'run"vos\n' $(abspath $(DSK)) $(abspath $(APPS_DSK))
 
 shot: $(DSK)
 	snap run --shell caprice32.launcher -c "bash $(abspath tools/cap32_shot.sh)"
@@ -643,6 +661,29 @@ test-vrouves: $(VROUVES_DSK) $(BUILD)/vrouves.dsk
 	rm -rf $(BUILD)/shots
 	for d in $(VROUVES_SHOTS); do \
 	  cp $(VROUVES_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/vrouves.dsk $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The two discs given out (TEST_SCRIPT=16, as test-vrouves): the system
+# disc as build/vos.dsk has it, with the test keys, in A: and
+# build/apps.dsk in B:: TAB shows the programs of B:, RETURN starts the
+# first, PONG
+APPS_TEST_DSK := $(BUILD)/vos_apps.dsk
+APPS_SHOTS := 200 280
+$(APPS_TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(SYS_APPS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_apps -DTEST_SCRIPT=16
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(SYS_APPS))
+	$(PYTHON) -I tools/dsk_ext.py --fit $@
+
+test-apps: $(APPS_TEST_DSK) $(APPS_DSK)
+	rm -rf $(BUILD)/shots
+	for d in $(APPS_SHOTS); do \
+	  cp $(APPS_TEST_DSK) $(BUILD)/vos_run.dsk; cp $(APPS_DSK) $(BUILD)/vos_run_b.dsk; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png

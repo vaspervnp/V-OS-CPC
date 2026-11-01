@@ -18,7 +18,7 @@ This creates the folder `myapps/hello/` from `sdk/template/`. It has three files
 make app NAME=hello
 ```
 
-This builds `build/HELLO.BIN` and puts it on the disk `build/vos.dsk`.
+This builds `build/HELLO.BIN` and puts it on the programs' disk, `build/apps.dsk`. `make run` puts that in B:; in the Launcher, TAB shows B:.
 
 ```bash
 make run
@@ -35,7 +35,7 @@ A bigger program:
 
 - Put more `.asm` files in its folder (e.g. `art.asm` with sprites) and bring them in with `include "art.asm"`. The build finds them, and rebuilds the program when they change.
 - Whatever you put in the subfolder `disc/` (e.g. `disc/LEVEL1.DAT`) goes onto the disk as it is, for `VOS_LOAD`.
-- With a subfolder `owndisc/`, the program also gets a disk of its own, `build/<name>.dsk`, with the `.BIN` and the files of `owndisc/`. It stays off `vos.dsk`. You put it in B: and run it from the Launcher (TAB, the other drive). Which drive it was started from, so that it loads its files from there, is in `VOS_SELF`: `db drive`, then its name (11 bytes).
+- With a subfolder `owndisc/`, the program also gets a disk of its own, `build/<name>.dsk`, with the `.BIN` and the files of `owndisc/`. It stays off `apps.dsk`. You put it in B: and run it from the Launcher (TAB, the other drive). Which drive it was started from, so that it loads its files from there, is in `VOS_SELF`: `db drive`, then its name (11 bytes).
 - **A file to open (version 14):** when RETURN in the Desktop or the Commander opens a file in your program, `VOS_OPEN` (`#B000`) holds `db 1, drive, 11-byte name` (0: none). Read it in `init`, with A = 0 and also with A = 2 (the program was already running), then write 0 there. The types and their programs are in the kernel's `ft_open` table (`src/kernel/files_ext.asm`).
 - A program with a relocation table (like those of the SDK) can be up to 12K. For the rest, load files into the data bank.
 

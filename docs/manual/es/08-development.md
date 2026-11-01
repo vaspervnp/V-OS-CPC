@@ -14,11 +14,11 @@ Para quienes trabajan en el propio V-OS. Los programas *para* V-OS se describen 
 
 | Orden | Qué hace |
 |---|---|
-| `make` | `build/vos.dsk`: el núcleo, las vistas, los idiomas, todos los programas y `myapps/*` |
+| `make` | `build/vos.dsk` (A:): el núcleo, las vistas, los idiomas, DEMO, MIXED, STUDIO, CLOCK y las fuentes `.VBS`; `build/apps.dsk` (B:): los demás programas y `myapps/*`; y el disquete de cada programa con `owndisc/`. Si un archivo no cabe en un disquete real (180K), se detiene con un error |
 | `make run` | abre el disquete en Caprice32 (`RUN"VOS"`) |
 | `make shot` | arranca sin ventana y hace una captura de pantalla |
 | `make docs` | el manual en PDF: `docs/V-OS.pdf` (griego) y `docs/V-OS-en.pdf`, `-fr`, `-es`, `-de`, `-it` |
-| `make windows` | `build/V-OS-windows.zip`: `V-OS.exe` para Windows, con CPCEMU 3.0.2 (CPC 6128, 576K, ratón AMX, tarjeta M4), `vos.dsk` en A: y `vrouves.dsk` en B:. V-OS arranca solo. Hace falta WSL y el zip portable de CPCEMU (`CPCEMU_ZIP=…`) |
+| `make windows` | `build/V-OS-windows.zip`: `V-OS.exe` para Windows, con CPCEMU 3.0.2 (CPC 6128, 576K, ratón AMX, tarjeta M4), `vos.dsk` en A:, `apps.dsk` en B: y los disquetes de los programas al lado. V-OS arranca solo. Hace falta WSL y el zip portable de CPCEMU (`CPCEMU_ZIP=…`) |
 | `make linux` | `build/V-OS-linux.tar.gz`: el script `V-OS` para Linux (x86_64), con CPCEMU 2.5 (la 3.0.2 no ha salido para Linux) y los mismos ajustes y disquetes. Hace falta SDL2 en el sistema y el tar.gz de CPCEMU para Linux (`CPCEMU_TGZ=…`) |
 | `make songs` | las canciones de Arkos Tracker 3 como archivos `.MUS` en `myapps/music/owndisc` (`tools/mkmusic.py`; hace falta Arkos Tracker 3, `ARKOS=…`) |
 | `make new-app NAME=x`, `make app NAME=x` | su propio programa (SDK) |
@@ -94,6 +94,7 @@ Las pruebas ejecutan V-OS en Caprice32 sin ventana y hacen capturas de pantalla 
 | `test-mines`, `test-bricks` | los juegos |
 | `test-vars` | las 128 variables, SAVE/LOAD VARS |
 | `test-sdk` | la plantilla del SDK |
+| `test-apps` | los dos disquetes tal como se entregan, `vos.dsk` (con las teclas del test) en A: y `apps.dsk` en B:: el Launcher muestra B: y PONG se ejecuta desde allí |
 | `test-vrouves` | VROUVES desde su disquete en B:, por el Launcher (TAB): construir, la oleada 1, el dinero, HIGH SCORES |
 | `test-notepad` | NOTEPAD: escribir, DEL, el diálogo de guardar, OPEN solo con archivos `.TXT` |
 | `test-notepad-big` | la ventana de texto de NOTEPAD en un emulador Z80 (`tools/notepad_check.py`): un archivo de 12K con su propio banco de datos, mover, escribir y SAVE, texto hasta 16K, y 4K en un 6128 |

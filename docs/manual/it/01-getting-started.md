@@ -3,7 +3,7 @@
 ## Cosa serve
 
 - Un Amstrad CPC 6128 o un suo emulatore. V-OS è testato su Caprice32.
-- Il dischetto di V-OS nell'unità A:, cioè il `build/vos.dsk` creato da `make`.
+- Il dischetto di V-OS nell'unità A:, cioè il `build/vos.dsk` creato da `make`, e il dischetto dei programmi, `build/apps.dsk`, in B:.
 - Facoltativamente:
   - un mouse AMX
   - una seconda unità (B:)

@@ -18,7 +18,7 @@ Esto crea la carpeta `myapps/hello/` a partir de `sdk/template/`. Contiene tres 
 make app NAME=hello
 ```
 
-Esto compila `build/HELLO.BIN` y lo pone en el disquete `build/vos.dsk`.
+Esto compila `build/HELLO.BIN` y lo pone en el disquete de los programas, `build/apps.dsk`. `make run` lo pone en B:; en el Launcher, TAB muestra B:.
 
 ```bash
 make run
@@ -35,7 +35,7 @@ Un programa más grande:
 
 - Ponga más archivos `.asm` en su carpeta (p. ej. `art.asm` con sprites) e inclúyalos con `include "art.asm"`. El build los encuentra y vuelve a compilar el programa cuando cambian.
 - Lo que ponga en la subcarpeta `disc/` (p. ej. `disc/LEVEL1.DAT`) va tal cual al disquete, para `VOS_LOAD`.
-- Con una subcarpeta `owndisc/`, el programa tiene además su propio disquete, `build/<nombre>.dsk`, con el `.BIN` y los archivos de `owndisc/`. No va en `vos.dsk`. Se pone en B: y se ejecuta desde el Launcher (TAB, la otra unidad). La unidad desde la que se inició, para cargar de allí sus archivos, está en `VOS_SELF`: `db unidad`, y luego su nombre (11 bytes).
+- Con una subcarpeta `owndisc/`, el programa tiene además su propio disquete, `build/<nombre>.dsk`, con el `.BIN` y los archivos de `owndisc/`. No va en `apps.dsk`. Se pone en B: y se ejecuta desde el Launcher (TAB, la otra unidad). La unidad desde la que se inició, para cargar de allí sus archivos, está en `VOS_SELF`: `db unidad`, y luego su nombre (11 bytes).
 - **Un archivo para abrir (versión 14):** cuando RETURN en el Escritorio o el Commander abre un archivo en su programa, `VOS_OPEN` (`#B000`) contiene `db 1, unidad, nombre de 11 bytes` (0: ninguno). Léalo en `init`, con A = 0 y también con A = 2 (el programa ya estaba en marcha), y luego escriba 0 allí. Los tipos y sus programas están en la tabla `ft_open` del núcleo (`src/kernel/files_ext.asm`).
 - Un programa con tabla de reubicación (como los del SDK) puede ocupar hasta 12K. Para lo demás, cargue archivos en el banco de datos.
 

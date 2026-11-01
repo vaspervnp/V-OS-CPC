@@ -14,11 +14,11 @@ For those who work on V-OS itself. Programs *for* V-OS are described in the [SDK
 
 | Command | What it does |
 |---|---|
-| `make` | `build/vos.dsk`: the kernel, the views, the languages, all programs and `myapps/*` |
+| `make` | `build/vos.dsk` (A:): the kernel, the views, the languages, DEMO, MIXED, STUDIO, CLOCK and the `.VBS` sources; `build/apps.dsk` (B:): the other programs and `myapps/*`; and the disc of each program with `owndisc/`. If a file does not fit on a real disc (180K), it stops with an error |
 | `make run` | opens the disk in Caprice32 (`RUN"VOS"`) |
 | `make shot` | starts without a window and takes a screenshot |
 | `make docs` | the manual as PDFs: `docs/V-OS.pdf` (Greek) and `docs/V-OS-en.pdf`, `-fr`, `-es`, `-de`, `-it` |
-| `make windows` | `build/V-OS-windows.zip`: `V-OS.exe` for Windows, with CPCEMU 3.0.2 (CPC 6128, 576K, AMX mouse, M4 board), `vos.dsk` in A: and `vrouves.dsk` in B:. V-OS starts by itself. Needs WSL and the portable CPCEMU zip (`CPCEMU_ZIP=…`) |
+| `make windows` | `build/V-OS-windows.zip`: `V-OS.exe` for Windows, with CPCEMU 3.0.2 (CPC 6128, 576K, AMX mouse, M4 board), `vos.dsk` in A:, `apps.dsk` in B: and the programs' own discs beside them. V-OS starts by itself. Needs WSL and the portable CPCEMU zip (`CPCEMU_ZIP=…`) |
 | `make linux` | `build/V-OS-linux.tar.gz`: the `V-OS` script for Linux (x86_64), with CPCEMU 2.5 (3.0.2 is not out for Linux) and the same settings and discs. Needs SDL2 on the system and CPCEMU's Linux tar.gz (`CPCEMU_TGZ=…`) |
 | `make songs` | the songs of Arkos Tracker 3 as `.MUS` files in `myapps/music/owndisc` (`tools/mkmusic.py`; needs Arkos Tracker 3, `ARKOS=…`) |
 | `make new-app NAME=x`, `make app NAME=x` | your own program (SDK) |
@@ -94,6 +94,7 @@ The tests run V-OS in Caprice32 without a window and take screenshots in `build/
 | `test-mines`, `test-bricks` | the games |
 | `test-vars` | the 128 variables, SAVE/LOAD VARS |
 | `test-sdk` | the SDK template |
+| `test-apps` | the two discs as given out, `vos.dsk` (with the test keys) in A: and `apps.dsk` in B:: the Launcher shows B: and PONG runs from there |
 | `test-vrouves` | VROUVES from its disc in B:, through the Launcher (TAB): building, wave 1, the funds, HIGH SCORES |
 | `test-notepad` | NOTEPAD: typing, DEL, the save dialog, OPEN with only `.TXT` files |
 | `test-notepad-big` | NOTEPAD's text window in a Z80 emulator (`tools/notepad_check.py`): a 12K file with its own data bank, moving, typing and SAVE, text up to 16K, and 4K on a 6128 |

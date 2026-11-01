@@ -3,7 +3,7 @@
 ## Ce qu'il vous faut
 
 - Un Amstrad CPC 6128 ou un émulateur. V-OS est testé sur Caprice32.
-- La disquette de V-OS dans le lecteur A:, c'est-à-dire le `build/vos.dsk` que produit `make`.
+- La disquette de V-OS dans le lecteur A:, c'est-à-dire le `build/vos.dsk` que produit `make`, et la disquette des programmes, `build/apps.dsk`, en B:.
 - En option :
   - une souris AMX
   - un second lecteur (B:)

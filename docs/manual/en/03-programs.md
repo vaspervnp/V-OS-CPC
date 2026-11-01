@@ -45,6 +45,8 @@ While it is open, it gets the keys and clicks. Its window can be dragged by its 
 
 ## The programs on the disc
 
+A CPC disc holds 180K, so V-OS comes on two. `vos.dsk` (A:) has the system, DEMO, MIXED, STUDIO and CLOCK, and the `.VBS` sources of the VB programs, which Studio opens from A:. `apps.dsk` (B:) has the others, from PONG to WEBGET: in the Launcher, TAB shows B:. Some programs have a disc of their own, as the table says.
+
 | Program | What it is |
 |---|---|
 | **STUDIO** | the block editor: you make programs on the CPC ([chapter 5](05-studio.md)) |

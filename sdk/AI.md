@@ -6,16 +6,16 @@ You are writing a program for **V-OS**, a windowed operating system for the Amst
 
 ```bash
 make new-app NAME=myprog      # myapps/myprog/: myprog.asm, texts.txt, icon.txt (from sdk/template)
-make app NAME=myprog          # build/MYPROG.BIN (+ relocation table), onto build/vos.dsk
-make run                      # Caprice32 with build/vos.dsk; the program is in the Launcher
+make app NAME=myprog          # build/MYPROG.BIN (+ relocation table), onto build/apps.dsk
+make run                      # Caprice32, build/vos.dsk in A:, build/apps.dsk in B:; Launcher, TAB
 ```
 
 - NAME: 1–8 lowercase letters/digits, starting with a letter, not the name of a V-OS program.
 - Plain `make` builds every `myapps/*` too.
 - Extra `.asm` files in the program's folder can be `include`d by name; the build tracks them.
-- `myapps/<name>/disc/*` are copied as they are onto `build/vos.dsk` (data files for `VOS_LOAD`).
-- `myapps/<name>/owndisc/` instead gives the program **its own disc**, `build/<name>.dsk` (the `.BIN` plus the files of `owndisc/`), and keeps it off `vos.dsk`. The Launcher shows drive B: with TAB.
-- The V-OS disc is nearly full (a few K free). Anything big goes on its own disc.
+- `myapps/<name>/disc/*` are copied as they are onto `build/apps.dsk` (data files for `VOS_LOAD`).
+- `myapps/<name>/owndisc/` instead gives the program **its own disc**, `build/<name>.dsk` (the `.BIN` plus the files of `owndisc/`), and keeps it off `apps.dsk`. The Launcher shows drive B: with TAB.
+- Every disc given out must fit a real 3" disc (180 blocks of 1K): `tools/dsk_ext.py --fit` stops the build otherwise. `apps.dsk` has about 70K free; anything bigger goes on its own disc.
 
 ## 2. The shape of a program
 

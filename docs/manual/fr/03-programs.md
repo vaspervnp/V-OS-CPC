@@ -45,6 +45,8 @@ Tant qu'il est ouvert, il reçoit les touches et les clics. Sa fenêtre se dépl
 
 ## Les programmes de la disquette
 
+Une disquette du CPC contient 180K, alors V-OS vient sur deux. `vos.dsk` (A:) a le système, DEMO, MIXED, STUDIO et CLOCK, et les sources `.VBS` des programmes VB, que Studio ouvre depuis A:. `apps.dsk` (B:) a les autres, de PONG à WEBGET : dans le Lanceur, TAB montre B:. Certains programmes ont leur propre disquette, comme le dit le tableau.
+
 | Programme | Ce que c'est |
 |---|---|
 | **STUDIO** | l'éditeur de blocs : vous créez des programmes sur le CPC ([chapitre 5](05-studio.md)) |

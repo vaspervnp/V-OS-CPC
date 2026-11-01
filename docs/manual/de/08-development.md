@@ -14,11 +14,11 @@ Für alle, die an V-OS selbst arbeiten. Programme *für* V-OS beschreibt das [SD
 
 | Befehl | Was er tut |
 |---|---|
-| `make` | `build/vos.dsk`: der Kernel, die Ansichten, die Sprachen, alle Programme und `myapps/*` |
+| `make` | `build/vos.dsk` (A:): der Kernel, die Ansichten, die Sprachen, DEMO, MIXED, STUDIO, CLOCK und die `.VBS`-Quellen; `build/apps.dsk` (B:): die anderen Programme und `myapps/*`; und die Diskette jedes Programms mit `owndisc/`. Passt eine Datei nicht auf eine echte Diskette (180K), bricht es mit einem Fehler ab |
 | `make run` | öffnet die Diskette in Caprice32 (`RUN"VOS"`) |
 | `make shot` | startet ohne Fenster und macht einen Screenshot |
 | `make docs` | das Handbuch als PDFs: `docs/V-OS.pdf` (Griechisch) und `docs/V-OS-en.pdf`, `-fr`, `-es`, `-de`, `-it` |
-| `make windows` | `build/V-OS-windows.zip`: `V-OS.exe` für Windows, mit CPCEMU 3.0.2 (CPC 6128, 576K, AMX-Maus, M4-Karte), `vos.dsk` in A: und `vrouves.dsk` in B:. V-OS startet von selbst. Braucht WSL und das portable Zip von CPCEMU (`CPCEMU_ZIP=…`) |
+| `make windows` | `build/V-OS-windows.zip`: `V-OS.exe` für Windows, mit CPCEMU 3.0.2 (CPC 6128, 576K, AMX-Maus, M4-Karte), `vos.dsk` in A:, `apps.dsk` in B: und die eigenen Disketten der Programme daneben. V-OS startet von selbst. Braucht WSL und das portable Zip von CPCEMU (`CPCEMU_ZIP=…`) |
 | `make linux` | `build/V-OS-linux.tar.gz`: das Skript `V-OS` für Linux (x86_64), mit CPCEMU 2.5 (3.0.2 gibt es für Linux nicht) und denselben Einstellungen und Disketten. Braucht SDL2 auf dem System und das Linux-tar.gz von CPCEMU (`CPCEMU_TGZ=…`) |
 | `make songs` | die Songs von Arkos Tracker 3 als `.MUS`-Dateien in `myapps/music/owndisc` (`tools/mkmusic.py`; braucht Arkos Tracker 3, `ARKOS=…`) |
 | `make new-app NAME=x`, `make app NAME=x` | dein eigenes Programm (SDK) |
@@ -94,6 +94,7 @@ Die Tests starten V-OS in Caprice32 ohne Fenster und machen Screenshots in `buil
 | `test-mines`, `test-bricks` | die Spiele |
 | `test-vars` | die 128 Variablen, SAVE/LOAD VARS |
 | `test-sdk` | die SDK-Vorlage |
+| `test-apps` | die zwei Disketten, wie sie ausgegeben werden, `vos.dsk` (mit den Test-Tasten) in A: und `apps.dsk` in B:: der Launcher zeigt B:, und PONG läuft von dort |
 | `test-vrouves` | VROUVES von seiner Diskette in B:, über den Launcher (TAB): Bauen, Welle 1, das Geld, HIGH SCORES |
 | `test-notepad` | NOTEPAD: Tippen, DEL, der Speicherdialog, OPEN mit nur `.TXT`-Dateien |
 | `test-notepad-big` | NOTEPADs Textfenster in einem Z80-Emulator (`tools/notepad_check.py`): eine 12K-Datei mit eigener Datenbank, Bewegen, Tippen und SAVE, Text bis 16K, und 4K auf einem 6128 |

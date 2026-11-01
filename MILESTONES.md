@@ -4,6 +4,18 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M49 (V-OS fits real discs; version 0.20):**
+- **Two discs:** a real 3" disc holds 180K (180 blocks of 1K), but `vos.dsk` had grown to 211K. The files past block 179 (DATABASE, NOTEPAD, PAINT, SYSINFO, WEBGET) lay on extra tracks that only an emulator has. Now `build/vos.dsk` (A:, 105K) has the kernel, the views, the languages, `CALC.SYS`, `DB.SYS`, DEMO, MIXED, STUDIO, CLOCK, `VBRUN.SYS` and the `.VBS` sources (Studio opens them from A:). The new `build/apps.dsk` (B:, 106K) has the VB programs (PONG to BRICKS) and the `myapps` without a disc of their own. Both have about 72K free. In the Launcher, TAB shows B:.
+- **A check:** `tools/dsk_ext.py --fit` stops the build when a file of a disc given out (`vos.dsk`, `apps.dsk`, the programs' own discs) lies past the end of a real disc. On the test discs it is a warning.
+- **`make app`** puts your program on `apps.dsk`; `make run` boots with `vos.dsk` in A: and `apps.dsk` in B:.
+- **Windows and Linux packages:** `APPS.DSK` in B:, and the programs' own discs (VROUVES, SHEET, STREETS, READER, MARKDOWN, MUSIC) beside it, to put in B: from CPCEMU's setup.
+- **Bug found:** the French PDF of the manual never finished. SHEET's row in the programs table was taller than a page in French, and MuPDF, which cannot split a table row, added empty pages for ever. The row is shorter now, and `tools/mkdocs.py` stops with an error when a part runs past 60 pages.
+- **Tested:**
+  - `make test-apps` (new, Caprice32): the system disc as given out (with the test keys) in A: and `apps.dsk` in B:: the Launcher shows B: (PAGE 1/2, the VB programs), PONG runs from B:; the Desktop shows B: with 14 files and 72K free.
+  - `make`, `make linux` and `make windows`: both discs and all the packages' discs fit (the check on every one).
+  - Again: `test-about` (0.20).
+- **Not tested:** on a real CPC; changing discs in CPCEMU's setup.
+
 **M48 (SHEET and formulas through the API; version 0.19):**
 - **Formulas for every program:** a new call, `VX_CALC` (API 24), and its engine `CALC.SYS`, which the kernel loads from A: the first time (in base RAM bank 1, between the second extension and `DB.SYS`). Numbers have two decimals (32 bits in hundredths, up to ±21474836.46). A formula has `+ - * /`, brackets, cells (`B3`) of a grid the program gives, and SUM, AVG, MIN, MAX, COUNT of values, cells and ranges (`B2:D9`), ABS, INT, ROUND(x, 0–2). `CALC_EVAL` works out a formula, `CALC_NUMBER` reads a number, `CALC_TEXT` writes one (`-12.5`), `CALC_CELL` reads a cell's name. Empty and text cells count as nothing; a cell with an error gives an error to what uses it. Six new error messages in every language (THE FORMULA IS WRONG, DIVISION BY ZERO, …).
 - **SHEET** (`myapps/sheet`, on its own disc `sheet.dsk` with `BUDGET.VSH`): a spreadsheet of 16 columns and 64 rows. Numbers, text, or formulas after `=`, up to 40 characters; the cursor's text on the first line; numbers on the right, text on the left, `#ERR`, `########`. Every change works all the formulas out again, also those that use later cells; cells that use each other become `#ERR`. A wrong formula is refused and asked again. ^N ^O ^S ^A ^W; a `.VSH` is text, a line a cell (`B3 =B1*2`), and opens in SHEET from the Desktop and the Commander; UTF-8 files from a PC are read. Its values live in the data bank, where `CALC.SYS` reads them.

@@ -1,5 +1,5 @@
 // V-OS.exe - starts CPCEMU as a CPC 6128 with a 512K RAM expansion, an
-// AMX mouse and an M4 board, V-OS in drive A: and VROUVES in drive B:
+// AMX mouse and an M4 board, V-OS in drive A: and its programs in drive B:
 // (cpcemu\vos.cfg); V-OS starts by itself (DISC.BAS on drive A:).
 // Built by tools/mkwindows.sh with the C# compiler of Windows' .NET.
 using System;
@@ -16,7 +16,7 @@ class Launcher
         string emu = Path.Combine(home, "cpcemu");
         string exe = Path.Combine(emu, "cpcemu_portable.exe");
         foreach (string f in new string[] { exe, Path.Combine(emu, "vos.cfg"),
-                 Path.Combine(emu, "DISC", "VOS.DSK"), Path.Combine(emu, "DISC", "VROUVES.DSK") })
+                 Path.Combine(emu, "DISC", "VOS.DSK"), Path.Combine(emu, "DISC", "APPS.DSK") })
         {
             if (!File.Exists(f))
             {

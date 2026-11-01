@@ -3,7 +3,7 @@
 ## Was du brauchst
 
 - Einen Amstrad CPC 6128 oder einen Emulator dafür. V-OS wird mit Caprice32 getestet.
-- Die V-OS-Diskette in Laufwerk A:, also die `build/vos.dsk`, die `make` erzeugt.
+- Die V-OS-Diskette in Laufwerk A:, also die `build/vos.dsk`, die `make` erzeugt, und die Diskette der Programme, `build/apps.dsk`, in B:.
 - Optional:
   - eine AMX-Maus
   - ein zweites Laufwerk (B:)

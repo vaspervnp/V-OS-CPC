@@ -45,6 +45,8 @@ Solange es offen ist, bekommt es die Tasten und Klicks. Sein Fenster lässt sich
 
 ## Die Programme auf der Diskette
 
+Eine CPC-Diskette fasst 180K, darum kommt V-OS auf zwei. `vos.dsk` (A:) hat das System, DEMO, MIXED, STUDIO und CLOCK und die `.VBS`-Quellen der VB-Programme, die Studio von A: öffnet. `apps.dsk` (B:) hat die anderen, von PONG bis WEBGET: im Launcher zeigt TAB das Laufwerk B:. Manche Programme haben eine eigene Diskette, wie die Tabelle sagt.
+
 | Programm | Was es ist |
 |---|---|
 | **STUDIO** | der Block-Editor: Du erstellst Programme auf dem CPC ([Kapitel 5](05-studio.md)) |
