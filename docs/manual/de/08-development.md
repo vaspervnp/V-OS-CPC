@@ -113,6 +113,9 @@ Die Tests starten V-OS in Caprice32 ohne Fenster und machen Screenshots in `buil
 | `test-streets` | STREETS von `streets.dsk` in B:: ein neues `STREETS.VDB` mit 24 Straßen, Suchen, eine neue Straße |
 | `test-database-z80` | DATABASE in einem Z80-Emulator, die Datenbank in Python und der Bildschirm als Text: zwei Tabellen, 47 Datensätze aus dem Formular, die Reihenfolge ohne Groß-/Kleinschreibung und Akzente, Suchen, eine Änderung, ein Löschen, Blättern |
 | `test-database` | DATABASE in Caprice32: eine neue Datenbank auf B:, eine Tabelle, drei Datensätze aus dem Formular, die Liste, Suchen, eine Änderung |
+| `test-calc-sys` | die Formel-Engine `CALC.SYS` in einem Z80-Emulator (`tools/calc_check.py`): feste Formeln und 40.000 zufällige, Zahlen und Texte, mit einem Modell in Python verglichen |
+| `test-sheet-z80` | SHEET in einem Z80-Emulator mit `CALC.SYS` selbst und dem Bildschirm als Text: Werte, `#ERR`, Zellen, die einander benutzen, Blättern, SAVE und OPEN, eine UTF-8-Datei, `BUDGET.VSH`, ein volles Blatt |
+| `test-sheet` | SHEET in Caprice32: Zahlen und eine Formel getippt, `CALC.SYS` von A:, das Blatt auf B: gespeichert |
 | `test-kbds` | TASTATUREN: ALLE SECHS in Setup, dann in NOTEPAD die Tasten `:` und Z mit jeder Tastatur: `:z`, `:ζ`, `mw`, `ñz`, `öy`, `òz` |
 | `test-charset`, `test-reader-utf8` | UTF-8-Dateien auf Griechisch, Französisch, Spanisch, Deutsch und Italienisch in NOTEPAD und in READER |
 | `test-utf8` | der Code von `VX_UTF8` in einem Z80-Emulator, gegen `tools/voscs.py` |

@@ -34,7 +34,7 @@ Modo 1. Una finestra FILE mostra i file di un'unità come icone, quattro per rig
 
 - **Menu FILE:** APRI, INFO SUL FILE (^I), COPIA SULL'ALTRA UNITÀ, ELIMINA, RINOMINA, RILEGGI I DISCHI, ESCI IN BASIC.
 - **La finestra FILE** si può trascinare per il suo titolo e resta lì, anche quando cambi vista.
-- **Apertura per tipo** (anche nel Commander): i `.TXT` si aprono in NOTEPAD, i `.MD` in MARKDOWN, i `.PIC` e `.LYR` in PAINT, i `.MUS` in MUSIC, i `.VDB` in DATABASE, che comincia a suonarli. Il programma si cerca sull'unità del file, poi su A:, poi su B:. Se non si trova, appare "NESSUN PROGRAMMA PER QUESTO FILE". Se il programma ha modifiche non salvate, chiede prima.
+- **Apertura per tipo** (anche nel Commander): i `.TXT` si aprono in NOTEPAD, i `.MD` in MARKDOWN, i `.PIC` e `.LYR` in PAINT, i `.VDB` in DATABASE, i `.VSH` in SHEET, i `.MUS` in MUSIC, che comincia a suonarli. Il programma si cerca sull'unità del file, poi su A:, poi su B:. Se non si trova, appare "NESSUN PROGRAMMA PER QUESTO FILE". Se il programma ha modifiche non salvate, chiede prima.
 
 ## Launcher (PROGRAMMI), F2
 

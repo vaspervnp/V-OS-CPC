@@ -144,8 +144,13 @@ def main():
     for k, body in enumerate(pages):
         story = fitz.Story(body, user_css=CSS, archive=arch)
         heads[:] = headings(body)
-        more = True
+        more, start = True, pno
         while more:
+            # a table row taller than a page never fits: MuPDF would add
+            # empty pages for ever
+            if pno - start > 60:
+                sys.exit(f"{out}: part {k} ({re.sub('<.*?>', '', body[:80])}) "
+                         "does not fit; a table row is taller than a page")
             dev = writer.begin_page(PAGE)
             more, _ = story.place(BODY)
             if k >= 2:

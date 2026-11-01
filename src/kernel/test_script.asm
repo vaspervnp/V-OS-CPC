@@ -312,6 +312,51 @@ test_keys:
         dw 3050 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 32
+; make test-sheet (-DTEST_SCRIPT=32): SHEET (myapps/sheet), last on the
+; test disc, CALC.SYS on A:, the sheet saved on B:. Expected:
+;   frame  300  F2, 570-630 DOWN x3, 670-760 RIGHT x4, 810 RETURN ->
+;                               SHEET: an empty sheet, the cursor at A1
+;   frame 1050  1 2 RETURN    -> A1 12 (CALC.SYS loaded), the cursor A2
+;   frame 1650  3 0 RETURN    -> A2 30
+;   frame 2250  =a1+a2 RETURN -> A3 42 (3050)
+;   frame 3150  UP            -> A3, its formula on the first line
+;   frame 3300  CONTROL+W     -> drive B: (A: has no room)
+;   frame 3450  CONTROL+S, t RETURN -> B:T.VSH, SAVED (4150)
+test_keys:
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  570 : db   4, 0, %00000100   ; DOWN
+        dw  600 : db   4, 0, %00000100   ; DOWN
+        dw  630 : db   4, 0, %00000100   ; DOWN
+        dw  670 : db   4, 0, %00000010   ; RIGHT
+        dw  700 : db   4, 0, %00000010   ; RIGHT
+        dw  730 : db   4, 0, %00000010   ; RIGHT
+        dw  760 : db   4, 0, %00000010   ; RIGHT
+        dw  810 : db   4, 2, %00000100   ; RETURN: SHEET
+        dw 1050 : db   4, 8, %00000001   ; 1: the input, "1"
+        dw 1250 : db   4, 8, %00000010   ; 2
+        dw 1290 : db   4, 2, %00000100   ; RETURN: A1 12
+        dw 1650 : db   4, 7, %00000010   ; 3
+        dw 1850 : db   4, 4, %00000001   ; 0
+        dw 1890 : db   4, 2, %00000100   ; RETURN: A2 30
+        dw 2245 : db  15, 2, %00100000   ; SHIFT
+        dw 2250 : db   4, 3, %00000010   ; =
+        dw 2450 : db   4, 8, %00100000   ; a
+        dw 2490 : db   4, 8, %00000001   ; 1
+        dw 2525 : db  15, 2, %00100000   ; SHIFT
+        dw 2530 : db   4, 3, %00010000   ; +
+        dw 2570 : db   4, 8, %00100000   ; a
+        dw 2610 : db   4, 8, %00000010   ; 2
+        dw 2650 : db   4, 2, %00000100   ; RETURN: A3 =A1+A2
+        dw 3150 : db   4, 0, %00000001   ; UP: A3
+        dw 3295 : db  15, 2, %10000000   ; CONTROL
+        dw 3300 : db   4, 7, %00001000   ; W: drive B: (A: is full)
+        dw 3445 : db  15, 2, %10000000   ; CONTROL
+        dw 3450 : db   4, 7, %00010000   ; S: SAVE, its name
+        dw 3650 : db   4, 6, %00001000   ; t
+        dw 3690 : db   4, 2, %00000100   ; RETURN: B:T.VSH
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 31
 ; make test-database (-DTEST_SCRIPT=31): DATABASE (myapps/database), last
 ; on the test disc, its database on B:. Expected:
@@ -1562,6 +1607,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

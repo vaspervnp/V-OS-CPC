@@ -34,7 +34,7 @@
 DB_ADDR         equ #5100
 DB_CACHE        equ #6C00
         IFNDEF DB_SLOTS
-DB_SLOTS        equ 5
+DB_SLOTS        equ 4
         ENDIF
 TRAP            equ #0040           ; dk_* (tools/db_check.py)
 FS_ERR_FULL     equ 8               ; (kernel/fs.asm)

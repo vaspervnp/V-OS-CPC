@@ -166,7 +166,7 @@ command: ...
 | `VOS_FIT` | same → HL, DE | brings a window inside the screen |
 | `VOS_EXT` | A = a `VX_*` call, BC, DE, HL as it wants → A, HL, C, DE, carry | the calls after the table (version 15), below |
 
-**The `VOS_EXT` calls:** `VX_VERSION` → A = API, HL = V-OS version (BCD). `VX_FREE` C = drive → A = free K. Unknown: carry `VX_CLIP_PUT` HL = text, BC = bytes → the clipboard (up to 1K). `VX_CLIP_GET` DE = where, BC = room → HL = size (version 16). `VX_M4` HL → a command for the M4 board (db size, dw command, data), DE → the response, BC = bytes; carry: no M4 board (version 17). `VX_MEM` → HL = the RAM in K, DE = the K free for programs (version 18). `VX_BEHIND` DE → db drive, 11-byte name of a file: its program (by type) starts behind this one, with `init` A = 3 and the file in `VOS_OPEN` (version 19; MUSIC knows it). `VX_DATA` → A = 1 if the data bank is the program's own (memory expansion), 0 if it is the shared bank 4 (version 21; NOTEPAD keeps text up to 16K this way). `VX_DB` C = a `DB_*` call, DE, HL → a database (version 22, below). `VX_UTF8` HL → text, BC = bytes, E = 0 in the program's memory or `VOS_DATA` in its data bank: if it is UTF-8 (from a PC or the web), it becomes the V-OS character set there → BC = bytes now, A = 1; A = 0: it was not UTF-8 and stays as it was (version 23; NOTEPAD and READER do this).
+**The `VOS_EXT` calls:** `VX_VERSION` → A = API, HL = V-OS version (BCD). `VX_FREE` C = drive → A = free K. Unknown: carry `VX_CLIP_PUT` HL = text, BC = bytes → the clipboard (up to 1K). `VX_CLIP_GET` DE = where, BC = room → HL = size (version 16). `VX_M4` HL → a command for the M4 board (db size, dw command, data), DE → the response, BC = bytes; carry: no M4 board (version 17). `VX_MEM` → HL = the RAM in K, DE = the K free for programs (version 18). `VX_BEHIND` DE → db drive, 11-byte name of a file: its program (by type) starts behind this one, with `init` A = 3 and the file in `VOS_OPEN` (version 19; MUSIC knows it). `VX_DATA` → A = 1 if the data bank is the program's own (memory expansion), 0 if it is the shared bank 4 (version 21; NOTEPAD keeps text up to 16K this way). `VX_DB` C = a `DB_*` call, DE, HL → a database (version 22, below). `VX_UTF8` HL → text, BC = bytes, E = 0 in the program's memory or `VOS_DATA` in its data bank: if it is UTF-8 (from a PC or the web), it becomes the V-OS character set there → BC = bytes now, A = 1; A = 0: it was not UTF-8 and stays as it was (version 23; NOTEPAD and READER do this). `VX_CALC` C = a `CALC_*` call, DE → a block, HL → text → formulas and numbers (version 24, below).
 
 ### Databases (version 22)
 
@@ -187,6 +187,21 @@ command: ...
 | `DB_COUNT` | → HL = records |
 
 Errors: carry and A (`DB_ERR_*`, and the disc's errors), which `VOS_ERROR` shows. Text is kept as it is typed, in the V-OS character set, the same in every language: one database can hold Greek, French and German together. Only a database of V-OS 0.15 with Latin letters (Latin-1) is different: `DB_OPEN` then gives A = 1; show `DB_ERR_ALPHABET` with `VOS_ERROR`. Sorting and FIND compare bytes: in a `DB_TEXT` key capitals and small letters, and accented ones, are different. A `DB_ALPHA` field (type 2, from version 23) is text like `DB_TEXT`, but as a key it is sorted and found without case or accents: ΕΛΕΝΗ, Ελένη and ελένη, or Élodie and ELODIE, are the same; the record keeps the text as it was typed. Examples are STREETS (`myapps/streets`), a street index, and DATABASE (`myapps/database`), a whole database program with tables, a list and a form; `tools/vdb.py` shows and checks a `.VDB` file on the PC.
+
+### Formulas (version 24)
+
+`VOS_EXT` with A = `VX_CALC` and C = a `CALC_*` call works out formulas, as a spreadsheet does. The kernel loads the engine, `CALC.SYS`, from drive A: the first time. A number is 32 bits, in hundredths (1234 is 12.34), from -21474836.46 to 21474836.46. A formula has `+ - * /`, brackets, numbers (`12`, `3.5`, `.25`; a third decimal rounds), cells (`A1` to `Z255`) and the functions SUM, AVG, MIN, MAX, COUNT (of values, cells and ranges such as `B2:D9`, between `,` or `;`), ABS(x), INT(x) (down to a whole number) and ROUND(x) or ROUND(x, 0–2), in capitals or not. Products and quotients are rounded to the hundredth.
+
+DE → the program's block, `CB_SIZE` (10) bytes: `CB_RESULT` (a number, 4 bytes), `CB_COLS`, `CB_ROWS`, `CB_GRID` (dw), `CB_BANK`, `CB_AT`. The cells are a grid of the program's: `CB_COLS` × `CB_ROWS` numbers of 4 bytes, row after row, at `CB_GRID`, in its data bank when `CB_BANK` = `VOS_DATA`. A cell `CALC_NONE` has no number (empty, or text: 0 in `+ - * /`, left out by the functions); `CALC_BAD` has an error.
+
+| Call | In → out |
+|---|---|
+| `CALC_EVAL` | HL → formula, 0 (`=` first or not) → `CB_RESULT` and DE:HL (DE high) |
+| `CALC_NUMBER` | HL → text: only a number? → as `CALC_EVAL` |
+| `CALC_TEXT` | `CB_RESULT` → text at HL (13 bytes of room: `-12.5`), A = its length |
+| `CALC_CELL` | HL → text: a cell (`b12`) at its start? → D = column, E = row (from 0), A = its characters |
+
+Errors: carry and A (`CALC_ERR_*`: 30 a wrong formula, 31 division by zero, 32 a number too big, 33 a cell outside the grid, 34 a cell it uses has an error, 29 `CALC.SYS` is not on A:), which `VOS_ERROR` shows; then `CB_RESULT` = `CALC_BAD` and `CB_AT` = where in the text. The example is SHEET (`myapps/sheet`), a spreadsheet that keeps its values in its data bank and works the formulas out again after each change.
 
 Full details, e.g. on the background, the accessory and `VOS_SPLIT`, are in `src/api/vos_api.inc`. For examples, see `apps/demo/demo.asm` (mode 0, motion), `apps/clock/clock.asm` (accessory) and `apps/mixed/mixed.asm` (mixed screen). A whole game with sprites, a stage from a file and sound is `myapps/vrouves/`.
 

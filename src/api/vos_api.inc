@@ -81,7 +81,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 23              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 24              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -93,7 +93,8 @@ VOS_API_VERSION equ 23              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 16: the clipboard, 17: VX_M4,
                                     ; 18: VX_MEM, 19: VX_BEHIND, init A = 3,
                                     ; 20: VOS_LOAD_IX, 21: VX_DATA,
-                                    ; 22: VX_DB, databases, 23: VX_UTF8
+                                    ; 22: VX_DB, databases, 23: VX_UTF8,
+                                    ; 24: VX_CALC, formulas
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -230,7 +231,10 @@ VX_UTF8         equ 9                   ; (23) HL -> text, BC = bytes, E =
                                         ; the V-OS character set there ->
                                         ; BC = bytes now, A = 1; A = 0: not
                                         ; UTF-8, as it was
-VX_COUNT        equ 10
+VX_CALC         equ 10                  ; (24) C = CALC_* call (below), DE
+                                        ; -> a calc block, HL -> text ->
+                                        ; A, DE, HL; carry, A = error
+VX_COUNT        equ 11
 
 ; Databases (version 22): VOS_EXT with A = VX_DB, C = one of these. One
 ; database is open at a time, for the program that opened it (another
@@ -304,6 +308,54 @@ DB_ERR_BROKEN   equ 25                  ; its index is damaged
 DB_ERR_BAD      equ 26                  ; no such DB_* call
 DB_ERR_NO_SYS   equ 27                  ; DB.SYS is not on drive A:
 DB_ERR_ALPHABET equ 28                  ; (a warning: DB_OPEN's A = 1)
+
+; Formulas (version 24): VOS_EXT with A = VX_CALC, C = one of these;
+; the engine, CALC.SYS, comes from drive A: when it is first needed.
+; A number is 32 bits, signed, in hundredths (1234 is 12.34), from
+; -21474836.46 to 21474836.46, kept low byte first. A formula has
+; + - * / ( ), numbers (12, -3.5, .25: a third decimal rounds), cells
+; (A1 .. Z255: column A.., row 1..) and the functions SUM, AVG, MIN,
+; MAX, COUNT (of values, cells and ranges such as B2:D9, between "," or
+; ";"), ABS(x), INT(x) (down to a whole number) and ROUND(x) or
+; ROUND(x, places 0..2); names and cells in capitals or not. Products
+; and quotients are rounded to the hundredth. The cells are a grid of
+; the program's: CB_COLS x CB_ROWS numbers of 4 bytes, row after row,
+; at CB_GRID (in its data bank with CB_BANK = VOS_DATA). In the grid
+; CALC_NONE is no number (an empty cell or text: 0 in + - * /, left
+; out by the functions) and CALC_BAD a cell with an error (a formula
+; that uses it: CALC_ERR_VALUE).
+CALC_EVAL       equ 0                   ; HL -> formula, 0 ("=" first or
+                                        ; not) -> CB_RESULT and DE:HL
+                                        ; (DE high); error: CB_RESULT =
+                                        ; CALC_BAD, CB_AT where it was
+CALC_NUMBER     equ 1                   ; HL -> text, 0: only a number?
+                                        ; -> as EVAL
+CALC_TEXT       equ 2                   ; CB_RESULT as text at HL ("-12.5",
+                                        ; CALC_TEXT_MAX + 1 bytes of room)
+                                        ; -> A = its length (CALC_NONE:
+                                        ; none, CALC_BAD: "#ERR")
+CALC_CELL       equ 3                   ; HL -> text: a cell ("b12") at
+                                        ; its start? -> D = column, E = row
+                                        ; (from 0), A = its characters;
+                                        ; carry: no (DE: no block)
+CALC_CALLS      equ 4
+CB_RESULT       equ 0                   ; the block: 4 bytes, a number
+CB_COLS         equ 4                   ; the grid: columns (1..26),
+CB_ROWS         equ 5                   ; rows (1..255),
+CB_GRID         equ 6                   ; dw: where,
+CB_BANK         equ 8                   ; 0 or VOS_DATA
+CB_AT           equ 9                   ; an error: where in the text
+CB_SIZE         equ 10
+CALC_TEXT_MAX   equ 12
+CALC_NONE_HI    equ #8000               ; CALC_NONE: #80000000, CALC_BAD:
+CALC_NONE_LO    equ 0                   ; #80000001 (high word, low)
+CALC_BAD_LO     equ 1
+CALC_ERR_NO_SYS equ 29                  ; CALC.SYS is not on drive A:
+CALC_ERR_SYNTAX equ 30                  ; not a formula (or a number)
+CALC_ERR_DIV0   equ 31                  ; division by zero (AVG of none)
+CALC_ERR_BIG    equ 32                  ; a number too big
+CALC_ERR_REF    equ 33                  ; a cell outside the grid
+CALC_ERR_VALUE  equ 34                  ; a cell it uses has an error
 
 ; The data bank: 16K more for the program, seen at the same addresses
 ; #4000-#7FFF but never mapped there: the program copies to and from it

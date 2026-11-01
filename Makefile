@@ -32,6 +32,12 @@
 #   make test-db     the database engine in a Z80 emulator: thousands of
 #                 random calls checked against a model, the file page by page
 #   make test-db-disc DB.SYS with the kernel's file system on a DSK image
+#   make test-calc-sys the formula engine (CALC.SYS) in a Z80 emulator:
+#                 fixed and random formulas checked against a model
+#   make test-sheet-z80 SHEET in a Z80 emulator with CALC.SYS, its screen
+#                 as text: values, errors, scrolling, SAVE, OPEN, UTF-8
+#   make test-sheet  SHEET: numbers and a formula typed, CALC.SYS from A:,
+#                 the sheet saved
 #   make test-streets STREETS from its disc: a new STREETS.VDB, FIND, ADD
 #   make test-database-z80 DATABASE in a Z80 emulator, its screen as text:
 #                 records, key order, FIND, changes, scrolling, two tables
@@ -76,7 +82,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -883,13 +889,20 @@ test-data: $(DATA_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN
 	ls $(BUILD)/shots/*/*.png
 
 # The database engine (tools/db_check.py, a Z80 emulator): src/db/db.asm
-# built alone (-DDB_HARNESS), with 5 cache pages and with 2
+# built alone (-DDB_HARNESS), with 4 cache pages (as in V-OS) and 2
 test-db:
 	@mkdir -p $(BUILD)/db_test
-	for n in 5 2; do \
+	for n in 4 2; do \
 	  $(RASM) src/db/db.asm -I src -DDB_HARNESS=1 -DDB_SLOTS=$$n -o $(BUILD)/db_test/db$$n -s > $(BUILD)/db_test/rasm.log || exit 1; \
 	  $(PYTHON) tools/db_check.py $(BUILD)/db_test/db$$n.bin $(BUILD)/db_test/db$$n.sym 4000 || exit 1; \
 	done
+
+# The formula engine (tools/calc_check.py, a Z80 emulator): src/calc/
+# calc.asm built alone (-DCALC_HARNESS), checked against a model
+test-calc-sys:
+	@mkdir -p $(BUILD)/calc_test
+	$(RASM) src/calc/calc.asm -I src -DCALC_HARNESS=1 -o $(BUILD)/calc_test/calc -s > $(BUILD)/calc_test/rasm.log
+	for s in 1 2; do $(PYTHON) tools/calc_check.py $(BUILD)/calc_test/calc.bin $(BUILD)/calc_test/calc.sym 20000 $$s || exit 1; done
 
 # DB.SYS with the kernel's own file system (tools/db_disc_check.py, a
 # Z80 emulator, the floppy controller on a DSK image): STREETS.VDB on B:
@@ -905,6 +918,14 @@ test-db-disc: $(DSK) $(BUILD)/streets.dsk
 test-database-z80: $(BUILD)/DATABASE.BIN
 	$(RASM) myapps/database/database.asm -I src -I $(BUILD)/myapp_database -I myapps/database -o $(BUILD)/myapp_database/check -s > $(BUILD)/myapp_database/check.log
 	$(PYTHON) tools/database_check.py $(BUILD)/myapp_database/check.bin $(BUILD)/myapp_database/check.sym
+
+# SHEET in a Z80 emulator (tools/sheet_check.py): the V-OS calls
+# stubbed, VX_CALC CALC.SYS itself in a second emulator
+test-sheet-z80: $(BUILD)/SHEET.BIN
+	@mkdir -p $(BUILD)/calc_test
+	$(RASM) src/calc/calc.asm -I src -DCALC_HARNESS=1 -o $(BUILD)/calc_test/calc -s > $(BUILD)/calc_test/rasm.log
+	$(RASM) myapps/sheet/sheet.asm -I src -I $(BUILD)/myapp_sheet -I myapps/sheet -o $(BUILD)/myapp_sheet/check -s > $(BUILD)/myapp_sheet/check.log
+	$(PYTHON) tools/sheet_check.py $(BUILD)/myapp_sheet/check.bin $(BUILD)/myapp_sheet/check.sym $(BUILD)/calc_test/calc.bin $(BUILD)/calc_test/calc.sym
 
 # DATABASE (TEST_SCRIPT=31): a database made on B:, a table, records
 # added in the form, the list in key order, FIND, a change saved
@@ -923,6 +944,27 @@ test-database: $(DATABASE_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(DATABASE_SHOTS); do \
 	  cp $(DATABASE_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_TIMEOUT=60 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# SHEET (TEST_SCRIPT=32): numbers and a formula typed, worked out by
+# CALC.SYS from A:, the sheet saved as B:T.VSH
+SHEET_DSK := $(BUILD)/vos_sheet.dsk
+SHEET_SHOTS := 1600 4500
+$(SHEET_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/SHEET.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_sheet -DTEST_SCRIPT=32
+	mv $(TEST_DSK) $@
+	$(call add_packs,$@)
+	$(call add_apps,$@,$(APPS) $(BUILD)/SHEET.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-sheet: $(SHEET_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(SHEET_SHOTS); do \
+	  cp $(SHEET_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
 	  snap run --shell caprice32.launcher -c "VOS_TIMEOUT=60 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png

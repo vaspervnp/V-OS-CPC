@@ -113,6 +113,9 @@ The tests run V-OS in Caprice32 without a window and take screenshots in `build/
 | `test-streets` | STREETS from `streets.dsk` in B:: a new `STREETS.VDB` with 24 streets, finding, a new street |
 | `test-database-z80` | DATABASE in a Z80 emulator, with the database in Python and the screen as text: two tables, 47 records from the form, the order without case or accents, finding, a change, a deletion, scrolling |
 | `test-database` | DATABASE in Caprice32: a new database on B:, a table, three records from the form, the list, finding, a change |
+| `test-calc-sys` | the formula engine `CALC.SYS` in a Z80 emulator (`tools/calc_check.py`): fixed formulas and 40,000 random ones, numbers and texts, checked against a model in Python |
+| `test-sheet-z80` | SHEET in a Z80 emulator with `CALC.SYS` itself and the screen as text: values, `#ERR`, cells that use each other, scrolling, SAVE and OPEN, a UTF-8 file, `BUDGET.VSH`, a full sheet |
+| `test-sheet` | SHEET in Caprice32: numbers and a formula typed, `CALC.SYS` from A:, the sheet saved on B: |
 | `test-kbds` | KEYBOARDS: ALL SIX in Setup, then in NOTEPAD the `:` and Z keys with each keyboard: `:z`, `:ζ`, `mw`, `ñz`, `öy`, `òz` |
 | `test-charset`, `test-reader-utf8` | UTF-8 files in Greek, French, Spanish, German and Italian in NOTEPAD and in READER |
 | `test-utf8` | the code of `VX_UTF8` in a Z80 emulator, against `tools/voscs.py` |

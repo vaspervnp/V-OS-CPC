@@ -1,0 +1,21 @@
+# SHEET's texts: NAME | English | Greek (tools/mktexts.py). "|" with
+# no spaces around it starts a new line in a dialog.
+MENU        | SHEET                 | ΦΥΛΛΟ
+NEW         | NEW SHEET             | ΝΕΟ ΦΥΛΛΟ
+OPEN        | OPEN...               | ΑΝΟΙΓΜΑ...
+SAVE        | SAVE                  | ΑΠΟΘΗΚΕΥΣΗ
+SAVE_AS     | SAVE AS...            | ΑΠΟΘΗΚΕΥΣΗ ΩΣ...
+DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+ABOUT_TEXT  | SHEET|NUMBERS, TEXT, FORMULAS|WITH CALC.SYS|(VX_CALC), FROM THE SDK | ΦΥΛΛΟ|ΑΡΙΘΜΟΙ, ΚΕΙΜΕΝΟ, ΤΥΠΟΙ|ΜΕ ΤΟ CALC.SYS|(VX_CALC), ΑΠΟ ΤΟ SDK
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+HINT        | ARROWS  RETURN CHANGE  DEL EMPTY  ESC MENU | ΒΕΛΑΚΙΑ  RETURN ΑΛΛΑΓΗ  DEL ΣΒΗΣΙΜΟ  ESC ΜΕΝΟΥ
+EDIT_T      | NUMBER, TEXT OR =FORMULA | ΑΡΙΘΜΟΣ, ΚΕΙΜΕΝΟ Ή =ΤΥΠΟΣ
+NAME_T      | THE SHEET'S NAME      | ΤΟ ΟΝΟΜΑ ΤΟΥ ΦΥΛΛΟΥ
+PICK_T      | OPEN A SHEET          | ΑΝΟΙΓΜΑ ΦΥΛΛΟΥ
+NO_FILES    | NO SHEET (.VSH)|ON THIS DRIVE | ΚΑΝΕΝΑ ΦΥΛΛΟ (.VSH)|ΣΕ ΑΥΤΗ ΤΗ ΜΟΝΑΔΑ
+DISCARD     | DISCARD THE CHANGES?  | ΝΑ ΧΑΘΟΥΝ ΟΙ ΑΛΛΑΓΕΣ;
+FULL        | NO ROOM FOR|MORE CELLS | ΔΕΝ ΧΩΡΑΝΕ|ΑΛΛΑ ΚΕΛΙΑ
+BIG         | THE FILE IS|TOO BIG   | ΤΟ ΑΡΧΕΙΟ ΕΙΝΑΙ|ΠΟΛΥ ΜΕΓΑΛΟ
+SAVED       | SAVED                 | ΑΠΟΘΗΚΕΥΤΗΚΕ
+WORKING     | WORKING OUT THE FORMULAS... | ΥΠΟΛΟΓΙΣΜΟΣ ΤΩΝ ΤΥΠΩΝ...

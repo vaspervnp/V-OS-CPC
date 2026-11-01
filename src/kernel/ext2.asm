@@ -113,6 +113,38 @@ db_entry:
 db_sys:         db "DB      SYS"
 db_loaded:      db 0
 
+; VX_CALC (kernel/api.asm: xa_calc): the formula engine, src/calc/
+; calc.asm, from drive A: to CALC_ADDR the first time, as DB.SYS
+calc_entry:
+        ld a,(calc_loaded)
+        or a
+        jr nz,.go
+        push bc
+        push de
+        xor a
+        call fdc_select
+        ld hl,calc_sys
+        ld de,CALC_ADDR
+        ld c,EXT2_CFG
+        call fs_load
+        pop de
+        pop bc
+        jr c,.none
+        ld a,(CALC_ADDR + 3)        ; "CA"
+        cp "C"
+        jr nz,.none
+        ld a,1
+        ld (calc_loaded),a
+.go:
+        ld hl,(xa_hl)
+        jp CALC_ADDR
+.none:
+        ld a,CALC_ERR_NO_SYS
+        scf
+        ret
+calc_sys:       db "CALC    SYS"
+calc_loaded:    db 0
+
 ; ---------------------------------------------------------------------
 ; Moving windows (VOS_DRAG, VOS_FIT; kernel/api.asm, ui/ui.asm): a
 ; window is dr_x, dr_y (drag_run takes it in DE), dr_w, dr_h, in pixels

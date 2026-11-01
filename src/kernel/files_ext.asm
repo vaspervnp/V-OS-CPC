@@ -301,6 +301,7 @@ ft_open:        db "TXT", "NOTEPAD BIN"
                 db "LYR", "PAINT   BIN"
                 db "MUS", "MUSIC   BIN"
                 db "VDB", "DATABASEBIN"
+                db "VSH", "SHEET   BIN"
                 db 0
 
 ; ---------------------------------------------------------------------

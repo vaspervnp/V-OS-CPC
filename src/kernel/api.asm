@@ -81,7 +81,7 @@ api_ext:
         ret
 
 xa_table:       dw xa_version, xa_free, xa_clip_put, xa_clip_get, xa_m4
-                dw xa_mem, xa_behind, xa_data, xa_db, xa_utf8
+                dw xa_mem, xa_behind, xa_data, xa_db, xa_utf8, xa_calc
         assert $ - xa_table == VX_COUNT * 2
 xa_hl:          dw 0
 
@@ -89,6 +89,12 @@ xa_hl:          dw 0
 ; ext2.asm: db_entry)
 xa_db:
         ld hl,db_entry
+        jp ext2_call
+
+; VX_CALC: C = CALC_* call, DE, HL (xa_hl): the formula engine (kernel/
+; ext2.asm: calc_entry)
+xa_calc:
+        ld hl,calc_entry
         jp ext2_call
 
 ; VX_UTF8: HL (xa_hl) -> text, BC, E (kernel/ext2.asm: u8_entry). B
