@@ -278,3 +278,36 @@ IF C3 = 40
   TEXT "YOU WIN!" 72 136
   SET D3 -1
 END
+
+# its texts in the other languages (V-OS shows the one it is in); the
+# three under the field are as long as each other, as each one is
+# written over the one before
+LANG EL
+"MINES" "ΝΑΡΚΕΣ"
+" NEW " " ΝΕΟ "
+"8 MINES" "8 ΝΑΡΚΕΣ "
+"BOOM!  " "ΜΠΟΥΜ!    "
+"YOU WIN!" "ΚΕΡΔΙΣΕΣ! "
+LANG FR
+" NEW " " JOUER "
+"8 MINES" "8 MINES "
+"BOOM!  " "BOUM !  "
+"YOU WIN!" "GAGNÉ ! "
+LANG ES
+"MINES" "MINAS"
+" NEW " " NUEVO "
+"8 MINES" "8 MINAS  "
+"BOOM!  " "¡BUM!    "
+"YOU WIN!" "¡GANASTE!"
+LANG DE
+"MINES" "MINEN"
+" NEW " " NEU "
+"8 MINES" "8 MINEN  "
+"BOOM!  " "BUMM!    "
+"YOU WIN!" "GEWONNEN!"
+LANG IT
+"MINES" "MINE"
+" NEW " " NUOVO "
+"8 MINES" "8 MINE    "
+"BOOM!  " "BUM!      "
+"YOU WIN!" "HAI VINTO!"

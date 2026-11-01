@@ -82,6 +82,7 @@ api_ext:
 
 xa_table:       dw xa_version, xa_free, xa_clip_put, xa_clip_get, xa_m4
                 dw xa_mem, xa_behind, xa_data, xa_db, xa_utf8, xa_calc
+                dw xa_lang
         assert $ - xa_table == VX_COUNT * 2
 xa_hl:          dw 0
 

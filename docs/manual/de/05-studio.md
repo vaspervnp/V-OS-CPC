@@ -29,7 +29,7 @@ Studio nutzt einen „geteilten“ Bildschirm mit zwei Zonen:
 | SAVE | ^S | − SPRITE |
 | SAVE AS | | BACKGROUND (die Farbe der Bühne) |
 | RUN | ^R | SCREEN MODE (0 oder 1) |
-| IN BACKGROUND | | |
+| IN BACKGROUND | | TEXT LANGUAGE (^T) |
 | BACK | ^Q | |
 
 - **RUN (^R):** speichert `NAME.VBS`, schreibt `NAME.VBN` und startet es. Das Programm endet über sein eigenes Menü (PROGRAM > STOP, ^Q), und dann startet Studio wieder mit demselben Programm geöffnet.
@@ -214,12 +214,21 @@ Es gibt 128 Variablen, die alle Skripte gemeinsam nutzen, mit den Namen A–H, A
 - `LOAD VARS ALL FROM "GAME"` ändert die Variablen, die die Datei nennt. Mit einer Gruppe ändert es nur die, die auch in der Gruppe sind. Zeilen, die es nicht versteht, werden ignoriert, und fehlt die Datei, ändert sich nichts.
 - So kann eine Datei alle Variablen wiederherstellen oder nur eine Achtergruppe, z. B. die gespeicherten Positionen eines Spiels.
 
+## Die Texte in anderen Sprachen
+
+Die Texte eines Programms (Fenster, Knöpfe, TEXT, LABEL) können in jeder Sprache von V-OS eine Übersetzung haben. Das Programm zeigt sie in der Sprache, in der V-OS beim Start ist. So heißt CALC auf Griechisch „ΑΡΙΘΜΟΜΗΧΑΝΗ“, auf Englisch „CALCULATOR“, auf Deutsch „RECHNER“.
+
+- **EDIT > TEXT LANGUAGE (^T):** geht durch die Sprachen EN, EL, FR, ES, DE, IT und zurück zu den eigenen Texten des Programms. Unter den Sprites, neben dem Namen, steht der Code der Sprache (z. B. `CALC DE`).
+- In einer Sprache zeigen und ändern die Textfelder die Texte in dieser Sprache. Ein Text ohne Übersetzung zeigt seinen eigenen, und wenn du ihn änderst, wird das seine Übersetzung. Ein neuer Text, den du in einer Sprache schreibst, wird auch sein eigener.
+- Die Übersetzungen werden in der `.VBS` (und der `.VBN`) gespeichert, alle sechs zusammen, etwa 3K.
+- In einer `.vbt` schreibt man sie mit `LANG DE` und darunter Zeilen `"Text" "Übersetzung"`.
+
 ## Dateien
 
-- **`NAME.VBS`:** das Programm, so wie du es bearbeitest. OPEN öffnet es, und bis zu 5K werden gelesen.
+- **`NAME.VBS`:** das Programm, so wie du es bearbeitest. OPEN öffnet es, und bis zu 9K werden gelesen.
 - **`NAME.VBN`:** das startbereite Programm. RUN schreibt es, und es startet auch aus der Ansicht Programme. Es ist der Player (`VBRUN.SYS`) zusammen mit dem Programm. Der Player übersetzt die Blöcke beim Start in Z80-Code, deshalb laufen die Programme schnell.
 
-Eine `.VBS` lässt sich auch aus Text auf dem PC erzeugen, mit `tools/mkvbs.py`. Die Syntax ist am Anfang der Datei beschrieben, und Beispiele sind `blocks/examples/*.vbt` (CALC, MINES, FLAP, TICKER, VARS).
+Eine `.VBS` lässt sich auch aus Text auf dem PC erzeugen, mit `tools/mkvbs.py`. Die Syntax ist am Anfang der Datei beschrieben, und Beispiele sind `blocks/examples/*.vbt` (CALC, MINES, FLAP, TICKER, VARS). CALC und MINES haben auch Übersetzungen (`LANG`).
 
 ## Grenzen
 
@@ -231,7 +240,7 @@ Eine `.VBS` lässt sich auch aus Text auf dem PC erzeugen, mit `tools/mkvbs.py`.
 | Variablen | 128 |
 | REPEAT in einem Programm | 64 (darüber hinaus teilen sie sich einen Zähler) |
 | Ineinander verschachtelte offene Blöcke | 16 |
-| Texte | 32, je bis zu 14 Zeichen |
+| Texte | 32, je bis zu 14 Zeichen, und in 6 Sprachen |
 | Kostüme | 8, 16×16 |
 | Schaltflächen | 64 |
 | Code | mindestens 4.000 Bytes, auch für das größte Programm. Was nicht hineinpasst, wird ignoriert |

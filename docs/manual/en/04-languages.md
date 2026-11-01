@@ -21,7 +21,7 @@ The symbols `@ # [ ] { } \ |` are not on the packs' keyboards, because the CPC h
 
 ## Program texts
 
-Programs have their own texts in **two languages**: English and, optionally, one more (today, Greek). A program appears in its second language only when the pack is in that language. Otherwise it appears in English. So, with French, Studio appears in English.
+Programs have their own texts in **two languages**: English and, optionally, one more (today, Greek). A program appears in its second language only when the pack is in that language. Otherwise it appears in English. So, with French, Studio appears in English. Studio's programs, though, can have their texts in all six languages ([chapter 5](05-studio.md)): CALC is called "CALCULATRICE" in French.
 
 ## One alphabet for all
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""mkvbs - a Studio program (.VBS, version 3) from text.
+"""mkvbs - a Studio program (.VBS, version 4) from text.
 
 usage: mkvbs.py prog.vbt out.VBS [player out.VBN]
 
@@ -18,6 +18,11 @@ spaces are ignored):
   IMAGE                       a costume (1, 2, ... in order), then 16
                               lines of 16 pixels: a pen in hex, "."
                               none; at most 8
+  LANG code                   then lines "text" "its translation": the
+                              texts in that language (EN EL FR ES DE
+                              IT), shown when V-OS is in it; a text
+                              left out stays as it is (all six are
+                              written, in that order, as Studio does)
   OP slot slot slot           a block: its name in apps/studio/blocks.txt
                               without OP_ (START, IF, WINDOW, ...), then
                               its slots in slot order (not as shown)
@@ -36,6 +41,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import voscs  # noqa: E402,F401  (the codec "vos")
 
 SPR_MAX, TEXT_MAX, TEXT_SIZE, MAX_LINES, COS_MAX = 6, 32, 16, 240, 8
+LANGS = ("EN", "EL", "FR", "ES", "DE", "IT")
 K = dict(NUM=1, VAR=2, X=3, Y=4, RND=5, KEY=6, TOUCH=7, EDGE=8, CMP=9,
          SPR=10, KEYN=11, BUTTON=12, TEXT=13, COSTUME=14, GROUP=15)
 
@@ -114,6 +120,8 @@ def slot(word, texts):
 def compile_vbt(lines):
     ops = op_names()
     bg, mode, runs, sprites, texts, code, images = 0, 0, 0, [], [], [], []
+    langs = {}                          # code -> {text: translation}
+    lang = None                         # in a LANG section
     rows = None                         # an IMAGE's lines still to come
     for n, line in enumerate(lines, 1):
         line = line.split("#", 1)[0] if '"' not in line else line
@@ -131,7 +139,20 @@ def compile_vbt(lines):
                     rows = None
                 continue
             head = w[0].upper()
-            if head == "BG":
+            if lang is not None and head.startswith('"'):
+                if len(w) != 2 or not w[1].startswith('"'):
+                    raise Error('a translation: "text" "translation"')
+                raw = w[1][1:-1].encode("vos")
+                if len(raw) > TEXT_SIZE - 2:
+                    raise Error(f"{w[1]}: at most {TEXT_SIZE - 2} characters")
+                langs[lang][w[0][1:-1].encode("vos")] = raw
+                continue
+            if head == "LANG":
+                if len(w) != 2 or w[1].upper() not in LANGS:
+                    raise Error("LANG " + " or ".join(LANGS))
+                lang = w[1].upper()
+                langs.setdefault(lang, {})
+            elif head == "BG":
                 bg = int(w[1]) & 15
             elif head == "BEHIND":
                 if w[1:] not in (["PAUSE"], ["RUN"]):
@@ -165,7 +186,11 @@ def compile_vbt(lines):
         raise Error("an IMAGE without its 16 lines")
     if len(code) > MAX_LINES:
         raise Error(f"more than {MAX_LINES} lines")
-    out = bytearray(b"VBS\x03" + bytes([bg | runs << 6 | mode << 7, len(sprites)]))
+    for code_, table in langs.items():
+        for text in table:
+            if text not in texts:
+                raise Error(f"LANG {code_}: no text \"{text.decode('vos')}\"")
+    out = bytearray(b"VBS\x04" + bytes([bg | runs << 6 | mode << 7, len(sprites)]))
     for x, y, wd, ht, colour, costume in sprites:
         if costume > len(images):
             raise Error(f"no costume {costume}")
@@ -178,6 +203,14 @@ def compile_vbt(lines):
     out.append(len(images))
     for image in images:
         out += bytes(2) + bytes(image)
+    out.append(len(LANGS) if langs else 0)  # all of them, in order, as
+    for code_ in LANGS if langs else ():    # Studio keeps them
+        table = langs.get(code_, {})
+        out += code_.encode()
+        for t in texts:
+            t = table.get(t, b"")
+            out += t + bytes(TEXT_SIZE - len(t))
+        out += bytes(TEXT_SIZE * (TEXT_MAX - len(texts)))
     return bytes(out)
 
 

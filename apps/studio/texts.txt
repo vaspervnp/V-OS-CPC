@@ -18,6 +18,7 @@ DEL_SPRITE  | - SPRITE              | - ΑΝΤΙΚΕΙΜΕΝΟ
 BG          | BACKGROUND            | ΦΟΝΤΟ
 MODE        | SCREEN MODE           | MODE ΟΘΟΝΗΣ
 BEHIND      | IN BACKGROUND         | ΣΤΟ ΠΑΡΑΣΚΗΝΙΟ
+TLANG       | TEXT LANGUAGE         | ΓΛΩΣΣΑ ΚΕΙΜΕΝ.
 
 # palette categories
 C_EVENTS    | EVENTS                | ΓΕΓΟΝΟΤΑ

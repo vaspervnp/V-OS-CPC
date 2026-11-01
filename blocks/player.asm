@@ -53,7 +53,7 @@ PROG_BG         equ 0               ; set at rt_bg_n, see pl_init
 SCRIPT_COUNT    equ 0               ; rt_nscripts_n
 SPRITE_COUNT    equ 0               ; rt_nsprites_n
 
-; the VBS record, version 3 (as apps/studio/studio.asm)
+; the VBS record, version 3 or 4 (as apps/studio/studio.asm)
 SPR_MAX         equ 6
 SPR_SIZE        equ 8
 TEXT_MAX        equ 32
@@ -125,9 +125,9 @@ prog_palette:   db 0, 26, 1, 2, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16, 0
 pl_init:
         cp 2                        ; going on: all is in place
         jp z,rt_init
-        ld hl,vbs_data              ; "VBS", 1? Else no program
+        ld hl,vbs_data              ; "VBS", 3 or 4? Else no program
         ld de,pl_magic
-        ld b,4
+        ld b,3
 .magic:
         ld a,(de)
         cp (hl)
@@ -135,6 +135,10 @@ pl_init:
         inc hl
         inc de
         djnz .magic
+        ld a,(hl)
+        sub 3
+        cp 2
+        jr nc,.empty
         ld a,(vbs_data + V_NSPR)
         cp SPR_MAX + 1
         jr nc,.empty
@@ -142,7 +146,9 @@ pl_init:
         ld de,MAX_LINES + 1
         or a
         sbc hl,de
-        jr c,.read
+        jr nc,.empty
+        call pl_lang
+        jr .read
 .empty:
         xor a
         ld (vbs_data + V_NSPR),a
@@ -201,6 +207,82 @@ pl_init:
         ld hl,pl_script_sites
         call pl_patch
         jp rt_init
+
+; Version 4: the texts in the language V-OS shows (VX_LANG), if the
+; program has them, in place of its own; an empty one keeps its own.
+; After the costumes: db count, then per language dw code ("EN": "E"
+; first), TEXT_MAX texts of TEXT_SIZE bytes.
+pl_lang:
+        ld a,(vbs_data + 3)
+        cp 4
+        ret nz
+        ld hl,(vbs_data + V_NLINES) ; past the lines
+        add hl,hl
+        ld d,h
+        ld e,l
+        add hl,hl
+        add hl,hl
+        add hl,de
+        ld de,vbs_data + V_LINES
+        add hl,de
+        ld a,(hl)                   ; and the costumes (count * 258)
+        inc hl
+        ld d,a
+        ld e,0
+        add hl,de
+        ld e,a
+        ld d,0
+        add hl,de
+        add hl,de
+        ld a,(hl)                   ; the languages
+        or a
+        ret z
+        ld b,a
+        inc hl
+        push hl
+        push bc
+        ld a,VX_LANG
+        call VOS_EXT
+        ex de,hl
+        pop bc
+        pop hl
+        ret c                       ; (an older V-OS)
+.lang:
+        ld a,(hl)
+        inc hl
+        cp e
+        jr nz,.next
+        ld a,(hl)
+        cp d
+        jr z,.found
+.next:
+        push de
+        ld de,1 + TEXT_MAX * TEXT_SIZE
+        add hl,de
+        pop de
+        djnz .lang
+        ret
+.found:
+        inc hl
+        ld de,vbs_data + V_TEXTS
+        ld b,TEXT_MAX
+.text:
+        push bc
+        ld bc,TEXT_SIZE
+        ld a,(hl)
+        or a
+        jr z,.keep
+        ldir
+        jr .text_next
+.keep:
+        add hl,bc
+        ex de,hl
+        add hl,bc
+        ex de,hl
+.text_next:
+        pop bc
+        djnz .text
+        ret
 
 ; A = value, HL -> dw address... 0: the value at each address
 pl_patch:
@@ -1557,7 +1639,7 @@ rt_texts:       db 2 + TEXT_MAX, "EL" ; the runtime's, then the program's
                 dw vbs_data + V_TEXTS + (n - 1) * TEXT_SIZE, 0
         REND
 
-pl_magic:       db "VBS", 3
+pl_magic:       db "VBS"
 pl_bg_sites:    dw rt_bg_1, rt_bg_2, rt_bg_3, rt_bg_4, 0
 pl_spr_sites:   dw rt_nsprites_1, rt_nsprites_2, rt_nsprites_3, rt_nsprites_4, 0
 pl_script_sites: dw rt_nscripts_1, rt_nscripts_2, 0

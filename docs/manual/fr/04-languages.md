@@ -21,7 +21,7 @@ Les symboles `@ # [ ] { } \ |` ne sont pas sur les claviers des modules, car le 
 
 ## Les textes des programmes
 
-Les programmes ont leurs propres textes en **deux langues** : l'anglais et, en option, une autre (aujourd'hui, le grec). Un programme n'apparaît dans sa seconde langue que si le module est dans cette langue. Sinon, il apparaît en anglais. Ainsi, en français, Studio apparaît en anglais.
+Les programmes ont leurs propres textes en **deux langues** : l'anglais et, en option, une autre (aujourd'hui, le grec). Un programme n'apparaît dans sa seconde langue que si le module est dans cette langue. Sinon, il apparaît en anglais. Ainsi, en français, Studio apparaît en anglais. Les programmes de Studio, eux, peuvent avoir leurs textes dans les six langues ([chapitre 5](05-studio.md)) : CALC s'appelle « CALCULATRICE » en français.
 
 ## Un alphabet pour toutes
 

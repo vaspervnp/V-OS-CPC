@@ -74,3 +74,15 @@ IF BUTTON > 9
     END
   END
 END
+
+# its title in the other languages (V-OS shows the one it is in)
+LANG EN
+"ΑΡΙΘΜΟΜΗΧΑΝΗ" "CALCULATOR"
+LANG FR
+"ΑΡΙΘΜΟΜΗΧΑΝΗ" "CALCULATRICE"
+LANG ES
+"ΑΡΙΘΜΟΜΗΧΑΝΗ" "CALCULADORA"
+LANG DE
+"ΑΡΙΘΜΟΜΗΧΑΝΗ" "RECHNER"
+LANG IT
+"ΑΡΙΘΜΟΜΗΧΑΝΗ" "CALCOLATRICE"

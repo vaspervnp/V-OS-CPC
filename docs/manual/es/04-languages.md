@@ -21,7 +21,7 @@ Los símbolos `@ # [ ] { } \ |` no están en los teclados de los paquetes, porqu
 
 ## Los textos de los programas
 
-Los programas tienen sus propios textos en **dos idiomas**: inglés y, de forma opcional, uno más (hoy, griego). Un programa aparece en su segundo idioma solo cuando el paquete está en ese idioma. Si no, aparece en inglés. Así, con el francés, Studio aparece en inglés.
+Los programas tienen sus propios textos en **dos idiomas**: inglés y, de forma opcional, uno más (hoy, griego). Un programa aparece en su segundo idioma solo cuando el paquete está en ese idioma. Si no, aparece en inglés. Así, con el francés, Studio aparece en inglés. Los programas de Studio, en cambio, pueden tener sus textos en los seis idiomas ([capítulo 5](05-studio.md)): CALC se llama «CALCULADORA» en español.
 
 ## Un alfabeto para todos
 

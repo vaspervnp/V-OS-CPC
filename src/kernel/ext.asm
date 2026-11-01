@@ -296,6 +296,16 @@ xa_data:
         ld a,1
         ret
 
+; VX_LANG -> HL = the code of the language V-OS shows ("EN", "EL",
+; ...: L the first letter)
+xa_lang:
+        ld hl,"E" + "N" * 256
+        ld a,(lang_ui)
+        or a
+        ret z
+        ld hl,(lang_code)
+        ret
+
 ; -> A = a bank of the expansion that no program and no data use; C
 ; kept. Carry: fewer than two such banks
 data_free:

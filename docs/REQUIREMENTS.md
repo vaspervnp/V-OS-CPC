@@ -394,7 +394,7 @@ Header με:
 - **Χώρος:** τα `ptr_buf`, `ptr_params`, `ui_title_x`, `ui_title_w`, `fp_line` στο GAP1 από το +664 ως το +788, τα `ev_cur`, `dlg_wlist`, `fi_new`, `fi_text` στο GAP6 από το +628 ως το +685 (`include/memmap.inc`). Η μνήμη αυτή είναι πάντα ορατή (σελίδα #C000) και μηδενίζεται από τον loader.
 - **`src/kernel/ext.asm` (`app_place`):** αν το `slot_alloc` δεν βρει χώρο για πρόγραμμα με πίνακα, δοκιμάζεται η διαδρομή `.fixed` (όλη μια bank, ή η bank 5 μόνο του)· το image είναι φτιαγμένο για το #4000, οπότε δεν χρειάζεται relocation.
 - **Προγράμματα:** `pmode` (1 ή 2), `ncols` και `xoff` αντί για το `COLS`, `set_mode` (VOS_MODE, παλέτα, στήλες), `palette2` (πένα 0 λευκή, 1 μαύρη, περίγραμμα γκρι)· στους editors `edges`, `breaks` (μια γραμμή 1 pixel στο κενό πάνω από τη γραμμή που αρχίζει σελίδα, `PAGE_LINES` = 60, σβησμένη αλλού, από το `cur_line` της κατάστασης), `page_no`, `row_rest` (ένα `VOS_RECT` στο υπόλοιπο της γραμμής). Το `page.asm` παίρνει το πλάτος από τα `ncols`/`xoff` και κρατά τους buffers στο `PV_W` = 80. Το SHEET: `vcols` (5 ή 10), `fit_left` (η πρώτη στήλη ως 16 − `vcols`), `draw_grid`.
-- **Δοκιμές:** στα σενάρια 17, 21, 26 και 32 προστέθηκε στο τέλος το CONTROL+L (στο 17 και RETURN πατημένο 5 × 250 καρέ, στο 21 και CONTROL+P).
+- **Δοκιμές:** στα σενάρια 17, 21, 26 και 32 προστέθηκε στο τέλος το CONTROL+M (στο 17 και RETURN πατημένο 5 × 250 καρέ, στο 21 και CONTROL+P).
 
 **Υλοποίηση M49 (πραγματικές δισκέτες):**
 - **Makefile:** το `SYS_APPS` (DEMO, MIXED, STUDIO, CLOCK, `VBRUN.SYS` και τα `.VBS`) πάει στη `vos.dsk`· το `DISC_APPS` (τα υπόλοιπα του `APPS`) και το `DSK_MYAPPS` στη νέα `$(APPS_DSK)`, `build/apps.dsk`, που τη φτιάχνει το `iDSK -n`. Οι δισκέτες των tests κρατούν όλο το `APPS`, όπως πριν.

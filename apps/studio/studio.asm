@@ -24,7 +24,13 @@
 ; at an edge, the button
 ; pressed, comparisons, texts). A text slot names one of the program's
 ; 32 texts: adding WINDOW, BUTTON or TEXT takes a free one and asks for
-; it; RETURN or a click on the slot changes it.
+; it; RETURN or a click on the slot changes it. EDIT > TEXT LANGUAGE
+; (^T) goes through the languages (EN EL FR ES DE IT, then the
+; program's own texts again; the panel shows the name and the code):
+; in one of them the text slots show and change the texts in it, kept
+; in the data bank (TR_BANK) and saved after the costumes; the player
+; shows them when V-OS is in that language. An empty one is the
+; program's own; a new text takes that one too.
 ;
 ; Keys: TAB moves between the script, the palette and the stage.
 ; Script: UP/DOWN choose the line, LEFT/RIGHT a slot, RETURN adds the
@@ -95,7 +101,7 @@ ED_PY           equ ED_GY + 16 * 7 + 2  ; the pens, under the cells
 ED_TX           equ 88              ; its title and the pen
 
 ; ---- the program (VBS) ----------------------------------------------
-; db "VBS", version (3); db background pen (+ V_MODE1: the program
+; db "VBS", version (4); db background pen (+ V_MODE1: the program
 ; runs in mode 1, 384 pixels wide; + V_RUNS: it goes on in the
 ; background), sprite count;
 ; SPR_MAX sprites (dw x, y; db w, h, colour, costume: 0 none, 1..);
@@ -103,10 +109,13 @@ ED_TX           equ 88              ; its title and the pen
 ; lines; db costume count, costumes (db 0, 0, then 16 x 16 pens, a byte
 ; a pixel, bit 7: none). Here the costumes stay at a fixed place
 ; (costumes): SAVE and RUN move them after the lines for a while.
-; A line: db OP_*, then 3 slots of db K_*, dw value.
+; A line: db OP_*, then 3 slots of db K_*, dw value. Version 4 then
+; has its texts in other languages: db count, then per language dw
+; code ("EN": "E" first), TEXT_MAX texts of TEXT_SIZE bytes (empty:
+; the program's own).
 ; Version 1 had no texts: OPEN makes room for them; 1 and 2 have no
-; costumes.
-VBS_VERSION     equ 3
+; costumes; 1 to 3 no languages.
+VBS_VERSION     equ 4
 SPR_MAX         equ 6
 SPR_SIZE        equ 8
 TEXT_MAX        equ 32
@@ -126,7 +135,14 @@ V1_NLINES       equ V_TEXTS             ; version 1
 COS_MAX         equ 8
 COS_SIZE        equ 258
 VBS_ROOM        equ V_LINES + MAX_LINES * LINE_SIZE + 1 + COS_MAX * COS_SIZE
-VBS_FILE_K      equ 5                   ; files of up to 5K are read
+VBS_FILE_K      equ 9                   ; files of up to 9K are read
+TR_LANGS        equ 6                   ; EN EL FR ES DE IT (tr_codes)
+TR_ENTRY        equ 2 + TEXT_MAX * TEXT_SIZE ; dw code, the texts
+TR_MOVES        equ (TR_LANGS * TR_ENTRY + 63) / 64 ; bank_move's
+TR_MARK         equ #71FE               ; in the data bank: "TR" while the
+TR_BANK         equ #7200               ; languages there are whole (all
+                                        ; else there starts at #4000)
+        assert TR_BANK + TR_MOVES * 64 <= #8000
 NO_PEN          equ #80
 
 ; slot kinds
@@ -215,6 +231,7 @@ CMD_BG          equ 9
 CMD_RUN         equ 10
 CMD_MODE        equ 11
 CMD_BEHIND      equ 12
+CMD_TLANG       equ 13
 
 KEY_CLR         equ 16
 ERR_BAD_NAME    equ 11              ; system error texts (fs.asm)
@@ -333,10 +350,22 @@ refresh:
 ; a new program: one sprite that bounces
 ; ---------------------------------------------------------------------
 prog_new:
+        ld hl,vbs                   ; no sprites, no texts, then the head,
+        ld de,vbs + 1               ; sprite 1 and the lines
+        ld bc,V_NLINES - 1
+        ld (hl),b
+        ldir
         ld hl,new_prog
         ld de,vbs
-        ld bc,new_prog_end - new_prog
+        ld bc,new_head_end - new_prog
         ldir
+        ld hl,new_lines
+        ld de,vbs + V_NLINES
+        ld bc,new_prog_end - new_lines
+        ldir
+        xor a
+        ld (tr_lang),a
+        ld (tr_used),a
         ld hl,name_none
         ld de,prog_name
         ld bc,9
@@ -1053,6 +1082,8 @@ command:
         jp z,do_mode
         cp CMD_BEHIND
         jp z,do_behind
+        cp CMD_TLANG
+        jp z,do_tlang
         jp VOS_COMMAND              ; VIEW and HELP menus
 
 do_new:
@@ -1248,16 +1279,30 @@ do_save_as:
         ld a,ERR_BAD_NAME
         jp VOS_ERROR
 
+; the program and its languages put together in the data bank, then
+; saved from there
 write_file:
         call make_fcb
         call vbs_bytes
+        push hl
         ld b,h
         ld c,l
-        xor a
-        ld hl,fcb
-        ld de,vbs
-        call VOS_SAVE
+        ld hl,vbs
+        ld de,LOAD_AT
+        call VOS_BANK_PUT
         call cos_unpack
+        pop hl
+        ld de,LOAD_AT
+        add hl,de
+        call tr_put
+        ld de,0 - LOAD_AT
+        add hl,de
+        ld b,h
+        ld c,l
+        ld a,VOS_DATA
+        ld hl,fcb
+        ld de,LOAD_AT
+        call VOS_SAVE
         jp c,VOS_ERROR
         ld hl,fcb
         call keep_name
@@ -1281,31 +1326,27 @@ do_run:
 
 run_bin:
         ld a,VOS_DATA               ; the player to the data bank, the
-        ld hl,name_player           ; program after it, then both
+        ld hl,name_player           ; .VBS just saved after it, then both
         ld de,VOS_APP_ADDR
         call VOS_LOAD
         jp c,VOS_ERROR
         ld (player_size),bc
+        ld hl,(player_size)
+        ld de,VOS_APP_ADDR
+        add hl,de
+        ex de,hl
+        ld a,VOS_DATA
+        ld hl,fcb
+        call VOS_LOAD
+        jp c,VOS_ERROR
         ld hl,fcb + 8
         ld (hl),"V"
         inc hl
         ld (hl),"B"
         inc hl
         ld (hl),"N"
-        call vbs_bytes
-        push hl
-        ld b,h
-        ld c,l
         ld hl,(player_size)
-        ld de,VOS_APP_ADDR
-        add hl,de
-        ex de,hl
-        ld hl,vbs
-        call VOS_BANK_PUT
-        call cos_unpack
-        pop hl
-        ld de,(player_size)
-        add hl,de
+        add hl,bc
         ld b,h
         ld c,l
         ld a,VOS_DATA
@@ -1575,6 +1616,22 @@ load_prog:
         ld de,costumes + 1
         call nz,VOS_BANK_GET
 .no_costumes:
+        xor a                       ; version 4: the languages
+        ld (tr_lang),a
+        ld (tr_used),a
+        ld a,(vbs + 3)
+        cp 4
+        jr nz,.no_langs
+        ld hl,(vbs + V_NLINES)
+        call times10
+        ld de,LOAD_AT + V_LINES
+        add hl,de
+        push hl
+        call cos_bytes
+        pop hl
+        add hl,bc
+        call tr_load
+.no_langs:
         ld a,VBS_VERSION
         ld (vbs + 3),a
         pop bc
@@ -1688,8 +1745,7 @@ insert_block:
         inc hl
         ld a,(ib_text)
         ld (hl),a
-        call text_ptr
-        ld (hl),0
+        call tr_forget
         xor a
         ld (slot),a
         call edit_text
@@ -1764,13 +1820,15 @@ text_ptr:
         pop de
         ret
 
-; the chosen slot's text: VOS_INPUT, on a copy (ESC keeps it as it was)
+; the chosen slot's text: VOS_INPUT, on a copy (ESC keeps it as it
+; was); in another language (tr_lang) its text there, and the program's
+; own too while that is empty
 edit_text:
         call slot_ptr
         inc hl
         ld a,(hl)
-        call text_ptr
-        push hl
+        ld (et_text),a
+        call tr_text
         ld de,tbuf
         ld bc,TEXT_SIZE
         ldir
@@ -1778,15 +1836,279 @@ edit_text:
         ld hl,tbuf
         ld c,TEXT_CHARS
         call VOS_INPUT
-        pop de
         ret c
-        ld hl,tbuf
-        ld bc,TEXT_SIZE - 1
-        ldir
         xor a
-        ld (de),a
+        ld (tbuf + TEXT_SIZE - 1),a
+        ld a,(tr_lang)
+        or a
+        jr z,.own
+        call tr_ready
+        ld a,(tr_lang)
+        ld c,a
+        ld a,(et_text)
+        call tr_addr
+        ex de,hl
+        ld hl,tbuf
+        ld bc,TEXT_SIZE
+        call VOS_BANK_PUT
+        ld a,(et_text)
+        call text_ptr
+        ld a,(hl)
+        or a
+        jr nz,.done
+.own:
+        ld a,(et_text)
+        call text_ptr
+        ex de,hl
+        ld hl,tbuf
+        ld bc,TEXT_SIZE
+        ldir
+.done:
         ld a,R_LINE
         jp parts
+
+; ---- the texts in other languages, in the data bank ------------------
+; EDIT > TEXT LANGUAGE: the next one (0: the program's own)
+do_tlang:
+        ld a,(tr_lang)
+        inc a
+        cp TR_LANGS + 1
+        jr c,.set
+        xor a
+.set:
+        ld (tr_lang),a
+        ld a,R_STAGE + R_SCRIPT
+        jp refresh
+
+; A = language 1.. -> HL -> its code ("EN")
+tr_code:
+        dec a
+        add a,a
+        ld hl,tr_codes
+        add a,l
+        ld l,a
+        ret nc
+        inc h
+        ret
+
+; A = language 1.. -> HL = its texts in the data bank (after its code)
+tr_slot:
+        dec a
+        add a,a                     ; TR_BANK + (A - 1) * TR_ENTRY + 2
+        ld l,a
+        add a,TR_BANK >> 8
+        ld h,a
+        inc l
+        inc l
+        ret
+
+; A = text, C = language 1.. -> HL = the text there, in the data bank
+tr_addr:
+        call text_ptr
+        push de
+        ld de,0 - (vbs + V_TEXTS)
+        add hl,de
+        push hl
+        ld a,c
+        call tr_slot
+        pop de
+        add hl,de
+        pop de
+        ret
+
+; the texts in the data bank are forgotten if something else was
+; written over them (TR_MARK) -> A = tr_used, Z: none
+tr_check:
+        ld hl,TR_MARK
+        ld de,tr_mk
+        ld bc,2
+        call VOS_BANK_GET
+        ld hl,(tr_mk)
+        ld de,"T" + "R" * 256
+        or a
+        sbc hl,de
+        ld a,(tr_used)
+        jr z,.whole
+        xor a
+        ld (tr_used),a
+.whole:
+        or a
+        ret
+
+; before a text goes there: the languages, all empty, if there are none
+tr_ready:
+        call tr_check
+        ret nz
+        ld hl,lbuf
+        ld de,lbuf + 1
+        ld bc,63
+        ld (hl),b
+        ldir
+        ld de,TR_BANK
+        ld b,TR_MOVES
+.zero:
+        push bc
+        push de
+        ld hl,lbuf
+        ld bc,64
+        call VOS_BANK_PUT
+        pop hl
+        ld de,64
+        add hl,de
+        ex de,hl
+        pop bc
+        djnz .zero
+        ld c,TR_LANGS               ; then their codes
+.code:
+        ld a,c
+        call tr_slot
+        dec hl
+        dec hl
+        ex de,hl
+        ld a,c
+        call tr_code
+        push bc
+        ld bc,2
+        call VOS_BANK_PUT
+        pop bc
+        dec c
+        jr nz,.code
+        inc c
+        ld a,c
+        ld (tr_used),a
+tr_whole:                           ; the languages there are whole now
+        ld hl,tr_mark_text
+        ld de,TR_MARK
+        ld bc,2
+        jp VOS_BANK_PUT
+
+; A = text -> HL -> it in tr_lang (tr_buf), or the program's own if it
+; has none there (keeps DE)
+tr_text:
+        push de
+        ld (et_text),a
+        ld a,(tr_lang)
+        or a
+        jr z,.own
+        call tr_check
+        jr z,.own
+        ld a,(tr_lang)
+        ld c,a
+        ld a,(et_text)
+        call tr_addr
+        ld de,tr_buf
+        ld bc,TEXT_SIZE
+        call VOS_BANK_GET
+        ld hl,tr_buf
+        ld a,(hl)
+        or a
+        jr nz,.done
+.own:
+        ld a,(et_text)
+        call text_ptr
+.done:
+        pop de
+        ret
+
+; A = a new text: empty, in every language too
+tr_forget:
+        ld (et_text),a
+        call text_ptr
+        ld d,h
+        ld e,l
+        inc de
+        ld bc,TEXT_SIZE - 1
+        ld (hl),b
+        ldir
+        call tr_check
+        ret z
+        ld c,TR_LANGS
+.lang:
+        ld a,(et_text)
+        call tr_addr
+        ex de,hl
+        ld a,(et_text)
+        call text_ptr
+        push bc
+        ld bc,TEXT_SIZE
+        call VOS_BANK_PUT
+        pop bc
+        dec c
+        jr nz,.lang
+        ret
+
+; HL = the place after the costumes in the data bank: the languages
+; there (db 0, or TR_LANGS and all of them) -> HL after them
+tr_put:
+        push hl
+        call tr_check
+        ld a,TR_LANGS
+        jr nz,.some
+        xor a
+.some:
+        ld (tp_n),a
+        pop de
+        push de
+        ld hl,tp_n
+        ld bc,1
+        call VOS_BANK_PUT
+        pop hl
+        inc hl
+        ld a,(tp_n)
+        or a
+        ret z
+        push hl
+        ex de,hl
+        ld hl,TR_BANK
+        ld b,TR_MOVES
+        call bank_move
+        pop hl
+        ld de,TR_LANGS * TR_ENTRY
+        add hl,de
+        ret
+
+; HL -> the count of languages in a version 4 file, in the data bank
+; (OPEN): their texts to TR_BANK. Studio's have all of them, in order
+tr_load:
+        ld de,tp_n
+        ld bc,1
+        push hl
+        call VOS_BANK_GET
+        pop hl
+        ld a,(tp_n)
+        cp TR_LANGS
+        ret nz
+        inc hl
+        ld de,TR_BANK
+        ld b,TR_MOVES
+        call bank_move
+        ld a,1
+        ld (tr_used),a
+        jp tr_whole
+
+; HL -> DE in the data bank, B times 64 bytes (through lbuf) -> DE
+; after them
+bank_move:
+        push bc
+        push hl
+        push de
+        ld de,lbuf
+        ld bc,64
+        call VOS_BANK_GET
+        pop de
+        push de
+        ld hl,lbuf
+        ld bc,64
+        call VOS_BANK_PUT
+        pop hl
+        ld bc,64
+        add hl,bc
+        ex de,hl
+        pop hl
+        add hl,bc
+        pop bc
+        djnz bank_move
+        ret
 
 ; A = op: a new line at ib_at, with the op's default slots
 put_line:
@@ -2703,11 +3025,24 @@ draw_list:
         ld de,LIST_Y + SPR_MAX * LIST_H + 14
         ld bc,lbuf
         call VOS_PRINT
-        ld hl,prog_name             ; the file
+        ld hl,prog_name             ; the file, or the texts' language
         ld de,lbuf
         call append
+        ld a,(tr_lang)
+        or a
         ld hl,vbs_dot_ext
+        jr z,.ext
+        ld a," "
+        ld (de),a
+        inc de
+        ld a,(tr_lang)
+        call tr_code
+        ldi
+        ldi
+        jr .named
+.ext:
         call append
+.named:
         xor a
         ld (de),a
         call list_colours
@@ -3818,7 +4153,7 @@ render_slot:
         jp append
 .quoted:                            ; "text"
         ld a,l
-        call text_ptr
+        call tr_text
         ld a,#22
         ld (de),a
         inc de
@@ -4121,12 +4456,14 @@ menu_studio:    db T_STUDIO, 9
                 db T_BEHIND, CMD_BEHIND, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
-menu_edit:      db T_EDIT, 5
+menu_edit:      db T_EDIT, 7
                 db T_DELETE, CMD_DELETE, 0, 0
                 db T_ADD_SPRITE, CMD_ADD_SPRITE, 0, 0
                 db T_DEL_SPRITE, CMD_DEL_SPRITE, 0, 0
                 db T_BG, CMD_BG, 0, 0
                 db T_MODE, CMD_MODE, 0, 0
+                db VOS_SEPARATOR, 0, 0, 0
+                db T_TLANG, CMD_TLANG, "T", 0
 
 dlg_new:        db T_STUDIO, T_D_NEW, 2, VM_YES, VM_NO
 dlg_pauses:     db T_BEHIND, T_D_PAUSES, 2, VM_YES, VM_NO
@@ -4216,15 +4553,16 @@ vbs_ext:        db "VBS"
 vbs_dot_ext:    db ".VBS", 0
 name_none:      db "NONAME", 0, 0, 0
 name_player:    db "VBRUN   SYS"
+tr_codes:       db "ENELFRESDEIT"       ; the languages (tr_lang 1..)
+tr_mark_text:   db "TR"
 player_size:    dw 0
 keep_mark:      db "STU"            ; VOS_KEEP: "STU", the .VBS name
 
 ; the program after NEW: sprite 1 bounces
 new_prog:       db "VBS", VBS_VERSION, 0, 1
                 dw 88, 120 : db 8, 8, 8, 0
-                ds (SPR_MAX - 1) * SPR_SIZE
-                ds TEXT_MAX * TEXT_SIZE
-                dw 6
+new_head_end:
+new_lines:      dw 6
                 db OP_START,   K_SPR, 1, 0, 0, 0, 0, 0, 0, 0
                 db OP_SPEED,   K_NUM, 2, 0, K_NUM, 2, 0, 0, 0, 0
                 db OP_FOREVER, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -4254,6 +4592,11 @@ ce_i:           db 0
 cos_len:        dw 0
 msg:            db 0                ; status line text, 0: the keys
 named:          db 0                ; prog_name chosen by the user
+tr_lang:        db 0                ; the texts shown: 0 the program's,
+tr_used:        db 0                ; 1.. tr_codes; 1: TR_BANK has them
+tr_mk:          dw 0
+tp_n:           db 0
+et_text:        db 0
 run_after:      db 0                ; saving for RUN
 prog_name:      ds 9
 name_buf:       ds 11
@@ -4316,6 +4659,7 @@ fill_pen        equ scratch + 63
 rc              equ scratch + 64
 lbuf            equ scratch + 73
 tbuf            equ scratch + 169
+tr_buf          equ scratch + 193   ; TEXT_SIZE
 SCRATCH_SIZE    equ 209
 ; the program (not in the file). RUN loads the player (VBRUN.SYS,
 ; blocks/player.asm) into the data bank and saves it with the program

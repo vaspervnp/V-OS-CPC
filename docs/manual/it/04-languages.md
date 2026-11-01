@@ -21,7 +21,7 @@ I simboli `@ # [ ] { } \ |` non sono sulle tastiere dei pacchetti, perché il CP
 
 ## I testi dei programmi
 
-I programmi hanno i propri testi in **due lingue**: l'inglese e, facoltativamente, un'altra (oggi il greco). Un programma appare nella sua seconda lingua solo quando il pacchetto è in quella lingua. Altrimenti appare in inglese. Quindi, con il francese, Studio appare in inglese.
+I programmi hanno i propri testi in **due lingue**: l'inglese e, facoltativamente, un'altra (oggi il greco). Un programma appare nella sua seconda lingua solo quando il pacchetto è in quella lingua. Altrimenti appare in inglese. Quindi, con il francese, Studio appare in inglese. I programmi di Studio, invece, possono avere i loro testi in tutte e sei le lingue ([capitolo 5](05-studio.md)): CALC si chiama «CALCOLATRICE» in italiano.
 
 ## Un alfabeto per tutte
 

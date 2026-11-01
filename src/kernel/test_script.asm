@@ -264,6 +264,10 @@ test_frame:     dw 0
 ;   frame 2600  TAB, 2650 LEFT -> the palette: WINDOWS
 ;   frame 2800  RETURN       -> WINDOW added, the dialog asks its text
 ;   frame 2900, 2950 H, I, 3050 RETURN -> WINDOW "ΗΙ" 120 100
+;   frame 3250  CONTROL+T    -> the texts in English: WINDOW
+;                               "CALCULATOR", "ΗΙ" (none: its own);
+;                               the panel says CALC EN
+;   frame 3600, 3700 CONTROL+T -> EL (its own), then FR: "CALCULATRICE"
 test_keys:
         dw  300 : db   4, 1, %01000000   ; F2
         dw  420 : db   4, 0, %00000100   ; DOWN
@@ -310,6 +314,12 @@ test_keys:
         dw 2900 : db   4, 5, %00010000   ; H
         dw 2950 : db   4, 4, %00001000   ; I
         dw 3050 : db   4, 2, %00000100   ; RETURN
+        dw 3245 : db  15, 2, %10000000   ; CONTROL
+        dw 3250 : db   4, 6, %00001000   ; T
+        dw 3595 : db  15, 2, %10000000   ; CONTROL
+        dw 3600 : db   4, 6, %00001000   ; T
+        dw 3695 : db  15, 2, %10000000   ; CONTROL
+        dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 32
