@@ -16,6 +16,9 @@ kernel_entry:
         call fdc_init
         call snd_init
         call cfg_load               ; SETUP.CFG, if there is one, then
+        IFDEF DEMO
+        call demo_load
+        ENDIF
         ld hl,lang_init             ; the pack it names from the disc
         call ext_call
         call cfg_apply

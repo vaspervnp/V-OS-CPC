@@ -120,5 +120,5 @@ ev_get:
 ev_head:    db 0
 ev_tail:    db 0
 ev_dropped: db 0
-ev_cur:     ds EV_SIZE
+ev_cur      equ GAP6 + 628          ; EV_SIZE
 ev_buf:     ds EV_SIZE * EV_COUNT

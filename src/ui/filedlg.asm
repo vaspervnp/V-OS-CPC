@@ -339,4 +339,4 @@ fp_h            equ uw_h
 fp_rows_y:      dw 0
 fp_ry:          dw 0
 fp_colours:     dw 0                ; background, foreground
-fp_line:        ds 24
+fp_line         equ GAP1 + 765      ; 24

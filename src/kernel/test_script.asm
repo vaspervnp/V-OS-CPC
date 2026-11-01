@@ -323,6 +323,8 @@ test_keys:
 ;   frame 3150  UP            -> A3, its formula on the first line
 ;   frame 3300  CONTROL+W     -> drive B: (A: has no room)
 ;   frame 3450  CONTROL+S, t RETURN -> B:T.VSH, SAVED (4150)
+;   frame 4400  CONTROL+M    -> the page (mode 2): 10 columns A-J, black
+;                               on white, grid lines, A1-A3 12 30 42
 test_keys:
         dw  300 : db   4, 1, %01000000   ; F2
         dw  570 : db   4, 0, %00000100   ; DOWN
@@ -355,6 +357,8 @@ test_keys:
         dw 3450 : db   4, 7, %00010000   ; S: SAVE, its name
         dw 3650 : db   4, 6, %00001000   ; t
         dw 3690 : db   4, 2, %00000100   ; RETURN: B:T.VSH
+        dw 4395 : db  15, 2, %10000000   ; CONTROL
+        dw 4400 : db   4, 4, %01000000   ; M: the page
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 31
@@ -648,6 +652,9 @@ test_keys:
 ;   frame 1300  DEL          -> INDEX.MD again
 ;   frame 1500-1650 TAB x4   -> the fourth link, the secure page
 ;   frame 1750  RETURN       -> "ONLY HTTP ADDRESSES CAN BE OPENED"
+;   frame 1900  RETURN       -> the dialog closed
+;   frame 2000  CONTROL+M    -> the page (mode 2): INDEX.MD in 80
+;                               columns between the page's edges
 test_keys:
         dw  300 : db   4, 1, %01000000   ; F2
         dw  450 : db   4, 8, %00010000   ; TAB: drive B:
@@ -660,6 +667,9 @@ test_keys:
         dw 1600 : db   4, 8, %00010000   ; TAB
         dw 1650 : db   4, 8, %00010000   ; TAB
         dw 1750 : db   4, 2, %00000100   ; RETURN: the secure page
+        dw 1900 : db   4, 2, %00000100   ; RETURN: OK
+        dw 1995 : db  15, 2, %10000000   ; CONTROL
+        dw 2000 : db   4, 4, %01000000   ; M: the page
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 25
@@ -785,6 +795,8 @@ test_keys:
 ;                               lines that follow each other joined
 ;   frame 1600  RIGHT        -> the page a screen on
 ;   frame 2200  RETURN       -> the text again
+;   frame 2400  CONTROL+M    -> the editor on the page (mode 2), PAGE 1
+;   frame 2700  CONTROL+P    -> the preview in 80 columns, mode 2
 ; (wide gaps: the shots, counted in typed keys, cannot aim closely)
 test_keys:
         dw  300 : db   4, 1, %01000000   ; F2
@@ -797,6 +809,10 @@ test_keys:
         dw 1000 : db   4, 3, %00001000   ; P
         dw 1600 : db   4, 0, %00000010   ; RIGHT
         dw 2200 : db   4, 2, %00000100   ; RETURN: the text
+        dw 2395 : db  15, 2, %10000000   ; CONTROL
+        dw 2400 : db   4, 4, %01000000   ; M: the page
+        dw 2695 : db  15, 2, %10000000   ; CONTROL
+        dw 2700 : db   4, 3, %00001000   ; P: its preview
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 20
@@ -934,6 +950,11 @@ test_keys:
 ;   frame 1600  CONTROL+N    -> an empty text again
 ;   frame 1700  CONTROL+O    -> the files of A:, to open one
 ;   frame 1850  ESC          -> no file: the empty text
+;   frame 1950  CONTROL+M    -> the page (mode 2): black on white, 80
+;                               columns between two edges, PAGE 1
+;   frame 2050  h i          -> "hi" on the page
+;   frame 2150-3400 RETURN held -> many lines: past line 60, a line
+;                               over the row of line 61, PAGE 2
 test_keys:
         dw  300 : db   4, 1, %01000000   ; F2
         dw  420 : db   4, 0, %00000100   ; DOWN
@@ -968,6 +989,15 @@ test_keys:
         dw 1695 : db  15, 2, %10000000   ; CONTROL
         dw 1700 : db   4, 4, %00000100   ; O
         dw 1850 : db   4, 8, %00000100   ; ESC
+        dw 1945 : db  15, 2, %10000000   ; CONTROL
+        dw 1950 : db   4, 4, %01000000   ; M: the page
+        dw 2050 : db   4, 5, %00010000   ; h
+        dw 2080 : db   4, 4, %00001000   ; i
+        dw 2150 : db 250, 2, %00000100   ; RETURN held
+        dw 2400 : db 250, 2, %00000100   ; RETURN held
+        dw 2650 : db 250, 2, %00000100   ; RETURN held
+        dw 2900 : db 250, 2, %00000100   ; RETURN held
+        dw 3150 : db 250, 2, %00000100   ; RETURN held
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 16

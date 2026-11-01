@@ -160,7 +160,12 @@ ptr_poll:
 .apply:
         call ptr_width
         ld hl,(ptr_x)
+        ld a,d
+        cp 768 >> 8                 ; mode 2: twice as far, as wide
         ld a,(pp_dx)
+        jr nz,.dx
+        add a,a
+.dx:
         call ptr_add
         ld de,(ptr_x)
         ld (ptr_x),hl

@@ -15,7 +15,7 @@ Each program has its own menu next to the common VIEW and HELP. It ends from its
 V-OS programs are of two kinds:
 
 - **Small, with a relocation table:** DEMO, MIXED and CLOCK, the web editor examples (PONG, CATCH, STARCAT, COUNTER), and whatever the [SDK](../../../sdk/README.en.md) makes. They share 12K of memory, and as many as fit run together.
-- **Programs that need all the memory:** STUDIO and whatever Studio makes (CALC, MINES, FLAP, TICKER and your own). Without a memory expansion they run on their own. If one is already running, you get "CLOSE ANOTHER PROGRAM FIRST".
+- **Programs that need all the memory:** STUDIO and whatever Studio makes (CALC, MINES, FLAP, TICKER and your own). So are MARKDOWN and READER, which are over 12K. Without a memory expansion they run on their own. If one is already running, you get "CLOSE ANOTHER PROGRAM FIRST".
 
 When you go to a view (F1–F4) while a program is running:
 
@@ -42,6 +42,10 @@ A small program, such as CLOCK, can open in a window **on top of anything**: a v
 2. From then on, **F5** opens and closes it, wherever you are. ESC also closes it.
 
 While it is open, it gets the keys and clicks. Its window can be dragged by its title. When it closes, whatever was underneath is redrawn.
+
+## The page (mode 2)
+
+NOTEPAD, MARKDOWN, READER and SHEET have PAGE (MODE 2) in their menu, ^M. The screen goes to mode 2: black text on white paper, 768 pixels across, with the menus and dialogs black on white too. The editors (NOTEPAD and MARKDOWN) show 80 columns between the page's edges, a line where each page of 60 lines ends, and PAGE n in the last line. MARKDOWN's preview and READER show the page in 80 columns with its styles. SHEET shows 10 columns (A–J) with lines between them. ^M again goes back to mode 1.
 
 ## The programs on the disc
 

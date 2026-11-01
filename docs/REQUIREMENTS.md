@@ -387,6 +387,15 @@ Header με:
 - **Δοκιμή:** το `make test-multi`. Το DEMO τρέχει και αλλάζει χρώμα. Με F2 ο Launcher, και τρέχει το PONG. Ξανά στον Launcher, το DEMO συνεχίζει με το ίδιο χρώμα και κλείνει με ^Q. Το PONG συνεχίζει. Το STUDIO δεν ξεκινά και βγαίνει το σφάλμα 13.
 - **Λάθος που βρέθηκε:** το μήνυμα σε μία γραμμή (27 χαρακτήρες) έκανε τον διάλογο φαρδύτερο από την οθόνη σε mode 0. Δεν φαινόταν, και ο βρόχος του περίμενε κουμπί. Βρέθηκε με dump της στοίβας και των μεταβλητών του διαλόγου (`TEST_DUMP`, `TEST_DUMP_AT`).
 
+**Υλοποίηση M50 (η σελίδα, mode 2):**
+- **`src/gfx/gfx.asm`:** το `gfx_mode2` (shift 3, pixel mask 7, pen mask 1, πλάτος 768) με τους πίνακες `gfx_pix2`, `gfx_lmask2`, `gfx_rmask2` (το 8ο byte του, #FF, είναι το πρώτο του `gfx_lmask2`), `gfx_fill2`· το `gfx_params_for` διαλέγει ανάμεσα σε τρία. Το `txt_char` στο mode 2 γράφει ένα byte ανά γραμμή: bg xor ((fg xor bg) and bits), μετά το `txt_row` (τα στυλ). Το `gfx_set_mode` κρύβει πρώτα τον pointer (`ptr_hide`), ώστε το save-under να επιστρέψει με τη γεωμετρία του παλιού mode.
+- **`src/ui/ui.asm`:** το `ui_set_mode` μετακινεί το x του pointer κατά τη διαφορά των modes (×2 ανά βήμα πάνω, ÷2 κάτω) και έχει το `ui_pens_mode2` (επιφάνεια, μπάρα 0· κείμενο, επιλογή, σκιά, πλαίσιο 1) με σκιά 8 pixels δεξιά.
+- **`src/gfx/pointer.asm`:** στο mode 2 (pen mask 1) το βέλος έχει περίγραμμα πένας 1 και γέμισμα πένας 0, όποιες κι αν είναι οι πένες της όψης. **`src/drivers/mouse.asm`:** διπλάσιο dx όταν το πλάτος είναι 768.
+- **Χώρος:** τα `ptr_buf`, `ptr_params`, `ui_title_x`, `ui_title_w`, `fp_line` στο GAP1 από το +664 ως το +788, τα `ev_cur`, `dlg_wlist`, `fi_new`, `fi_text` στο GAP6 από το +628 ως το +685 (`include/memmap.inc`). Η μνήμη αυτή είναι πάντα ορατή (σελίδα #C000) και μηδενίζεται από τον loader.
+- **`src/kernel/ext.asm` (`app_place`):** αν το `slot_alloc` δεν βρει χώρο για πρόγραμμα με πίνακα, δοκιμάζεται η διαδρομή `.fixed` (όλη μια bank, ή η bank 5 μόνο του)· το image είναι φτιαγμένο για το #4000, οπότε δεν χρειάζεται relocation.
+- **Προγράμματα:** `pmode` (1 ή 2), `ncols` και `xoff` αντί για το `COLS`, `set_mode` (VOS_MODE, παλέτα, στήλες), `palette2` (πένα 0 λευκή, 1 μαύρη, περίγραμμα γκρι)· στους editors `edges`, `breaks` (μια γραμμή 1 pixel στο κενό πάνω από τη γραμμή που αρχίζει σελίδα, `PAGE_LINES` = 60, σβησμένη αλλού, από το `cur_line` της κατάστασης), `page_no`, `row_rest` (ένα `VOS_RECT` στο υπόλοιπο της γραμμής). Το `page.asm` παίρνει το πλάτος από τα `ncols`/`xoff` και κρατά τους buffers στο `PV_W` = 80. Το SHEET: `vcols` (5 ή 10), `fit_left` (η πρώτη στήλη ως 16 − `vcols`), `draw_grid`.
+- **Δοκιμές:** στα σενάρια 17, 21, 26 και 32 προστέθηκε στο τέλος το CONTROL+L (στο 17 και RETURN πατημένο 5 × 250 καρέ, στο 21 και CONTROL+P).
+
 **Υλοποίηση M49 (πραγματικές δισκέτες):**
 - **Makefile:** το `SYS_APPS` (DEMO, MIXED, STUDIO, CLOCK, `VBRUN.SYS` και τα `.VBS`) πάει στη `vos.dsk`· το `DISC_APPS` (τα υπόλοιπα του `APPS`) και το `DSK_MYAPPS` στη νέα `$(APPS_DSK)`, `build/apps.dsk`, που τη φτιάχνει το `iDSK -n`. Οι δισκέτες των tests κρατούν όλο το `APPS`, όπως πριν.
 - **`tools/dsk_ext.py`:** διαβάζει τον κατάλογο (track 0 με sectors #C1.. για DATA, track 2 με #41.. για SYSTEM) και βρίσκει τα αρχεία με block ≥ 180 (DATA) ή ≥ 171 (SYSTEM). Με `--fit` σταματά, αλλιώς τυπώνει προειδοποίηση. Το file system του V-OS υπολογίζει θέση και για τέτοια blocks, γι' αυτό στον εξομοιωτή διαβάζονταν.
@@ -972,6 +981,7 @@ Header με:
 50. **M48 — SHEET και τύποι μέσω API:** η μηχανή των τύπων `CALC.SYS` (αριθμοί με δύο δεκαδικά, `+ - * /`, κελιά, SUM AVG MIN MAX COUNT ABS INT ROUND) και το API της (`VX_CALC`, API 24) για κάθε πρόγραμμα, το λογιστικό φύλλο SHEET (`.VSH` ανά τύπο), `make test-calc-sys`, `make test-sheet-z80`, `make test-sheet` (§7.3). Έκδοση 0.19. *Έγινε.*
 
 51. **M49 — Πραγματικές δισκέτες:** το V-OS σε δύο δισκέτες που χωρούν σε δισκέτα 3" (180K): η `vos.dsk` με το σύστημα στο A: και η `apps.dsk` με τα προγράμματα στο B:, ο έλεγχος `tools/dsk_ext.py --fit`, τα πακέτα με την `APPS.DSK` στο B:, `make test-apps` (§7.3). Έκδοση 0.20. *Έγινε.*
+52. **M50 — Η σελίδα (mode 2):** mode 2 στον kernel (`VOS_MODE` με A = 2, API 25: γραφικά, κείμενο, pointer, μενού και διάλογοι), η σελίδα (^M) στα NOTEPAD, MARKDOWN, READER και SHEET, προγράμματα με πίνακα relocation πάνω από 12K μόνα τους στο #4000, `make test-notepad`, `test-markdown`, `test-reader`, `test-sheet`, `test-sheet-z80` με τη σελίδα (§7.3). Έκδοση 0.21. *Έγινε.*
 ---
 
 ## 12. Αποφάσεις

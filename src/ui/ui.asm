@@ -47,30 +47,36 @@ UIP_HEAD        equ 8               ; headings on the desk
 UI_PEN_COUNT    equ 9
 
 ; ---------------------------------------------------------------------
-; ui_set_mode - A = 0 or 1: screen mode plus the UI pens for it
+; ui_set_mode - A = 0, 1 or 2: screen mode plus the UI pens for it
 ; Destroys: all
 ; ---------------------------------------------------------------------
 ui_set_mode:
-        ld hl,gfx_mode              ; keep the pointer on the same spot
-        cp (hl)
-        jr z,.same_mode
-        ld hl,split_on              ; (mixed screen: always mode 1 pixels)
-        inc (hl)
-        dec (hl)
+        ld c,a
+        ld a,(split_on)             ; (mixed screen: always mode 1 pixels)
+        or a
         jr nz,.same_mode
+        ld a,c                      ; keep the pointer on the same spot:
+        ld hl,gfx_mode              ; its x doubles a mode up
+        sub (hl)
+        jr z,.same_mode
         di
         ld hl,(ptr_x)
-        or a
-        jr z,.halve
-        add hl,hl                   ; mode 0 -> 1
-        jr .scaled
-.halve:
-        srl h                       ; mode 1 -> 0
+        jp p,.up
+.down:
+        srl h
         rr l
+        inc a
+        jr nz,.down
+        jr .scaled
+.up:
+        add hl,hl
+        dec a
+        jr nz,.up
 .scaled:
         ld (ptr_x),hl
         ei
 .same_mode:
+        ld a,c
         push af
         call gfx_set_mode
         pop af
@@ -82,6 +88,10 @@ ui_set_mode:
         ld hl,ui_pens_mode1
         ld bc,#0404
         ld de,#0208                 ; 2 characters, text 8 pixels in
+        cp 2
+        jr c,.copy
+        ld hl,ui_pens_mode2
+        ld b,8                      ; mode 2: the shadow 8 pixels right
 .copy:
         ld a,d
         ld (ui_title_pad),a
@@ -1657,6 +1667,7 @@ ui_menu_event:
 ;                  desk bar text sel seltx shadow frame desktext head
 ui_pens_mode1:  db 0,   1,  2,   2,  1,    2,     2,    1,       3
 ui_pens_mode0:  db 2,   1,  0,   0,  1,    0,     0,    1,       8
+ui_pens_mode2:  db 0,   0,  1,   1,  0,    1,     1,    1,       1
 
 ; ---- state ----------------------------------------------------------
 ui_pens:        ds UI_PEN_COUNT
@@ -1679,13 +1690,13 @@ ui_bar:         dw 0
 ui_open:        db UI_NONE
 ui_keys_was:    db 0                ; ptr_keys_on before the menu opened
 ui_sel:         db 0
-ui_title_x:     ds 2 * 8
+ui_title_x      equ GAP1 + 741      ; 2 * 8
 ui_title_pad:   db 2
 ui_title_off:   db 8
 ui_bar_x:       db 8
 ui_ind_room:    db 1
 uz_arg:         db 0
-ui_title_w:     ds 8
+ui_title_w      equ GAP1 + 757      ; 8
 ub_x:           dw 0
 ub_i:           db 0
 ut_i:           db 0

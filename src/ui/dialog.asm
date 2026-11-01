@@ -314,7 +314,6 @@ dlg_h               equ uw_h
 dlg_bx:             dw 0
 dlg_by:             dw 0
 dlg_line_y:         dw 0
-dlg_wlist:          db 0
-                    ds DLG_MAX_BUTTONS * 8
+dlg_wlist           equ GAP6 + 636  ; 1 + DLG_MAX_BUTTONS * 8
 dlg_text            equ GAP1 + 512  ; DLG_TEXT_MAX bytes
 dlg_custom          equ GAP3 + 544  ; text for DLG_OWN_TEXT dialogs

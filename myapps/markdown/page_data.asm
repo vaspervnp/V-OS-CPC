@@ -21,9 +21,9 @@ pv_dy:          dw 0
 pv_end:         db 0
 pv_rect:        dw 0, 0, 0, 8         ; x, y, w, h, pen
                 db BG
-pv_ch:          ds COLS             ; the page line: characters,
-pv_at:          ds COLS             ; then their attributes
-pv_tmp:         ds COLS * 2
+pv_ch:          ds PV_W             ; the page line: characters (up to
+pv_at:          ds PV_W             ; ncols), then their attributes
+pv_tmp:         ds PV_W * 2
         IFDEF PV_LINKS
 pv_li:          db 0                ; the links counted so far
 pv_sel:         db #FF              ; the chosen one (#FF: none)

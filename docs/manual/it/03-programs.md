@@ -15,7 +15,7 @@ Ogni programma ha il proprio menu accanto ai comuni VISTA e AIUTO. Si chiude dal
 I programmi V-OS sono di due tipi:
 
 - **Piccoli, con una tabella di rilocazione:** DEMO, MIXED e CLOCK, gli esempi dell'editor web (PONG, CATCH, STARCAT, COUNTER) e tutto quello che crea l'[SDK](../../../sdk/README.it.md). Condividono 12K di memoria, e ne girano insieme quanti ce ne stanno.
-- **Programmi che hanno bisogno di tutta la memoria:** STUDIO e quello che crea Studio (CALC, MINES, FLAP, TICKER e i tuoi). Senza un'espansione di memoria girano da soli. Se uno è già in esecuzione, compare "CHIUDI PRIMA UN ALTRO PROGRAMMA".
+- **Programmi che hanno bisogno di tutta la memoria:** STUDIO e quello che crea Studio (CALC, MINES, FLAP, TICKER e i tuoi). Così anche MARKDOWN e READER, che superano i 12K. Senza un'espansione di memoria girano da soli. Se uno è già in esecuzione, compare "CHIUDI PRIMA UN ALTRO PROGRAMMA".
 
 Quando passi a una vista (F1–F4) mentre un programma è in esecuzione:
 
@@ -42,6 +42,10 @@ Un programma piccolo, come CLOCK, può aprirsi in una finestra **sopra qualsiasi
 2. Da quel momento, **F5** lo apre e lo chiude, ovunque tu sia. Anche ESC lo chiude.
 
 Mentre è aperto, riceve i tasti e i clic. La sua finestra si può trascinare per il titolo. Quando si chiude, quello che c'era sotto viene ridisegnato.
+
+## La pagina (modo 2)
+
+NOTEPAD, MARKDOWN, READER e SHEET hanno PAGE (MODE 2) nel loro menu, ^M. Lo schermo passa al modo 2: testo nero su carta bianca, 768 pixel di larghezza, con menu e dialoghi anch'essi neri su bianco. Gli editor (NOTEPAD e MARKDOWN) mostrano 80 colonne tra i bordi della pagina, una riga dove finisce ogni pagina di 60 righe, e PAGE n nell'ultima riga. L'anteprima di MARKDOWN e READER mostrano la pagina in 80 colonne con i suoi stili. SHEET mostra 10 colonne (A–J) con righe tra loro. ^M di nuovo torna al modo 1.
 
 ## I programmi sul dischetto
 

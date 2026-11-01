@@ -3,7 +3,10 @@
 ; with a preview page (made with the SDK, from NOTEPAD)
 ;
 ; The editor is NOTEPAD's: mode 1, 48 columns, 22 lines, up to 6K of
-; text with LF between the lines (CR LF on the disc). ^P shows the page:
+; text with LF between the lines (CR LF on the disc). ^M (PAGE), as in
+; NOTEPAD: mode 2 (API 25), black on white, 80 columns between the
+; page's edges, a line where a page of PAGE_LINES lines ends, the page
+; in the last line; the preview is then 80 columns too. ^P shows the page:
 ; the marks are gone, and the text is in bold, italic or underlined with
 ; the text styles of VOS_COLOURS (API 13):
 ;   # ## ###  headings          **bold** __bold__   *italic* _italic_
@@ -14,7 +17,7 @@
 ; space. The arrows scroll the page (left and right: a screen), RETURN
 ; or ^P go back to the text.
 ;   MARKDOWN menu: NEW ^N, OPEN ^O (.MD files), SAVE ^S, SAVE AS,
-;   PREVIEW ^P, OTHER DRIVE, ABOUT, BACK ^Q
+;   PREVIEW ^P, OTHER DRIVE, PAGE ^M, ABOUT, BACK ^Q
 ;   make app NAME=markdown    build/MARKDOWN.BIN and build/markdown.dsk
 ; =====================================================================
 
@@ -23,7 +26,10 @@
 BG              equ 2               ; pens (palette below)
 INK             equ 1
 CUR_PEN         equ 3
-COLS            equ 48              ; the text on the screen
+COLS            equ 48              ; the text on the screen (mode 1)
+COLS2           equ 80              ; on the page (mode 2), from PAGE_X
+PAGE_X          equ 64
+PAGE_LINES      equ 60              ; lines a page
 ROWS            equ 22
 TOP_Y           equ 14
 STATUS_Y        equ 238
@@ -44,6 +50,7 @@ CMD_COPY        equ VC_APP + 9       ; the EDIT menu
 CMD_CUT         equ VC_APP + 10
 CMD_PASTE       equ VC_APP + 11
 CMD_ALL         equ VC_APP + 12
+CMD_PAGE        equ VC_APP + 13
 
 
         org VOS_APP_ADDR
@@ -58,10 +65,7 @@ init:
         push af
         ld hl,texts
         call VOS_TEXTS
-        ld a,1
-        call VOS_MODE
-        ld hl,palette
-        call VOS_PALETTE
+        call set_mode
         call VOS_MENU_VIEW
         ld (bar + 5),hl
         call VOS_MENU_HELP
@@ -103,13 +107,17 @@ redraw:
         ld a,BG
         call VOS_CLS
         call VOS_DRAW_BAR
+        ld a,(pmode)                ; the page: its edges
+        cp 2
+        call z,edges
         ld a,(pv_mode)
         or a
         jp nz,pv_show
-        ld a,T_HINT
         ld hl,0
         ld de,HINT_Y
-        ld c,COLS
+        ld a,(ncols)
+        ld c,a
+        ld a,T_HINT
         call print_label
         call place
         call draw_all
@@ -447,7 +455,11 @@ click:
         cp ROWS
         ret nc
         ld (click_r),a
-        ex de,hl                    ; column = x / 8
+        ex de,hl                    ; column = (x - xoff) / 8
+        ld de,(xoff)
+        or a
+        sbc hl,de
+        ret c
         srl h
         rr l
         srl h
@@ -455,7 +467,8 @@ click:
         srl h
         rr l
         ld a,l
-        cp COLS
+        ld hl,ncols
+        cp (hl)
         ret nc
         ld (click_c),a
         ld hl,.go
@@ -489,6 +502,21 @@ click:
 command:
         cp CMD_PREVIEW
         jp z,pv_toggle
+        cp CMD_PAGE
+        jr nz,.not_page
+        ld hl,pmode                 ; mode 1 <-> the page, mode 2 (the
+        ld a,(hl)                   ; preview too, from its top)
+        xor 3
+        ld (hl),a
+        xor a
+        ld (left),a
+        ld hl,0
+        ld (pv_top),hl
+        call pv_new
+        call set_mode
+        call VOS_DRAW_BAR
+        jp redraw
+.not_page:
         ld c,a                      ; its own commands leave the page
         sub VC_APP
         jr c,.text
@@ -1024,10 +1052,16 @@ place:
         jr .row
 .right:
         sub (hl)
-        cp COLS
+        push hl
+        ld hl,ncols
+        cp (hl)
+        ld a,(hl)
+        pop hl
         jr c,.row
-        ld a,(cur_col)              ; right of it
-        sub COLS - 16
+        sub 16                      ; right of it
+        ld b,a
+        ld a,(cur_col)
+        sub b
         and #F0
         ld (hl),a
         call redo_all
@@ -1121,6 +1155,8 @@ cursor_at:
         add hl,hl
         add hl,hl
         add hl,hl
+        ld bc,(xoff)
+        add hl,bc
         pop af
         jp VOS_CHAR
 
@@ -1128,7 +1164,8 @@ cursor_at:
 draw_row:
         push af
         ld de,line
-        ld b,COLS
+        ld a,(ncols)
+        ld b,a
         jr c,.pad
         ld a,(left)
         ld c,a
@@ -1153,17 +1190,12 @@ draw_row:
         djnz .char
         jr .print
 .pad:
-        ld a,COLS                   ; the characters of the row
-        sub b
+        ld a,(ncols)                ; the characters of the row (the
+        sub b                       ; rest is filled, row_rest)
         ld (row_k),a
-.space:
-        ld a," "
-        ld (de),a
-        inc de
-        djnz .space
         jr .printed
 .print:
-        ld a,COLS
+        ld a,(ncols)
         ld (row_k),a
 .printed:
         xor a
@@ -1172,9 +1204,10 @@ draw_row:
         pop af
         call row_y
         ld (row_y0),de
-        ld hl,0
+        ld hl,(xoff)
         ld bc,line
         call VOS_PRINT
+        call row_rest
         call sel_range              ; the selected part, inverted
         ret z
         push de
@@ -1206,6 +1239,8 @@ draw_row:
         add hl,hl
         add hl,hl
         add hl,hl
+        ld de,(xoff)
+        add hl,de
         ld de,(row_y0)
         jp VOS_PRINT
 ; HL -> in the text -> A = its column in the row, 0 to row_k
@@ -1225,6 +1260,145 @@ draw_row:
         ret c
         ld a,l
         ret
+
+; the mode of pmode, its palette, columns and x
+set_mode:
+        ld a,(pmode)
+        call VOS_MODE
+        ld hl,palette
+        ld bc,COLS
+        ld de,0
+        ld a,(pmode)
+        cp 2
+        jr nz,.set
+        ld hl,palette2
+        ld c,COLS2
+        ld e,PAGE_X
+.set:
+        ld a,c
+        ld (ncols),a
+        ld (xoff),de
+        jp VOS_PALETTE
+
+; the page's edges, left and right of its text
+edges:
+        ld ix,edge_rect
+        ld hl,PAGE_X - 6
+        ld (ix+0),l
+        ld (ix+1),h
+        call VOS_RECT
+        ld hl,PAGE_X + COLS2 * 8 + 5
+        ld (ix+0),l
+        ld (ix+1),h
+        jp VOS_RECT
+
+; the page: a line over each row that starts a page (cur_line, a page
+; every PAGE_LINES lines), none over the others
+breaks:
+        ld a,(pmode)
+        cp 2
+        ret nz
+        ld hl,(cur_line)            ; the top row's line, from 0
+        ld a,(cur_row)
+        ld e,a
+        ld d,0
+        or a
+        sbc hl,de
+        dec hl
+        ld a,h
+        or l
+        ld (brk_first),a            ; 0: the text's first line on top
+        ld bc,-PAGE_LINES
+.mod:
+        add hl,bc
+        jr c,.mod
+        ld bc,PAGE_LINES
+        add hl,bc
+        ld c,l                      ; its line in its page
+        ld b,0                      ; row
+.row:
+        push bc
+        ld a,c
+        or a
+        ld a,BG
+        jr nz,.pen
+        ld a,b                      ; a page starts here, unless it is
+        or a                        ; the first line of the text
+        ld a,INK
+        jr nz,.pen
+        ld a,(brk_first)
+        or a
+        ld a,INK
+        jr nz,.pen
+        ld a,BG
+.pen:
+        ld (brk_rect + 8),a
+        ld a,b
+        call row_y
+        dec de
+        ld (brk_rect + 2),de
+        ld ix,brk_rect
+        call VOS_RECT
+        pop bc
+        inc c
+        ld a,c
+        cp PAGE_LINES
+        jr c,.next
+        ld c,0
+.next:
+        inc b
+        ld a,b
+        cp ROWS
+        jr c,.row
+        ret
+
+; PAGE n in the last line: n = (cur_line - 1) / PAGE_LINES + 1
+page_no:
+        ld a,T_PAGE_NO
+        ld hl,384
+        ld de,STATUS_Y
+        ld c,6
+        call print_label
+        ld hl,(cur_line)
+        dec hl
+        ld de,-PAGE_LINES
+        ld bc,1
+.div:
+        add hl,de
+        jr nc,.n
+        inc bc
+        jr .div
+.n:
+        ld h,b
+        ld l,c
+        ld de,432
+        jp number
+
+; the row after its row_k characters: empty, a rectangle is faster
+; than spaces
+row_rest:
+        ld a,(row_k)
+        ld l,a
+        ld a,(ncols)
+        sub l
+        ret z
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,(xoff)
+        add hl,de
+        ld (rest_rect),hl
+        ld hl,(row_y0)
+        ld (rest_rect + 2),hl
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld (rest_rect + 4),hl
+        ld ix,rest_rect
+        jp VOS_RECT
 
 ; A = row -> DE = its y
 row_y:
@@ -1248,10 +1422,11 @@ status:
         ld a,(pv_mode)
         or a
         jr z,.text
-        ld a,T_PV_STATUS
         ld hl,0
         ld de,STATUS_Y
-        ld c,COLS
+        ld a,(ncols)
+        ld c,a
+        ld a,T_PV_STATUS
         jp print_label
 .text:
         ld de,line
@@ -1298,7 +1473,7 @@ status:
         ld a,CUR_PEN
         ld c,BG
         call VOS_COLOURS
-        ld hl,0
+        ld hl,(xoff)
         ld de,STATUS_Y
         ld bc,line
         call VOS_PRINT
@@ -1320,10 +1495,14 @@ status:
         inc bc
         jr .count
 .counted:
-        ld h,b
-        ld l,c
+        ld (cur_line),bc
+        call breaks
+        ld hl,(cur_line)
         ld de,240
         call number
+        ld a,(pmode)                ; the page: PAGE n
+        cp 2
+        call z,page_no
         ld a,T_COL
         ld hl,288
         ld de,STATUS_Y
@@ -1336,9 +1515,12 @@ status:
         ld de,336
         ; fall through
 
-; HL = number, DE = x: 5 digits on the last line
+; HL = number, DE = x (from xoff): 5 digits on the last line
 number:
-        push de
+        push hl
+        ld hl,(xoff)
+        add hl,de
+        ex (sp),hl
         ld de,line
         ld bc,-10000
         call .digit
@@ -1378,8 +1560,13 @@ number:
         inc de
         ret
 
-; A = text, HL = x, DE = y, C = width: it, then spaces to the width
+; A = text, HL = x (from xoff), DE = y, C = width: it, then spaces to
+; the width
 print_label:
+        push de
+        ld de,(xoff)
+        add hl,de
+        pop de
         push hl
         push de
         push bc
@@ -1425,10 +1612,11 @@ pv_toggle:
 
 ; the page on the screen, with its hint and status line
 pv_show:
-        ld a,T_PV_HINT
         ld hl,0
         ld de,HINT_Y
-        ld c,COLS
+        ld a,(ncols)
+        ld c,a
+        ld a,T_PV_HINT
         call print_label
         call pv_render
         jp status
@@ -1501,16 +1689,26 @@ pv_event:
 ; black, white, blue, bright yellow (mode 1: pens 0..3), the border
 palette:        db 0, 26, 1, 24, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16
                 db 1
+; the page (mode 2): pen 0 white paper, pen 1 black ink, a grey border
+palette2:       db 26, 0, 26, 0, 26, 0, 26, 0, 26, 0, 26, 0, 26, 0, 26, 0
+                db 13
+edge_rect:      dw 0, TOP_Y - 2, 1, ROWS * 10 + 2
+                db INK
+brk_rect:       dw PAGE_X, 0, COLS2 * 8, 1
+                db INK
+rest_rect:      dw 0, 0, 0, 8
+                db BG
 
 bar:            db 4
                 dw menu, edit_menu, 0, 0
-menu:           db T_MENU, 9
+menu:           db T_MENU, 10
                 db T_NEW, CMD_NEW, "N", 0
                 db T_OPEN, CMD_OPEN, "O", 0
                 db T_SAVE, CMD_SAVE, "S", 0
                 db T_SAVE_AS, CMD_SAVE_AS, 0, 0
                 db T_PREVIEW, CMD_PREVIEW, "P", 0
                 db T_DRIVE, CMD_DRIVE, 0, 0
+                db T_PAGE, CMD_PAGE, "M", 0
                 db T_ABOUT, CMD_ABOUT, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
@@ -1545,6 +1743,11 @@ row_i0:         db 0
 tend:           dw 0                ; -> after the text
 top:            dw 0                ; -> the first line on the screen
 left:           db 0                ; the first column on the screen
+pmode:          db 1                ; 1, or 2: the page (^M)
+ncols:          db COLS             ; the columns on the screen
+xoff:           dw 0                ; x of the first one
+cur_line:       dw 1                ; the cursor's line, from 1
+brk_first:      db 0
 cur_ls:         dw 0                ; -> the cursor's line
 cur_row:        db 0
 cur_col:        db 0
@@ -1556,5 +1759,5 @@ outp:           dw 0
 sbuf:           ds 32
 pv_mode:        db 0                ; 1: the page
         include "page_data.asm"
-line:           ds COLS + 1
+line:           ds COLS2 + 1
 text:           ds TEXT_MAX

@@ -4,13 +4,15 @@
 ;
 ; Mode 1, 48 columns. A sheet has 16 columns (A-P) and 64 rows; the
 ; screen shows 5 columns and 19 rows of it, and the cursor's cell with
-; its text on the first line. A cell holds up to 40 characters: a
+; its text on the first line. ^M (PAGE) switches to the page: mode 2
+; (API 25), 96 columns, black on white, 10 columns of the sheet with
+; lines between them. A cell holds up to 40 characters: a
 ; number (12, -3.5), text, or a formula after "=" (=SUM(B2:B9)*2):
 ; see src/api/vos_api.inc for what formulas have.
 ;   ARROWS move, RETURN changes the cell, typing starts a new text,
 ;   DEL or CLR empties it. After each change every formula is worked out again.
 ;   SHEET menu: NEW SHEET ^N, OPEN ^O, SAVE ^S, SAVE AS ^A, OTHER DRIVE
-;   ^W, ABOUT, BACK ^Q
+;   ^W, PAGE ^M, ABOUT, BACK ^Q
 ; The cells' texts are kept here; their values (CALC_NONE for text or
 ; nothing) in the data bank, from GRID, as CALC.SYS reads them: they
 ; are worked out again whenever the data bank may have been lost (a 6128
@@ -23,10 +25,12 @@
 BG              equ 2               ; pens (palette below)
 INK             equ 1
 HEAD            equ 3
-COLS            equ 48
+COLS            equ 48              ; mode 1
+COLS2           equ 96              ; the page, mode 2
 N_COLS          equ 16              ; the sheet
 N_ROWS          equ 64
-VIS_COLS        equ 5               ; on the screen
+VIS_COLS        equ 5               ; on the screen (mode 1)
+VIS_COLS2       equ 10              ; on the page
 VIS_ROWS        equ 19
 CELL_W          equ 9               ; a column: 8 characters and a space
 NUM_W           equ 3               ; the rows' numbers
@@ -46,6 +50,8 @@ CHUNK           equ 128             ; read and written that much a time
 LINE_MAX        equ 63
 HEAP_MAX        equ 6400            ; the cells' texts
 
+        assert NUM_W + VIS_COLS2 * CELL_W <= COLS2
+
 CMD_NEW         equ VC_APP + 1      ; menu items: commands
 CMD_OPEN        equ VC_APP + 2
 CMD_SAVE        equ VC_APP + 3
@@ -53,6 +59,7 @@ CMD_SAVE_AS     equ VC_APP + 4
 CMD_DRIVE       equ VC_APP + 5
 CMD_ABOUT       equ VC_APP + 6
 CMD_BACK        equ VC_APP + 7
+CMD_PAGE        equ VC_APP + 8
 
         org VOS_APP_ADDR
         jp init
@@ -67,10 +74,7 @@ init:
         push af
         ld hl,texts
         call VOS_TEXTS
-        ld a,1
-        call VOS_MODE
-        ld hl,palette
-        call VOS_PALETTE
+        call set_mode
         call VOS_MENU_VIEW
         ld (bar + 3),hl
         call VOS_MENU_HELP
@@ -597,10 +601,11 @@ draw_top:
 ; the columns' letters
 draw_head:
         call blank_line
+        ld a,(vcols)
+        ld b,a
         ld hl,line + NUM_W + 4
         ld a,(left)
         add a,"A"
-        ld b,VIS_COLS
 .col:
         ld (hl),a
         inc a
@@ -647,7 +652,8 @@ draw_row:
         ld (col),a
         ld hl,left
         sub (hl)
-        cp VIS_COLS
+        ld hl,vcols
+        cp (hl)
         jr c,.cell
 .print:
         call colours
@@ -656,6 +662,7 @@ draw_row:
         ld hl,0
         ld bc,line
         call VOS_PRINT
+        call draw_grid
         ld a,(row)                  ; its number
         cp N_ROWS
         ret nc
@@ -707,6 +714,79 @@ draw_row:
         add hl,hl
         ld bc,lbuf
         jp VOS_PRINT
+
+; the page: a line between the cells of the row srow
+draw_grid:
+        ld a,(pmode)
+        cp 2
+        ret nz
+        ld a,(srow)
+        call row_y
+        ld (grid_rect + 2),de
+        ld ix,grid_rect
+        ld hl,NUM_W * 8 - 4         ; in the space before each cell
+        ld a,(vcols)
+        inc a
+        ld b,a
+.line:
+        push bc
+        push hl
+        ld (ix+0),l
+        ld (ix+1),h
+        call VOS_RECT
+        pop hl
+        ld de,CELL_W * 8
+        add hl,de
+        pop bc
+        djnz .line
+        ret
+
+; left: the cursor's column on the screen, and the last one at most P
+fit_left:
+        ld a,(cur_c)
+        ld hl,left
+        cp (hl)
+        jr nc,.not_left
+        ld (hl),a
+        jr .max
+.not_left:
+        ld b,a
+        ld a,(vcols)
+        dec a
+        ld c,a
+        ld a,b
+        sub c
+        jr c,.max
+        cp (hl)
+        jr c,.max
+        ld (hl),a
+.max:
+        ld a,(vcols)
+        ld b,a
+        ld a,N_COLS
+        sub b
+        cp (hl)
+        ret nc
+        ld (hl),a
+        ret
+
+; the mode of pmode: its palette, its columns
+set_mode:
+        ld a,(pmode)
+        call VOS_MODE
+        ld hl,palette
+        ld bc,COLS * 256 + VIS_COLS
+        ld a,(pmode)
+        cp 2
+        jr nz,.set
+        ld hl,palette2
+        ld bc,COLS2 * 256 + VIS_COLS2
+.set:
+        ld a,b
+        ld (ncols),a
+        ld a,c
+        ld (vcols),a
+        jp VOS_PALETTE
 
 ; A = row on the screen -> DE = its y
 row_y:
@@ -907,18 +987,7 @@ event:
 moved:
         ld hl,(left)                ; left, top
         ld (was),hl
-        ld a,(cur_c)                ; a column on the screen
-        ld hl,left
-        cp (hl)
-        jr nc,.not_left
-        ld (hl),a
-        jr .rows
-.not_left:
-        sub VIS_COLS - 1
-        jr c,.rows
-        cp (hl)
-        jr c,.rows
-        ld (hl),a
+        call fit_left               ; a column on the screen
 .rows:
         ld a,(cur_r)
         ld hl,top
@@ -1036,6 +1105,16 @@ command:
         ld (fdrive),a
         jp draw_top
 .not_drive:
+        cp CMD_PAGE
+        jr nz,.not_page
+        ld hl,pmode                 ; mode 1 <-> the page, mode 2
+        ld a,(hl)
+        xor 3
+        ld (hl),a
+        call set_mode
+        call fit_left
+        jp redraw
+.not_page:
         cp CMD_ABOUT
         jr nz,.not_about
         ld hl,dlg_about
@@ -1452,10 +1531,11 @@ ask_name:
 ; ---------------------------------------------------------------------
 ; little things
 ; ---------------------------------------------------------------------
-; line: 48 spaces, 0
+; line: ncols spaces, 0
 blank_line:
+        ld a,(ncols)
+        ld b,a
         ld hl,line
-        ld b,COLS
 .space:
         ld (hl)," "
         inc hl
@@ -1506,15 +1586,21 @@ print_label:
 ; black, white, blue, bright yellow (mode 1: pens 0..3), the border
 palette:        db 0, 26, 1, 24, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16
                 db 1
+; the page: white paper, black ink (pens 2, 3 are 0, 1)
+palette2:       db 26, 0, 26, 0, 26, 0, 26, 0, 26, 0, 26, 0, 26, 0, 26, 0
+                db 13
+grid_rect:      dw 0, 0, 1, 10
+                db INK
 bar:            db 3
                 dw menu, 0, 0
-menu:           db T_MENU, 9
+menu:           db T_MENU, 10
                 db T_NEW, CMD_NEW, "N", 0
                 db T_OPEN, CMD_OPEN, "O", 0
                 db T_SAVE, CMD_SAVE, "S", 0
                 db T_SAVE_AS, CMD_SAVE_AS, "A", 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_DRIVE, CMD_DRIVE, "W", 0
+                db T_PAGE, CMD_PAGE, "M", 0
                 db T_ABOUT, CMD_ABOUT, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
@@ -1537,6 +1623,9 @@ name_tmp:       ds 11
 name_buf:       ds 8
 modified:       db 0
 said:           db 0                ; a text for the last line, once
+pmode:          db 1                ; 1, or 2: the page (^M)
+ncols:          db COLS             ; the characters of a line
+vcols:          db VIS_COLS         ; the sheet's columns on the screen
 cur_c:          db 0
 cur_r:          db 0
 left:           db 0                ; the first column, row on the screen
@@ -1561,7 +1650,7 @@ fb_i:           db 0
 ntext:          ds CALC_TEXT_MAX + 2
 input:          ds CELL_MAX + 2
 ctext:          ds CELL_MAX + 1
-line:           ds COLS + 1
+line:           ds COLS2 + 1
 lbuf:           ds LINE_MAX + 1
 fbuf:           ds CHUNK
 heap_end:       dw 0

@@ -1,7 +1,9 @@
 ; =====================================================================
 ; reader.asm - READER, Markdown pages from the disc or the web (SDK)
 ;
-; Mode 1, 48 columns, 22 rows: a page as MARKDOWN's preview shows it
+; Mode 1, 48 columns, 22 rows; ^M (PAGE): mode 2 (API 25), black on
+; white, 80 columns between the page's edges. A page as MARKDOWN's
+; preview shows it
 ; (../markdown/page.asm, with PV_LINKS). A page is a place: "A:NAME.MD"
 ; on a disc, or "host/path" on the web (HTTP, with the M4 board,
 ; VX_M4: C_HTTPGETMEM, then C_COPYBUF 512 bytes at a time), up to 6K.
@@ -11,7 +13,7 @@
 ;               or a name next to this page (on its disc, or on the web)
 ;   DEL         the page before (up to HIST_MAX back)
 ;   READER menu: OPEN A FILE ^O (.MD), OPEN AN ADDRESS ^U, PREVIOUS
-;   PAGE, OTHER DRIVE, ABOUT, BACK ^Q
+;   PAGE, OTHER DRIVE, PAGE ^M, ABOUT, BACK ^Q
 ; At the start it opens INDEX.MD from its own drive.
 ;   make app NAME=reader      build/READER.BIN and build/reader.dsk
 ; =====================================================================
@@ -23,7 +25,9 @@ PV_LINKS        equ 1               ; page.asm: links, TAB and RETURN
 BG              equ 2               ; pens (palette below)
 INK             equ 1
 CUR_PEN         equ 3
-COLS            equ 48              ; the page on the screen
+COLS            equ 48              ; the page on the screen (mode 1)
+COLS2           equ 80              ; on the page (mode 2), from PAGE_X
+PAGE_X          equ 64
 ROWS            equ 22
 TOP_Y           equ 14
 STATUS_Y        equ 238
@@ -43,6 +47,7 @@ CMD_PREVIOUS    equ VC_APP + 3
 CMD_DRIVE       equ VC_APP + 4
 CMD_ABOUT       equ VC_APP + 5
 CMD_BACK        equ VC_APP + 6
+CMD_PAGE        equ VC_APP + 7
 
         org VOS_APP_ADDR
         jp init
@@ -56,10 +61,7 @@ init:
         push af
         ld hl,texts
         call VOS_TEXTS
-        ld a,1
-        call VOS_MODE
-        ld hl,palette
-        call VOS_PALETTE
+        call set_mode
         call VOS_MENU_VIEW
         ld (bar + 3),hl
         call VOS_MENU_HELP
@@ -84,10 +86,14 @@ redraw:
         ld a,BG
         call VOS_CLS
         call VOS_DRAW_BAR
-        ld a,T_HINT
+        ld a,(pmode)                ; the page: its edges
+        cp 2
+        call z,edges
         ld hl,0
         ld de,HINT_Y
-        ld c,COLS
+        ld a,(ncols)
+        ld c,a
+        ld a,T_HINT
         call print_lab
         call pv_render
         ; fall through
@@ -96,7 +102,8 @@ redraw:
 status:
         ld hl,place
         ld de,line
-        ld b,COLS
+        ld a,(ncols)
+        ld b,a
 .char:
         ld a,(hl)
         or a
@@ -117,10 +124,41 @@ status:
         ld a,CUR_PEN
         ld c,BG
         call VOS_COLOURS
-        ld hl,0
+        ld hl,(xoff)
         ld de,STATUS_Y
         ld bc,line
         jp VOS_PRINT
+
+; the mode of pmode, its palette, columns and x
+set_mode:
+        ld a,(pmode)
+        call VOS_MODE
+        ld hl,palette
+        ld bc,COLS
+        ld de,0
+        ld a,(pmode)
+        cp 2
+        jr nz,.set
+        ld hl,palette2
+        ld c,COLS2
+        ld e,PAGE_X
+.set:
+        ld a,c
+        ld (ncols),a
+        ld (xoff),de
+        jp VOS_PALETTE
+
+; the page's edges, left and right of its text
+edges:
+        ld ix,edge_rect
+        ld hl,PAGE_X - 6
+        ld (ix+0),l
+        ld (ix+1),h
+        call VOS_RECT
+        ld hl,PAGE_X + COLS2 * 8 + 5
+        ld (ix+0),l
+        ld (ix+1),h
+        jp VOS_RECT
 
 ; ---------------------------------------------------------------------
 ; events
@@ -200,9 +238,9 @@ event:
 ; A = command (the menu)
 command:
         cp CMD_OPEN
-        jr z,open_file
+        jp z,open_file
         cp CMD_ADDRESS
-        jr z,open_address
+        jp z,open_address
         cp CMD_PREVIOUS
         jp z,previous
         cp CMD_DRIVE
@@ -213,6 +251,19 @@ command:
         ld (hl),a
         ret
 .not_drive:
+        cp CMD_PAGE
+        jr nz,.not_page
+        ld hl,pmode                 ; mode 1 <-> the page, mode 2: the
+        ld a,(hl)                   ; page again from its top (it wraps
+        xor 3                       ; elsewhere: no checkpoints)
+        ld (hl),a
+        ld hl,0
+        ld (pv_top),hl
+        call pv_new
+        call set_mode
+        call VOS_DRAW_BAR
+        jp redraw
+.not_page:
         cp CMD_ABOUT
         jr nz,.not_about
         ld hl,dlg_about
@@ -357,20 +408,33 @@ load_place:
         ld hl,dlg_fail
         jp VOS_DIALOG
 
-; A = text: on the last line
+; A = text: on the last line, then spaces to its end
 loading:
         call VOS_MSG
         ld de,place_tmp
-        ld bc,COLS
-        ldir
+        ld a,(ncols)
+        ld b,a
+.char:
+        ld a,(hl)
+        or a
+        jr z,.pad
+        ld (de),a
+        inc hl
+        inc de
+        djnz .char
+        jr .end
+.pad:
+        ld a," "
+        ld (de),a
+        inc de
+        djnz .pad
+.end:
+        xor a
+        ld (de),a
         ld a,CUR_PEN
         ld c,BG
         call VOS_COLOURS
-        ld hl,0
-        ld de,STATUS_Y
-        ld bc,blank
-        call VOS_PRINT
-        ld hl,0
+        ld hl,(xoff)
         ld de,STATUS_Y
         ld bc,place_tmp
         jp VOS_PRINT
@@ -818,8 +882,13 @@ copy_z:
         inc de
         jr copy_z
 
-; A = text, HL = x, DE = y, C = width: it, then spaces to the width
+; A = text, HL = x (from xoff), DE = y, C = width: it, then spaces to
+; the width
 print_lab:
+        push de
+        ld de,(xoff)
+        add hl,de
+        pop de
         push hl
         push de
         push bc
@@ -858,13 +927,19 @@ print_lab:
 ; black, white, blue, bright yellow (mode 1: pens 0..3), the border
 palette:        db 0, 26, 1, 24, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16
                 db 1
+; the page (mode 2): pen 0 white paper, pen 1 black ink, a grey border
+palette2:       db 26, 0, 26, 0, 26, 0, 26, 0, 26, 0, 26, 0, 26, 0, 26, 0
+                db 13
+edge_rect:      dw 0, TOP_Y - 2, 1, ROWS * 10 + 2
+                db INK
 bar:            db 3
                 dw menu, 0, 0
-menu:           db T_MENU, 7
+menu:           db T_MENU, 8
                 db T_OPEN, CMD_OPEN, "O", 0
                 db T_ADDRESS, CMD_ADDRESS, "U", 0
                 db T_PREVIOUS, CMD_PREVIOUS, 0, 0
                 db T_DRIVE, CMD_DRIVE, 0, 0
+                db T_PAGE, CMD_PAGE, "M", 0
                 db T_ABOUT, CMD_ABOUT, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
@@ -873,12 +948,13 @@ dlg_fail:       db T_MENU, 0, 1, VM_OK
 ext_md:         db "MD "
 http:           db "http://"
 start:          db "A:INDEX.MD", 0
-blank:          ds COLS, " "
-                db 0
 
         include "app_texts.asm"     ; texts, from texts.txt
 
 fdrive:         db 0
+pmode:          db 1                ; 1, or 2: the page (^M)
+ncols:          db COLS             ; the page's columns on the screen
+xoff:           dw 0                ; x of the first one
 cat:            dw 0
 flen:           dw 0
 done:           dw 0
@@ -890,7 +966,7 @@ place:          ds PLACE_MAX + 1    ; the page shown
 new_place:      ds PLACE_MAX + 1
 link:           ds PLACE_MAX + 1
 addr:           ds PLACE_MAX + 1
-place_tmp:      ds COLS + 1
+place_tmp:      ds COLS2 + 1
 hist:           ds HIST_MAX * (PLACE_MAX + 1)
 pk_get:         db 0                ; C_HTTPGETMEM: size, command, bytes
                 dw C_HTTPGETMEM     ; wanted, the address
@@ -900,7 +976,7 @@ pk_copy:        db 6                ; C_COPYBUF: size, command, from,
                 dw C_COPYBUF        ; bytes
                 dw 0, 0
 resp:           ds 3 + PIECE
-line:           ds COLS + 1
+line:           ds COLS2 + 1
         include "../markdown/page_data.asm"
 tend:           dw 0
 text:           ds TEXT_MAX

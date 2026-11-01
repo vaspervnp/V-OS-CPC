@@ -85,7 +85,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -680,6 +680,25 @@ $(APPS_TEST_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(SYS_APPS)
 	$(call add_apps,$@,$(SYS_APPS))
 	$(PYTHON) -I tools/dsk_ext.py --fit $@
 
+# The demo for the videos (tools/video): V-OS built with -DDEMO plays
+# DEMO.KEY (tools/video/demo.py) by itself (kernel/demo.asm), with a
+# RAM expansion. build/demo_sys.dsk has the system and ENGLISH.MSG;
+# tools/video/record.py adds a language, DEMO.KEY and the programs, all
+# on A: (CPCEMU 2.5 for Linux has no drive B:), records it in CPCEMU
+# (576K, M4) and puts the captions on.
+#   make demo-sys linux; tools/video/record.py en (el fr es de it)
+DEMO_SYS := $(BUILD)/demo_sys.dsk
+$(BUILD)/DEMO1.KEY $(BUILD)/DEMO2.KEY $(BUILD)/demo_captions.json &: tools/video/demo.py
+	@mkdir -p $(BUILD)
+	$(PYTHON) -I tools/video/demo.py $(BUILD)/DEMO.KEY $(BUILD)/demo_captions.json
+$(DEMO_SYS): $(SOURCES) $(LANG_KERNEL) $(PACKS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_demo -DDEMO=1
+	mv $(DSK) $@
+	$(IDSK) $@ -i $(BUILD)/ENGLISH.MSG -t 1 -c 8000 -e 8000 > /dev/null
+demo-sys: $(DEMO_SYS) $(BUILD)/DEMO1.KEY $(APPS) $(MYAPP_BINS)
+
 test-apps: $(APPS_TEST_DSK) $(APPS_DSK)
 	rm -rf $(BUILD)/shots
 	for d in $(APPS_SHOTS); do \
@@ -710,7 +729,7 @@ test-music: $(MUSIC_DSK) $(BUILD)/music.dsk
 
 # READER (TEST_SCRIPT=26): myapps/reader from build/reader.dsk in B:
 READER_DSK := $(BUILD)/vos_reader.dsk
-READER_SHOTS := 290 330 380 470 600
+READER_SHOTS := 290 330 380 470 600 760
 $(READER_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
@@ -992,7 +1011,7 @@ test-database: $(DATABASE_DSK) $(TEST_DSK_B)
 # SHEET (TEST_SCRIPT=32): numbers and a formula typed, worked out by
 # CALC.SYS from A:, the sheet saved as B:T.VSH
 SHEET_DSK := $(BUILD)/vos_sheet.dsk
-SHEET_SHOTS := 1600 4500
+SHEET_SHOTS := 1600 4500 5600
 $(SHEET_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/SHEET.BIN
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
@@ -1061,7 +1080,7 @@ test-notepad-big: $(BUILD)/NOTEPAD.BIN
 
 # MARKDOWN (TEST_SCRIPT=21): myapps/markdown from build/markdown.dsk in B:
 MARKDOWN_DSK := $(BUILD)/vos_markdown.dsk
-MARKDOWN_SHOTS := 300 380 430 530 700
+MARKDOWN_SHOTS := 300 380 430 530 700 900
 $(MARKDOWN_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
@@ -1135,7 +1154,7 @@ test-scr: $(BUILD)/PAINT.BIN
 
 # NOTEPAD (TEST_SCRIPT=17): myapps/notepad, last on the test disc
 NOTEPAD_DSK := $(BUILD)/vos_notepad.dsk
-NOTEPAD_SHOTS := 330 430 480 510
+NOTEPAD_SHOTS := 330 430 480 510 600 2100
 $(NOTEPAD_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/NOTEPAD.BIN
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)

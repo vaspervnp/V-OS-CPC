@@ -96,27 +96,27 @@ Die Tests starten V-OS in Caprice32 ohne Fenster und machen Screenshots in `buil
 | `test-sdk` | die SDK-Vorlage |
 | `test-apps` | die zwei Disketten, wie sie ausgegeben werden, `vos.dsk` (mit den Test-Tasten) in A: und `apps.dsk` in B:: der Launcher zeigt B:, und PONG läuft von dort |
 | `test-vrouves` | VROUVES von seiner Diskette in B:, über den Launcher (TAB): Bauen, Welle 1, das Geld, HIGH SCORES |
-| `test-notepad` | NOTEPAD: Tippen, DEL, der Speicherdialog, OPEN mit nur `.TXT`-Dateien |
+| `test-notepad` | NOTEPAD: Tippen, DEL, der Speicherdialog, OPEN mit nur `.TXT`-Dateien; dann ^M: die Seite (Modus 2) |
 | `test-notepad-big` | NOTEPADs Textfenster in einem Z80-Emulator (`tools/notepad_check.py`): eine 12K-Datei mit eigener Datenbank, Bewegen, Tippen und SAVE, Text bis 16K, und 4K auf einem 6128 |
 | `test-data` | (576K) NOTEPAD mit 15K Text bis Zeile 33, dazwischen MARKDOWN, dann NOTEPAD zurück zum Anfang: die Zeilen aus seiner eigenen Datenbank |
 | `test-paint` | PAINT: Linie, Rechteck, Füllen, die Menüs, dann die Ebenen (eine ausblenden), OTHER DRIVE und EXPORT .SCR nach B: ("SAVED AS .SCR") |
 | `test-scr` | PAINTs EXPORT .SCR (sein Code in einem Z80-Emulator, `tools/scr_check.py`) wird in BASIC von Diskette geladen, mit der Palette; jedes Pixel des Bildschirms wird geprüft |
 | `test-about` | HILFE > ÜBER V-OS |
 | `test-music` | MUSIC von `music.dsk` in B:: ein Song spielt und läuft hinter dem Launcher weiter |
-| `test-markdown` | MARKDOWN von `markdown.dsk` in B:: `README.MD` geöffnet, die Seite mit ^P, einen Bildschirm weiter, zurück zum Text |
+| `test-markdown` | MARKDOWN von `markdown.dsk` in B:: `README.MD` geöffnet, die Seite mit ^P, einen Bildschirm weiter, zurück zum Text; dann ^M: die Seite (Modus 2) |
 | `test-open` | Öffnen nach Typ im Commander: `README.MD` in MARKDOWN von B:, eine `.TXT` in NOTEPAD von A: |
 | `test-sysinfo` | SYSINFO aus dem Commander: Version, API, Speicher, freie K auf A: und B:, ^R, ^Q. Mit `SYSINFO_RAM=576` mit einer 512K-Erweiterung |
 | `test-clip` | die Zwischenablage: Markieren mit SHIFT, ^C und ^V in NOTEPAD, ^A, ^X, ^V, dann ^V in MARKDOWN |
 | `test-webget` | von Hand, im CPCEMU von `make linux` (M4-Karte; braucht einen Bildschirm und das Internet): WEBGET lädt `example.com/index.html`. Schließe CPCEMU mit F12, wenn SAVED erscheint; dann wird `INDEX.HTM` auf der Diskette gesucht |
-| `test-reader` | READER von `reader.dsk` in B: öffnet `INDEX.MD`, TAB wählt einen Link, RETURN öffnet `ABOUT.MD`, DEL geht zurück, und ein `https://`-Link gibt eine Meldung |
+| `test-reader` | READER von `reader.dsk` in B: öffnet `INDEX.MD`, TAB wählt einen Link, RETURN öffnet `ABOUT.MD`, DEL geht zurück, und ein `https://`-Link gibt eine Meldung; dann ^M: die Seite (Modus 2) |
 | `test-db` | die Datenbank-Maschine in einem Z80-Emulator (`tools/db_check.py`): tausende zufällige Aufrufe auf vier Tabellen, gegen ein Modell geprüft, die Datei Seite für Seite (`tools/vdb.py`), bis die Diskette voll ist |
 | `test-db-disc` | `DB.SYS` mit dem Dateisystem des Kernels auf einem DSK-Abbild (`tools/db_disc_check.py`) |
 | `test-streets` | STREETS von `streets.dsk` in B:: ein neues `STREETS.VDB` mit 24 Straßen, Suchen, eine neue Straße |
 | `test-database-z80` | DATABASE in einem Z80-Emulator, die Datenbank in Python und der Bildschirm als Text: zwei Tabellen, 47 Datensätze aus dem Formular, die Reihenfolge ohne Groß-/Kleinschreibung und Akzente, Suchen, eine Änderung, ein Löschen, Blättern |
 | `test-database` | DATABASE in Caprice32: eine neue Datenbank auf B:, eine Tabelle, drei Datensätze aus dem Formular, die Liste, Suchen, eine Änderung |
 | `test-calc-sys` | die Formel-Engine `CALC.SYS` in einem Z80-Emulator (`tools/calc_check.py`): feste Formeln und 40.000 zufällige, Zahlen und Texte, mit einem Modell in Python verglichen |
-| `test-sheet-z80` | SHEET in einem Z80-Emulator mit `CALC.SYS` selbst und dem Bildschirm als Text: Werte, `#ERR`, Zellen, die einander benutzen, Blättern, SAVE und OPEN, eine UTF-8-Datei, `BUDGET.VSH`, ein volles Blatt |
-| `test-sheet` | SHEET in Caprice32: Zahlen und eine Formel getippt, `CALC.SYS` von A:, das Blatt auf B: gespeichert |
+| `test-sheet-z80` | SHEET in einem Z80-Emulator mit `CALC.SYS` selbst und dem Bildschirm als Text: Werte, `#ERR`, Zellen, die einander benutzen, Blättern, SAVE und OPEN, eine UTF-8-Datei, `BUDGET.VSH`, ein volles Blatt; dann ^M: die Seite (Modus 2) |
+| `test-sheet` | SHEET in Caprice32: Zahlen und eine Formel getippt, `CALC.SYS` von A:, das Blatt auf B: gespeichert; dann ^M: die Seite (Modus 2) |
 | `test-kbds` | TASTATUREN: ALLE SECHS in Setup, dann in NOTEPAD die Tasten `:` und Z mit jeder Tastatur: `:z`, `:ζ`, `mw`, `ñz`, `öy`, `òz` |
 | `test-charset`, `test-reader-utf8` | UTF-8-Dateien auf Griechisch, Französisch, Spanisch, Deutsch und Italienisch in NOTEPAD und in READER |
 | `test-utf8` | der Code von `VX_UTF8` in einem Z80-Emulator, gegen `tools/voscs.py` |

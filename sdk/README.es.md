@@ -37,7 +37,7 @@ Un programa más grande:
 - Lo que ponga en la subcarpeta `disc/` (p. ej. `disc/LEVEL1.DAT`) va tal cual al disquete, para `VOS_LOAD`.
 - Con una subcarpeta `owndisc/`, el programa tiene además su propio disquete, `build/<nombre>.dsk`, con el `.BIN` y los archivos de `owndisc/`. No va en `apps.dsk`. Se pone en B: y se ejecuta desde el Launcher (TAB, la otra unidad). La unidad desde la que se inició, para cargar de allí sus archivos, está en `VOS_SELF`: `db unidad`, y luego su nombre (11 bytes).
 - **Un archivo para abrir (versión 14):** cuando RETURN en el Escritorio o el Commander abre un archivo en su programa, `VOS_OPEN` (`#B000`) contiene `db 1, unidad, nombre de 11 bytes` (0: ninguno). Léalo en `init`, con A = 0 y también con A = 2 (el programa ya estaba en marcha), y luego escriba 0 allí. Los tipos y sus programas están en la tabla `ft_open` del núcleo (`src/kernel/files_ext.asm`).
-- Un programa con tabla de reubicación (como los del SDK) puede ocupar hasta 12K. Para lo demás, cargue archivos en el banco de datos.
+- Un programa con tabla de reubicación (como los del SDK) funciona junto a otros hasta 12K; uno mayor (hasta 16K) funciona solo sin ampliación de memoria, como uno sin tabla (MARKDOWN, READER). Para lo demás, cargue archivos en el banco de datos.
 
 ## Cómo funciona un programa
 
@@ -101,7 +101,7 @@ command: ...
 
 - **Registros:** las llamadas alteran todos los registros excepto IX. Los argumentos van en A, BC, DE, HL (IX para `VOS_RECT` y `VOS_BLIT`). Los resultados vuelven en A o HL. Si hay fallo, se activa el acarreo (carry) y A = número de error, que `VOS_ERROR` muestra.
 - **Memoria:** no ponga otro banco en `#4000`, porque el programa desaparecerá bajo sus pies. Para 16K más está el banco de datos (`VOS_BANK_GET`, `VOS_BANK_PUT`, `VOS_DATA`). Se comparte con las vistas y otros programas, y conserva sus datos solo mientras el programa está en marcha. Con una ampliación de memoria (API 21) cada programa recibe uno propio, que guarda lo que tiene hasta que el programa termina, corra lo que corra mientras tanto; `VX_DATA` dice cuál (A = 1: el suyo).
-- **Coordenadas:** x en píxeles del modo (modo 0: 0–191, modo 1: 0–383), y de 0 a 258. La barra de menús ocupa y 0–11.
+- **Coordenadas:** x en píxeles del modo (modo 0: 0–191, modo 1: 0–383, modo 2: 0–767), y de 0 a 258. La barra de menús ocupa y 0–11.
 - **RASM:** las etiquetas no distinguen mayúsculas de minúsculas (`BOX` y `box` son lo mismo). El hexadecimal se escribe con `#` y no con `&`.
 
 ## Los formatos de datos
@@ -132,7 +132,7 @@ command: ...
 | `VOS_RANDOM` | → A | 0–255 |
 | `VOS_COMMAND` | A = orden | las órdenes comunes de VER y AYUDA (6–19). Numere sus propias órdenes desde `VC_APP` (32), o un elemento de VER o AYUDA ejecuta una de las suyas |
 | `VOS_ERROR` | A = error | diálogo de error |
-| `VOS_MODE` | A = 0 / 1 | modo 0 (192×259, 16 tintas) o 1 (384×259, 4 tintas) |
+| `VOS_MODE` | A = 0 / 1 / 2 | modo 0 (192×259, 16 tintas), 1 (384×259, 4 tintas) o 2 (768×259, 2 tintas, 96 columnas de texto; versión 25). En modo 2 los menús y diálogos se dibujan con la tinta 1 sobre la 0: tinta 0 blanca y 1 negra dan texto negro sobre papel blanco (NOTEPAD, MARKDOWN, READER, SHEET con ^M) |
 | `VOS_PALETTE` | HL → 17 colores | |
 | `VOS_CLS` | A = tinta | borra la pantalla |
 | `VOS_PLOT` | HL = x, DE = y, A = tinta | un píxel |

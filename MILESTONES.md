@@ -4,6 +4,24 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M50 (the page: mode 2 for text and SHEET; version 0.21):**
+- **Mode 2 in the kernel** (API 25): `VOS_MODE` with A = 2 gives 768×259 pixels in two pens, 96 columns of text. Plot, rectangles, images, text with its styles, the pointer, menus and dialogs all work in it, from a third table of pixel masks beside those of modes 0 and 1. In mode 2 the menus and dialogs draw in pen 1 on pen 0 (black on white with the programs' palette), and the pointer is edged in pen 1 and filled with pen 0, so it shows on both. Its moves go twice as far, as the screen is twice as wide.
+- **Room in the kernel:** the resident kernel had 8 bytes free. Buffers that are always written before they are read (the pointer's save-under, the menu titles' places, the file list's line, the current event, the dialog's buttons, the file names of FILE) moved into the unused video RAM after the language's tables (GAP1 and GAP6): 184 bytes. The kernel now ends at #3DCB.
+- **The page in the programs:** NOTEPAD, MARKDOWN, READER and SHEET have PAGE (MODE 2), ^M, in their menu. The editors show 80 columns between the page's edges, black on white, a line where each page of 60 lines ends and PAGE n in the last line. MARKDOWN's preview and READER show the page in 80 columns with its styles. SHEET shows 10 columns (A–J) with lines between them; the view stops at P. ^M again goes back to mode 1.
+- **Faster rows:** NOTEPAD and MARKDOWN fill the empty end of a row with one rectangle instead of printing spaces: a full redraw (RETURN) is about three times faster, in both modes.
+- **A program over 12K:** MARKDOWN and READER grew past the 12K that relocatable programs share in bank 5. A program with a relocation table that does not fit there now runs alone at #4000, as a program without one does, instead of failing with CLOSE ANOTHER PROGRAM FIRST. With a memory expansion it still gets a bank of its own.
+- **Bugs found:** changing the mode with the pointer on the screen left its save-under from the old mode, which came back as stray pixels in the new one: the pointer is hidden before the mode changes. In mode 2 the pointer's outline was pen 2, which wraps to 0 (white on white).
+- **Not changed:** the test disc in A: is full (FREE 3K) since earlier milestones, so test-input's Studio program cannot be saved there (DISC FULL); the same with the M49 code.
+- **Tested:**
+  - `make test-notepad`: then ^M: the page, 80 columns, edges, PAGE 1; RETURN held past line 60: the page's line over line 61, PAGE 2.
+  - `make test-markdown`: then ^M in the editor and ^P: the preview in mode 2, 80 columns with headings, bold, italic, lists, a quote.
+  - `make test-reader`: then ^M: INDEX.MD in 80 columns, its links, the selected one inverted.
+  - `make test-sheet`: then ^M: 10 columns with lines, 12 30 42 in A1–A3.
+  - `make test-sheet-z80`: the page part (10 columns, the view to P and back, a formula in H1, ^M back), in the Z80 emulator.
+  - MARKDOWN's editor, preview and READER in a Z80 emulator, mode 1 compared with the M49 versions after every step: the same.
+  - Again: `test-input`, `test-calc`, `test-drag`, `test-acc`, `test-switch`, `test-notepad-big`, `test-database-z80`, `test-calc-sys`, `test-utf8`, `test-about` (0.21), `test-sysinfo` (API 25), `test-sdk`, `test-multi`, `test-expand`, `test-data`, `test-kbds`, `test-charset`, `test-reader-utf8`, `test-database`, `test-streets`, `test-open`, `test-apps`.
+- **Not tested:** on a real CPC and monitor (mode 2 on a colour monitor); the page with a RAM expansion for READER and MARKDOWN; SHEET's file in page mode after OPEN.
+
 **M49 (V-OS fits real discs; version 0.20):**
 - **Two discs:** a real 3" disc holds 180K (180 blocks of 1K), but `vos.dsk` had grown to 211K. The files past block 179 (DATABASE, NOTEPAD, PAINT, SYSINFO, WEBGET) lay on extra tracks that only an emulator has. Now `build/vos.dsk` (A:, 105K) has the kernel, the views, the languages, `CALC.SYS`, `DB.SYS`, DEMO, MIXED, STUDIO, CLOCK, `VBRUN.SYS` and the `.VBS` sources (Studio opens them from A:). The new `build/apps.dsk` (B:, 106K) has the VB programs (PONG to BRICKS) and the `myapps` without a disc of their own. Both have about 72K free. In the Launcher, TAB shows B:.
 - **A check:** `tools/dsk_ext.py --fit` stops the build when a file of a disc given out (`vos.dsk`, `apps.dsk`, the programs' own discs) lies past the end of a real disc. On the test discs it is a warning.

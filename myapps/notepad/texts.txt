@@ -6,6 +6,8 @@ OPEN        | OPEN...               | ΑΝΟΙΓΜΑ...
 SAVE        | SAVE                  | ΑΠΟΘΗΚΕΥΣΗ
 SAVE_AS     | SAVE AS...            | ΑΠΟΘΗΚΕΥΣΗ ΩΣ...
 DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+PAGE        | PAGE (MODE 2)         | ΣΕΛΙΔΑ (MODE 2)
+PAGE_NO     | PAGE                  | ΣΕΛΙΔΑ
 ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
 ABOUT_TEXT  | NOTEPAD|TEXT FILES UP TO 4K,|16K WITH MORE RAM|FOR V-OS, MADE|WITH THE SDK | ΣΗΜΕΙΩΜΑΤΑΡΙΟ|ΚΕΙΜΕΝΑ ΩΣ 4K,|16K ΜΕ ΕΠΕΚΤΑΣΗ|ΓΙΑ ΤΟ V-OS, ΑΠΟ|ΤΟ SDK
 BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ

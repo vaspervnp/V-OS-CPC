@@ -213,7 +213,7 @@ dlg_yes_no:     db MSG_DLG_FILE_T, DLG_OWN_TEXT, 2, MSG_BTN_YES, MSG_BTN_NO
 
 file_name:      ds 11
 sys_drive:      db 0
-fi_new:         ds 11
-fi_text:        ds FILE_TEXT_MAX + 2  ; + the cursor of input_run
+fi_new          equ GAP6 + 661      ; 11
+fi_text         equ GAP6 + 672      ; FILE_TEXT_MAX + 2: + the cursor
 fi_drive:       db 0
 fi_target:      db 0

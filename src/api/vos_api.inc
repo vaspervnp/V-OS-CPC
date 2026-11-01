@@ -81,7 +81,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 24              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 25              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -94,7 +94,7 @@ VOS_API_VERSION equ 24              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 18: VX_MEM, 19: VX_BEHIND, init A = 3,
                                     ; 20: VOS_LOAD_IX, 21: VX_DATA,
                                     ; 22: VX_DB, databases, 23: VX_UTF8,
-                                    ; 24: VX_CALC, formulas
+                                    ; 24: VX_CALC, formulas, 25: mode 2
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -116,7 +116,9 @@ VOS_RANDOM      equ VOS_API + 3 * 3     ; -> A = 0..255
 VOS_COMMAND     equ VOS_API + 4 * 3     ; A = VC_*: a shared menu command
 VOS_ERROR       equ VOS_API + 5 * 3     ; A = error number: error dialog
 ; ---- graphics -------------------------------------------------------
-VOS_MODE        equ VOS_API + 6 * 3     ; A = 0 or 1, with the UI pens
+VOS_MODE        equ VOS_API + 6 * 3     ; A = 0, 1 or 2 (version 25: 768
+                                        ; pixels, pens 0 and 1), with the
+                                        ; UI pens
 VOS_PALETTE     equ VOS_API + 7 * 3     ; HL -> 17 firmware colours
 VOS_CLS         equ VOS_API + 8 * 3     ; A = pen
 VOS_PLOT        equ VOS_API + 9 * 3     ; HL = x, DE = y, A = pen

@@ -2,25 +2,29 @@
 ; gfx.asm - overscan screen, mode-aware plot / rectangle / text
 ;
 ; Coordinates: x in pixels of the current mode (0..383 in mode 1,
-; 0..191 in mode 0), y in drawable lines 0..GFX_H-1 (physical line
-; GFX_TOP + y, see memmap.inc). Pens are 0..3 (mode 1)
-; or 0..15 (mode 0); higher pens wrap.
+; 0..191 in mode 0, 0..767 in mode 2), y in drawable lines 0..GFX_H-1
+; (physical line GFX_TOP + y, see memmap.inc). Pens are 0..3 (mode 1),
+; 0..15 (mode 0) or 0..1 (mode 2); higher pens wrap.
 ;
 ; Byte layout (bit 7 = left):
 ;   mode 1, 4 pixels: pixel p has pen bit 0 at bit 7-p, pen bit 1 at 3-p
 ;   mode 0, 2 pixels: left pixel bits 7,3,5,1 / right pixel 6,2,4,0
 ;                     for pen bits 0,1,2,3
+;   mode 2, 8 pixels: pixel p at bit 7-p
 ; =====================================================================
 
 ; gfx_init (the overscan CRTC, the line table) runs once, from the loader
 ; (boot/loader.asm), so it takes no room in the kernel.
 
 ; ---------------------------------------------------------------------
-; gfx_set_mode - A = 0 or 1. Sets the Gate Array mode, the pixel
+; gfx_set_mode - A = 0, 1 or 2. Sets the Gate Array mode, the pixel
 ; tables, and rebuilds the text colour table.
 ; Destroys: all
 ; ---------------------------------------------------------------------
 gfx_set_mode:
+        push af                     ; the pointer off while its pixels
+        call ptr_hide               ; are those of the old mode
+        pop af
         ld (gfx_mode),a
         push af
         ld hl,split_on              ; mixed screen: the interrupt sets it
@@ -34,13 +38,16 @@ gfx_set_mode:
         ld a,(txt_fg)
         jp txt_set_colours
 
-; gfx_params_for - A = 0 or 1: the pixel tables of that mode, without
-; the text colours (pointer.asm). Destroys: BC, DE, HL
+; gfx_params_for - A = 0, 1 or 2: the pixel tables of that mode,
+; without the text colours (pointer.asm). Destroys: BC, DE, HL
 gfx_params_for:
         ld hl,gfx_mode0
         or a
         jr z,.copy
         ld hl,gfx_mode1
+        cp 2
+        jr c,.copy
+        ld hl,gfx_mode2
 .copy:
         ld de,gfx_params
         ld bc,GFX_PARAMS_SIZE
@@ -421,7 +428,8 @@ txt_set_colours:
         ret
 
 ; ---------------------------------------------------------------------
-; txt_char - HL = x (multiple of 4 in mode 1, of 2 in mode 0),
+; txt_char - HL = x (multiple of 4 in mode 1, of 2 in mode 0, of 8 in
+; mode 2),
 ; DE = y, A = character. Draws an opaque 8x8 cell in txt_fg/txt_bg.
 ; 32..127 use the kernel font, 128..255 the language pack's font;
 ; anything else (or 128..255 without a pack) draws as '?'.
@@ -453,9 +461,10 @@ txt_char:
         push hl
         pop ix                      ; IX -> line addresses
         ld a,(gfx_mode)
-        or a
+        cp 1
         ld a,8
-        jr z,.row0
+        jr c,.row0
+        jr nz,.row2
 .row1:                              ; mode 1: two nibbles per row
         ld (txt_rows),a
         ld l,(ix+0)
@@ -530,6 +539,29 @@ txt_char:
         ld a,(txt_rows)
         dec a
         jr nz,.row0
+        pop ix
+        ret
+.row2:                              ; mode 2: a byte per row
+        ld (txt_rows),a
+        ld l,(ix+0)
+        ld h,(ix+1)
+        inc ix
+        inc ix
+        ld de,(txt_col)
+        add hl,de
+        ex de,hl
+        call txt_row
+        ld h,a                      ; bg xor ((fg xor bg) and bits)
+        ld a,(txt_bg_byte)
+        ld l,a
+        ld a,(txt_fg_byte)
+        xor l
+        and h
+        xor l
+        ld (de),a
+        ld a,(txt_rows)
+        dec a
+        jr nz,.row2
         pop ix
         ret
 
@@ -669,6 +701,10 @@ gfx_mode0:
         dw 192
         dw gfx_pix0, gfx_lmask0, gfx_rmask0, gfx_fill0
 GFX_PARAMS_SIZE equ $ - gfx_mode0
+gfx_mode2:
+        db 3, 7, 1
+        dw 768
+        dw gfx_pix2, gfx_lmask2, gfx_rmask2, gfx_fill2
 
 gfx_pix1:   db #88, #44, #22, #11   ; one pixel
 gfx_lmask1: db #FF, #77, #33, #11   ; this pixel and those to its right
@@ -680,6 +716,11 @@ gfx_lmask0: db #FF, #55
 gfx_rmask0: db #AA, #FF
 gfx_fill0:  db #00, #C0, #0C, #CC, #30, #F0, #3C, #FC
             db #03, #C3, #0F, #CF, #33, #F3, #3F, #FF
+
+gfx_pix2:   db #80, #40, #20, #10, #08, #04, #02, #01
+gfx_rmask2: db #80, #C0, #E0, #F0, #F8, #FC, #FE   ; #FF: the next byte
+gfx_lmask2: db #FF, #7F, #3F, #1F, #0F, #07, #03, #01
+gfx_fill2:  db #00, #FF
 
 ; ---- state ----------------------------------------------------------
 gfx_mode:   db 1

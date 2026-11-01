@@ -80,4 +80,4 @@ myapps/              τα δικά σου προγράμματα (make new-app),
 
 ## Κατάσταση
 
-Το V-OS είναι στο **M49** (έκδοση 0.20 beta· κάθε milestone προσθέτει 0.01). Τι πρόσθεσε κάθε milestone και πώς ελέγχθηκε: [MILESTONES.el.md](MILESTONES.el.md).
+Το V-OS είναι στο **M50** (έκδοση 0.21 beta· κάθε milestone προσθέτει 0.01). Τι πρόσθεσε κάθε milestone και πώς ελέγχθηκε: [MILESTONES.el.md](MILESTONES.el.md).

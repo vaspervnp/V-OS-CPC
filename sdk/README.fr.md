@@ -37,7 +37,7 @@ Un programme plus grand :
 - Ce que vous mettez dans le sous-dossier `disc/` (par ex. `disc/LEVEL1.DAT`) va tel quel sur la disquette, pour `VOS_LOAD`.
 - Avec un sous-dossier `owndisc/`, le programme a aussi sa propre disquette, `build/<nom>.dsk`, avec le `.BIN` et les fichiers de `owndisc/`. Il ne va pas sur `apps.dsk`. Vous la mettez en B: et le lancez depuis le Lanceur (TAB, l'autre lecteur). Le lecteur d'où il a été lancé, pour y charger ses fichiers, est dans `VOS_SELF` : `db lecteur`, puis son nom (11 octets).
 - **Un fichier à ouvrir (version 14) :** quand RETURN dans le Bureau ou le Commander ouvre un fichier dans votre programme, `VOS_OPEN` (`#B000`) contient `db 1, lecteur, nom de 11 octets` (0 : aucun). Lisez-le dans `init`, avec A = 0 et aussi avec A = 2 (le programme tournait déjà), puis écrivez-y 0. Les types et leurs programmes sont dans la table `ft_open` du noyau (`src/kernel/files_ext.asm`).
-- Un programme avec une table de relocation (comme ceux du SDK) peut faire jusqu'à 12K. Pour le reste, chargez des fichiers dans la banque de données.
+- Un programme avec une table de relocation (comme ceux du SDK) tourne à côté d'autres jusqu'à 12K ; un plus grand (jusqu'à 16K) tourne seul sans extension mémoire, comme un programme sans table (MARKDOWN, READER). Pour le reste, chargez des fichiers dans la banque de données.
 
 ## Comment fonctionne un programme
 
@@ -101,7 +101,7 @@ command: ...
 
 - **Registres :** les appels altèrent tous les registres sauf IX. Les arguments vont dans A, BC, DE, HL (IX pour `VOS_RECT` et `VOS_BLIT`). Les résultats reviennent dans A ou HL. En cas d'échec, la retenue (carry) est mise et A = numéro d'erreur, que `VOS_ERROR` affiche.
 - **Mémoire :** ne mettez pas une autre banque en `#4000`, car le programme disparaîtrait sous vos pieds. Pour 16K de plus, il y a la banque de données (`VOS_BANK_GET`, `VOS_BANK_PUT`, `VOS_DATA`). Elle est partagée avec les vues et les autres programmes, et ne garde ses données que tant que le programme tourne. Avec une extension mémoire (API 21), chaque programme reçoit la sienne, qui garde son contenu jusqu'à la fin du programme, quoi qu'il tourne entre-temps ; `VX_DATA` dit laquelle (A = 1 : la sienne).
-- **Coordonnées :** x en pixels du mode (mode 0 : 0–191, mode 1 : 0–383), y de 0 à 258. La barre de menus occupe y 0–11.
+- **Coordonnées :** x en pixels du mode (mode 0 : 0–191, mode 1 : 0–383, mode 2 : 0–767), y de 0 à 258. La barre de menus occupe y 0–11.
 - **RASM :** les étiquettes ne sont pas sensibles à la casse (`BOX` et `box` sont identiques). L'hexadécimal s'écrit avec `#` et non avec `&`.
 
 ## Les formats de données
@@ -132,7 +132,7 @@ command: ...
 | `VOS_RANDOM` | → A | 0–255 |
 | `VOS_COMMAND` | A = commande | les commandes communes d'AFFICHAGE et AIDE (6–19). Numérotez vos propres commandes à partir de `VC_APP` (32), sinon un élément d'AFFICHAGE ou d'AIDE lance l'une des vôtres |
 | `VOS_ERROR` | A = erreur | dialogue d'erreur |
-| `VOS_MODE` | A = 0 / 1 | mode 0 (192×259, 16 encres) ou 1 (384×259, 4 encres) |
+| `VOS_MODE` | A = 0 / 1 / 2 | mode 0 (192×259, 16 encres), 1 (384×259, 4 encres) ou 2 (768×259, 2 encres, 96 colonnes de texte ; version 25). En mode 2, menus et dialogues se dessinent à l'encre 1 sur l'encre 0 : encre 0 blanche et 1 noire donnent du texte noir sur papier blanc (NOTEPAD, MARKDOWN, READER, SHEET avec ^M) |
 | `VOS_PALETTE` | HL → 17 couleurs | |
 | `VOS_CLS` | A = encre | efface l'écran |
 | `VOS_PLOT` | HL = x, DE = y, A = encre | un pixel |

@@ -31,9 +31,9 @@ app_place:
         call slot_alloc             ; A = pages to move it by
         pop hl
         pop bc
-        ret c
-        or a
-        ret z
+        jr c,.fixed                 ; no room beside the others (over 12K
+        or a                        ; in bank 5): alone at #4000, where
+        ret z                       ; it was made for, as one without
         jp reloc
 .fixed:
         ld bc,#4001                 ; none: a whole bank, at #4000

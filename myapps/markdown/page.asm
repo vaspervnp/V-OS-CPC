@@ -4,8 +4,10 @@
 ;
 ; pv_render draws the page lines pv_top.. of text..tend on the screen
 ; rows 0..ROWS-1 (row_y), until the screen is full. The program gives:
-; text, tend, at_eol, same, row_y, line (COLS + 1 bytes), COLS, ROWS,
-; BG, INK, CUR_PEN. Markdown: # ## ### headings, **bold** __bold__,
+; text, tend, at_eol, same, row_y, line (COLS2 + 1 bytes), ROWS, BG,
+; INK, CUR_PEN, and the page's width: ncols (db, its columns, up to
+; COLS2) and xoff (dw, the x of its first one): 48 from 0 in mode 1, 80
+; from PAGE_X in mode 2 (the page). Call pv_new when they change. Markdown: # ## ### headings, **bold** __bold__,
 ; *italic* _italic_, `code`, ``` blocks, - * + and 1. lists, > quotes,
 ; --- lines, [links](url) underlined, \ before a mark. Lines that follow
 ; each other make one paragraph (two spaces at the end break it), as do a
@@ -33,6 +35,7 @@ ST_LINK         equ 8
 LK_MAX          equ 16              ; links kept from one screen
 CK_MAX          equ 64              ; checkpoints (ck_tab)
 CK_STEP         equ 8               ; page lines between them, at least
+PV_W            equ COLS2           ; pv_ch: its attributes PV_W on
 
 ; the page's lines pv_top.. on the screen: the text from its start,
 ; line by line, until the screen is full (then pv_more = 1)
@@ -165,7 +168,8 @@ pv_line:
 .ruled:
         xor a
         ld (pv_join),a
-        ld b,COLS                   ; ---: a line across
+        ld a,(ncols)                ; ---: a line across
+        ld b,a
         ld a,(pv_n)
         ld c,a
         ld a,b
@@ -799,8 +803,9 @@ pv_put:
         push hl
         push af
         push bc
+        ld hl,ncols
         ld a,(pv_n)
-        cp COLS
+        cp (hl)
         call nc,pv_wrap
         pop bc
         pop af
@@ -812,7 +817,7 @@ pv_put:
         ld hl,pv_ch
         add hl,de
         ld (hl),a
-        ld de,COLS
+        ld de,PV_W
         add hl,de
         ld (hl),c
         pop hl
@@ -821,8 +826,13 @@ pv_put:
 ; the page line is full: out up to its last space, the rest on the next
 ; line (none: all of it out)
 pv_wrap:
-        ld hl,pv_ch + COLS - 1
-        ld b,COLS - 1
+        ld a,(ncols)
+        dec a
+        ld e,a
+        ld d,0
+        ld hl,pv_ch
+        add hl,de
+        ld b,a
 .find:
         ld a,(pv_ind)
         cp b
@@ -836,7 +846,8 @@ pv_wrap:
 .space:
         ld a,b
         ld (pv_n),a                 ; the line ends before the space
-        ld a,COLS - 1
+        ld a,(ncols)
+        dec a
         sub b
         ld (pv_cnt),a
         or a
@@ -848,9 +859,9 @@ pv_wrap:
         ld b,0
         ldir
         pop hl
-        ld de,COLS
+        ld de,PV_W
         add hl,de
-        ld de,pv_tmp + COLS
+        ld de,pv_tmp + PV_W
         ld a,(pv_cnt)
         ld c,a
         ldir
@@ -868,10 +879,10 @@ pv_wrap:
         ld b,0
         ldir
         pop hl
-        ld de,COLS
+        ld de,PV_W
         add hl,de
         ex de,hl
-        ld hl,pv_tmp + COLS
+        ld hl,pv_tmp + PV_W
         ld a,(pv_cnt)
         ld c,a
         ldir
@@ -920,7 +931,7 @@ pv_emit:
 .indent:
         ld (hl)," "
         push hl
-        ld de,COLS
+        ld de,PV_W
         add hl,de
         ld (hl),A_NORM
         pop hl
@@ -940,14 +951,14 @@ pv_fill:
         ld d,0
         ld hl,pv_ch
         add hl,de
-        ld a,COLS
+        ld a,(ncols)
         sub e
         ret z
         ld b,a
 .pad:
         ld (hl)," "
         push hl
-        ld de,COLS
+        ld de,PV_W
         add hl,de
         ld a,(pv_pad)
         ld (hl),a
@@ -961,14 +972,19 @@ pv_fill:
 pv_draw:
         call row_y
         ld (pv_dy),de
-        ld hl,pv_ch + COLS - 1      ; pv_end: after the last cell to print
-        ld b,COLS
+        ld a,(ncols)                ; pv_end: after the last cell to print
+        ld b,a
+        dec a
+        ld e,a
+        ld d,0
+        ld hl,pv_ch
+        add hl,de
 .trim:
         ld a,(hl)
         cp " "
         jr nz,.trimmed
         push hl
-        ld de,COLS
+        ld de,PV_W
         add hl,de
         ld a,(hl)
         pop hl
@@ -989,7 +1005,7 @@ pv_draw:
         jr nc,pv_clear
         ld e,a
         ld d,0
-        ld hl,pv_ch + COLS          ; its attributes
+        ld hl,pv_ch + PV_W          ; its attributes
         add hl,de
         ld c,(hl)
         ld b,a                      ; B = the column
@@ -999,11 +1015,11 @@ pv_draw:
         cp c
         jr nz,.copied
         push bc
-        ld bc,-COLS
+        ld bc,-PV_W
         add hl,bc
         ld a,(hl)
         ld (de),a
-        ld bc,COLS + 1
+        ld bc,PV_W + 1
         add hl,bc
         pop bc
         inc de
@@ -1021,6 +1037,8 @@ pv_draw:
         add hl,hl
         add hl,hl
         add hl,hl
+        ld de,(xoff)
+        add hl,de
         push hl
         ld a,b
         ld (pv_i),a
@@ -1042,21 +1060,28 @@ pv_draw:
 
 ; the page line after pv_end: the background
 pv_clear:
-        cp COLS
-        ret nc
-        ld l,a                      ; x
+        ld hl,ncols
+        ld b,a
+        ld a,(hl)
+        sub b                       ; the columns after it
+        ret z
+        ret c
+        ld l,a                      ; w
         ld h,0
         add hl,hl
         add hl,hl
         add hl,hl
+        ld (pv_rect + 4),hl
+        ld l,b                      ; x
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,(xoff)
+        add hl,de
         ld (pv_rect),hl
         ld de,(pv_dy)
         ld (pv_rect + 2),de
-        ld de,COLS * 8
-        ex de,hl
-        or a
-        sbc hl,de
-        ld (pv_rect + 4),hl
         push ix
         ld ix,pv_rect
         call VOS_RECT

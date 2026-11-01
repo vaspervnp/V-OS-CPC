@@ -61,6 +61,9 @@ test_x:
 .go:
         jp (hl)
         ENDIF
+        IFDEF DEMO
+        include "kernel/demo.asm"
+        ENDIF
         include "drivers/ga.asm"
         include "drivers/kbd.asm"
         include "drivers/mouse.asm"
@@ -110,7 +113,11 @@ EXT_SIZE        equ ext_end - ext_start
         IFDEF TEST_SCRIPT                     ; the test script takes some of
         assert KERNEL_SIZE <= KERNEL_LIMIT + #100 - KERNEL_BASE ; the stack
         ELSE
+        IFDEF DEMO                            ; and the demo
+        assert KERNEL_SIZE <= KERNEL_LIMIT + #100 - KERNEL_BASE
+        ELSE
         assert KERNEL_SIZE <= KERNEL_LIMIT - KERNEL_BASE
+        ENDIF
         ENDIF
         assert MSG_COUNT <= VT_FIRST          ; program texts start there
         assert app_self == VOS_SELF

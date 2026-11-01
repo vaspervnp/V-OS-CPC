@@ -257,10 +257,19 @@ ptr_copy:
 
 ; draw the arrow at pd_x, pd_y
 ptr_draw:
+        ld a,(gfx_penmask)
+        dec a                       ; mode 2 (pens 0 and 1): edged in
+        ld bc,#0100                 ; pen 1, filled with pen 0
+        jr z,.pens
         ld a,(ptr_pen_out)
+        ld b,a
+        ld a,(ptr_pen_fill)
+        ld c,a
+.pens:
+        ld a,b
         call gfx_pen_byte
         ld (pd_out),a
-        ld a,(ptr_pen_fill)
+        ld a,c
         call gfx_pen_byte
         ld (pd_fill),a
         ld hl,(pd_y)
@@ -362,5 +371,5 @@ pc_dir:         db 0
 pc_rows:        db 0
 pc_line:        dw 0
 pc_buf:         dw 0
-ptr_buf:        ds PTR_H * 5           ; up to 5 bytes per row (mode 0)
-ptr_params:     ds GFX_PARAMS_SIZE     ; drawing in the other mode
+ptr_buf         equ GAP1 + 664         ; PTR_H * 5: up to 5 bytes a row
+ptr_params      equ GAP1 + 729         ; GFX_PARAMS_SIZE: the other mode

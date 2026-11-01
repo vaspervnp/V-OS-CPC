@@ -77,6 +77,9 @@ kbd_scan:
         IFDEF TEST_SCRIPT
         call test_inject
         ENDIF
+        IFDEF DEMO
+        call demo_inject
+        ENDIF
 
         ; modifiers from the fresh matrix
         ld a,(kbd_caps)

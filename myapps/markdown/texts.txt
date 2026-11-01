@@ -7,6 +7,8 @@ SAVE        | SAVE                  | ΑΠΟΘΗΚΕΥΣΗ
 SAVE_AS     | SAVE AS...            | ΑΠΟΘΗΚΕΥΣΗ ΩΣ...
 PREVIEW     | PREVIEW               | ΠΡΟΕΠΙΣΚΟΠΗΣΗ
 DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+PAGE        | PAGE (MODE 2)         | ΣΕΛΙΔΑ (MODE 2)
+PAGE_NO     | PAGE                  | ΣΕΛΙΔΑ
 ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
 ABOUT_TEXT  | MARKDOWN|.MD FILES UP TO 6K|^P SHOWS THE PAGE|FOR V-OS, FROM THE SDK | MARKDOWN|ΑΡΧΕΙΑ .MD ΩΣ 6K|^P ΔΕΙΧΝΕΙ ΤΗ ΣΕΛΙΔΑ|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
 BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ

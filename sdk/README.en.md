@@ -37,7 +37,7 @@ A bigger program:
 - Whatever you put in the subfolder `disc/` (e.g. `disc/LEVEL1.DAT`) goes onto the disk as it is, for `VOS_LOAD`.
 - With a subfolder `owndisc/`, the program also gets a disk of its own, `build/<name>.dsk`, with the `.BIN` and the files of `owndisc/`. It stays off `apps.dsk`. You put it in B: and run it from the Launcher (TAB, the other drive). Which drive it was started from, so that it loads its files from there, is in `VOS_SELF`: `db drive`, then its name (11 bytes).
 - **A file to open (version 14):** when RETURN in the Desktop or the Commander opens a file in your program, `VOS_OPEN` (`#B000`) holds `db 1, drive, 11-byte name` (0: none). Read it in `init`, with A = 0 and also with A = 2 (the program was already running), then write 0 there. The types and their programs are in the kernel's `ft_open` table (`src/kernel/files_ext.asm`).
-- A program with a relocation table (like those of the SDK) can be up to 12K. For the rest, load files into the data bank.
+- A program with a relocation table (like those of the SDK) runs beside others when it is up to 12K; a bigger one (up to 16K) runs on its own without a memory expansion, like one without a table (MARKDOWN, READER). For the rest, load files into the data bank.
 
 ## How a program works
 
@@ -101,7 +101,7 @@ command: ...
 
 - **Registers:** calls corrupt all registers except IX. Arguments go in A, BC, DE, HL (IX for `VOS_RECT` and `VOS_BLIT`). Results return in A or HL. On failure, carry is set and A = error number, which `VOS_ERROR` displays.
 - **Memory:** do not page another bank in at `#4000`, because the program will vanish from under you. For 16K more there is the data bank (`VOS_BANK_GET`, `VOS_BANK_PUT`, `VOS_DATA`). It is shared with views and other programs, and keeps its data only while the program is running. With a memory expansion (API 21) each program gets one of its own, which keeps what is in it until the program ends, whatever runs meanwhile; `VX_DATA` says which (A = 1: its own).
-- **Coordinates:** x in pixels of the mode (mode 0: 0–191, mode 1: 0–383), y from 0 to 258. The menu bar takes y 0–11.
+- **Coordinates:** x in pixels of the mode (mode 0: 0–191, mode 1: 0–383, mode 2: 0–767), y from 0 to 258. The menu bar takes y 0–11.
 - **RASM:** labels are not case-sensitive (`BOX` and `box` are the same). Hex is written with `#` and not with `&`.
 
 ## The data formats
@@ -132,7 +132,7 @@ command: ...
 | `VOS_RANDOM` | → A | 0–255 |
 | `VOS_COMMAND` | A = command | the shared commands of VIEW and HELP (6–19). Number your own commands from `VC_APP` (32) up, or a VIEW or HELP item runs one of yours |
 | `VOS_ERROR` | A = error | error dialog |
-| `VOS_MODE` | A = 0 / 1 | mode 0 (192×259, 16 pens) or 1 (384×259, 4 pens) |
+| `VOS_MODE` | A = 0 / 1 / 2 | mode 0 (192×259, 16 pens), 1 (384×259, 4 pens) or 2 (768×259, 2 pens, 96 text columns; version 25). In mode 2 menus and dialogs draw in pen 1 on pen 0: pen 0 white and pen 1 black give black text on white paper (NOTEPAD, MARKDOWN, READER, SHEET with ^M) |
 | `VOS_PALETTE` | HL → 17 colors | |
 | `VOS_CLS` | A = pen | clears the screen |
 | `VOS_PLOT` | HL = x, DE = y, A = pen | one pixel |

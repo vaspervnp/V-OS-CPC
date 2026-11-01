@@ -113,10 +113,14 @@ GFX_H           equ 259
 ; ---- video RAM gaps (800 bytes each) ---------------------------------
 GAP_SIZE        equ 800
 GAP0            equ #C4E0           ; pack font 128..191, lang_msg_buf, bg_api
-GAP1            equ #CCE0           ; pack font 192..255, dlg_text
+GAP1            equ #CCE0           ; pack font 192..255, dlg_text, then
+                                    ; from +664 ptr_buf, ptr_params,
+                                    ; ui_title_x, ui_title_w, fp_line
 GAP2            equ #D4E0           ; pack case, keymap, combos; fs block list
 GAP3            equ #DCE0           ; disc sector buffer, free block map
 GAP4            equ #E4E0           ; directory entries 0..24
 GAP5            equ #ECE0           ; directory entries 25..49
-GAP6            equ #F4E0           ; directory entries 50..63, text to save
+GAP6            equ #F4E0           ; directory entries 50..63, fc_blist,
+                                    ; from +628 ev_cur, dlg_wlist, fi_new,
+                                    ; fi_text
 GAP7            equ #FCE0           ; file list for the UI (50 x 16 bytes)

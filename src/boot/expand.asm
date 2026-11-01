@@ -43,6 +43,17 @@ xb_detect:
         ld a,c
         cp 8
         jr nz,.read
+        IFDEF DEMO
+        ld de,xb_found              ; the demo build: the last bank for
+        or a                        ; DEMO.KEY (kernel/demo.asm), not for
+        sbc hl,de                   ; programs
+        add hl,de
+        jr z,.no_demo
+        dec hl
+        ld a,(hl)
+        ld (demo_cfg),a
+.no_demo:
+        ENDIF
         ld (hl),0
         ld a,LANG_BANK_CFG
         call ram_select

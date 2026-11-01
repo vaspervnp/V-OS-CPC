@@ -5,6 +5,7 @@ OPEN        | OPEN A FILE...        | ΑΝΟΙΓΜΑ ΑΡΧΕΙΟΥ...
 ADDRESS     | OPEN AN ADDRESS...    | ΑΝΟΙΓΜΑ ΔΙΕΥΘΥΝΣΗΣ...
 PREVIOUS    | PREVIOUS PAGE    DEL  | ΠΡΟΗΓΟΥΜΕΝΗ ΣΕΛΙΔΑ DEL
 DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+PAGE        | PAGE (MODE 2)         | ΣΕΛΙΔΑ (MODE 2)
 ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
 ABOUT_TEXT  | READER|MARKDOWN PAGES FROM|THE DISC OR THE WEB|(M4 BOARD, HTTP)|FOR V-OS, FROM THE SDK | READER|ΣΕΛΙΔΕΣ MARKDOWN ΑΠΟ|ΔΙΣΚΕΤΑ Ή WEB|(ΚΑΡΤΑ M4, HTTP)|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
 BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ

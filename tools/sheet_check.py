@@ -5,7 +5,7 @@ usage: sheet_check.py sheet.bin sheet.sym calc.bin calc.sym
 
 Runs SHEET (myapps/sheet, assembled at #4000, with its symbols) in a
 Z80 emulator (the z80 package) with the V-OS calls stubbed: VOS_PRINT
-writes into a screen of text (48 columns, a row each y), VOS_INPUT and
+writes into a screen of text (48 columns, 96 in mode 2, a row each y), VOS_INPUT and
 VOS_DIALOG answer from a script, the data bank is 16K of its own, files
 are kept here. VX_CALC is CALC.SYS itself (src/calc/calc.asm built with
 -DCALC_HARNESS) in a second emulator: each call gets the block, the
@@ -14,6 +14,7 @@ typed into cells; then the screen must show their values (numbers on
 the right, text on the left, "#ERR", "########"), a wrong formula must
 be asked again, formulas that use later cells and each other must be
 worked out, DEL must empty a cell, the columns and rows must scroll, a
+page (^M, mode 2) must show 10 columns and scroll to P, then 5 again, a
 sheet saved must be its lines, opened again the same, a UTF-8 file
 must be read, the sample BUDGET.VSH must open with its values, and a
 full sheet must say so. Exits 1 on the first
@@ -37,7 +38,7 @@ VX_UTF8, VX_DATA, VX_CALC = 9, 7, 10
 VE_KEY_DOWN = 1
 VK = dict(UP=0, RIGHT=1, DOWN=2, LEFT=8, RETURN=18, DEL=79)
 VC_APP = 32
-CMD = dict(NEW=1, OPEN=2, SAVE=3, SAVE_AS=4, DRIVE=5, ABOUT=6, BACK=7)
+CMD = dict(NEW=1, OPEN=2, SAVE=3, SAVE_AS=4, DRIVE=5, ABOUT=6, BACK=7, PAGE=8)
 CALC_TEXT = 2
 CAT = 0xB800                     # where VOS_CATALOG's list is
 SYNTAX = 30
@@ -67,6 +68,8 @@ class App:
         self.screen = {}
         self.inv = {}
         self.colours = (1, 2)
+        self.width = 48                       # 96 in mode 2
+        self.rects = []
         self.inputs, self.buttons, self.picks = [], [], []
         self.errors, self.dialogs = [], []
         self.calc_calls = 0
@@ -118,14 +121,23 @@ class App:
                 while m.memory[a]:
                     s += bytes([m.memory[a]])
                     a += 1
-                row = self.screen.setdefault(m.de, [' '] * 48)
-                inv = self.inv.setdefault(m.de, [False] * 48)
+                w = self.width
+                row = self.screen.setdefault(m.de, [' '] * w)
+                inv = self.inv.setdefault(m.de, [False] * w)
+                if m.hl % 8 or len(row) != w:
+                    sys.exit('sheet_check: x %d, or a row of another mode' % m.hl)
                 for i, ch in enumerate(s.decode('vos')):
-                    if 0 <= m.hl // 8 + i < 48:
+                    if 0 <= m.hl // 8 + i < w:
                         row[m.hl // 8 + i] = ch
                         inv[m.hl // 8 + i] = self.colours[0] == 2
                     else:
                         sys.exit('sheet_check: printed past the screen: %r' % s)
+            elif n == MODE:
+                self.width = 96 if m.a == 2 else 48
+                self.screen, self.inv = {}, {}
+            elif n == RECT:
+                b = m.memory[m.ix:m.ix + 9]
+                self.rects.append(tuple(b[i] | b[i + 1] << 8 for i in range(0, 8, 2)) + (b[8],))
             elif n == CLS:
                 self.screen, self.inv = {}, {}
             elif n == COLOURS:
@@ -218,12 +230,14 @@ class App:
             self.key('DOWN')
 
     def line(self, y):
-        return ''.join(self.screen.get(y, [' '] * 48)).rstrip()
+        return ''.join(self.screen.get(y, [' '] * self.width)).rstrip()
 
     def row(self, r):
-        """row r on the screen (from 0): its number and its 5 cells"""
-        s = ''.join(self.screen.get(42 + 10 * r, [' '] * 48))
-        return s[:3].strip(), [s[3 + 9 * i:11 + 9 * i] for i in range(5)]
+        """row r on the screen (from 0): its number and its cells (5, or
+        10 on the page)"""
+        s = ''.join(self.screen.get(42 + 10 * r, [' '] * self.width))
+        n = 10 if self.width == 96 else 5
+        return s[:3].strip(), [s[3 + 9 * i:11 + 9 * i] for i in range(n)]
 
     def inverted(self):
         return [(y, i) for y, inv in self.inv.items() for i, v in enumerate(inv) if v]
@@ -318,6 +332,47 @@ def main():
     check('the last column', app.line(30), '       L        M        N        O        P')
     app.key('RIGHT')
     check('no more', app.line(14).split()[0], 'P1')
+    # the page (^M, mode 2): 10 columns, the last one P
+    app.rects = []
+    app.command('PAGE')
+    check('the page: 96 columns', app.width, 96)
+    check('the page: lines between the cells of row 1',
+          [x for x, y, w, h, pen in app.rects if y == 42 and w == 1 and h == 10 and pen == 1],
+          [20 + 72 * i for i in range(11)])
+
+    def heads(first, n):
+        return ' ' * 7 + (' ' * 8).join(chr(ord(first) + i) for i in range(n))
+    check('the page: up to P', app.line(30), heads('G', 10))
+    check('the page: the cursor at P1', app.inverted(), [(42, 3 + 9 * 9 + i) for i in range(8)])
+    check('the page: the first line', (app.line(14).split()[0], app.line(14)[35:]),
+          ('P1', 'B:NONAME.VSH'))
+    check('the page: the hint', app.line(249)[:6], 'ARROWS')
+    check('the page: 19 rows', (app.row(0)[0], app.row(18)[0]), ('1', '19'))
+    app.go('A1')
+    check('the page: A to J', app.line(30), heads('A', 10))
+    app.go('H1')
+    app.enter('=E1*2')
+    check('the page: row 1', app.row(0)[1],
+          [num('10'), txt('Total'), num('5.25'), num('#ERR'), num('4.25'), txt(''), txt(''),
+           num('8.5'), txt(''), txt('')])
+    check('the page: the cursor at H2', app.inverted(), [(52, 3 + 9 * 7 + i) for i in range(8)])
+    app.go('H1')
+    app.key('DEL')
+    check('the page: H1 empty', app.row(0)[1][7], txt(''))
+    app.go('J1')
+    check('the page: J, not scrolled', app.line(30), heads('A', 10))
+    app.key('RIGHT')
+    check('the page: K, scrolled', app.line(30), heads('B', 10))
+    for _ in range(6):
+        app.key('RIGHT')
+    check('the page: P at most', (app.line(30), app.line(14).split()[0]),
+          (heads('G', 10), 'P1'))
+    app.rects = []
+    app.command('PAGE')
+    check('mode 1: no lines', app.rects, [])
+    check('mode 1 again', (app.width, app.line(30), app.row(0)[1][4], app.inverted()),
+          (48, '       L        M        N        O        P', txt(''),
+           [(42, 39 + i) for i in range(8)]))
     app.go('A19')
     check('row 19 on the screen', app.row(18)[0], '19')
     app.key('DOWN')
@@ -394,7 +449,7 @@ def main():
     if app.errors:
         sys.exit('sheet_check: errors %r' % app.errors)
     print('sheet_check: numbers, text, formulas (%d CALC.SYS calls), errors, scrolling, '
-          'SAVE, OPEN, a UTF-8 file and a full sheet (%d cells): all right'
+          'the page (^M), SAVE, OPEN, a UTF-8 file and a full sheet (%d cells): all right'
           % (app.calc_calls, n - 1))
 
 

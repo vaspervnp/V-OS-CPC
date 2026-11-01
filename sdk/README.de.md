@@ -37,7 +37,7 @@ Ein größeres Programm:
 - Was du in den Unterordner `disc/` legst (z. B. `disc/LEVEL1.DAT`), kommt unverändert auf die Diskette, für `VOS_LOAD`.
 - Mit einem Unterordner `owndisc/` bekommt das Programm auch eine eigene Diskette, `build/<name>.dsk`, mit der `.BIN` und den Dateien aus `owndisc/`. Es kommt nicht auf `apps.dsk`. Du legst sie in B: ein und startest es aus dem Launcher (TAB, das andere Laufwerk). Von welchem Laufwerk es gestartet wurde, damit es seine Dateien von dort lädt, steht in `VOS_SELF`: `db Laufwerk`, dann sein Name (11 Bytes).
 - **Eine Datei zum Öffnen (Version 14):** wenn RETURN auf dem Schreibtisch oder im Commander eine Datei in deinem Programm öffnet, enthält `VOS_OPEN` (`#B000`) `db 1, Laufwerk, 11-Byte-Name` (0: keine). Lies es in `init`, mit A = 0 und auch mit A = 2 (das Programm lief schon), und schreibe danach 0 hinein. Die Typen und ihre Programme stehen in der Tabelle `ft_open` des Kernels (`src/kernel/files_ext.asm`).
-- Ein Programm mit Relocation-Tabelle (wie die des SDK) darf bis zu 12K groß sein. Für den Rest lädst du Dateien in die Daten-Bank.
+- Ein Programm mit Relocation-Tabelle (wie die des SDK) läuft bis 12K neben anderen; ein größeres (bis 16K) läuft ohne Speichererweiterung allein, wie eines ohne Tabelle (MARKDOWN, READER). Für den Rest lädst du Dateien in die Daten-Bank.
 
 ## Wie ein Programm funktioniert
 
@@ -101,7 +101,7 @@ command: ...
 
 - **Register:** Aufrufe verändern alle Register außer IX. Argumente kommen in A, BC, DE, HL (IX für `VOS_RECT` und `VOS_BLIT`). Ergebnisse kommen in A oder HL zurück. Bei einem Fehler ist Carry gesetzt und A = Fehlernummer, die `VOS_ERROR` anzeigt.
 - **Speicher:** Blende keine andere Bank bei `#4000` ein, denn dann verschwindet das Programm unter dir. Für 16K mehr gibt es die Daten-Bank (`VOS_BANK_GET`, `VOS_BANK_PUT`, `VOS_DATA`). Sie wird mit Ansichten und anderen Programmen geteilt und behält ihre Daten nur, solange das Programm läuft. Mit einer Speichererweiterung (API 21) bekommt jedes Programm eine eigene, die ihren Inhalt bis zu seinem Ende behält, was auch immer dazwischen läuft; `VX_DATA` sagt, welche gilt (A = 1: eine eigene).
-- **Koordinaten:** x in Pixeln des Modus (Modus 0: 0–191, Modus 1: 0–383), y von 0 bis 258. Die Menüleiste belegt y 0–11.
+- **Koordinaten:** x in Pixeln des Modus (Modus 0: 0–191, Modus 1: 0–383, Modus 2: 0–767), y von 0 bis 258. Die Menüleiste belegt y 0–11.
 - **RASM:** Bei Labels spielt Groß- und Kleinschreibung keine Rolle (`BOX` und `box` sind dasselbe). Hex wird mit `#` geschrieben und nicht mit `&`.
 
 ## Die Datenformate
@@ -132,7 +132,7 @@ command: ...
 | `VOS_RANDOM` | → A | 0–255 |
 | `VOS_COMMAND` | A = Befehl | die gemeinsamen Befehle von VIEW und HELP (6–19). Nummeriere deine eigenen Befehle ab `VC_APP` (32), sonst startet ein Eintrag von VIEW oder HELP einen deiner Befehle |
 | `VOS_ERROR` | A = Fehler | Fehlerdialog |
-| `VOS_MODE` | A = 0 / 1 | Modus 0 (192×259, 16 Stifte) oder 1 (384×259, 4 Stifte) |
+| `VOS_MODE` | A = 0 / 1 / 2 | Modus 0 (192×259, 16 Stifte), 1 (384×259, 4 Stifte) oder 2 (768×259, 2 Stifte, 96 Textspalten; Version 25). In Modus 2 zeichnen Menüs und Dialoge mit Stift 1 auf Stift 0: Stift 0 weiß und 1 schwarz ergeben schwarze Schrift auf weißem Papier (NOTEPAD, MARKDOWN, READER, SHEET mit ^M) |
 | `VOS_PALETTE` | HL → 17 Farben | |
 | `VOS_CLS` | A = Stift | löscht den Bildschirm |
 | `VOS_PLOT` | HL = x, DE = y, A = Stift | ein Pixel |
