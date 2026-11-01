@@ -1814,7 +1814,8 @@ fx_tick:
 ; the screen
 ; ---------------------------------------------------------------------
 
-; what moved erased, then the invaders, effects and cursor drawn
+; what moved erased (and drawn again at once), then the invaders,
+; effects and cursor drawn
 draw_tick:
         ld ix,enemies               ; erase: the dead and the moved
         ld b,MAX_EN
@@ -1843,6 +1844,9 @@ draw_tick:
         ld (ix + E_OX),#FF
         ld a,1
         ld (dirty),a
+        ld a,(ix + E_TYPE)          ; one that moved is drawn again at once:
+        or a                        ; it is never seen away (the flicker)
+        call nz,en_draw
 .e_next:
         ld de,EN_SZ
         add ix,de
@@ -1889,14 +1893,7 @@ draw_tick:
         or a
         jr z,.d_next
 .d_draw:
-        call en_place
-        ld (ix + E_OX),d
-        ld (ix + E_OY),e
-        ld (ix + E_OFR),a
-        call en_sprite
-        ld b,d
-        ld c,e
-        call draw_spr
+        call en_draw
 .d_next:
         ld de,EN_SZ
         add ix,de
@@ -1964,6 +1961,17 @@ draw_cursor:
         add a,PF_Y
         ld c,a
         pop hl
+        jp draw_spr
+
+; IX = invader: drawn where it is now, and that kept
+en_draw:
+        call en_place
+        ld (ix + E_OX),d
+        ld (ix + E_OY),e
+        ld (ix + E_OFR),a
+        call en_sprite
+        ld b,d
+        ld c,e
         jp draw_spr
 
 ; IX = invader -> D = screen byte, E = line, A = frame (0 / 1)
