@@ -222,13 +222,19 @@ slot_own:
         ldir
         ret
 
-; the program ends: its slot is free, and its data bank
+; the program ends: its slot is free, its data bank and its VX_IRQ
 slot_free:
         ld hl,app_slot
         ld a,(hl)
         ld (hl),0
         or a
         ret z
+        ld hl,irq_slot              ; and its VX_IRQ routine
+        cp (hl)
+        jr nz,.irq_kept
+        ld hl,0
+        ld (irq_hook),hl
+.irq_kept:
         ld l,a
         ld h,SLOT_DATA >> 8
         ld (hl),0
@@ -304,6 +310,43 @@ xa_lang:
         or a
         ret z
         ld hl,(lang_code)
+        ret
+
+; VX_IRQ: HL (xa_hl) = a routine of the program, called from the
+; interrupt once a frame (kernel/interrupts.asm: irq_call), 0: none.
+; One program's at a time; it stops when that program ends (slot_free).
+; Carry, A = 0: not for an accessory or a program without a slot
+xa_irq:
+        ld hl,(xa_hl)
+        ld a,(app_slot)
+        ld c,a
+        ld a,h
+        or l
+        jr nz,.set
+        ld a,(irq_slot)             ; none: if the routine is its own
+        cp c
+        jr z,irq_set
+        xor a                       ; another's: kept
+        ret
+.set:
+        ld a,(acc_open)
+        or a
+        jr nz,irq_no
+        or c
+        jr z,irq_no
+        ld (irq_slot),a
+        ld a,(vw_cfg)
+        di
+        ld (irq_cfg),a
+irq_set:
+        di
+        ld (irq_hook),hl
+        ei
+        xor a
+        ret
+irq_no:
+        xor a
+        scf
         ret
 
 ; -> A = a bank of the expansion that no program and no data use; C

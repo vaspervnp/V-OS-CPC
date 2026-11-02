@@ -7,10 +7,12 @@
 ; the data bank, copied here and its pointers moved to where it is now.
 ; PLAY and STOP (SPACE), the buttons or the menu. The song is played by
 ; Targhan's AKM player (PlayerAkm.asm, Arkos Tracker 3, MIT licence),
-; one frame each VE_FRAME, with the interrupts off (it borrows the
-; stack, and the keyboard reads the AY too). It goes on in the
-; background (VOS_BACKGROUND) behind views and other programs; three
-; bars show the channels' volumes. Studio's MUSIC block starts it
+; one frame each interrupt frame (VX_IRQ: irq_play), so it goes on
+; evenly behind views, other programs and their drawing. On a V-OS
+; without VX_IRQ it plays a frame each VE_FRAME instead, with the
+; interrupts off (it borrows the stack, and the keyboard reads the AY
+; too), in the background too (VOS_BACKGROUND). Three bars show the
+; channels' volumes. Studio's MUSIC block starts it
 ; behind a program (VX_BEHIND, init A = 3) with a song.
 ;   make app NAME=music       build/MUSIC.BIN, on build/music.dsk with
 ;                             the songs of owndisc/ (make songs)
@@ -49,6 +51,7 @@ init:
         jr nz,.front
         ld a,1
         ld (quiet),a
+        call irq_on
         call VOS_BACKGROUND
         call open_arg
         xor a
@@ -72,8 +75,8 @@ init:
         call VOS_SET_WIDGETS
         ld a,1                      ; VE_FRAME events, 50 a second
         call VOS_TICKS
-        ld a,1                      ; and behind other programs too
-        call VOS_BACKGROUND
+        call irq_on                 ; and behind other programs too, if
+        call VOS_BACKGROUND         ; it plays there by them
         pop af
         cp 2
         jr z,.back
@@ -230,11 +233,51 @@ event:
         jp nz,stop_song
         jp play_song
 
-; a frame of the song, and the bars (in front, with no menu open)
+; the song from the interrupt (VX_IRQ: irq_play), if V-OS has it ->
+; by_irq; A = 1: it plays by the frame events instead, behind other
+; programs too (VOS_BACKGROUND)
+irq_on:
+        ld hl,irq_play
+        ld a,VX_IRQ
+        call VOS_EXT
+        sbc a,a                     ; carry: 0, else 1
+        inc a
+        ld (by_irq),a
+        xor 1
+        ret
+
+; the interrupt, once a frame (VX_IRQ): a frame of the song. IY and the
+; other registers (EXX, AF') are kept for the program interrupted
+irq_play:
+        ld a,(playing)
+        or a
+        ret z
+        ex af,af'
+        push af
+        exx
+        push bc
+        push de
+        push hl
+        push iy
+        call PLY_AKM_Play
+        pop iy
+        pop hl
+        pop de
+        pop bc
+        exx
+        pop af
+        ex af,af'
+        ret
+
+; a frame of the song (without VX_IRQ), and the bars (in front, with no
+; menu open)
 frame:
         ld a,(playing)
         or a
         ret z
+        ld a,(by_irq)
+        or a
+        jr nz,.bars
         push ix
         push iy
         di
@@ -242,6 +285,7 @@ frame:
         ei
         pop iy
         pop ix
+.bars:
         call VOS_MENU_OPEN          ; (in the background: Z, and the
         ret nz                      ; drawing does nothing)
         ld hl,PLY_AKM_Track1_Volume
@@ -347,6 +391,8 @@ play_song:
         ld a,(loaded)
         or a
         ret z
+        xor a                       ; not from the interrupt meanwhile
+        ld (playing),a
         push ix
         push iy
         ld hl,song
@@ -560,6 +606,7 @@ fdrive:         db 0
 quiet:          db 0                ; 1: started behind (init A = 3)
 loaded:         db 0
 playing:        db 0
+by_irq:         db 0                ; 1: played from the interrupt (VX_IRQ)
 shown:          db 0, 0, 0          ; the bars' heights drawn
 sname:          ds 8
 name_tmp:       ds 11

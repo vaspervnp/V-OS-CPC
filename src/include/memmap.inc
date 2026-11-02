@@ -122,5 +122,6 @@ GAP4            equ #E4E0           ; directory entries 0..24
 GAP5            equ #ECE0           ; directory entries 25..49
 GAP6            equ #F4E0           ; directory entries 50..63, fc_blist,
                                     ; from +628 ev_cur, dlg_wlist, fi_new,
-                                    ; fi_text
+                                    ; fi_text; from +700 VX_IRQ's
+                                    ; irq_hook ... and its stack
 GAP7            equ #FCE0           ; file list for the UI (50 x 16 bytes)

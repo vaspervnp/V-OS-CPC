@@ -303,28 +303,47 @@ def part1():
     d.ctrl("m", 2.0)                    # NOTEPAD goes on behind
 
     # ---- PAINT
-    C({"en": "PAINT: 16 colours, tools, layers, and export to a CPC screen file",
-       "el": "PAINT: 16 χρώματα, εργαλεία, επίπεδα και εξαγωγή σε αρχείο οθόνης CPC",
-       "fr": "PAINT : 16 couleurs, outils, calques et export en écran CPC",
-       "es": "PAINT: 16 colores, herramientas, capas y exportar a pantalla CPC",
-       "de": "PAINT: 16 Farben, Werkzeuge, Ebenen und Export als CPC-Bild",
-       "it": "PAINT: 16 colori, strumenti, livelli ed esportazione in schermata CPC"})
-    d.launch("PAINT", 3.0)
+    C({"en": "PAINT: the whole CPC screen, 160 x 200, 16 colours, tools and layers",
+       "el": "PAINT: όλη η οθόνη του CPC, 160 x 200, 16 χρώματα, εργαλεία και επίπεδα",
+       "fr": "PAINT : tout l'écran du CPC, 160 x 200, 16 couleurs, outils et calques",
+       "es": "PAINT: toda la pantalla del CPC, 160 x 200, 16 colores, herramientas y capas",
+       "de": "PAINT: der ganze CPC-Bildschirm, 160 x 200, 16 Farben, Werkzeuge, Ebenen",
+       "it": "PAINT: tutto lo schermo del CPC, 160 x 200, 16 colori, strumenti e livelli"})
+    d.launch("PAINT", 6.0)
     d.raw(d.t, 2, 0x81, 30)             # the pointer on the picture
-    d.raw(d.t, 2, 0x82, 110)
+    d.raw(d.t, 2, 0x82, 140)
     d.wait(0.5)
     for _ in range(3):
         d.key("TAB", 0.3)
-    line, bits = MATRIX["COPY"]
-    d.raw(d.t, 100, line, bits)
-    d.hold("UP", 1.0, 1.2)
+    line, bits = MATRIX["COPY"]         # held arrows speed up: short
+    d.raw(d.t, 50, line, bits)          # holds, not to reach the menus
+    d.hold("UP", 0.5, 1.2)
     d.key("x", 0.3)
     d.key("TAB", 0.3)
-    d.raw(d.t, 100, line, bits)
-    d.hold("LEFT", 0.8, 1.2)
+    d.raw(d.t, 50, line, bits)
+    d.hold("LEFT", 0.5, 1.2)
     d.key("f", 0.3)
     d.key("TAB", 0.3)
     d.key("COPY", 3.0)
+    C({"en": "The window moves with its scroll bars; the pointer's place and the window's",
+       "el": "Το παράθυρο κινείται με τις μπάρες του· η θέση του pointer και του παραθύρου",
+       "fr": "La fenêtre bouge avec ses barres ; la place du pointeur et celle de la fenêtre",
+       "es": "La ventana se mueve con sus barras; la posición del puntero y de la ventana",
+       "de": "Das Fenster bewegt sich mit seinen Leisten; Zeiger- und Fensterposition",
+       "it": "La finestra si muove con le sue barre; la posizione del puntatore e della finestra"},
+      sync=False)
+    d.raw(d.t, 2, 0x81, 65)             # the bar on the right, near its
+    d.raw(d.t, 2, 0x82, 140)            # bottom
+    d.wait(0.3)
+    d.key("COPY", 2.5)
+    d.raw(d.t, 2, 0x81, 60)             # the bar below, at its right
+    d.raw(d.t, 2, 0x82, 147)
+    d.wait(0.3)
+    d.key("COPY", 2.5)
+    d.raw(d.t, 2, 0x81, 30)             # the pointer back on the picture
+    d.raw(d.t, 2, 0x82, 80)
+    d.wait(0.3)
+    d.hold("RIGHT", 0.4, 2.5)
 
     # ---- music and a game
     C({"en": "MUSIC: Arkos Tracker songs, which go on behind other programs",
@@ -333,7 +352,7 @@ def part1():
        "es": "MUSIC: canciones de Arkos Tracker, que siguen detrás de otros programas",
        "de": "MUSIC: Arkos-Tracker-Lieder, die hinter anderen Programmen weiterlaufen",
        "it": "MUSIC: brani di Arkos Tracker, che continuano dietro gli altri programmi"})
-    d.launch("MUSIC", 3.0)
+    d.launch("MUSIC", 5.0)
     d.ctrl("o", 2.0)
     d.key("RETURN", 6.0)
     C({"en": "VROUVES: a tower defence game, written with the SDK in assembly",
@@ -397,19 +416,10 @@ def part2():
     d.launch("SYSINFO", 5.0)
     d.ctrl("q", 1.0)
 
-    # ---- data: STREETS, DATABASE, SHEET
-    C({"en": "STREETS: an index of streets in a V-OS database (DB.SYS)",
-       "el": "STREETS: ένα ευρετήριο οδών σε βάση δεδομένων του V-OS (DB.SYS)",
-       "fr": "STREETS : un index de rues dans une base de données V-OS (DB.SYS)",
-       "es": "STREETS: un índice de calles en una base de datos de V-OS (DB.SYS)",
-       "de": "STREETS: ein Straßenverzeichnis in einer V-OS-Datenbank (DB.SYS)",
-       "it": "STREETS: un indice delle strade in un database di V-OS (DB.SYS)"})
-    d.launch("STREETS", 14.0)           # it makes STREETS.VDB
-    d.type("ag", 0.6)
-    d.wait(2.0)
-    d.key("DEL", 2.0)
-    d.key("DEL", 2.0)
-    d.ctrl("q", 1.0)
+    # ---- data: DATABASE, SHEET. STREETS is not shown: in the 1984
+    # emulator its list puts an FF at #B1FC, where 1984 looks for the
+    # 464 firmware's palette, and the screen turns one colour. Its
+    # STREETS.VDB (tools/video, made by STREETS) is on the disc instead.
     C({"en": "DATABASE: tables, fields, a list and a form, like a small Access",
        "el": "DATABASE: πίνακες, πεδία, λίστα και φόρμα, όπως μια μικρή Access",
        "fr": "DATABASE : tables, champs, liste et formulaire, comme un petit Access",

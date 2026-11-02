@@ -4,6 +4,17 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M53 (the music from the interrupt; version 0.24):**
+- **Music without breaks:** MUSIC's song used to play a frame at a time from V-OS's main loop (a `VE_FRAME` event), so it stopped whenever the main loop was busy: for about two seconds each time a program or view loaded, and in long drawings. It now plays from the interrupt, 50 times a second, in front or behind, and goes on while other programs load and draw; only a disc transfer (16 ms a sector, with interrupts off) holds it for a moment.
+- **`VX_IRQ` (API 27):** a program gives the kernel a routine of its own, which the interrupt calls once a frame with the program's bank mapped and a stack of its own (the one interrupted may be in the bank window), putting back the bank that was there after it. HL = 0 stops it, and the program's end stops it too; one program's at a time; not for an accessory or a program alone in bank 5 (carry). It must be short, keep IY, EXX and AF', and call nothing of V-OS. On an older V-OS MUSIC plays as before.
+- **Test disc:** the MUSIC block's test disc had grown past block 179 (TUNE.VBN: NOT A V-OS PROGRAM); it now leaves out the Studio sources and the FR, ES, DE and IT packs, as the others of one program.
+- **Tested:**
+  - `make test-music`: the song plays (PLAYING, the bars move), behind the Launcher and in front again.
+  - `make test-music-block` (576K): TUNE's MUSIC block starts MUSIC behind it with AGANAMEM; in front, it is playing.
+  - `make test-behind`, `test-multi`, `test-switch`: as before (TICKER counts behind, DEMO and PONG side by side, the switcher).
+  - The sound, recorded with the 1984 emulator in the demo video (MUSIC, then VROUVES loading and running, the Launcher, MUSIC again): before, 7.5 s of silence in 40 s of music (three breaks of 2 s at each load); now one of 0.2 s, the song's own.
+- **Not tested:** on a real CPC; a song with a heavy frame beside the mixed screen (`VOS_SPLIT`).
+
 **M52 (PAINT on the whole screen; version 0.23):**
 - **The whole screen:** PAINT's picture is the CPC's own screen, 160×200 pixels in mode 0 without the overscan, kept in PAINT's data bank laid out as the screen is (8 blocks of #800, lines of 80 bytes). It is saved as a 16K `.SCR` that loads at #C000, with the palette in its unused bytes at #C7D0, so BASIC and other CPC programs load it too; OPEN lists the `.SCR` files, and a `.SCR` opens in PAINT from the Desktop. A `.PIC` of 128×128 opens at the top left of a white screen.
 - **The window and its bars:** the window shows 128×128 of the picture. A bar on its right and one under it show which part (yellow on grey); a click on a bar puts the window's middle there, and with the button held it follows the pointer. The window moves by two pixels across, so that a byte stays a byte.

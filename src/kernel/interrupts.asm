@@ -104,6 +104,10 @@ int_handler:
         call ptr_poll
         call fdc_tick
         call snd_tick
+        ld hl,(irq_hook)            ; a program's routine (VX_IRQ)
+        ld a,h
+        or l
+        call nz,irq_call
 .no_input:
         ld a,(int_slice)
 
@@ -123,6 +127,24 @@ int_handler:
         ei
         ret
 .call_hl:
+        jp (hl)
+
+; HL = irq_hook: called in its bank (irq_cfg), on a stack of its own (the
+; one interrupted may be in #4000-#7FFF), with interrupts off; the bank
+; that was there (ram_config) mapped back after it
+irq_call:
+        ld (irq_sp),sp
+        ld sp,IRQ_STACK
+        ld a,(irq_cfg)
+        ld b,GA_PORT >> 8
+        out (c),a
+        call .go
+        ld a,(ram_config)
+        ld b,GA_PORT >> 8
+        out (c),a
+        ld sp,(irq_sp)
+        ret
+.go:
         jp (hl)
 
 ; ---------------------------------------------------------------------
@@ -146,3 +168,9 @@ int_slice:      db 0
 int_blind:      db 0                ; interrupts since VSYNC was seen
 int_slice_hook: dw 0                ; 0 = none; called with A = slice 0..5
 int_input:      db 0                ; the slice for keyboard, pointer, disc, sound
+; VX_IRQ (kernel/ext.asm, xa_irq), in GAP6 (include/memmap.inc): 0 at boot
+irq_hook        equ GAP6 + 700      ; 2: the routine, 0: none
+irq_cfg         equ GAP6 + 702      ; its bank's RAM config
+irq_slot        equ GAP6 + 703      ; its program's slot
+irq_sp          equ GAP6 + 704      ; 2: the stack interrupted
+IRQ_STACK       equ GAP6 + GAP_SIZE ; 94 bytes down to GAP6 + 706

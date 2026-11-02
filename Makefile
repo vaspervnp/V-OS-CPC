@@ -880,8 +880,8 @@ $(MBLOCK_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/TUNE.VBN $(BU
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_mblock -DTEST_SCRIPT=27
 	mv $(TEST_DSK) $@
-	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS))
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(TEST_APPS))
 	$(call add_apps,$@,myapps/music/owndisc/AGANAMEM.MUS $(BUILD)/TUNE.VBN)
 	$(PYTHON) -I tools/dsk_ext.py $@
 

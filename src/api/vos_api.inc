@@ -53,6 +53,19 @@
 ; what the caller kept there is lost. MUSIC knows A = 3 (myapps/music);
 ; with a RAM expansion there is room for it beside most programs.
 ;
+; From the interrupt (version 27): VOS_EXT with A = VX_IRQ, HL = a
+; routine of the program has the kernel call it once a frame from the
+; interrupt, in front or behind, paused or not, so that it keeps time
+; while the main loop waits (a program loading, a long drawing). It
+; runs with interrupts off, its bank at #4000 and a stack of 94 bytes:
+; it must be short (a few scan lines), keep IY, EXX and AF' (the
+; interrupted program's), touch only its own memory and the AY (the
+; keyboard scan before it leaves the PPI as it should be: port A out),
+; and call nothing of V-OS. HL = 0 stops it; the program's end stops it
+; too. One program's at a time, the last one asked. A disc transfer
+; keeps interrupts off (16 ms a sector), so it waits then. MUSIC plays
+; its songs this way (myapps/music, irq_play).
+;
 ; Windows that move (version 10): on a VE_PTR_DOWN, VOS_DRAG with the
 ; window (HL = x, DE = y, BC = width, A = height) takes it, if the
 ; click is on its top 10 rows: until the button goes up, a dashed
@@ -81,7 +94,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 26              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 27              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -95,7 +108,7 @@ VOS_API_VERSION equ 26              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 20: VOS_LOAD_IX, 21: VX_DATA,
                                     ; 22: VX_DB, databases, 23: VX_UTF8,
                                     ; 24: VX_CALC, formulas, 25: mode 2,
-                                    ; 26: VX_LANG
+                                    ; 26: VX_LANG, 27: VX_IRQ
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -240,7 +253,13 @@ VX_CALC         equ 10                  ; (24) C = CALC_* call (below), DE
 VX_LANG         equ 11                  ; (26) -> HL = the code of the
                                         ; language V-OS shows ("EN",
                                         ; "EL", ...: L the first letter)
-VX_COUNT        equ 12
+VX_IRQ          equ 12                  ; (27) HL = a routine of the
+                                        ; program, called from the
+                                        ; interrupt once a frame (0:
+                                        ; none; see below); carry: not
+                                        ; for an accessory or a program
+                                        ; that runs alone in bank 5
+VX_COUNT        equ 13
 
 ; Databases (version 22): VOS_EXT with A = VX_DB, C = one of these. One
 ; database is open at a time, for the program that opened it (another
