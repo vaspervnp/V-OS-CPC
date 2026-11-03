@@ -81,7 +81,7 @@ Modo 1. Una línea para cada ajuste. Los cambios se aplican al momento. Al guard
 | RETARDO REPETICIÓN | cuánto tiempo se mantiene pulsada una tecla antes de que empiece a repetirse: CORTO, MEDIO, LARGO |
 | VELOC. REPETICIÓN | LENTA, MEDIO, RÁPIDA |
 | RATÓN AMX | SÍ, NO |
-| LECTURA AMX | PULSOS o NIVELES: cómo se lee el ratón. Si el puntero no se mueve bien, pruebe el otro |
+| LECTURA AMX | NIVELES (al principio) o PULSOS: cómo se lee el ratón. NIVELES cuenta cada lectura con movimiento, PULSOS solo el comienzo de los pulsos. Si el puntero se mueve demasiado rápido o demasiado despacio, pruebe el otro |
 | COLOR DEL FONDO | AZUL, NEGRO, VERDE, ROJO |
 | TECLADOS | EN + IDIOMA, LOS SEIS (los que recorre CONTROL+SHIFT) |
 

@@ -6,9 +6,13 @@
 ; AMX mouse: plugs into the joystick port, so it shows up on keyboard
 ; matrix line 9 (bits 0-3 up/down/left/right, 5 fire 1, 4 fire 2,
 ; 6 fire 3). Movement arrives as pulses on the direction lines; amx_tick
-; samples line 9 on every interrupt (300 Hz) and counts rising edges.
-; TO VERIFY ON HARDWARE: pulse width and whether counting edges (the
-; default) or sampling levels (amx_levels = 1) gives the right speed.
+; samples line 9 on every interrupt (300 Hz) and counts each read where
+; a line is active as one step (LEVELS, the default: right for short
+; pulses and for an emulator that holds a line active while it has
+; movement to give, as CPCEMU seems to), or only rising edges (PULSES,
+; amx_levels = 0: half as fast there, and the same speed whichever
+; way). TO VERIFY ON HARDWARE: the pulse width. A step is a pixel; in
+; mode 0, whose pixels are twice as wide, half a pixel across.
 ;
 ; Cursor keys: move the pointer while held, accelerating from 1 to 6
 ; pixels per frame. COPY is the left button.
@@ -23,7 +27,7 @@ PTR_RIGHT       equ %010
 PTR_MIDDLE      equ %100
 
 ; ---------------------------------------------------------------------
-; amx_tick - every interrupt. Destroys: AF, BC
+; amx_tick - every interrupt. Destroys: AF, BC, HL
 ; ---------------------------------------------------------------------
 amx_tick:
         ld a,(amx_enabled)
@@ -52,6 +56,7 @@ amx_tick:
         ld b,a                      ; directions now
         ld a,(amx_levels)
         or a
+        ld a,b                      ; levels: each read active is one
         jr nz,.count
         ld a,(amx_prev)
         cpl
@@ -60,36 +65,40 @@ amx_tick:
         ld c,a
         ld a,b
         ld (amx_prev),a
-        bit 0,c
-        jr z,.no_up
-        ld a,(amx_dy)
-        dec a
-        ld (amx_dy),a
+        ld hl,amx_dy                ; up, down, left, right
+        rr c
+        jr nc,.no_up
+        dec (hl)
 .no_up:
-        bit 1,c
-        jr z,.no_down
-        ld a,(amx_dy)
-        inc a
-        ld (amx_dy),a
+        rr c
+        jr nc,.no_down
+        inc (hl)
 .no_down:
-        bit 2,c
-        jr z,.no_lft
-        ld a,(amx_dx)
-        dec a
-        ld (amx_dx),a
+        dec hl                      ; amx_dx
+        rr c
+        jr nc,.no_lft
+        dec (hl)
 .no_lft:
-        bit 3,c
-        ret z
-        ld a,(amx_dx)
-        inc a
-        ld (amx_dx),a
+        rr c
+        ret nc
+        inc (hl)
         ret
 
 ; ---------------------------------------------------------------------
 ; ptr_poll - 50 Hz, interrupt context. Destroys: AF, BC, DE, HL
 ; ---------------------------------------------------------------------
 ptr_poll:
-        ld a,(amx_dx)               ; movement from the AMX mouse
+        call ptr_width              ; movement from the AMX mouse, as
+        ld a,(amx_dx)               ; fast across as down: a pixel of
+        inc d                       ; mode 0 is twice as wide, so half
+        dec d                       ; there, the odd one kept
+        jr nz,.whole
+        ld hl,pp_half
+        add a,(hl)
+        sra a
+        ld (hl),0
+        rl (hl)
+.whole:
         ld (pp_dx),a
         ld a,(amx_dy)
         ld (pp_dy),a
@@ -293,9 +302,10 @@ ptr_accel:      db 0
 pp_dx:          db 0
 pp_dy:          db 0
 pp_moved:       db 0
+pp_half:        db 0                ; mode 0: half a pixel to come
 
 amx_enabled:    db 1
-amx_levels:     db 0                ; 0 = count rising edges, 1 = levels
+amx_levels:     db 1                ; 1 = count levels, 0 = rising edges
 amx_prev:       db 0
 amx_buttons:    db 0
 amx_dx:         db 0

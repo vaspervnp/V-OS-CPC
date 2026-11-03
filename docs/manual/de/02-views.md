@@ -81,7 +81,7 @@ Modus 1. Eine Zeile für jede Einstellung. Änderungen wirken sofort. Beim Speic
 | VERZÖGERUNG | wie lange du eine Taste hältst, bevor sie sich wiederholt: KURZ, MITTEL, LANG |
 | WIEDERHOLRATE | LANGSAM, MITTEL, SCHNELL |
 | AMX-MAUS | AN, AUS |
-| AMX-LESEART | IMPULSE oder PEGEL: wie die Maus gelesen wird. Bewegt sich der Zeiger nicht richtig, versuche die andere |
+| AMX-LESEART | PEGEL (anfangs) oder IMPULSE: wie die Maus gelesen wird. PEGEL zählt jedes Lesen mit Bewegung, IMPULSE nur den Beginn der Impulse. Bewegt sich der Zeiger zu schnell oder zu langsam, versuche die andere |
 | HINTERGRUND | BLAU, SCHWARZ, GRÜN, ROT |
 | TASTATUREN | EN + SPRACHE, ALLE SECHS (die CONTROL+SHIFT durchgeht) |
 

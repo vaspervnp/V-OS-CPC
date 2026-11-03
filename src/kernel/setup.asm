@@ -110,6 +110,6 @@ cfg_save:
 
 cfg_file:       db "SETUP   CFG"
 cfg_magic:      db "VCFG", 3
-cfg_data:       db VIEW_DESKTOP, 0, 25, 3, 1, 0, 1, 0, 0 ; English, and the
+cfg_data:       db VIEW_DESKTOP, 0, 25, 3, 1, 1, 1, 0, 0 ; English, and the
                                                     ; Greek pack, at first
 cfg_head:       ds CFG_SIZE

@@ -81,7 +81,7 @@ Mode 1. One line for each setting. Changes take effect at once. When saved (RETU
 | REPEAT DELAY | how long you hold a key before it starts repeating: SHORT, MEDIUM, LONG |
 | REPEAT SPEED | SLOW, MEDIUM, FAST |
 | AMX MOUSE | ON, OFF |
-| AMX READING | PULSES or LEVELS: how the mouse is read. If the pointer does not move properly, try the other one |
+| AMX READING | LEVELS (at first) or PULSES: how the mouse is read. LEVELS counts every read with movement, PULSES only the starts of the pulses. If the pointer moves too fast or too slowly, try the other one |
 | DESK COLOUR | BLUE, BLACK, GREEN, RED |
 | KEYBOARDS | EN + PACK, ALL SIX (the ones CONTROL+SHIFT goes through) |
 

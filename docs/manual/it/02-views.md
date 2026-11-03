@@ -81,7 +81,7 @@ Modo 1. Una riga per ogni impostazione. Le modifiche hanno effetto subito. Quand
 | RITARDO RIPETIZ. | quanto a lungo tieni premuto un tasto prima che inizi a ripetersi: BREVE, MEDIO, LUNGO |
 | VELOC. RIPETIZ. | LENTA, MEDIO, VELOCE |
 | MOUSE AMX | SÌ, NO |
-| LETTURA AMX | IMPULSI o LIVELLI: come viene letto il mouse. Se il puntatore non si muove bene, prova l'altro |
+| LETTURA AMX | LIVELLI (all'inizio) o IMPULSI: come viene letto il mouse. LIVELLI conta ogni lettura con movimento, IMPULSI solo l'inizio degli impulsi. Se il puntatore si muove troppo veloce o troppo lento, prova l'altro |
 | COLORE SFONDO | BLU, NERO, VERDE, ROSSO |
 | TASTIERE | EN + LINGUA, TUTTE SEI (quelle che CONTROL+SHIFT percorre) |
 

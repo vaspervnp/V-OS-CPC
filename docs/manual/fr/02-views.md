@@ -81,7 +81,7 @@ Mode 1. Une ligne par réglage. Les changements prennent effet tout de suite. Un
 | DÉLAI RÉPÉTITION | combien de temps on tient une touche avant qu'elle se répète : COURT, MOYEN, LONG |
 | VITESSE RÉPÉTITION | LENTE, MOYEN, RAPIDE |
 | SOURIS AMX | OUI, NON |
-| LECTURE AMX | IMPULSIONS ou NIVEAUX : la façon de lire la souris. Si le pointeur ne bouge pas correctement, essayez l'autre |
+| LECTURE AMX | NIVEAUX (au départ) ou IMPULSIONS : la façon de lire la souris. NIVEAUX compte chaque lecture avec du mouvement, IMPULSIONS seulement le début des impulsions. Si le pointeur bouge trop vite ou trop lentement, essayez l'autre |
 | COULEUR DU BUREAU | BLEU, NOIR, VERT, ROUGE |
 | CLAVIERS | EN + LANGUE, LES SIX (ceux que CONTROL+SHIFT parcourt) |
 
