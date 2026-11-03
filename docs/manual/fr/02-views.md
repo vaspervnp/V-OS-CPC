@@ -78,7 +78,9 @@ Avec une carte M4, le Bureau a une troisième icône de lecteur, DISK, sous A: e
 - **Les dossiers** apparaissent comme des dossiers (une icône avec un onglet, ou DIR dans le Commander). RETURN sur l'un d'eux y entre, et `..`, la première entrée, remonte. Dans le Lanceur, ils sont là aussi, pour atteindre les programmes qu'ils contiennent.
 - **Tout comme sur une disquette :** les programmes s'y lancent, les fichiers s'ouvrent dans leurs programmes, et ^C, ^D et ^N copient, suppriment et renomment. Les copies entre DISK et une disquette vont jusqu'à 16K. Dossiers et fichiers ont des noms comme sur le CPC (8.3 : `NOM.EXT`) ; les noms plus longs n'apparaissent pas.
 - **M4.SYS** (sur `vos.dsk`) est chargé depuis A: la première fois que DISK sert.
-- **Pas encore :** OUVRIR et ENREGISTRER des programmes (NOTEPAD, PAINT…) ne voient encore que A: et B:. DATABASE ne marche que sur disquette, et la carte SD ne se formate pas depuis V-OS. V-OS démarre toujours depuis une disquette en A: (tapez `|DISC` avant `RUN"VOS"` : avec une carte M4, le CPC démarre sur la carte SD).
+- **Dans les programmes :** OTHER DRIVE (^W dans SHEET) passe de A: à B: puis à DISK, et la ligne du bas indique `DISK:NOM.TXT`. La liste d'OPEN montre aussi les dossiers : RETURN sur l'un d'eux (ou sur `..`) liste ce dossier, et SAVE écrit dans le dossier d'où vous avez ouvert. READER écrit la carte `C:` dans ses adresses.
+- **Les bases de données** vont aussi sur DISK : le ^W de DATABASE y arrive, et STREETS lancé depuis la carte y garde son STREETS.VDB.
+- **Pas encore :** la carte SD ne se formate pas depuis V-OS. V-OS démarre toujours depuis une disquette en A: (tapez `|DISC` avant `RUN"VOS"` : avec une carte M4, le CPC démarre sur la carte SD).
 
 ## Réglages, F4
 

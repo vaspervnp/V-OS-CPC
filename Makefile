@@ -895,16 +895,17 @@ test-music-block: $(MBLOCK_DSK) $(BUILD)/music.dsk
 	done
 	ls $(BUILD)/shots/*/*.png
 
-# Files opened by type (TEST_SCRIPT=22): B: is markdown.dsk with a text
+# Files opened by type (TEST_SCRIPT=22): A: with NOTEPAD.BIN only (the
+# other programs would push it past block 179); B: is markdown.dsk with a text
 OPEN_DSK := $(BUILD)/vos_open.dsk
 OPEN_SHOTS := 215 235 330 370 400
-$(OPEN_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
+$(OPEN_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(BUILD)/NOTEPAD.BIN
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_open -DTEST_SCRIPT=22
 	mv $(TEST_DSK) $@
 	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS))
+	$(call add_apps,$@,$(BUILD)/NOTEPAD.BIN)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-open: $(OPEN_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN
@@ -914,7 +915,6 @@ test-open: $(OPEN_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN
 	iDSK $(BUILD)/vos_open_b.dsk -i $(BUILD)/HELLO.TXT -t 0 > /dev/null
 	for d in $(OPEN_SHOTS); do \
 	  cp $(OPEN_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/vos_open_b.dsk $(BUILD)/vos_run_b.dsk; \
-	  iDSK $(BUILD)/vos_run.dsk -i $(BUILD)/NOTEPAD.BIN -t 1 -c 4000 -e 4000 > /dev/null; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
@@ -932,7 +932,6 @@ test-charset: $(OPEN_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN tools/voscs
 	iDSK $(BUILD)/vos_open_b.dsk -i $(BUILD)/HELLO.TXT -t 0 > /dev/null
 	for d in $(CHARSET_SHOTS); do \
 	  cp $(OPEN_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/vos_open_b.dsk $(BUILD)/vos_run_b.dsk; \
-	  iDSK $(BUILD)/vos_run.dsk -i $(BUILD)/NOTEPAD.BIN -t 1 -c 4000 -e 4000 > /dev/null; \
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
@@ -1054,7 +1053,7 @@ $(KBDS_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/NOTEPAD.BIN
 	$(RASM) src/vos.asm -o $(BUILD)/vos_kbds -DTEST_SCRIPT=30
 	mv $(TEST_DSK) $@
 	$(call add_test_packs,$@)
-	$(call add_apps,$@,$(TEST_APPS) $(BUILD)/NOTEPAD.BIN)
+	$(call add_apps,$@,$(BUILD)/NOTEPAD.BIN)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-kbds: $(KBDS_DSK) $(TEST_DSK_B)
@@ -1156,22 +1155,30 @@ test-paint: $(PAINT_DSK) $(TEST_DSK_B)
 # The M4 board's SD card in the 1984 emulator for Windows (tools/
 # m4_shot.sh, VOS_1984): the Desktop on DISK, a copy to A:, folders,
 # NOTEPAD run from the card (TEST_SCRIPT=34, build/shots/NNNN.png); the
-# Commander and the Launcher on DISK (35, build/shots/v-NNNN.png).
-# M4.SYS is on these discs only.
+# Commander and the Launcher on DISK (35, build/shots/v-NNNN.png);
+# NOTEPAD's OPEN and SAVE on DISK (36, build/shots/o-NNNN.png, then the
+# card's HELLO.TXT checked); STREETS makes its database on DISK (37,
+# a card with STREETS.BIN only, build/shots/d-NNNN.png, then the card's
+# STREETS.VDB checked). M4.SYS
+# is on these discs only.
 M4_DSK := $(BUILD)/vos_m4.dsk
 M4V_DSK := $(BUILD)/vos_m4v.dsk
+M4O_DSK := $(BUILD)/vos_m4o.dsk
+M4D_DSK := $(BUILD)/vos_m4d.dsk
 M4_SHOTS = 900 1200 1500 1800 2050 2300 2500 2700
 M4V_SHOTS = 500 900 1200 1500 1800 2100 2400
+M4O_SHOTS = 900 1250 1400 1800 2700 3000 3500
+M4D_SHOTS = 1100 1800 2400
 $(BUILD)/vos_m4%.dsk: $(SOURCES) $(LANG_KERNEL) $(PACKS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(basename $@) \
-	  -DTEST_SCRIPT=$(if $(findstring m4v,$@),35,34) -s
+	  -DTEST_SCRIPT=$(if $(findstring m4v,$@),35,$(if $(findstring m4o,$@),36,$(if $(findstring m4d,$@),37,34))) -s
 	mv $(TEST_DSK) $@
 	$(call add_test_packs,$@)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
-test-m4: $(M4_DSK) $(M4V_DSK) $(BUILD)/NOTEPAD.BIN
+test-m4: $(M4_DSK) $(M4V_DSK) $(M4O_DSK) $(M4D_DSK) $(BUILD)/NOTEPAD.BIN $(BUILD)/STREETS.BIN
 	rm -rf $(BUILD)/shots
 	for d in $(M4_SHOTS); do \
 	  cp $(M4_DSK) $(BUILD)/vos_run.dsk; bash tools/m4_shot.sh $$d; \
@@ -1180,6 +1187,16 @@ test-m4: $(M4_DSK) $(M4V_DSK) $(BUILD)/NOTEPAD.BIN
 	  cp $(M4V_DSK) $(BUILD)/vos_run.dsk; \
 	  M4_SYM=$(BUILD)/vos_m4v.sym M4_SHOT=v-$$d bash tools/m4_shot.sh $$d; \
 	done
+	for d in $(M4O_SHOTS); do \
+	  cp $(M4O_DSK) $(BUILD)/vos_run.dsk; \
+	  M4_SYM=$(BUILD)/vos_m4o.sym M4_SHOT=o-$$d bash tools/m4_shot.sh $$d; \
+	done
+	grep -aq "xHello from the SD card" $(BUILD)/m4run/HELLO.TXT
+	for d in $(M4D_SHOTS); do \
+	  cp $(M4D_DSK) $(BUILD)/vos_run.dsk; \
+	  M4_CARD=db M4_SYM=$(BUILD)/vos_m4d.sym M4_SHOT=d-$$d bash tools/m4_shot.sh $$d; \
+	done
+	$(PYTHON) -I tools/vdb.py check $(BUILD)/m4run/STREETS.VDB
 
 # PAINT on the whole screen (TEST_SCRIPT=33, 576K: a data bank of its
 # own): lines, the window moved by its bars, saved as B:NONAME.SCR and
@@ -1226,7 +1243,7 @@ $(NOTEPAD_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/NOTEPAD.BIN
 	$(RASM) src/vos.asm -o $(BUILD)/vos_notepad -DTEST_SCRIPT=17
 	mv $(TEST_DSK) $@
 	$(call add_test_packs,$@)
-	$(call add_apps,$@,$(TEST_APPS) $(BUILD)/NOTEPAD.BIN)
+	$(call add_apps,$@,$(BUILD)/NOTEPAD.BIN)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-notepad: $(NOTEPAD_DSK) $(TEST_DSK_B)

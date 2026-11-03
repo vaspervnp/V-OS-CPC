@@ -150,12 +150,7 @@ draw_state:
         ret nz
         ld de,lbuf
         ld a,(fdrive)
-        add a,"A"
-        ld (de),a
-        inc de
-        ld a,":"
-        ld (de),a
-        inc de
+        call vos_drive_text
         ld a,(loaded)
         or a
         jr z,.none
@@ -371,9 +366,7 @@ command:
         cp CMD_DRIVE
         jr nz,.not_drive
         ld hl,fdrive
-        ld a,(hl)
-        xor 1
-        ld (hl),a
+        call vos_next_drive
         jp draw_state
 .not_drive:
         cp CMD_ABOUT
@@ -600,6 +593,7 @@ dlg_about:      db T_MENU, T_ABOUT_TEXT, 1, VM_OK
 dlg_not_song:   db T_MENU, T_NOT_SONG, 1, VM_OK
 ext_mus:        db "MUS"
 
+        include "api/vos_drive.inc"
         include "app_texts.asm"     ; texts, from texts.txt
 
 fdrive:         db 0

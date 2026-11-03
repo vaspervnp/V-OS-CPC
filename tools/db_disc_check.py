@@ -5,7 +5,8 @@ test-db-disc).
 usage: db_disc_check.py VOS.BIN DB.SYS vos.sym disc.dsk [operations]
 
 Runs the kernel (from VOS.BIN, as the loader puts it at #0000) and
-DB.SYS (at DB_ADDR in base RAM bank 1) in a Z80 emulator (the z80
+DB.SYS (at DB_ADDR in base RAM bank 1, with the second extension
+there, which has its disc layer) in a Z80 emulator (the z80
 package). Only the floppy controller (fdc_select, fdc_recalibrate,
 fdc_read_id, fdc_read, fdc_write) works on the Extended DSK image
 here, and ram_select swaps 16K banks at #4000; fs.asm, bank_copy and
@@ -75,6 +76,10 @@ class Machine:
         self.banks = {c: bytearray(0x4000) for c in (0xC0, 0xC4, 0xC5, 0xC6, 0xC7)}
         db = dbsys[128:]
         self.banks[0xC0][sym['DB_START'] - 0x4000:sym['DB_START'] - 0x4000 + len(db)] = db
+        img = sym['EXT2_IMAGE'] - sym['LOADER_START']   # the disc layer, dk_*
+        size = sym['EXT2_END'] - sym['EXT2_START']
+        self.banks[0xC0][sym['EXT2_START'] - 0x4000:sym['EXT2_START'] - 0x4000 + size] = \
+            vos[img:img + size]
         self.window = 0xC0
         mem[0x4000:0x8000] = self.banks[0xC0]
         mem[CALL:CALL + 5] = bytes([0xCD, sym['DB_START'] & 255, sym['DB_START'] >> 8, 0x18, 0xFE])

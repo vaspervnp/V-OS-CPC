@@ -77,8 +77,14 @@ fs_m4:
         ex (sp),hl
         ld (m4_entry),hl
         pop hl
-        ld (m4_hl),hl
         ld (m4_bc),bc
+        push de                     ; the name, from a program's bank
+        ld de,fs_name               ; too: bank 7 takes its place
+        ld bc,11
+        ldir
+        pop de
+        ld hl,fs_name
+        ld (m4_hl),hl
         ld hl,m4_fs_e
         ld a,(ram_home_cfg)
         cp LANG_BANK_CFG

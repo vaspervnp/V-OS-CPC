@@ -246,9 +246,7 @@ command:
         cp CMD_DRIVE
         jr nz,.not_drive
         ld hl,fdrive
-        ld a,(hl)
-        xor 1
-        ld (hl),a
+        call vos_next_drive
         ret
 .not_drive:
         cp CMD_PAGE
@@ -949,6 +947,7 @@ ext_md:         db "MD "
 http:           db "http://"
 start:          db "A:INDEX.MD", 0
 
+        include "api/vos_drive.inc"
         include "app_texts.asm"     ; texts, from texts.txt
 
 fdrive:         db 0

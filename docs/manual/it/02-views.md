@@ -78,7 +78,9 @@ Con una scheda M4, la Scrivania ha una terza icona di unità, DISK, sotto A: e B
 - **Le cartelle** appaiono come cartelle (un'icona con linguetta, o DIR nel Commander). RETURN su una ci entra, e `..`, la prima voce, risale. Nel Launcher ci sono anche loro, per arrivare ai programmi che contengono.
 - **Tutto come su un dischetto:** i programmi si avviano da lì, i file si aprono nei loro programmi, e ^C, ^D e ^N copiano, eliminano e rinominano. Le copie tra DISK e un dischetto arrivano fino a 16K. Cartelle e file hanno nomi come sul CPC (8.3: `NOME.EXT`); i nomi più lunghi non appaiono.
 - **M4.SYS** (su `vos.dsk`) viene caricato da A: la prima volta che si usa DISK.
-- **Non ancora:** APRI e SALVA dei programmi (NOTEPAD, PAINT…) vedono ancora solo A: e B:. DATABASE funziona solo sui dischetti, e la scheda SD non si formatta da V-OS. V-OS stesso parte ancora da un dischetto in A: (scrivi `|DISC` prima di `RUN"VOS"`: con una scheda M4, il CPC parte sulla scheda SD).
+- **Nei programmi:** OTHER DRIVE (^W in SHEET) passa da A: a B: e a DISK, e la riga in basso dice `DISK:NOME.TXT`. La lista di OPEN mostra anche le cartelle: RETURN su una (o su `..`) mostra quella cartella, e SAVE scrive nella cartella da cui hai aperto. READER scrive la scheda come `C:` nei suoi indirizzi.
+- **I database** vanno anche su DISK: il ^W di DATABASE ci arriva, e STREETS avviato dalla scheda tiene lì il suo STREETS.VDB.
+- **Non ancora:** la scheda SD non si formatta da V-OS. V-OS stesso parte ancora da un dischetto in A: (scrivi `|DISC` prima di `RUN"VOS"`: con una scheda M4, il CPC parte sulla scheda SD).
 
 ## Impostazioni, F4
 

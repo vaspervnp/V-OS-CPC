@@ -78,7 +78,9 @@ With an M4 board, the Desktop has a third drive icon, DISK, under A: and B:, and
 - **Folders** show as folders (an icon with a tab, or DIR in the Commander). RETURN on one goes into it, and `..`, the first entry, goes back up. In the Launcher, folders are there too, so that you can reach the programs inside them.
 - **Everything as on a disc:** programs run from it, files open in their programs, and ^C, ^D and ^N copy, delete and rename. Copies between DISK and a disc go up to 16K. Folders and files are named as on the CPC (8.3: `NAME.EXT`); names that are longer do not show.
 - **M4.SYS** (on `vos.dsk`) is loaded from A: the first time DISK is used.
-- **Not yet:** the programs' OPEN and SAVE (NOTEPAD, PAINT…) still see only A: and B:. DATABASE works only on discs, and the SD card is not formatted from V-OS. V-OS itself still starts from a disc in A: (type `|DISC` before `RUN"VOS"`: with an M4 board, the CPC starts on the SD card).
+- **In the programs:** OTHER DRIVE (^W in SHEET) goes A: → B: → DISK, and the bottom line says `DISK:NAME.TXT`. OPEN's list shows the folders too: RETURN on one (or on `..`) lists that folder, and SAVE writes in the folder you opened from. READER writes the card as `C:` in its places.
+- **Databases** go on DISK too: DATABASE's ^W reaches it, and STREETS run from the card keeps its STREETS.VDB there.
+- **Not yet:** the SD card is not formatted from V-OS. V-OS itself still starts from a disc in A: (type `|DISC` before `RUN"VOS"`: with an M4 board, the CPC starts on the SD card).
 
 ## Setup, F4
 

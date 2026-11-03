@@ -78,7 +78,9 @@ Con una tarjeta M4, el Escritorio tiene un tercer icono de unidad, DISK, debajo 
 - **Las carpetas** se ven como carpetas (un icono con pestaña, o DIR en el Commander). RETURN sobre una entra en ella, y `..`, la primera entrada, sube. En Programas también aparecen, para llegar a los programas que contienen.
 - **Todo como en un disquete:** los programas se ejecutan desde ella, los archivos se abren en sus programas, y ^C, ^D y ^N copian, borran y renombran. Las copias entre DISK y un disquete llegan hasta 16K. Carpetas y archivos tienen nombres como en el CPC (8.3: `NOMBRE.EXT`); los nombres más largos no aparecen.
 - **M4.SYS** (en `vos.dsk`) se carga desde A: la primera vez que se usa DISK.
-- **Aún no:** ABRIR y GUARDAR de los programas (NOTEPAD, PAINT…) solo ven A: y B:. DATABASE solo funciona en disquetes, y la tarjeta SD no se formatea desde V-OS. V-OS sigue arrancando desde un disquete en A: (escriba `|DISC` antes de `RUN"VOS"`: con una tarjeta M4, el CPC arranca en la tarjeta SD).
+- **En los programas:** OTHER DRIVE (^W en SHEET) pasa de A: a B: y a DISK, y la línea de abajo dice `DISK:NOMBRE.TXT`. La lista de OPEN muestra también las carpetas: RETURN en una (o en `..`) muestra esa carpeta, y SAVE escribe en la carpeta desde donde abrió. READER escribe la tarjeta como `C:` en sus direcciones.
+- **Las bases de datos** van también en DISK: el ^W de DATABASE llega allí, y STREETS ejecutado desde la tarjeta guarda allí su STREETS.VDB.
+- **Aún no:** la tarjeta SD no se formatea desde V-OS. V-OS sigue arrancando desde un disquete en A: (escriba `|DISC` antes de `RUN"VOS"`: con una tarjeta M4, el CPC arranca en la tarjeta SD).
 
 ## Ajustes, F4
 

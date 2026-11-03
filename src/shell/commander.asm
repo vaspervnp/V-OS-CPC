@@ -642,16 +642,6 @@ cm_draw_row:
         ld hl,cm_ent
         ld de,cm_line
         call util_cat_row
-        ld a,(cm_ent + M4_FOLDER)   ; a folder: no dot, "DIR" for its
-        or a                        ; size
-        jr z,.print
-        ld a," "
-        ld (cm_line + 8),a
-        ld hl,cm_line + 12
-        ld de,cm_dir
-        ex de,hl
-        ld bc,6
-        ldir
 .print:
         ld de,(cm_ry)
         inc de
@@ -896,7 +886,6 @@ cm_active:      db 0                ; panel with the selection
 cm_drv:         db 0, 1             ; per panel: its drive (2: DISK)
 cm_m4:          db 0                ; 1: an M4 board
 cm_folder:      ds 10               ; the card's folder: its last 9
-cm_dir:         db "  DIR", 0
 cm_p:           db 0                ; panel the routines work on
 cm_px:          dw 0
 cm_count:       ds 2                ; per panel (index cm_p)

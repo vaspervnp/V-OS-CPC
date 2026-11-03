@@ -69,8 +69,13 @@
 ; Drives (version 28): 0 A:, 1 B:, 2 DISK, the SD card of an M4 board
 ; (VOS_CATALOG, VOS_LOAD, VOS_SAVE, VOS_DELETE, VX_FREE), in its folder
 ; now: the Desktop's and Commander's RETURN on a folder goes into it.
-; Its catalog has the folders too, byte 13 of their entries 1 (VOS_CAT_EXT
-; leaves them out). Names are 8.3. Without an M4 board: carry, A = 35.
+; Its catalog has the folders too, byte 13 of their entries 1 (and
+; "..": up), and from version 29 VOS_CAT_EXT keeps them; VOS_FILE_PICK
+; goes into a folder chosen and lists it as the last VOS_CATALOG asked,
+; so the file it returns is always a file, in the folder now. Names are
+; 8.3. Without an M4 board: carry, A = 35. VX_DRIVE gives the drive
+; after one, for an OTHER DRIVE command; a program shows drive 2 as
+; "DISK:". Databases (VX_DB) work there too (version 29).
 ;
 ; Windows that move (version 10): on a VE_PTR_DOWN, VOS_DRAG with the
 ; window (HL = x, DE = y, BC = width, A = height) takes it, if the
@@ -100,7 +105,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 28              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 29              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -115,7 +120,9 @@ VOS_API_VERSION equ 28              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 22: VX_DB, databases, 23: VX_UTF8,
                                     ; 24: VX_CALC, formulas, 25: mode 2,
                                     ; 26: VX_LANG, 27: VX_IRQ,
-                                    ; 28: drive 2, the M4's SD card
+                                    ; 28: drive 2, the M4's SD card,
+                                    ; 29: VX_DRIVE, folders in the file
+                                    ; list
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -266,7 +273,11 @@ VX_IRQ          equ 12                  ; (27) HL = a routine of the
                                         ; none; see below); carry: not
                                         ; for an accessory or a program
                                         ; that runs alone in bank 5
-VX_COUNT        equ 13
+VX_DRIVE        equ 13                  ; (29) C = drive -> A = the next
+                                        ; one: 0 A: -> 1 B: -> 2 DISK
+                                        ; (with an M4 board) -> 0. Older
+                                        ; V-OS: carry (then A: <-> B:)
+VX_COUNT        equ 14
 
 ; Databases (version 22): VOS_EXT with A = VX_DB, C = one of these. One
 ; database is open at a time, for the program that opened it (another

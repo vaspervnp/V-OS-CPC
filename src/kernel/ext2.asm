@@ -611,3 +611,560 @@ fs_format:
         jr c,.track
         ret
 
+
+; VOS_CATALOG (kernel/api.asm: api_catalog): cat_a = drive (+
+; VOS_CAT_EXT: only the files with the extension cat_ext, and the SD
+; card's folders) -> A = files in FS_CAT, HL = FS_CAT; carry: A = error.
+; The file list goes into a folder with it again (fp_folder).
+cat_run:
+        ld a,(cat_a)
+        and #3F
+        call fdc_select
+        call fs_catalog
+        ret c
+        ld hl,cat_a
+        bit 6,(hl)
+        jr z,.end
+        ld hl,FS_CAT                ; from
+        ld de,FS_CAT                ; to: where the next one kept goes
+        ld b,a
+        ld c,0
+        or a
+        jr z,.kept
+.file:
+        push bc
+        push hl
+        ld bc,13
+        add hl,bc
+        ld a,(hl)
+        pop hl
+        push hl
+        or a
+        jr nz,.keep                 ; a folder
+        ld bc,8
+        add hl,bc
+        push de
+        ld de,cat_ext
+        ld b,3
+.same:
+        ld a,(de)
+        cp (hl)
+        jr nz,.other
+        inc hl
+        inc de
+        djnz .same
+.other:
+        pop de
+        jr nz,.drop
+.keep:
+        pop hl
+        ld bc,16
+        ldir
+        pop bc
+        inc c
+        djnz .file
+        jr .kept
+.drop:
+        pop hl
+        ld bc,16
+        add hl,bc
+        pop bc
+        djnz .file
+.kept:
+        ld a,c
+        ld (fc_count),a
+        or a
+.end:
+        ld hl,FS_CAT
+        ret
+
+; the file list's choice (ui/filedlg.asm: fp_sel) a folder of the SD
+; card: into it, and the catalog again as VOS_CATALOG made it -> NZ;
+; Z: not a folder, or nothing there (fp_result 2: cancelled)
+fp_folder:
+        ld a,(fp_sel)
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,FS_CAT
+        add hl,de
+        push hl
+        ld de,13
+        add hl,de
+        ld a,(hl)
+        pop hl
+        or a
+        ret z
+        ld de,file_name
+        ld bc,11
+        ldir
+        ld hl,m4_cd_e
+        call ext_call
+        jr c,.none
+        call cat_run
+        jr c,.none
+        or a
+        ret nz
+.none:
+        ld a,2
+        ld (fp_result),a
+        xor a
+        ret
+
+; ---------------------------------------------------------------------
+; DB.SYS's disc layer (src/db/db.asm): here, in the engine's bank, and
+; for the SD card too
+; ---------------------------------------------------------------------
+; before each call with a database open: its drive, its format
+dk_begin:
+        ld a,(db_drive)
+        call fdc_select
+        ld a,(db_drive)
+        cp 2
+        jr z,.card
+        ld hl,db_fmt
+        ld de,fs_first_id
+        ld bc,3
+        ldir
+.card:
+        or a
+        ret
+
+; a new file of one page, page 0 empty but for "VDB1" and 1 page
+dk_create:
+        ld a,(db_drive)
+        call fdc_select
+        ld hl,db_name
+        call fs_exists
+        ld a,FS_ERR_EXISTS
+        ccf
+        ret c
+        ld hl,DB_CACHE              ; (the cache is empty then)
+        ld de,DB_CACHE + 1
+        ld bc,DB_PAGE - 1
+        ld (hl),0
+        ldir
+        ld hl,db_magic
+        ld de,DB_CACHE
+        ld bc,4
+        ldir
+        ld a,1
+        ld (de),a
+        ld a,#FF                    ; no AMSDOS header
+        ld (fs_hdr_type),a
+        ld hl,db_name
+        ld de,DB_CACHE
+        ld bc,DB_PAGE
+        ld a,EXT2_CFG
+        call fs_save
+        ret c
+        ; fall through
+; the file's blocks -> db_blocks, db_nblocks; its format -> db_fmt
+dk_open:
+        ld a,(db_drive)
+        call fdc_select
+        ld a,(db_drive)
+        cp 2
+        jp z,dm_open_db
+        ld hl,db_name
+        call fs_set_name
+        call fs_mount
+        ret c
+        call fs_collect
+        ret c
+        ld hl,fs_first_id
+        ld de,db_fmt
+        ld bc,3
+        ldir
+        call fs_free_k              ; the room on the disc
+        ld (db_room),a
+dk_blocks:
+        ld hl,fs_blist
+        ld de,db_blocks
+        ld bc,180
+        ldir
+        ld a,(fs_nblocks)
+        ld (db_nblocks),a
+        or a
+        ret
+
+; DE = page -> HL -> 1K: from its block (dk_write: to it)
+dk_read:
+        ld a,(db_drive)
+        cp 2
+        ld a,M4_MODE_R
+        jp z,dm_page
+        call dk_sector
+        ret c
+        ld b,2
+.half:
+        push bc
+        push hl
+        push de
+        ex de,hl
+        call fs_read_ls
+        pop de
+        pop hl
+        pop bc
+        ret c
+        push bc
+        ex de,hl
+        push hl
+        ld hl,fs_buf
+        ld bc,512
+        ldir
+        pop hl
+        ex de,hl
+        inc de
+        pop bc
+        djnz .half
+        or a
+        ret
+dk_write:
+        ld a,(db_drive)
+        cp 2
+        ld a,M4_MODE_RW
+        jp z,dm_page
+        call dk_sector
+        ret c
+        ld b,2
+.half:
+        push bc
+        push de
+        ld de,fs_buf
+        ld bc,512
+        ldir
+        pop de
+        push hl
+        push de
+        ex de,hl
+        call fs_write_ls
+        pop de
+        pop hl
+        pop bc
+        ret c
+        inc de
+        djnz .half
+        or a
+        ret
+; DE = page -> DE = its first sector in the data area (HL kept)
+dk_sector:
+        ld a,(db_nblocks)
+        dec a
+        cp e
+        ld a,FS_ERR_NOT_FOUND
+        ret c
+        push hl
+        ld hl,db_blocks
+        add hl,de
+        ld e,(hl)
+        ld d,0
+        ex de,hl
+        add hl,hl
+        ex de,hl
+        pop hl
+        or a
+        ret
+
+; one block more for the file: the directory read again (the file as
+; it was?), a free block, the entries written again
+dk_append:
+        ld a,(db_drive)             ; the SD card: the file a page
+        cp 2                        ; longer
+        jr nz,.disc
+        call dm_grow
+        ret c
+        ld hl,db_nblocks
+        inc (hl)
+        xor a
+        ret
+.disc:
+        ld hl,db_name
+        call fs_set_name
+        call fs_mount
+        ret c
+        call fs_collect
+        ret c
+        ld a,(fs_nblocks)
+        ld hl,db_nblocks
+        cp (hl)
+        ld a,FS_ERR_NOT_FOUND       ; another disc?
+        scf
+        ret nz
+        ld a,2                      ; a free block
+.block:
+        ld hl,fs_blocks
+        cp (hl)
+        jr nc,.full
+        push af
+        call fs_used
+        jr z,.free
+        pop af
+        inc a
+        jr .block
+.full:
+        ld a,FS_ERR_FULL
+        scf
+        ret
+.free:
+        pop af
+        push af
+        call fs_mark
+        ld a,(fs_nblocks)
+        ld e,a
+        ld d,0
+        ld hl,fs_blist
+        add hl,de
+        pop af
+        ld (hl),a
+        ld hl,fs_nblocks
+        inc (hl)
+        ld a,(hl)
+        add a,15                    ; entries = (blocks + 15) / 16
+        rrca
+        rrca
+        rrca
+        rrca
+        and #0F
+        ld (fs_extents),a
+        ld a,(hl)                   ; records = blocks * 8
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld (fs_records),hl
+        call fs_unlink
+        call fs_free_entries
+        ld hl,fs_extents
+        cp (hl)
+        ld a,FS_ERR_DIR_FULL
+        ret c
+        call fs_write_entries
+        ret c
+        jp dk_blocks
+
+; ---- a database on the SD card (db_drive 2): the file opened, a page
+; read or written at page * 1024 (C_SEEK), closed; commands and
+; responses in fs_buf from +252, as kernel/m4.asm's, through VX_M4
+; (xa_m4), straight into the engine's cache in this bank
+M4_MODE_RW      equ #93                 ; FatFS, read and write, open
+                                        ; always: a write past its end
+                                        ; makes it longer (in 1984 too)
+                                        ; (M4_MODE_R: kernel/m4.asm)
+DM_ZERO         equ 0                   ; dm_page: a page of zeros
+DM_BUF          equ fs_buf + 252        ; db size, dw command, data
+DM_PIECE        equ 128
+
+; dk_open: -> db_nblocks = pages, db_room = free K on the card
+dm_open_db:
+        call fs_free_k
+        ret c
+        ld (db_room),a
+        ld a,M4_MODE_R              ; the size -> pages
+        call dm_open
+        ret c
+        ld a,#11                    ; C_FSIZE
+        call dm_cmd
+        call dm_go
+        ld hl,(DM_BUF + 3)
+        ld a,(DM_BUF + 5)
+        ld de,DB_PAGE - 1
+        add hl,de
+        adc a,0
+        srl a                       ; A:H / 4
+        rr h
+        srl a
+        rr h
+        ld a,h
+        ld (db_nblocks),a
+        jp dm_close
+
+; A = mode (M4_MODE_R, M4_MODE_RW, DM_ZERO), DE = page, HL -> its 1K
+; here
+dm_page:
+        ld (dm_ptr),hl
+        ld (dm_mode),a
+        or a
+        jr nz,.open
+        ld a,M4_MODE_RW
+.open:
+        push de
+        call dm_open
+        pop hl
+        ret c
+        push hl
+        ld a,#05                    ; C_SEEK: fd, 32-bit offset
+        call dm_cmd
+        pop hl
+        xor a
+        ld (de),a
+        inc de
+        add hl,hl
+        add hl,hl
+        ld a,l
+        ld (de),a
+        inc de
+        ld a,h
+        ld (de),a
+        inc de
+        xor a
+        ld (de),a
+        inc de
+        call dm_go
+        jr nz,.fail
+        ld b,DB_PAGE / DM_PIECE
+.piece:
+        push bc
+        ld a,(dm_mode)
+        cp M4_MODE_R
+        jr nz,.write
+        ld a,#02                    ; C_READ: fd, dw bytes
+        call dm_cmd
+        ld a,DM_PIECE
+        ld (de),a
+        inc de
+        xor a
+        ld (de),a
+        inc de
+        call dm_go
+        jr nz,.fail_bc
+        ld hl,DM_BUF + 4
+        ld de,(dm_ptr)
+        ld bc,DM_PIECE
+        ldir
+        ld (dm_ptr),de
+        jr .next
+.write:
+        ld a,#03                    ; C_WRITE: fd, the bytes
+        call dm_cmd
+        ld a,(dm_mode)
+        or a                        ; (DM_ZERO)
+        jr z,.zeros
+        ld hl,(dm_ptr)
+        ld bc,DM_PIECE
+        ldir
+        ld (dm_ptr),hl
+        jr .send
+.zeros:
+        ld h,d                      ; (dm_grow) a piece of zeros
+        ld l,e
+        ld (hl),0
+        inc de
+        ld bc,DM_PIECE - 1
+        ldir
+.send:
+        call dm_go
+        jr nz,.fail_bc
+.next:
+        pop bc
+        djnz .piece
+        jr dm_close
+.fail_bc:
+        pop bc
+.fail:
+        call dm_close
+        ld a,FDC_ERR_DATA
+        scf
+        ret
+
+; dk_append: the file a page longer, of zeros, at its end
+dm_grow:
+        ld a,(db_nblocks)
+        ld e,a
+        ld d,0
+        ld a,DM_ZERO
+        jp dm_page
+
+; A = mode: db_name opened -> dm_fd; carry: A = error
+dm_open:
+        ld hl,DM_BUF + 1
+        ld (hl),#01                 ; C_OPEN: mode, "NAME.EXT", 0
+        inc hl
+        ld (hl),#43
+        inc hl
+        ld (hl),a
+        inc hl
+        ex de,hl
+        ld hl,db_name
+        ld b,8
+.name:
+        ld a,(hl)
+        inc hl
+        cp " "
+        jr z,.skip
+        ld (de),a
+        inc de
+.skip:
+        djnz .name
+        ld a,"."
+        ld (de),a
+        inc de
+        ld b,3
+.ext:
+        ld a,(hl)
+        inc hl
+        and #7F
+        ld (de),a
+        inc de
+        djnz .ext
+        xor a
+        ld (de),a
+        inc de
+        call dm_go
+        ret c
+        ld a,(DM_BUF + 4)           ; data: the descriptor, the result
+        or a
+        ld a,FS_ERR_NOT_FOUND
+        scf
+        ret nz
+        ld a,(DM_BUF + 3)
+        ld (dm_fd),a
+        or a
+        ret
+
+dm_close:
+        ld a,#04                    ; C_CLOSE: fd
+        call dm_cmd
+        ; fall through
+; DE = after the command in DM_BUF: sent, the response there -> A = its
+; result (0 when it has no data, as C_SEEK's may not), Z: done; carry:
+; no M4 board (A = 35)
+dm_go:
+        ld a,e
+        sub (DM_BUF + 1) & #FF
+        ld (DM_BUF),a
+        ld hl,DM_BUF
+        ld de,DM_BUF
+        ld bc,DM_PIECE + 4
+        call xa_m4
+        ld a,35
+        ret c
+        ld a,(DM_BUF)
+        cp 3
+        ld a,0
+        jr c,.done
+        ld a,(DM_BUF + 3)
+.done:
+        or a
+        ret
+
+; A = command (#43xx) -> its first bytes, dm_fd, in DM_BUF; DE after
+dm_cmd:
+        ld hl,DM_BUF + 1
+        ld (hl),a
+        inc hl
+        ld (hl),#43
+        inc hl
+        ld a,(dm_fd)
+        ld (hl),a
+        inc hl
+        ex de,hl
+        ret
+
+dm_fd:          db 0
+dm_mode:        db 0
+dm_ptr:         dw 0

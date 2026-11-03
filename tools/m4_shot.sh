@@ -4,7 +4,8 @@
 # vos_run.dsk (|DISC first: with the M4 the SD card is the drive
 # AMSDOS starts on, and |A does not change that in 1984), B: a fresh
 # copy of build/apps.dsk, the SD card a fresh copy of build/m4sd
-# (HELLO.TXT, APPS/NOTEPAD.BIN, made here when missing). A snapshot at
+# (HELLO.TXT, APPS/NOTEPAD.BIN; with M4_CARD=db STREETS.BIN alone: made
+# here each time). A snapshot at
 # emulator frame FRAME (50 a second, from power on), its screen drawn
 # from memory with V-OS's palette (tools/sna_screen.py with M4_SYM, by
 # default build/vos_m4.sym: 1984 may have spoilt the inks) -> build/
@@ -15,11 +16,15 @@ cd "$(dirname "$0")/.."
 E1984=${VOS_1984:-/mnt/g/Amstrad/1984/1984.exe}
 frame=$1
 shot=${M4_SHOT:-$frame}
-[ -f build/m4sd/HELLO.TXT ] || {
+rm -rf build/m4sd
+if [ "$M4_CARD" = db ]; then                # STREETS.BIN alone
+    mkdir -p build/m4sd
+    cp build/STREETS.BIN build/m4sd/
+else
     mkdir -p build/m4sd/APPS
     printf 'Hello from the SD card.\r\n' > build/m4sd/HELLO.TXT
     cp build/NOTEPAD.BIN build/m4sd/APPS/
-}
+fi
 rm -rf build/m4run && cp -r build/m4sd build/m4run
 cp build/apps.dsk build/vos_b.dsk
 mkdir -p build/shots

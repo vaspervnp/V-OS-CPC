@@ -78,7 +78,9 @@ Mit einer M4-Karte hat der Schreibtisch ein drittes Laufwerkssymbol, DISK, unter
 - **Ordner** erscheinen als Ordner (ein Symbol mit Reiter, oder DIR im Commander). RETURN auf einem geht hinein, und `..`, der erste Eintrag, wieder hinauf. In der Programme-Ansicht sind sie auch da, damit du die Programme darin erreichst.
 - **Alles wie auf einer Diskette:** Programme starten von dort, Dateien öffnen sich in ihren Programmen, und ^C, ^D und ^N kopieren, löschen und benennen um. Kopien zwischen DISK und einer Diskette gehen bis 16K. Ordner und Dateien haben Namen wie auf dem CPC (8.3: `NAME.EXT`); längere Namen erscheinen nicht.
 - **M4.SYS** (auf `vos.dsk`) wird von A: geladen, wenn DISK das erste Mal gebraucht wird.
-- **Noch nicht:** ÖFFNEN und SPEICHERN der Programme (NOTEPAD, PAINT…) sehen noch nur A: und B:. DATABASE geht nur auf Disketten, und die SD-Karte wird nicht in V-OS formatiert. V-OS selbst startet weiter von einer Diskette in A: (tippe `|DISC` vor `RUN"VOS"`: mit einer M4-Karte startet der CPC auf der SD-Karte).
+- **In den Programmen:** OTHER DRIVE (^W in SHEET) geht A: → B: → DISK, und die untere Zeile zeigt `DISK:NAME.TXT`. Die Liste von OPEN zeigt auch die Ordner: RETURN auf einem (oder auf `..`) zeigt diesen Ordner, und SAVE schreibt in den Ordner, aus dem geöffnet wurde. READER schreibt die Karte als `C:` in seinen Adressen.
+- **Datenbanken** gehen auch auf DISK: das ^W von DATABASE erreicht es, und STREETS, von der Karte gestartet, hält dort seine STREETS.VDB.
+- **Noch nicht:** die SD-Karte wird nicht in V-OS formatiert. V-OS selbst startet weiter von einer Diskette in A: (tippe `|DISC` vor `RUN"VOS"`: mit einer M4-Karte startet der CPC auf der SD-Karte).
 
 ## Optionen, F4
 

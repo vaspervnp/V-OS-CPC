@@ -568,12 +568,11 @@ draw_top:
 .place:
         ld de,line + TOP_FILE
         ld a,(fdrive)
-        add a,"A"
-        ld (de),a
-        inc de
-        ld a,":"
-        ld (de),a
-        inc de
+        cp 2
+        jr c,.drive
+        ld de,line + TOP_FILE - 3   ; "DISK:": all of it in mode 1 too
+.drive:
+        call vos_drive_text
         ld hl,fname
         ld b,8
 .name:
@@ -1100,9 +1099,8 @@ command:
         jp z,save_as
         cp CMD_DRIVE
         jr nz,.not_drive
-        ld a,(fdrive)               ; A: <-> B:
-        xor 1
-        ld (fdrive),a
+        ld hl,fdrive                ; A: -> B: -> DISK
+        call vos_next_drive
         jp draw_top
 .not_drive:
         cp CMD_PAGE
@@ -1612,6 +1610,7 @@ dlg_big:        db T_MENU, T_BIG, 1, VM_OK
 ext_vsh:        db "VSH"
 noname:         db "NONAME  VSH"
 empty:          db 0
+        include "api/vos_drive.inc"
         include "app_texts.asm"     ; texts, from texts.txt
 
 cb:             db 0, 0, 0, 0, N_COLS, N_ROWS

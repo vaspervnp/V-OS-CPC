@@ -69,6 +69,14 @@ file_pick:
         ld (ptr_keys_on),a
         ld a,(fp_result)
         cp 2
+        jr z,.end
+        ld hl,fp_folder             ; a folder: its files (kernel/ext2.asm)
+        call ext2_call
+        ld a,(fp_title)
+        jp nz,file_pick
+.end:
+        ld a,(fp_result)
+        cp 2
         ccf                         ; carry if cancelled
         ld a,(fp_sel)
         ret
@@ -340,3 +348,5 @@ fp_rows_y:      dw 0
 fp_ry:          dw 0
 fp_colours:     dw 0                ; background, foreground
 fp_line         equ GAP1 + 765      ; 24
+cat_a           equ GAP1 + 796      ; VOS_CATALOG's drive (kernel/api.asm)
+cat_ext         equ GAP1 + 797      ; 3: and its extension

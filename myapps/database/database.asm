@@ -472,10 +472,8 @@ draw_top:
         jr .print
 .drive:
         ld a,(db_file)              ; no database: the drive
-        add a,"A"
-        ld (line),a
-        ld a,":"
-        ld (line + 1),a
+        ld de,line
+        call vos_drive_text
 .print:
         ld a,HEAD + VOS_BOLD
         ld c,BG
@@ -502,12 +500,7 @@ draw_top:
 ; DE -> line, HL -> db drive, 11-byte name: "A:NAME.VDB"
 put_place:
         ld a,(hl)
-        add a,"A"
-        ld (de),a
-        inc de
-        ld a,":"
-        ld (de),a
-        inc de
+        call vos_drive_text
         inc hl
         ld b,8
 .name:
@@ -1307,9 +1300,8 @@ command:
 .not_list:
         cp CMD_DRIVE
         jr nz,.not_drive
-        ld a,(db_file)              ; A: <-> B:
-        xor 1
-        ld (db_file),a
+        ld hl,db_file               ; A: -> B: -> DISK
+        call vos_next_drive
         xor a
         ld (db_ok),a
         ld c,DB_CLOSE
@@ -1738,6 +1730,7 @@ dlg_len:        db T_MENU, T_LEN_T, 1, VM_OK
 dlg_no_files:   db T_MENU, T_NO_FILES, 1, VM_OK
 ext_vdb:        db "VDB"
 
+        include "api/vos_drive.inc"
         include "app_texts.asm"     ; texts, from texts.txt
 
 db_ok:          db 0                ; db_file open

@@ -1056,9 +1056,7 @@ command:
         cp CMD_DRIVE
         jr nz,.not_drive
         ld hl,fdrive
-        ld a,(hl)
-        xor 1
-        ld (hl),a
+        call vos_next_drive
         jp draw_name
 .not_drive:
         cp CMD_ABOUT
@@ -2031,12 +2029,7 @@ draw_colours:
 draw_name:
         ld de,lbuf
         ld a,(fdrive)
-        add a,"A"
-        ld (de),a
-        inc de
-        ld a,":"
-        ld (de),a
-        inc de
+        call vos_drive_text
         ld hl,fname
         ld b,8
 .name:
@@ -2062,7 +2055,7 @@ draw_name:
 .mark:
         ld (de),a
         inc de
-        ld b,8
+        ld b,6                      ; (lbuf: "DISK:" 5 + 13 + 6 + 0)
 .pad:
         ld a," "
         ld (de),a
@@ -2473,6 +2466,7 @@ dblt:           dw 0, 0             ; a pixel of layers: 2 x 2
                 db 2
 dot_pairs:      db #FF, 0, #FF, 0
 
+        include "api/vos_drive.inc"
         include "app_texts.asm"     ; texts, from texts.txt
 
 lmode:          db 0                ; 0 a picture, 1 layers

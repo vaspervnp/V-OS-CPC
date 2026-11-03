@@ -302,6 +302,21 @@ xa_data:
         ld a,1
         ret
 
+; VX_DRIVE: C = drive -> A = the next one: A: -> B: -> DISK (with an
+; M4 board) -> A:
+xa_drive:
+        ld a,c
+        inc a
+        cp 2
+        ret c                       ; (B:)
+        jr nz,.a
+        call m4_find
+        ld a,2
+        ret nc
+.a:
+        xor a
+        ret
+
 ; VX_LANG -> HL = the code of the language V-OS shows ("EN", "EL",
 ; ...: L the first letter)
 xa_lang:

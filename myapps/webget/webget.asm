@@ -118,12 +118,10 @@ redraw:
         ld de,TOP_Y + 14
         call fact
         ld a,(fdrive)
-        add a,"A"
-        ld (value),a
-        ld a,":"
-        ld (value + 1),a
+        ld de,value
+        call vos_drive_text
         xor a
-        ld (value + 2),a
+        ld (de),a
         ld a,T_DRIVE_L
         ld de,TOP_Y + 28
         jp fact
@@ -194,9 +192,7 @@ event:
         cp CMD_DRIVE
         jr nz,.not_drive
         ld hl,fdrive
-        ld a,(hl)
-        xor 1
-        ld (hl),a
+        call vos_next_drive
         jp redraw
 .not_drive:
         cp CMD_ABOUT
@@ -465,6 +461,7 @@ index_htm:      db "INDEX.HTM", 0
 blank:          ds 48, " "
                 db 0
 
+        include "api/vos_drive.inc"
         include "app_texts.asm"     ; texts, from texts.txt
 
 fdrive:         db 0

@@ -118,7 +118,8 @@ GAP_SIZE        equ 800
 GAP0            equ #C4E0           ; pack font 128..191, lang_msg_buf, bg_api
 GAP1            equ #CCE0           ; pack font 192..255, dlg_text, then
                                     ; from +664 ptr_buf, ptr_params,
-                                    ; ui_title_x, ui_title_w, fp_line
+                                    ; ui_title_x, ui_title_w, fp_line,
+                                    ; m4_a..m4_bc, cat_a, cat_ext
 GAP2            equ #D4E0           ; pack case, keymap, combos; fs block list
 GAP3            equ #DCE0           ; disc sector buffer, free block map
 GAP4            equ #E4E0           ; directory entries 0..24

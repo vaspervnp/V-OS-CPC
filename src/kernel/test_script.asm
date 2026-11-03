@@ -362,6 +362,73 @@ test_keys:
         dw 2250 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 37
+; make test-m4 too (-DTEST_SCRIPT=37, M4_CARD=db: the SD card has only
+; STREETS.BIN): a database on DISK. Expected:
+;   frame  300, 350 TAB x2   -> the Desktop on DISK:/, STREETS selected
+;   frame  500  RETURN       -> STREETS from the card: it makes
+;                               DISK:STREETS.VDB, its streets listed
+;   frame 1300  CONTROL+Q, 1500 RETURN -> STREETS again: the file opened
+;   frame 2000  P            -> the streets that start with P (the index)
+; then build/m4run/STREETS.VDB is checked (tools/vdb.py check)
+test_keys:
+        dw  300 : db   4, 8, %00010000   ; TAB
+        dw  350 : db   4, 8, %00010000   ; TAB
+        dw  500 : db   4, 2, %00000100   ; RETURN
+        dw 1295 : db  15, 2, %10000000   ; CONTROL
+        dw 1300 : db   4, 8, %00001000   ; Q
+        dw 1500 : db   4, 2, %00000100   ; RETURN
+        dw 2000 : db   4, 3, %00001000   ; P
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 36
+; make test-m4 too (-DTEST_SCRIPT=36, the same SD card): a program's
+; OPEN and SAVE on DISK. Expected:
+;   frame  300, 350 TAB x2   -> the Desktop on DISK:/
+;   frame  450  RIGHT, 500 RETURN -> DISK:/APPS
+;   frame  650  RIGHT, 700 RETURN -> NOTEPAD from the card:
+;                               DISK:NONAME.TXT
+;   frame 1000  CONTROL+O    -> the file list on DISK:/APPS: ..
+;   frame 1150  RETURN on .. -> the list again, DISK:/: HELLO.TXT, APPS
+;   frame 1300  RETURN       -> HELLO.TXT opened: Hello from the SD card.
+;   frame 1450  X, 1600 CONTROL+S -> DISK:HELLO.TXT saved, "xHello"
+;   frame 1800  ESC, 1850-2000 DOWN x4, 2100 RETURN -> OTHER DRIVE: A:
+;   frame 2300  ESC, 2350-2500 DOWN x4, 2600 RETURN -> OTHER DRIVE: B:
+;   frame 2800  ESC, 2850-3000 DOWN x4, 3100 RETURN -> OTHER DRIVE: DISK:
+test_keys:
+        dw  300 : db   4, 8, %00010000   ; TAB
+        dw  350 : db   4, 8, %00010000   ; TAB
+        dw  450 : db   4, 0, %00000010   ; RIGHT
+        dw  500 : db   4, 2, %00000100   ; RETURN
+        dw  650 : db   4, 0, %00000010   ; RIGHT
+        dw  700 : db   4, 2, %00000100   ; RETURN
+        dw  995 : db  15, 2, %10000000   ; CONTROL
+        dw 1000 : db   4, 4, %00000100   ; O
+        dw 1150 : db   4, 2, %00000100   ; RETURN
+        dw 1300 : db   4, 2, %00000100   ; RETURN
+        dw 1450 : db   4, 7, %10000000   ; X
+        dw 1595 : db  15, 2, %10000000   ; CONTROL
+        dw 1600 : db   4, 7, %00010000   ; S
+        dw 1800 : db   4, 8, %00000100   ; ESC
+        dw 1850 : db   4, 0, %00000100   ; DOWN
+        dw 1900 : db   4, 0, %00000100   ; DOWN
+        dw 1950 : db   4, 0, %00000100   ; DOWN
+        dw 2000 : db   4, 0, %00000100   ; DOWN
+        dw 2100 : db   4, 2, %00000100   ; RETURN
+        dw 2300 : db   4, 8, %00000100   ; ESC
+        dw 2350 : db   4, 0, %00000100   ; DOWN
+        dw 2400 : db   4, 0, %00000100   ; DOWN
+        dw 2450 : db   4, 0, %00000100   ; DOWN
+        dw 2500 : db   4, 0, %00000100   ; DOWN
+        dw 2600 : db   4, 2, %00000100   ; RETURN
+        dw 2800 : db   4, 8, %00000100   ; ESC
+        dw 2850 : db   4, 0, %00000100   ; DOWN
+        dw 2900 : db   4, 0, %00000100   ; DOWN
+        dw 2950 : db   4, 0, %00000100   ; DOWN
+        dw 3000 : db   4, 0, %00000100   ; DOWN
+        dw 3100 : db   4, 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 35
 ; make test-m4 too (-DTEST_SCRIPT=35, the same SD card): the Commander
 ; and the Launcher on DISK. Expected:
@@ -1788,6 +1855,8 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

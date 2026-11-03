@@ -15,7 +15,7 @@
 ; deletes before it, CLR at it, RETURN starts a line. A line wider than
 ; the screen moves the view sideways, 16 columns at a time.
 ;   NOTEPAD menu: NEW ^N, OPEN ^O, SAVE ^S, SAVE AS, OTHER DRIVE (the
-;   drive OPEN and SAVE use, A: or B:), PAGE ^M, ABOUT, BACK ^Q
+;   drive OPEN and SAVE use, A:, B: or DISK), PAGE ^M, ABOUT, BACK ^Q
 ; The last line shows the drive and file ("*": not saved), the line
 ; and the column.
 ;   make app NAME=notepad     build/NOTEPAD.BIN, and build/vos.dsk
@@ -531,9 +531,7 @@ command:
         cp CMD_DRIVE
         jr nz,.not_drive
         ld hl,fdrive
-        ld a,(hl)
-        xor 1
-        ld (hl),a
+        call vos_next_drive
         jp status
 .not_drive:
         cp CMD_PAGE
@@ -1822,12 +1820,7 @@ colours:
 status:
         ld de,line
         ld a,(fdrive)
-        add a,"A"
-        ld (de),a
-        inc de
-        ld a,":"
-        ld (de),a
-        inc de
+        call vos_drive_text
         ld hl,fname
         ld b,8
 .name:
@@ -2028,8 +2021,9 @@ noname:         db "NONAME  TXT"
 ext_txt:        db "TXT"
 
         include "app_texts.asm"     ; texts, from texts.txt
+        include "api/vos_drive.inc"
 
-fdrive:         db 0                ; OPEN and SAVE: 0 A:, 1 B:
+fdrive:         db 0                ; OPEN and SAVE: 0 A:, 1 B:, 2 DISK
 fname:          ds 11
 name_tmp:       ds 11
 name_in:        ds 10               ; VOS_INPUT: 8 + 2

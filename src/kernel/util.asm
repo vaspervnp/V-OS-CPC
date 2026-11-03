@@ -122,8 +122,8 @@ util_fcb_text:
         djnz .ext
         ret
 
-; HL -> FS_CAT entry (name[11], 0, size in K) -> "NAME    .EXT  nnnK"
-; and a zero.  Destroys: AF, BC, HL
+; HL -> FS_CAT entry (name[11], 0, size in K, folder) -> "NAME    .EXT
+; nnnK" and a zero; a folder "NAME        DIR".  Destroys: AF, BC, HL
 util_cat_row:
         push hl
         ld bc,8
@@ -134,8 +134,20 @@ util_cat_row:
         ld bc,3
         ldir
         pop hl
-        ld bc,12
+        ld bc,13
         add hl,bc
+        ld a,(hl)
+        dec hl
+        or a
+        jr z,.file
+        ld hl,-4                    ; a folder: no dot, DIR
+        add hl,de
+        ld (hl)," "
+        ld hl,util_dir
+        ld bc,7
+        ldir
+        ret
+.file:
         ld l,(hl)                   ; size, right-aligned in 5 columns
         ld h,0
         ld c," "
@@ -164,6 +176,8 @@ util_cat_row:
         xor a
         ld (de),a
         ret
+
+util_dir:       db "   DIR", 0
 
 ; A = character -> DE, "|" -> new dialog line
 util_char:

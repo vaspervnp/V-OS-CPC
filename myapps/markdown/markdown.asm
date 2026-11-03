@@ -558,9 +558,7 @@ command:
         cp CMD_DRIVE
         jr nz,.not_drive
         ld hl,fdrive
-        ld a,(hl)
-        xor 1
-        ld (hl),a
+        call vos_next_drive
         jp status
 .not_drive:
         cp CMD_ABOUT
@@ -1431,12 +1429,7 @@ status:
 .text:
         ld de,line
         ld a,(fdrive)
-        add a,"A"
-        ld (de),a
-        inc de
-        ld a,":"
-        ld (de),a
-        inc de
+        call vos_drive_text
         ld hl,fname
         ld b,8
 .name:
@@ -1724,6 +1717,7 @@ dlg_big:        db T_MENU, T_TOO_BIG, 1, VM_OK
 noname:         db "NONAME  MD "
 ext_txt:        db "MD "
 
+        include "api/vos_drive.inc"
         include "app_texts.asm"     ; texts, from texts.txt
 
 fdrive:         db 0                ; OPEN and SAVE: 0 A:, 1 B:
