@@ -88,7 +88,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -1081,6 +1081,72 @@ test-streets: $(STREETS_DSK) $(BUILD)/streets.dsk
 	for d in $(STREETS_SHOTS); do \
 	  cp $(STREETS_DSK) $(BUILD)/vos_run.dsk; cp $(BUILD)/streets.dsk $(BUILD)/vos_run_b.dsk; \
 	  snap run --shell caprice32.launcher -c "VOS_TIMEOUT=60 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The dark theme (TEST_SCRIPT=38): A:SETUP.CFG with THEME DARK; the
+# Desktop, the Launcher, the Commander and a menu, Setup, then LIGHT
+THEME_DSK := $(BUILD)/vos_theme.dsk
+THEME_SHOTS := 90 150 240 330 420 560 760 1100
+$(THEME_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_theme -DTEST_SCRIPT=38
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	printf 'VCFG\004\000\000\031\003\001\001\001\000\000\001' > $(BUILD)/SETUP.CFG
+	$(IDSK) $@ -i $(BUILD)/SETUP.CFG -t 1 > /dev/null
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-theme: $(THEME_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(THEME_SHOTS); do \
+	  cp $(THEME_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_TIMEOUT=90 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The Desktop's window (TEST_SCRIPT=40): closed at first, TAB, its X,
+# a drive icon, the corner that sizes it, its scroll bar
+WINDOW_DSK := $(BUILD)/vos_window.dsk
+WINDOW_SHOTS := 95 110 170 260 330 480 760
+$(WINDOW_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_window -DTEST_SCRIPT=40
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-window: $(WINDOW_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(WINDOW_SHOTS); do \
+	  cp $(WINDOW_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_TIMEOUT=90 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The desk's picture (TEST_SCRIPT=39, 576K): Setup's BACKGROUND chooses
+# A:TEST.SCR (tools/mk_test_scr.py, as PAINT saves one), the Desktop
+# shows it; WALL_RAM=128: NEEDS A MEMORY EXPANSION
+WALL_DSK := $(BUILD)/vos_wall.dsk
+WALL_SHOTS := 200 330 450 600 800
+WALL_RAM ?= 576
+$(WALL_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) tools/mk_test_scr.py
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_wall -DTEST_SCRIPT=39
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(PYTHON) -I tools/mk_test_scr.py $(BUILD)/TEST.SCR
+	$(IDSK) $@ -i $(BUILD)/TEST.SCR -t 1 -c C000 -e C000 > /dev/null
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-wall: $(WALL_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(WALL_SHOTS); do \
+	  cp $(WALL_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=$(WALL_RAM) VOS_TIMEOUT=90 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
 

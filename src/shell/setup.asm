@@ -3,7 +3,8 @@
 ;
 ; Mode 1. One row per setting (kernel/setup.asm): view at boot,
 ; language, key repeat delay and speed, AMX mouse and how it is read,
-; desk colour, the keyboards CONTROL+SHIFT goes through. Changes apply at once. LANGUAGE goes through English and
+; desk colour, the keyboards CONTROL+SHIFT goes through, the theme
+; (light or dark), the desk's picture (BACKGROUND: a .SCR, st_picture). Changes apply at once. LANGUAGE goes through English and
 ; each language pack, which is loaded from A: at once (st_lang).
 ;   UP/DOWN          choose a setting
 ;   LEFT/RIGHT       change it (also a click on the row)
@@ -16,12 +17,15 @@ ST_Y            equ 30
 ST_W            equ 320
 ST_ROW_H        equ 16
 ST_ROWS_Y       equ ST_Y + 18
-ST_COUNT        equ 8               ; rows: the settings but CFG_PACK
+ST_COUNT        equ 10              ; rows: the settings but CFG_PACK
+ST_THEME        equ 8               ; the THEME row
+ST_WALL         equ 9               ; the BACKGROUND row
 ST_H            equ 18 + ST_COUNT * ST_ROW_H + 6
 ST_VALUE_X      equ ST_X + 184
 ST_STATUS_Y     equ ST_Y + ST_H + 12
 ST_KEYS_Y       equ GFX_H - 10
 ST_PACK         equ #FE             ; option text: the pack's own name
+ST_FILE         equ #FD             ; option text: CFG_WALL's file
 ST_ROW_SIZE     equ 11              ; db label, count, then 4 x (text, value)
 
         jp st_init
@@ -151,6 +155,14 @@ st_draw_row:
         ld (de),a
         inc de
         ld a,(hl)
+        cp ST_FILE
+        jr nz,.not_file
+        ld a,(cfg_data + CFG_WALL)  ; "A:NAME.SCR"
+        call file_drive_text
+        ld hl,cfg_data + CFG_WALL_NAME
+        call util_fcb_text
+        jr .end
+.not_file:
         cp ST_PACK
         jr nz,.message
         ld hl,lang_name
@@ -230,7 +242,7 @@ st_change:
         ld (st_step),a
         ld a,(st_sel)
         cp CFG_LANG
-        jr z,st_lang
+        jp z,st_lang
         call st_row_ptr
         ld (st_ptr),hl
         call st_option              ; A = option now
@@ -266,13 +278,74 @@ st_change:
         ld a,(st_sel)               ; language: everything again
         cp CFG_LANG
         jp z,st_redraw
+        cp ST_THEME                 ; the theme: everything again, in
+        jr nz,.not_theme            ; its pens
+        ld a,1
+        call ui_set_mode
+        jp st_redraw
+.not_theme:
+        cp ST_WALL
+        jp z,st_picture
         cp CFG_DESK
         jr nz,.row
+        xor a                       ; the picture in the new pens
+        ld (wall_state),a
         ld hl,palette_mode1
         call ga_set_palette
 .row:
         ld a,(st_sel)
         jp st_draw_row
+
+; BACKGROUND on a drive: its .SCR files to choose from (none, or ESC:
+; NONE); a RAM expansion keeps the picture (shell/wall.asm)
+st_picture:
+        xor a
+        ld (wall_state),a
+        ld a,(cfg_data + CFG_WALL)
+        inc a
+        jr z,.row
+        ld a,LANG_BANK_CFG          ; a bank for it?
+        ld hl,wall_bank
+        ld de,bank_buf
+        ld bc,1
+        call bank_get
+        ld a,(bank_buf)
+        or a
+        ld a,ST_ERR_MEMORY
+        jr z,.error
+        ld a,(cfg_data + CFG_WALL)
+        or VOS_CAT_EXT
+        ld hl,st_scr
+        call api_catalog
+        jr c,.error
+        or a
+        ld a,FS_ERR_NOT_FOUND
+        jr z,.error
+        ld a,MSG_SET_WALL
+        call file_pick
+        jr c,.none
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,FS_CAT
+        add hl,de
+        ld de,cfg_data + CFG_WALL_NAME
+        ld bc,11
+        ldir
+        jr .row
+.error:
+        call sys_error
+.none:
+        ld a,#FF
+        ld (cfg_data + CFG_WALL),a
+.row:
+        ld a,ST_WALL
+        jp st_draw_row
+ST_ERR_MEMORY   equ 40              ; NEEDS A MEMORY EXPANSION
+st_scr:         db "SCR"
 
 ; LANGUAGE: English (CFG_LANG 0), then each pack (CFG_PACK, from 0;
 ; CFG_LANG 1). A pack is loaded at once; one that is not on A: leaves
@@ -441,6 +514,10 @@ st_rows:
         db MSG_COL_BLUE, 1, MSG_COL_BLACK, 0, MSG_COL_GREEN, 9, MSG_COL_RED, 3
         db MSG_SET_KBDS, CFG_KBDS, 2
         db MSG_VAL_KB_PACK, 0, MSG_VAL_KB_ALL, 1, 0, 0, 0, 0
+        db MSG_SET_THEME, CFG_THEME, 2
+        db MSG_VAL_LIGHT, 0, MSG_VAL_DARK, 1, 0, 0, 0, 0
+        db MSG_SET_WALL, CFG_WALL, 4    ; a drive: its .SCR files to choose
+        db MSG_VAL_NONE, #FF, ST_FILE, 0, ST_FILE, 1, ST_FILE, 2
 
 ; ---- state ----------------------------------------------------------
 st_sel:         db 0

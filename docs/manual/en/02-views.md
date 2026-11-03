@@ -34,6 +34,7 @@ Mode 1. A FILES window shows the files of a drive as icons, four in each row. Th
 
 - **FILE menu:** OPEN, FILE INFO (^I), COPY TO NEXT DRIVE, DELETE, RENAME, READ DISCS AGAIN, EXIT TO BASIC.
 - **The FILES window** can be dragged by its title and stays there, even when you switch view.
+- **At first there is no window and no drive is chosen:** the desk (and its picture) shows. A drive (a click on its icon, or TAB) opens its window; the X on its title closes it, and so does a click on the open drive. The small square in the corner below on the right makes the window larger or smaller in whole icons (2–5 in a row, 1–5 rows; four by five at first), and the bar on the right shows which part of the list is in view: a click above or below its dark part scrolls a window's worth up or down. The size is kept, like the place.
 - **Opening by type** (also in the Commander): `.TXT` files open in NOTEPAD, `.MD` in MARKDOWN, `.PIC` and `.LYR` in PAINT, `.VDB` in DATABASE, `.VSH` in SHEET, `.MUS` in MUSIC, which starts playing them. The program is looked for on the file's drive, then on A:, then on B:. If it is not found, "NO PROGRAM FOR THIS FILE" is shown. If the program has unsaved changes, it asks first.
 
 ## Launcher, F2
@@ -96,6 +97,8 @@ Mode 1. One line for each setting. Changes take effect at once. When saved (RETU
 | AMX READING | LEVELS (at first) or PULSES: how the mouse is read. LEVELS counts every read with movement, PULSES only the starts of the pulses. If the pointer moves too fast or too slowly, try the other one |
 | DESK COLOUR | BLUE, BLACK, GREEN, RED |
 | KEYBOARDS | EN + PACK, ALL SIX (the ones CONTROL+SHIFT goes through) |
+| THEME | LIGHT, DARK (bars, menus, dialogs, windows and lists in black with white text; in programs, their menus and dialogs) |
+| BACKGROUND | NONE, or a `.SCR` picture: LEFT/RIGHT go through NONE, A:, B: and DISK, and on a drive its `.SCR` files are listed to choose one. The Desktop shows it in the middle of the desk, the desk colour around it; a PAINT picture (mode 0, 16 colours) in the desk's four colours. It needs a memory expansion (the last 16K bank of it keeps the picture); without one: NEEDS A MEMORY EXPANSION |
 
 | Key | What it does |
 |---|---|

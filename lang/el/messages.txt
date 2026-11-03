@@ -84,6 +84,7 @@ ERR_36      ΠΑΝΩ ΑΠΟ 16K: ΔΕΝ|ΑΝΤΙΓΡΑΦΕΤΑΙ ΕΚΕΙ
 ERR_37      ΕΙΝΑΙ ΗΔΗ|ΣΕ ΑΥΤΗ ΤΗ ΜΟΝΑΔΑ
 ERR_38      Η ΚΑΡΤΑ SD ΔΕΝ|ΔΙΑΜΟΡΦΩΝΕΤΑΙ ΕΔΩ
 ERR_39      ΤΟ M4.SYS ΔΕΝ|ΕΙΝΑΙ ΣΤΟ A:
+ERR_40      ΘΕΛΕΙ ΕΠΕΚΤΑΣΗ|ΜΝΗΜΗΣ
 RENAME_T    ΜΕΤΟΝΟΜΑΣΙΑ
 INPUT_HINT  RETURN ΕΝΤΑΞΕΙ  ESC ΑΚΥΡΟ
 DT_KEYS     TAB ΜΟΝΑΔΑ ENTER ΑΝΟΙΓΜΑ ^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.
@@ -108,6 +109,8 @@ SET_AMX     ΠΟΝΤΙΚΙ AMX
 SET_AMX_MODE ΑΝΑΓΝΩΣΗ AMX
 SET_DESK    ΧΡΩΜΑ ΦΟΝΤΟΥ
 SET_KBDS    ΠΛΗΚΤΡΟΛΟΓΙΑ
+SET_THEME   ΘΕΜΑ
+SET_WALL    ΕΙΚΟΝΑ ΦΟΝΤΟΥ
 VW_DESKTOP  ΕΠΙΦΑΝΕΙΑ
 VW_LAUNCHER ΠΡΟΓΡΑΜΜΑΤΑ
 VW_COMMANDER COMMANDER
@@ -123,6 +126,9 @@ VAL_PULSES  ΠΑΛΜΟΙ
 VAL_LEVELS  ΣΤΑΘΜΕΣ
 VAL_KB_PACK EN + ΓΛΩΣΣΑ
 VAL_KB_ALL  ΚΑΙ ΤΑ ΕΞΙ
+VAL_LIGHT   ΦΩΤΕΙΝΟ
+VAL_DARK    ΣΚΟΥΡΟ
+VAL_NONE    ΚΑΜΙΑ
 COL_BLUE    ΜΠΛΕ
 COL_BLACK   ΜΑΥΡΟ
 COL_GREEN   ΠΡΑΣΙΝΟ

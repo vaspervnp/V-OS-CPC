@@ -34,6 +34,7 @@ Modo 1. Una ventana ARCHIVOS muestra los archivos de una unidad como iconos, cua
 
 - **Menú ARCHIVO:** ABRIR, INFO DEL ARCHIVO (^I), COPIAR A LA SIGUIENTE, BORRAR, RENOMBRAR, RELEER LOS DISCOS, SALIR AL BASIC.
 - **La ventana ARCHIVOS** se puede arrastrar por su título y se queda ahí, incluso al cambiar de vista.
+- **Al principio no hay ventana ni unidad elegida:** se ve el fondo (y su imagen). Una unidad (un clic en su icono, o TAB) abre su ventana; la X de su título la cierra, igual que un clic en la unidad abierta. El cuadradito de la esquina inferior derecha agranda o reduce la ventana en iconos enteros (2 a 5 por fila, 1 a 5 filas; cuatro por cinco al principio), y la barra de la derecha muestra qué parte de la lista se ve: un clic encima o debajo de su parte oscura desplaza una ventana. El tamaño se guarda, como el sitio.
 - **Abrir según el tipo** (también en el Commander): los `.TXT` se abren en NOTEPAD, los `.MD` en MARKDOWN, los `.PIC` y `.LYR` en PAINT, los `.VDB` en DATABASE, los `.VSH` en SHEET, los `.MUS` en MUSIC, que empieza a tocarlos. El programa se busca en la unidad del archivo, luego en A: y luego en B:. Si no se encuentra, aparece "NINGÚN PROGRAMA PARA ESTE ARCHIVO". Si el programa tiene cambios sin guardar, pregunta primero.
 
 ## Programas, F2
@@ -96,6 +97,8 @@ Modo 1. Una línea para cada ajuste. Los cambios se aplican al momento. Al guard
 | LECTURA AMX | NIVELES (al principio) o PULSOS: cómo se lee el ratón. NIVELES cuenta cada lectura con movimiento, PULSOS solo el comienzo de los pulsos. Si el puntero se mueve demasiado rápido o demasiado despacio, pruebe el otro |
 | COLOR DEL FONDO | AZUL, NEGRO, VERDE, ROJO |
 | TECLADOS | EN + IDIOMA, LOS SEIS (los que recorre CONTROL+SHIFT) |
+| TEMA | CLARO, OSCURO (barras, menús, diálogos, ventanas y listas en negro con texto blanco; en los programas, sus menús y diálogos) |
+| IMAGEN DE FONDO | NINGUNA, o una imagen `.SCR`: IZQ./DER. pasan por NINGUNA, A:, B: y DISK, y en una unidad se listan sus `.SCR` para elegir uno. El Escritorio la muestra en el centro del fondo, con el color del fondo alrededor; una imagen de PAINT (modo 0, 16 colores) en los cuatro colores del Escritorio. Necesita una ampliación de memoria (su último banco de 16K guarda la imagen); sin ella: NECESITA UNA AMPLIACIÓN DE MEMORIA |
 
 | Tecla | Qué hace |
 |---|---|

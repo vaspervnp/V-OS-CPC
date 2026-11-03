@@ -325,7 +325,8 @@ test_keys:
         IF TEST_SCRIPT == 34
 ; make test-m4 (-DTEST_SCRIPT=34, in the 1984 emulator with an M4 board
 ; whose SD card holds HELLO.TXT and APPS/NOTEPAD.BIN). Expected:
-;   frame  300, 350 TAB x2   -> the Desktop on DISK: "DISK:/", HELLO.TXT
+;   frame  300-400 TAB x3   -> (no window at first) A:, B:, then the
+;                               Desktop on DISK: "DISK:/", HELLO.TXT
 ;                               (selected) and APPS (a folder)
 ;   frame  500  CONTROL+C    -> HELLO.TXT copied to A: (the next drive):
 ;                               COPIED TO A:
@@ -342,6 +343,7 @@ test_keys:
 test_keys:
         dw  300 : db   4, 8, %00010000   ; TAB
         dw  350 : db   4, 8, %00010000   ; TAB
+        dw  400 : db   4, 8, %00010000   ; TAB
         dw  495 : db  15, 2, %10000000   ; CONTROL
         dw  500 : db   4, 7, %01000000   ; C
         dw  700 : db   4, 2, %00000100   ; RETURN
@@ -362,10 +364,93 @@ test_keys:
         dw 2250 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 40
+; make test-window (-DTEST_SCRIPT=40): the Desktop's window. Expected:
+;   at first                 -> no window, no drive dark: the desk
+;   frame  250  TAB          -> A:, the window 4 x 5 cells, the bar full
+;   frame  400  a click on its X (304, 20) -> closed again
+;   frame  550  a click on the A: icon (350, 40) -> A: again
+;   frame  700  COPY held on the corner (312, 230), LEFT and UP held ->
+;               the outline smaller; up: the window 2 x 1, the bar's
+;               thumb at its top
+;   frame 1000  a click on the bar below the thumb -> the next row:
+;               LAUNCHER, COMMANDR
+test_keys:
+        dw  250 : db   4, 8, %00010000   ; TAB
+        dw  400 : db   1, #80, 1         ; COPY is the left button
+        dw  400 : db   5, #81, 152       ; the X
+        dw  400 : db   5, #82, 20
+        dw  410 : db   4, 1, %00000010   ; COPY
+        dw  550 : db   5, #81, 175       ; the A: icon
+        dw  550 : db   5, #82, 40
+        dw  560 : db   4, 1, %00000010   ; COPY
+        dw  700 : db   5, #81, 156       ; the corner
+        dw  700 : db   5, #82, 230
+        dw  710 : db 160, 1, %00000010   ; COPY held
+        dw  720 : db  60, 1, %00000001   ; LEFT held
+        dw  790 : db  60, 0, %00000001   ; UP held
+        dw 1000 : db   5, #81, 84        ; the bar (168, 60), below the
+        dw 1000 : db   5, #82, 60        ; thumb
+        dw 1010 : db   4, 1, %00000010   ; COPY
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 39
+; make test-wall (-DTEST_SCRIPT=39, 576K; A: has TEST.SCR, a mode 0
+; picture with PAINT's inks: tools/mk_test_scr.py). Expected:
+;   frame  300  F4           -> Setup
+;   frame  450-610 DOWN x9   -> BACKGROUND < NONE >
+;   frame  800  RIGHT        -> A:: the list of its .SCR: TEST.SCR
+;   frame 1000  RETURN       -> BACKGROUND < A:TEST.SCR >
+;   frame 1200  F1           -> the Desktop: the picture in the middle of
+;                               the desk, its 16 stripes in the four pens
+; (with 128K: at 800 NEEDS A MEMORY EXPANSION, and NONE)
+test_keys:
+        dw  300 : db   4, 2, %00010000   ; F4
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  470 : db   4, 0, %00000100   ; DOWN
+        dw  490 : db   4, 0, %00000100   ; DOWN
+        dw  510 : db   4, 0, %00000100   ; DOWN
+        dw  530 : db   4, 0, %00000100   ; DOWN
+        dw  550 : db   4, 0, %00000100   ; DOWN
+        dw  570 : db   4, 0, %00000100   ; DOWN
+        dw  590 : db   4, 0, %00000100   ; DOWN
+        dw  610 : db   4, 0, %00000100   ; DOWN
+        dw  800 : db   4, 0, %00000010   ; RIGHT
+        dw 1000 : db   4, 2, %00000100   ; RETURN
+        dw 1200 : db   4, 1, %00100000   ; F1
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 38
+; make test-theme (-DTEST_SCRIPT=38): A:SETUP.CFG says THEME DARK.
+; Expected, all in the dark theme:
+;   frame  250               -> the Desktop
+;   frame  300  F2           -> the Launcher
+;   frame  500  F3           -> the Commander
+;   frame  700  ESC          -> its FILE menu open
+;   frame  800  ESC, 850 F4  -> Setup: THEME < DARK >
+;   frame 1500-1640 DOWN x8, 1800 RIGHT -> THEME < LIGHT >: Setup light
+test_keys:
+        dw  300 : db   4, 1, %01000000   ; F2
+        dw  500 : db   4, 0, %00100000   ; F3
+        dw  700 : db   4, 8, %00000100   ; ESC
+        dw  800 : db   4, 8, %00000100   ; ESC
+        dw  850 : db   4, 2, %00010000   ; F4
+        dw 1500 : db   4, 0, %00000100   ; DOWN
+        dw 1520 : db   4, 0, %00000100   ; DOWN
+        dw 1540 : db   4, 0, %00000100   ; DOWN
+        dw 1560 : db   4, 0, %00000100   ; DOWN
+        dw 1580 : db   4, 0, %00000100   ; DOWN
+        dw 1600 : db   4, 0, %00000100   ; DOWN
+        dw 1620 : db   4, 0, %00000100   ; DOWN
+        dw 1640 : db   4, 0, %00000100   ; DOWN
+        dw 1800 : db   4, 0, %00000010   ; RIGHT
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 37
 ; make test-m4 too (-DTEST_SCRIPT=37, M4_CARD=db: the SD card has only
 ; STREETS.BIN): a database on DISK. Expected:
-;   frame  300, 350 TAB x2   -> the Desktop on DISK:/, STREETS selected
+;   frame  300-400 TAB x3   -> (no window at first) A:, B:, then the
+;                               Desktop on DISK:/, STREETS selected
 ;   frame  500  RETURN       -> STREETS from the card: it makes
 ;                               DISK:STREETS.VDB, its streets listed
 ;   frame 1300  CONTROL+Q, 1500 RETURN -> STREETS again: the file opened
@@ -374,6 +459,7 @@ test_keys:
 test_keys:
         dw  300 : db   4, 8, %00010000   ; TAB
         dw  350 : db   4, 8, %00010000   ; TAB
+        dw  400 : db   4, 8, %00010000   ; TAB
         dw  500 : db   4, 2, %00000100   ; RETURN
         dw 1295 : db  15, 2, %10000000   ; CONTROL
         dw 1300 : db   4, 8, %00001000   ; Q
@@ -384,7 +470,8 @@ test_keys:
         IF TEST_SCRIPT == 36
 ; make test-m4 too (-DTEST_SCRIPT=36, the same SD card): a program's
 ; OPEN and SAVE on DISK. Expected:
-;   frame  300, 350 TAB x2   -> the Desktop on DISK:/
+;   frame  300-400 TAB x3   -> (no window at first) A:, B:, then the
+;                               Desktop on DISK:/
 ;   frame  450  RIGHT, 500 RETURN -> DISK:/APPS
 ;   frame  650  RIGHT, 700 RETURN -> NOTEPAD from the card:
 ;                               DISK:NONAME.TXT
@@ -398,6 +485,7 @@ test_keys:
 test_keys:
         dw  300 : db   4, 8, %00010000   ; TAB
         dw  350 : db   4, 8, %00010000   ; TAB
+        dw  400 : db   4, 8, %00010000   ; TAB
         dw  450 : db   4, 0, %00000010   ; RIGHT
         dw  500 : db   4, 2, %00000100   ; RETURN
         dw  650 : db   4, 0, %00000010   ; RIGHT
@@ -1481,6 +1569,7 @@ test_keys:
         IF TEST_SCRIPT == 10
 ; make test-drag (-DTEST_SCRIPT=10): windows dragged by their title bars
 ; (COPY held, the cursor keys move the pointer). Expected:
+;   frame  250  TAB          -> the Desktop's window on A: (none at first)
 ;   frame  340-420 the Desktop's FILES window: a dashed outline while
 ;                  COPY is down, then the window there
 ;   frame  500  CONTROL+K    -> the KEYS dialog; 640-720 dragged
@@ -1494,6 +1583,7 @@ test_keys:
 ;                               right and down, with its buttons; 2200
 ;                               a click on 1 there: 1 shown
 test_keys:
+        dw  250 : db   4, 8, %00010000   ; TAB: A:'s window (none at first)
         dw  300 : db 120, #80, 1         ; COPY and the cursor keys
         dw  300 : db  40, #81, 50        ; FILES's title bar (100, 23)
         dw  300 : db  40, #82, 23
@@ -1855,6 +1945,9 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
+        ENDIF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

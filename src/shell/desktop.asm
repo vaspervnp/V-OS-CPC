@@ -1,30 +1,39 @@
 ; =====================================================================
 ; desktop.asm - the Desktop view (A), the first view at boot
 ;
-; Mode 1. A window shows the files of one drive as icons (the type in
-; the icon, a play sign beside a .VBN, the name below), four to a row;
-; the drive icons on the right choose which drive: A:, B: and, with an
-; M4 board, DISK, its SD card, whose folders show as folders (RETURN
-; goes in, ".." up; the title says where). The selected file is dark.
+; Mode 1. At first no window and no drive: the desk (and its picture).
+; A drive opens a window of its files as icons (the type in the icon, a
+; play sign beside a .VBN, the name below), as many to a row as the
+; window is wide; the drive icons on the right choose which drive: A:,
+; B: and, with an M4 board, DISK, its SD card, whose folders show as
+; folders (RETURN goes in, ".." up; the title says where). The selected
+; file is dark. The window: its title bar moves it, its X closes it,
+; the corner below on the right makes it larger or smaller (2-5 columns,
+; 1-5 rows), the bar on the right scrolls it a window at a time.
 ;   cursor keys      select (UP/DOWN a row)
-;   TAB              the next drive
+;   TAB              the next drive (no window: A:)
 ;   RETURN/ENTER     open (a folder: go in)
 ;   ^C copy to the next drive, ^D delete, ^N rename, ^R read again
 ;   mouse            click a file to select it, again for info; click
-;                    a drive to open it
+;                    a drive to open it, the open one to close it
 ; The file list is FS_CAT itself, read again on every drive change.
 ; An overlay (kernel/view.asm).
 ; =====================================================================
 
 DT_X            equ 8               ; the window, at first (dt_wx, dt_wy)
 DT_Y            equ 18
-DT_W            equ 304
-DT_H            equ 222
 dt_wx           equ #A000           ; kept between views (memmap.inc)
 dt_wy           equ #A002
 dt_placed       equ #A004
-DT_COLS         equ 4
-DT_ROWS         equ 5
+dt_cols         equ #A005           ; its size in cells
+dt_rows         equ #A006
+dt_shown        equ #A007           ; 1: open (dt_drive), 0: closed
+DT_COLS0        equ 4               ; at first
+DT_ROWS0        equ 5
+DT_MAX_COLS     equ 5
+DT_MAX_ROWS     equ 5
+DT_CLOSED       equ #FF             ; dt_drive: no window
+DT_BAR_W        equ 8               ; the scroll bar
 DT_CELL_W       equ 72
 DT_CELL_H       equ 38
 DT_DRIVE_X      equ 328             ; drive icons
@@ -49,7 +58,12 @@ dt_init:
         ld (dt_wx),hl
         ld hl,DT_Y
         ld (dt_wy),hl
+        ld hl,DT_ROWS0 * 256 + DT_COLS0
+        ld (dt_cols),hl
+        xor a                       ; at boot: closed
+        ld (dt_shown),a
 .placed:
+        call dt_size
         ld hl,dt_bar
         call ui_set_bar
         ld hl,ui_no_widgets
@@ -68,14 +82,80 @@ dt_init:
         sbc a,a
         inc a
         ld (dt_m4),a
-        ld a,(sys_drive)            ; the file selected in the last view
+        ld a,(dt_shown)             ; open: the drive of the file
+        or a                        ; selected in the last view
+        ld a,DT_CLOSED
+        jp z,.drive
+        ld a,(sys_drive)
+.drive:
         ld (dt_drive),a
+        xor a
+        ld (dt_count),a
         call dt_draw_screen
         jp dt_load
+
+; dt_cols, dt_rows -> dt_w, dt_h, dt_cells
+dt_size:
+        ld a,(dt_cols)
+        ld l,a
+        ld de,DT_CELL_W
+        call dt_mul
+        ld de,24
+        add hl,de
+        ld (dt_w),hl
+        ld a,(dt_rows)
+        ld l,a
+        ld de,DT_CELL_H
+        call dt_mul
+        ld a,30
+        add a,l
+        ld (dt_h),a
+        ld a,(dt_rows)
+        call dt_row_file
+        ld (dt_cells),a
+        ret
+
+; A = row -> A = its first file (A * dt_cols). Destroys B, HL
+dt_row_file:
+        ld b,a
+        inc b
+        xor a
+        ld hl,dt_cols
+        jr .first
+.add:
+        add a,(hl)
+.first:
+        djnz .add
+        ret
+
+; A = file -> A = its row (A / dt_cols). Destroys C, HL
+dt_file_row:
+        ld c,0
+        ld hl,dt_cols
+.sub:
+        sub (hl)
+        jr c,.done
+        inc c
+        jr .sub
+.done:
+        ld a,c
+        ret
+
+; no window, no drive: the desk
+dt_close:
+        ld a,DT_CLOSED
+        ld (dt_drive),a
+        xor a
+        ld (dt_shown),a
+        ld (dt_count),a
+        jp dt_redraw
 
 ; everything (also after a language change)
 dt_redraw:
         call dt_draw_screen
+        ld a,(dt_drive)
+        inc a
+        ret z
         jp dt_draw_window
 
 dt_draw_screen:
@@ -83,6 +163,7 @@ dt_draw_screen:
         ld a,UIP_DESK
         call ui_pen
         call gfx_cls
+        call wall_draw              ; the desk's picture (shell/wall.asm)
         call ui_draw_bar
         ld a,UIP_DESKTEXT
         ld c,UIP_DESK
@@ -180,8 +261,13 @@ dt_mul:
         djnz .add
         ret
 
-; read the open drive, then draw the window
+; read the open drive, then draw the window (none: nothing)
 dt_load:
+        ld a,(dt_drive)
+        cp DT_CLOSED
+        ret z
+        ld a,1
+        ld (dt_shown),a
         ld a,(dt_drive)
         call fdc_select
         call fs_catalog
@@ -301,12 +387,43 @@ dt_draw_window:
 .title:
         xor a
         ld (de),a
+        ld hl,(dt_w)                ; no further than the X
+        ld de,-24
+        add hl,de
+        srl h
+        rr l
+        srl h
+        rr l
+        srl h
+        rr l
+        ld a,l
+        cp 39
+        jr c,.fits
+        ld a,39
+.fits:
+        ld e,a
+        ld d,0
+        ld hl,dt_line
+        add hl,de
+        ld (hl),0
         ld a,UIP_SELTEXT
         ld c,UIP_SEL
         call ui_colours
         ld a,2
         call dt_text_at
         call txt_print
+        ld hl,(dt_wx)               ; the X that closes it
+        ld de,(dt_w)
+        add hl,de
+        ld de,-16
+        add hl,de
+        ld de,(dt_wy)
+        inc de
+        inc de
+        ld bc,dt_x_text
+        call txt_print
+        call dt_draw_bar
+        call dt_draw_grip
         call dt_draw_cells
         ld a,(dt_err)               ; free space, or the error
         or a
@@ -344,15 +461,309 @@ dt_draw_window:
         ld a,UIP_TEXT
         ld c,UIP_BAR
         call ui_colours
-        ld a,DT_H - 12
+        ld a,(dt_h)
+        sub 12
         call dt_text_at
         jp txt_print
 .box:
         ld (ui_fill_pen),a
         ld hl,(dt_wx)
         ld de,(dt_wy)
-        ld bc,DT_W
-        ld a,DT_H
+        ld bc,(dt_w)
+        ld a,(dt_h)
+        ret
+
+; the corner that sizes the window: a small square, below on the right
+dt_draw_grip:
+        ld a,UIP_TEXT
+        ld (ui_fill_pen),a
+        call dt_grip_xy
+        ld bc,6
+        ld a,6
+        jp ui_rect
+; -> HL, DE: the grip's top left (8 pixels in from the corner)
+dt_grip_xy:
+        ld hl,(dt_wx)
+        ld de,(dt_w)
+        add hl,de
+        ld de,-9
+        add hl,de
+        push hl
+        ld hl,(dt_wy)
+        ld a,(dt_h)
+        sub 9
+        ld e,a
+        ld d,0
+        add hl,de
+        ex de,hl
+        pop hl
+        ret
+
+; the scroll bar: the rows of files there are, the thumb where the
+; window is among them
+dt_draw_bar:
+        call dt_bar_geometry
+        ld a,UIP_BAR
+        ld (ui_fill_pen),a
+        call .track
+        call ui_rect
+        ld a,UIP_FRAME
+        ld (ui_fill_pen),a
+        call .track
+        call ui_frame
+        ld a,UIP_SEL
+        ld (ui_fill_pen),a
+        ld hl,(dt_bx)
+        inc hl
+        inc hl
+        ld de,(dt_by)
+        ld a,(dt_ty)
+        add a,e
+        ld e,a
+        jr nc,.y
+        inc d
+.y:
+        inc de
+        ld bc,DT_BAR_W - 4
+        ld a,(dt_tl)
+        sub 2
+        jp ui_rect
+.track:
+        ld hl,(dt_bx)
+        ld de,(dt_by)
+        ld bc,DT_BAR_W
+        ld a,(dt_th)
+        ret
+
+; -> dt_bx, dt_by, dt_th: the bar; dt_ty, dt_tl: its thumb (in it)
+dt_bar_geometry:
+        ld hl,(dt_wx)
+        ld de,(dt_w)
+        add hl,de
+        ld de,-(DT_BAR_W + 4)
+        add hl,de
+        ld (dt_bx),hl
+        ld hl,(dt_wy)
+        ld de,14
+        add hl,de
+        ld (dt_by),hl
+        ld a,(dt_h)
+        sub 28
+        ld (dt_th),a
+        ld (dt_tl),a
+        xor a
+        ld (dt_ty),a
+        call dt_total_rows          ; all of them in the window: all bar
+        ld hl,dt_rows
+        cp (hl)
+        ret c
+        ret z
+        ld (dt_tr),a
+        ld a,(dt_top)
+        call .part
+        ld (dt_ty),a
+        ld a,(dt_rows)
+        call .part
+        cp 4
+        jr nc,.long
+        ld a,4
+.long:
+        ld (dt_tl),a
+        ret
+; A = rows -> A = rows * dt_th / dt_tr
+.part:
+        ld l,a
+        ld a,(dt_th)
+        ld e,a
+        ld d,0
+        call dt_mul
+        ld a,(dt_tr)
+        ld e,a
+        ld c,0
+.div:
+        or a
+        sbc hl,de
+        jr c,.done
+        inc c
+        jr .div
+.done:
+        ld a,c
+        ret
+
+; -> A = rows of files (dt_count / dt_cols, rounded up)
+dt_total_rows:
+        ld a,(dt_count)
+        or a
+        ret z
+        dec a
+        call dt_file_row
+        inc a
+        ret
+
+; HL, DE = a click on the bar: up or down a window of rows
+dt_bar_click:
+        push de
+        call dt_bar_geometry
+        pop hl
+        ld de,(dt_by)
+        or a
+        sbc hl,de
+        ld a,(dt_ty)
+        cp l                        ; above the thumb: up
+        ld a,(dt_top)
+        ld hl,dt_rows
+        jr c,.down
+        sub (hl)
+        jr nc,.set
+        xor a
+        jr .set
+.down:
+        add a,(hl)                  ; (below it, or on it: down)
+        push af
+        call dt_total_rows          ; no further than the last rows
+        ld hl,dt_rows
+        sub (hl)
+        jr nc,.last
+        xor a
+.last:
+        ld c,a
+        pop af
+        cp c
+        jr c,.set
+        ld a,c
+.set:
+        ld (dt_top),a
+        call dt_draw_bar
+        jp dt_draw_cells
+
+; the grip taken: a dashed outline (ext2.asm: drag_outline) follows the
+; pointer in whole cells until the button goes up, then the window has
+; that size
+dt_resize:
+        ld hl,(dt_wx)
+        ld (dr_nx),hl
+        ld hl,(dt_wy)
+        ld (dr_ny),hl
+        call .size
+        call .outline
+.frame:
+        call ptr_update
+        call wait_frame
+.event:
+        call ev_get
+        jr z,.frame
+        cp EV_PTR_UP
+        jr z,.to
+        cp EV_PTR_MOVE
+        jr nz,.event
+.to:
+        push af
+        call .outline               ; away from where it was
+        ld hl,(ev_cur + 4)          ; columns: (x - wx - 12) / 72
+        ld de,(dt_wx)
+        ld bc,DT_CELL_W
+        call .cells
+        ld e,a
+        ld a,DT_MAX_COLS
+        cp e
+        jr c,.cols
+        ld a,e
+.cols:
+        cp 2
+        jr nc,.cols_ok
+        ld a,2
+.cols_ok:
+        ld (dt_cols),a
+.wide:
+        call dt_size                ; on the screen
+        ld hl,(dt_wx)
+        ld de,(dt_w)
+        add hl,de
+        ld de,384 + 1               ; (mode 1)
+        or a
+        sbc hl,de
+        jr c,.rows
+        ld hl,dt_cols
+        dec (hl)
+        jr .wide
+.rows:
+        ld hl,(ev_cur + 6)          ; rows: (y - wy - 11) / 38
+        ld de,(dt_wy)
+        ld bc,DT_CELL_H
+        call .cells
+        ld e,a
+        ld a,DT_MAX_ROWS
+        cp e
+        jr c,.rows_set
+        ld a,e
+.rows_set:
+        or a
+        jr nz,.rows_ok
+        inc a
+.rows_ok:
+        ld (dt_rows),a
+.high:
+        call dt_size
+        ld hl,(dt_wy)
+        ld a,(dt_h)
+        ld e,a
+        ld d,0
+        add hl,de
+        ld de,DT_KEYS_Y + 1
+        or a
+        sbc hl,de
+        jr c,.sized
+        ld hl,dt_rows
+        dec (hl)
+        jr .high
+.sized:
+        call .size
+        pop af
+        cp EV_PTR_UP
+        jr z,.done
+        call .outline
+        jp .event
+.done:
+        call dt_scroll
+        jp dt_redraw
+.size:
+        ld hl,(dt_w)
+        ld (dr_w),hl
+        ld a,(dt_h)
+        ld (dr_h),a
+        ret
+.outline:
+        ld hl,drag_outline
+        jp ext2_call
+; HL = pointer, DE = the window's edge, BC = a cell -> A = cells to it
+.cells:
+        or a
+        sbc hl,de
+        jr nc,.in
+        ld hl,0
+.in:
+        ld e,c
+        ld d,b
+        srl d                       ; to the nearest: + half a cell
+        rr e
+        add hl,de
+        ld de,12
+        or a
+        sbc hl,de
+        jr nc,.count
+        ld hl,0
+.count:
+        ld e,c
+        ld d,b
+        ld c,0
+.sub:
+        or a
+        sbc hl,de
+        jr c,.counted
+        inc c
+        jr .sub
+.counted:
+        ld a,c
         ret
 
 ; A = y in the window -> HL, DE: dt_line's place there, BC -> dt_line
@@ -375,7 +786,8 @@ dt_draw_cells:
         call dt_draw_cell
         pop af
         inc a
-        cp DT_COLS * DT_ROWS
+        ld hl,dt_cells
+        cp (hl)
         jr c,.cell
         ret
 
@@ -383,13 +795,14 @@ dt_draw_cells:
 dt_draw_cell:
         ld (dt_k),a
         ld c,0                      ; column, row
+        ld hl,dt_cols
 .row:
-        sub DT_COLS
+        sub (hl)
         jr c,.col
         inc c
         jr .row
 .col:
-        add a,DT_COLS
+        add a,(hl)
         ld l,a
         ld h,0
         ld de,DT_CELL_W
@@ -413,9 +826,8 @@ dt_draw_cell:
         ld bc,DT_CELL_W
         ld a,DT_CELL_H
         call ui_rect
-        ld a,(dt_top)               ; file = top row * 4 + cell
-        add a,a
-        add a,a
+        ld a,(dt_top)               ; file = top row * columns + cell
+        call dt_row_file
         ld hl,dt_k
         add a,(hl)
         ld (dt_i),a
@@ -597,9 +1009,11 @@ dt_cell0:
 ; dt_top so that the selection is on the screen -> carry if it moved
 dt_scroll:
         ld a,(dt_sel)               ; row of the selection
-        srl a
-        srl a
+        call dt_file_row
         ld b,a
+        ld a,(dt_rows)
+        dec a
+        ld c,a
         ld a,(dt_top)
         cp b
         jr z,.done
@@ -607,11 +1021,11 @@ dt_scroll:
         ld a,b                      ; above the screen
         jr .set
 .below:
-        add a,DT_ROWS - 1
+        add a,c
         cp b
         jr nc,.done
         ld a,b
-        sub DT_ROWS - 1
+        sub c
 .set:
         ld (dt_top),a
         scf
@@ -629,18 +1043,20 @@ dt_select:
         call dt_remember
         call dt_scroll
         pop bc
-        jp c,dt_draw_cells
-        ld a,(dt_top)               ; same screen: old and new cell
-        add a,a
-        add a,a
+        jr nc,.same
+        call dt_draw_bar
+        jp dt_draw_cells
+.same:
+        push bc                     ; same screen: old and new cell
+        ld a,(dt_top)
+        call dt_row_file
+        pop bc
         ld c,a
         ld a,b
         sub c
+        push bc
         call dt_draw_cell
-        ld a,(dt_top)
-        add a,a
-        add a,a
-        ld c,a
+        pop bc
         ld a,(dt_sel)
         sub c
         jp dt_draw_cell
@@ -666,13 +1082,14 @@ dt_remember:
 dt_open_drive:
         ld hl,dt_drive
         cp (hl)
-        ret z
+        jp z,dt_close               ; the open one again: closed
         ld b,(hl)
         ld (hl),a
         xor a
         ld (dt_sel),a
         ld a,b                      ; the one it was, then this one
-        call dt_draw_drive
+        cp DT_CLOSED
+        call nz,dt_draw_drive
         ld a,(dt_drive)
         call dt_draw_drive
         jp dt_load
@@ -717,10 +1134,16 @@ dt_event:
         ld d,-1
         cp KEY_LEFT
         jr z,.move
-        ld d,DT_COLS
+        ld e,a
+        ld a,(dt_cols)
+        ld d,a
+        ld a,e
         cp KEY_DOWN
         jr z,.move
-        ld d,-DT_COLS
+        ld a,d
+        neg
+        ld d,a
+        ld a,e
         cp KEY_UP
         jr z,.move
         cp KEY_TAB
@@ -754,32 +1177,104 @@ dt_event:
         or a
         sbc hl,de
         jr c,.ui
-        ld hl,(dt_wx)               ; its title bar drags the window
-        ld de,(dt_wy)
-        ld bc,DT_W
-        ld a,DT_H
-        call ui_drag
-        jr nc,.in
-        ld (dt_wx),hl
-        ld (dt_wy),de
-        jp dt_redraw
-.in:
-        ld hl,(ev_cur + 4)          ; in the window?
+        ld a,(dt_drive)             ; no window: only the drives
+        cp DT_CLOSED
+        jp z,.drive
+        ld hl,(ev_cur + 4)          ; in the window? HL, DE: where in it
         ld de,(dt_wx)
         or a
         sbc hl,de
-        jr c,.drive
-        ld de,DT_W
+        jp c,.drive
+        push hl
+        ld de,(dt_w)
         sbc hl,de
-        jr nc,.drive
+        pop bc
+        jp nc,.drive
         ld hl,(ev_cur + 6)
         ld de,(dt_wy)
         or a
         sbc hl,de
-        jr c,.drive
-        ld de,DT_H
+        jp c,.drive
+        ld a,(dt_h)
+        ld e,a
+        ld d,0
+        push hl
         sbc hl,de
+        pop de
+        jp nc,.drive
+        ld h,b                      ; HL = x, DE = y in the window
+        ld l,c
+        ld a,d
+        or a
+        jr nz,.not_title
+        ld a,e
+        cp 12
+        jr nc,.not_title
+        push hl                     ; the title bar: its X closes
+        ld de,(dt_w)
+        ld bc,16
+        ex de,hl
+        or a
+        sbc hl,bc
+        ex de,hl
+        or a
+        sbc hl,de
+        pop hl
+        jp nc,dt_close
+        ld hl,(dt_wx)               ; the rest drags the window
+        ld de,(dt_wy)
+        ld bc,(dt_w)
+        ld a,(dt_h)
+        call ui_drag
+        ret nc
+        ld (dt_wx),hl
+        ld (dt_wy),de
+        jp dt_redraw
+.not_title:
+        push de                     ; the grip: the window's size
+        push hl
+        ld de,(dt_w)
+        ld bc,-11
+        ex de,hl
+        add hl,bc
+        ex de,hl
+        or a
+        sbc hl,de
+        pop hl
+        pop de
+        jr c,.not_corner
+        ld a,(dt_h)
+        sub 11
+        cp e
+        jp c,dt_resize
+        ; the bar
+        push de
+        ld de,(dt_w)
+        ld bc,-(DT_BAR_W + 4)
+        ex de,hl
+        add hl,bc
+        ex de,hl
+        or a
+        sbc hl,de
+        pop de
         jr c,.window
+        ld hl,(ev_cur + 6)
+        ex de,hl
+        jp dt_bar_click
+.not_corner:
+        push de                     ; the bar?
+        ld de,(dt_w)
+        ld bc,-(DT_BAR_W + 4)
+        ex de,hl
+        add hl,bc
+        ex de,hl
+        or a
+        sbc hl,de
+        pop de
+        jr c,.window
+        ld hl,(ev_cur + 6)
+        ex de,hl
+        jp dt_bar_click
 .drive:
         ld hl,(ev_cur + 4)          ; a drive icon?
         ld de,DT_DRIVE_X
@@ -822,19 +1317,18 @@ dt_event:
         or a
         sbc hl,de
         ret c
-        ld a,h
-        or a
-        ret nz
-        ld a,l
+        ld de,DT_CELL_W
         ld c,0
 .cx:
-        sub DT_CELL_W
+        or a
+        sbc hl,de
         jr c,.cx_done
         inc c
         jr .cx
 .cx_done:
         ld a,c
-        cp DT_COLS
+        ld hl,dt_cols
+        cp (hl)
         ret nc
         ld (dt_k),a
         ld hl,(ev_cur + 6)
@@ -853,12 +1347,12 @@ dt_event:
         jr .cy
 .cy_done:
         ld a,c
-        cp DT_ROWS
+        ld hl,dt_rows
+        cp (hl)
         ret nc
-        ld hl,dt_top                ; file = (top + row) * 4 + column
-        add a,(hl)
-        add a,a
-        add a,a
+        ld hl,dt_top                ; file = (top + row) * columns +
+        add a,(hl)                  ; column
+        call dt_row_file
         ld hl,dt_k
         add a,(hl)
         ld hl,dt_count
@@ -997,4 +1491,16 @@ dt_ent:         dw 0
 dt_colours:     dw 0
 dt_name_colours: dw 0
 dt_line:        ds 40
+dt_w:           dw 0                ; the window's width and height
+dt_h:           db 0
+dt_cells:       db 0                ; columns * rows
+dt_bx:          dw 0                ; its scroll bar, thumb
+dt_by:          dw 0
+dt_th:          db 0
+dt_ty:          db 0
+dt_tl:          db 0
+dt_tr:          db 0                ; rows of files
+dt_x_text:      db "X", 0
 dt_vbn:         db "VBN"
+
+        include "wall.asm"

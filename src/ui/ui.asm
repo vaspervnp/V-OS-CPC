@@ -106,7 +106,11 @@ ui_set_mode:
         ld de,ui_pens
         ld bc,UI_PEN_COUNT
         ldir
-        ret
+        ld a,(cfg_data + CFG_THEME) ; dark: the pens swapped (kernel/
+        or a                        ; ext2.asm)
+        ret z
+        ld hl,ui_dark
+        jp ext2_call
 
 ; ---------------------------------------------------------------------
 ; ui_in_band - B = mode, HL = routine, A = its argument: runs it drawing

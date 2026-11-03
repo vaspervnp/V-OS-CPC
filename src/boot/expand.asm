@@ -54,12 +54,21 @@ xb_detect:
         ld (demo_cfg),a
 .no_demo:
         ENDIF
+        ld de,xb_found              ; the last bank for the desk's
+        or a                        ; picture (wall_bank, kernel/ext2.asm:
+        sbc hl,de                   ; wall_draw), not for programs
+        add hl,de
+        jr z,.no_wall
+        dec hl
+        ld a,(hl)
+        ld (xb_wall),a
+.no_wall:
         ld (hl),0
         ld a,LANG_BANK_CFG
         call ram_select
         ld hl,xb_found
         ld de,bk_list + 1
-        ld bc,XB_MAX + 1
+        ld bc,XB_MAX + 2            ; (and xb_wall: wall_bank)
         ldir
         jp ram_home
 ; A = block -> its first bank at #4000
@@ -71,3 +80,4 @@ xb_detect:
         jp ram_select
 
 xb_found:       ds XB_MAX + 1
+xb_wall:        db 0                ; -> wall_bank

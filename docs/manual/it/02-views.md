@@ -34,6 +34,7 @@ Modo 1. Una finestra FILE mostra i file di un'unità come icone, quattro per rig
 
 - **Menu FILE:** APRI, INFO SUL FILE (^I), COPIA SULL'UNITÀ SEGUENTE, ELIMINA, RINOMINA, RILEGGI I DISCHI, ESCI IN BASIC.
 - **La finestra FILE** si può trascinare per il suo titolo e resta lì, anche quando cambi vista.
+- **All'inizio non c'è finestra né unità scelta:** si vede lo sfondo (e la sua immagine). Un'unità (un clic sulla sua icona, o TAB) apre la sua finestra; la X del titolo la chiude, come un clic sull'unità aperta. Il quadratino nell'angolo in basso a destra ingrandisce o rimpicciolisce la finestra a icone intere (2–5 per riga, 1–5 righe; quattro per cinque all'inizio), e la barra a destra mostra quale parte della lista si vede: un clic sopra o sotto la sua parte scura scorre di una finestra. La dimensione resta, come il posto.
 - **Apertura per tipo** (anche nel Commander): i `.TXT` si aprono in NOTEPAD, i `.MD` in MARKDOWN, i `.PIC` e `.LYR` in PAINT, i `.VDB` in DATABASE, i `.VSH` in SHEET, i `.MUS` in MUSIC, che comincia a suonarli. Il programma si cerca sull'unità del file, poi su A:, poi su B:. Se non si trova, appare "NESSUN PROGRAMMA PER QUESTO FILE". Se il programma ha modifiche non salvate, chiede prima.
 
 ## Launcher (PROGRAMMI), F2
@@ -96,6 +97,8 @@ Modo 1. Una riga per ogni impostazione. Le modifiche hanno effetto subito. Quand
 | LETTURA AMX | LIVELLI (all'inizio) o IMPULSI: come viene letto il mouse. LIVELLI conta ogni lettura con movimento, IMPULSI solo l'inizio degli impulsi. Se il puntatore si muove troppo veloce o troppo lento, prova l'altro |
 | COLORE SFONDO | BLU, NERO, VERDE, ROSSO |
 | TASTIERE | EN + LINGUA, TUTTE SEI (quelle che CONTROL+SHIFT percorre) |
+| TEMA | CHIARO, SCURO (barre, menu, dialoghi, finestre e liste in nero con testo bianco; nei programmi, i loro menu e dialoghi) |
+| SFONDO | NESSUNO, o un'immagine `.SCR`: SINISTRA/DESTRA passano per NESSUNO, A:, B: e DISK, e su un'unità si elencano i suoi `.SCR` per sceglierne uno. La Scrivania la mostra al centro dello sfondo, col colore dello sfondo intorno; un'immagine di PAINT (modo 0, 16 colori) nei quattro colori della Scrivania. Serve un'espansione di memoria (il suo ultimo banco da 16K tiene l'immagine); senza: SERVE UN'ESPANSIONE DI MEMORIA |
 
 | Tasto | Cosa fa |
 |---|---|

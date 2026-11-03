@@ -1168,3 +1168,33 @@ dm_cmd:
 dm_fd:          db 0
 dm_mode:        db 0
 dm_ptr:         dw 0
+
+; the dark theme (Setup's THEME, CFG_THEME 1; ui/ui.asm: ui_set_mode):
+; the bars, menus, dialogs and lists in the text's pen and their text in
+; theirs, the selection the other way round, the shadow in the bar's
+; pen, the frame in the text's
+ui_dark:
+        assert UIP_TEXT == UIP_BAR + 1 && UIP_SEL == UIP_BAR + 2
+        assert UIP_SELTEXT == UIP_BAR + 3 && UIP_SHADOW == UIP_BAR + 4
+        assert UIP_FRAME == UIP_BAR + 5
+        ld hl,ui_pens + UIP_BAR
+        ld a,(hl)                   ; A = bar, B = text
+        inc hl
+        ld b,(hl)
+        ld (hl),a
+        dec hl
+        ld (hl),b
+        inc hl
+        inc hl
+        ld d,(hl)                   ; selection and its text
+        inc hl
+        ld e,(hl)
+        ld (hl),d
+        dec hl
+        ld (hl),e
+        inc hl
+        inc hl
+        ld (hl),b                   ; shadow, frame
+        inc hl
+        ld (hl),a
+        ret

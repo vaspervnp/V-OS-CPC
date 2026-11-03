@@ -34,6 +34,7 @@ Mode 1. Une fenêtre FICHIERS montre les fichiers d'un lecteur sous forme d'icô
 
 - **Menu FICHIER :** OUVRIR, INFOS DU FICHIER (^I), COPIER AU LECTEUR SUIVANT, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, QUITTER VERS LE BASIC.
 - **La fenêtre FICHIERS** se déplace par son titre et reste là où vous la mettez, même quand vous changez de vue.
+- **Au début, pas de fenêtre ni de lecteur choisi :** on voit le fond (et son image). Un lecteur (un clic sur son icône, ou TAB) ouvre sa fenêtre ; le X de son titre la ferme, comme un clic sur le lecteur ouvert. Le petit carré dans le coin en bas à droite agrandit ou réduit la fenêtre par icônes entières (2 à 5 par ligne, 1 à 5 lignes ; quatre sur cinq au début), et la barre de droite montre quelle partie de la liste est visible : un clic au-dessus ou au-dessous de sa partie foncée fait défiler d'une fenêtre. La taille est gardée, comme la place.
 - **Ouverture selon le type** (aussi dans le Commander) : les `.TXT` s'ouvrent dans NOTEPAD, les `.MD` dans MARKDOWN, les `.PIC` et `.LYR` dans PAINT, les `.VDB` dans DATABASE, les `.VSH` dans SHEET, les `.MUS` dans MUSIC, qui commence à les jouer. Le programme est cherché sur le lecteur du fichier, puis sur A:, puis sur B:. S'il n'est pas trouvé, « AUCUN PROGRAMME POUR CE FICHIER » s'affiche. Si le programme a des modifications non enregistrées, il demande d'abord.
 
 ## Lanceur (PROGRAMMES), F2
@@ -96,6 +97,8 @@ Mode 1. Une ligne par réglage. Les changements prennent effet tout de suite. Un
 | LECTURE AMX | NIVEAUX (au départ) ou IMPULSIONS : la façon de lire la souris. NIVEAUX compte chaque lecture avec du mouvement, IMPULSIONS seulement le début des impulsions. Si le pointeur bouge trop vite ou trop lentement, essayez l'autre |
 | COULEUR DU BUREAU | BLEU, NOIR, VERT, ROUGE |
 | CLAVIERS | EN + LANGUE, LES SIX (ceux que CONTROL+SHIFT parcourt) |
+| THÈME | CLAIR, SOMBRE (barres, menus, dialogues, fenêtres et listes en noir avec un texte blanc ; dans les programmes, leurs menus et dialogues) |
+| IMAGE DE FOND | AUCUNE, ou une image `.SCR` : GAUCHE/DROITE passent par AUCUNE, A:, B: et DISK, et sur un lecteur ses fichiers `.SCR` sont listés pour en choisir un. Le Bureau la montre au milieu du fond, la couleur du fond autour ; une image de PAINT (mode 0, 16 couleurs) dans les quatre couleurs du Bureau. Il faut une extension mémoire (sa dernière banque de 16K garde l'image) ; sans elle : IL FAUT UNE EXTENSION MÉMOIRE |
 
 | Touche | Ce qu'elle fait |
 |---|---|

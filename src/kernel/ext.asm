@@ -921,6 +921,7 @@ sa_next         equ #A81C
 ; (xb_detect), 0 at the end
 bk_list:        db VIEW_BANK_CFG
                 ds XB_MAX + 1, 0
+wall_bank:      db 0                ; the desk's picture's: 0 none
 
 ; ---------------------------------------------------------------------
 ; lang_init - load the pack of SETUP.CFG (CFG_PACK: GREEK.LNG, ...)

@@ -1,9 +1,9 @@
 ; =====================================================================
 ; setup.asm - settings kept in A:SETUP.CFG
 ;
-; File: "VCFG", version 3, then CFG_COUNT bytes in the order below
-; (version 2 has no CFG_KBDS: it stays 0; a version 1 file is not read:
-; the defaults).
+; File: "VCFG", version 4, then CFG_COUNT bytes in the order below
+; (version 3 ends before CFG_THEME, version 2 before CFG_KBDS too: the
+; rest stays as it is; a version 1 file is not read: the defaults).
 ; cfg_load (boot) reads it, if there is one, and applies it; the Setup
 ; view (shell/setup.asm) changes cfg_data, calls cfg_apply to see the
 ; change at once, and cfg_save to keep it.
@@ -19,7 +19,10 @@ CFG_DESK        equ 6               ; ink of the mode 1 desk
 CFG_PACK        equ 7               ; the pack: LANG_PACKS (kernel/ext.asm)
 CFG_KBDS        equ 8               ; CONTROL+SHIFT: 0 English and the
                                     ; pack's keyboard, 1 all (lang.asm)
-CFG_COUNT       equ 9
+CFG_THEME       equ 9               ; 0 light, 1 dark (ui/ui.asm)
+CFG_WALL        equ 10              ; the desk's picture: its drive, #FF
+CFG_WALL_NAME   equ 11              ; none; its name (11 bytes; ext2.asm)
+CFG_COUNT       equ 22
 CFG_SIZE        equ 5 + CFG_COUNT
 
 cfg_load:
@@ -48,11 +51,14 @@ cfg_load:
         ld a,(hl)                   ; the version
         inc hl
         ld bc,CFG_COUNT
+        cp 4
+        jr z,.copy
+        ld c,CFG_THEME              ; up to CFG_KBDS
         cp 3
         jr z,.copy
+        dec c                       ; up to CFG_DESK
         cp 2
         jr nz,.apply
-        dec c                       ; no CFG_KBDS
 .copy:
         ld de,cfg_data
         ldir
@@ -109,7 +115,9 @@ cfg_save:
         jp fs_save
 
 cfg_file:       db "SETUP   CFG"
-cfg_magic:      db "VCFG", 3
-cfg_data:       db VIEW_DESKTOP, 0, 25, 3, 1, 1, 1, 0, 0 ; English, and the
-                                                    ; Greek pack, at first
-cfg_head:       ds CFG_SIZE
+cfg_magic:      db "VCFG", 4
+cfg_data:       db VIEW_DESKTOP, 0, 25, 3, 1, 1, 1, 0, 0, 0, #FF ; English,
+                db "           "    ; and the Greek pack, at first; no
+                                    ; picture
+cfg_head        equ bank_buf        ; CFG_SIZE: only while read or written
+        assert CFG_SIZE <= 32

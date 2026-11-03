@@ -34,6 +34,7 @@ Modus 1. Ein Fenster DATEIEN zeigt die Dateien eines Laufwerks als Symbole, vier
 
 - **Menü DATEI:** ÖFFNEN, DATEI-INFO (^I), AUFS NÄCHSTE LAUFWERK, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, ZURÜCK ZU BASIC.
 - **Das Fenster DATEIEN** lässt sich an seinem Titel verschieben und bleibt dort, auch wenn du die Ansicht wechselst.
+- **Am Anfang gibt es kein Fenster und kein gewähltes Laufwerk:** man sieht den Hintergrund (und sein Bild). Ein Laufwerk (ein Klick auf sein Symbol, oder TAB) öffnet sein Fenster; das X im Titel schließt es, ebenso ein Klick auf das offene Laufwerk. Das kleine Quadrat in der Ecke unten rechts macht das Fenster in ganzen Symbolen größer oder kleiner (2–5 pro Reihe, 1–5 Reihen; am Anfang vier mal fünf), und die Leiste rechts zeigt, welcher Teil der Liste zu sehen ist: ein Klick über oder unter ihrem dunklen Teil blättert um ein Fenster. Die Größe bleibt, wie der Platz.
 - **Öffnen nach Typ** (auch im Commander): `.TXT`-Dateien öffnen sich in NOTEPAD, `.MD` in MARKDOWN, `.PIC` und `.LYR` in PAINT, `.VDB` in DATABASE, `.VSH` in SHEET, `.MUS` in MUSIC, das sie gleich abspielt. Das Programm wird auf dem Laufwerk der Datei gesucht, dann auf A:, dann auf B:. Wird es nicht gefunden, erscheint „KEIN PROGRAMM FÜR DIESE DATEI“. Hat das Programm ungespeicherte Änderungen, fragt es zuerst.
 
 ## Programme, F2
@@ -96,6 +97,8 @@ Modus 1. Eine Zeile für jede Einstellung. Änderungen wirken sofort. Beim Speic
 | AMX-LESEART | PEGEL (anfangs) oder IMPULSE: wie die Maus gelesen wird. PEGEL zählt jedes Lesen mit Bewegung, IMPULSE nur den Beginn der Impulse. Bewegt sich der Zeiger zu schnell oder zu langsam, versuche die andere |
 | HINTERGRUND | BLAU, SCHWARZ, GRÜN, ROT |
 | TASTATUREN | EN + SPRACHE, ALLE SECHS (die CONTROL+SHIFT durchgeht) |
+| DESIGN | HELL, DUNKEL (Leisten, Menüs, Dialoge, Fenster und Listen schwarz mit weißer Schrift; in Programmen ihre Menüs und Dialoge) |
+| HINTERGRUNDBILD | KEINS, oder ein `.SCR`-Bild: LINKS/RECHTS gehen durch KEINS, A:, B: und DISK, und auf einem Laufwerk werden seine `.SCR`-Dateien zur Wahl gelistet. Der Schreibtisch zeigt es in der Mitte, die Hintergrundfarbe darum; ein PAINT-Bild (Modus 0, 16 Farben) in den vier Farben des Schreibtischs. Es braucht eine Speichererweiterung (ihre letzte 16K-Bank hält das Bild); ohne: BRAUCHT EINE SPEICHERERWEITERUNG |
 
 | Taste | Was sie tut |
 |---|---|
