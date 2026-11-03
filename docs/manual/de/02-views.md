@@ -24,15 +24,15 @@ Modus 1. Ein Fenster DATEIEN zeigt die Dateien eines Laufwerks als Symbole, vier
 | Taste | Was sie tut |
 |---|---|
 | Pfeile | eine Datei auswählen (↑/↓ eine Reihe) |
-| TAB | das andere Laufwerk |
+| TAB | das nächste Laufwerk: A:, B:, DISK (mit einer M4-Karte) |
 | RETURN, ENTER | öffnen: ein Programm startet, eine Datei bekannten Typs öffnet sich in ihrem Programm, andere zeigen ihre Info |
-| ^C | auf das andere Laufwerk kopieren |
+| ^C | auf das nächste Laufwerk kopieren (von DISK: auf A:) |
 | ^D | löschen (fragt vorher) |
 | ^N | umbenennen |
 | ^R | die Disketten neu lesen |
 | Maus | Klick auf eine Datei: auswählen, noch einmal: öffnen. Klick auf ein Laufwerk: öffnet es |
 
-- **Menü DATEI:** ÖFFNEN, DATEI-INFO (^I), AUF ANDERES LAUFWERK, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, ZURÜCK ZU BASIC.
+- **Menü DATEI:** ÖFFNEN, DATEI-INFO (^I), AUFS NÄCHSTE LAUFWERK, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, ZURÜCK ZU BASIC.
 - **Das Fenster DATEIEN** lässt sich an seinem Titel verschieben und bleibt dort, auch wenn du die Ansicht wechselst.
 - **Öffnen nach Typ** (auch im Commander): `.TXT`-Dateien öffnen sich in NOTEPAD, `.MD` in MARKDOWN, `.PIC` und `.LYR` in PAINT, `.VDB` in DATABASE, `.VSH` in SHEET, `.MUS` in MUSIC, das sie gleich abspielt. Das Programm wird auf dem Laufwerk der Datei gesucht, dann auf A:, dann auf B:. Wird es nicht gefunden, erscheint „KEIN PROGRAMM FÜR DIESE DATEI“. Hat das Programm ungespeicherte Änderungen, fragt es zuerst.
 
@@ -46,10 +46,10 @@ Modus 0, 16 Farben. Zeigt nur die Programme eines Laufwerks (`.BIN`, `.VBN`, `.B
 | RETURN, ENTER | startet das Programm. Läuft es bereits, macht es dort weiter, wo es war |
 | ^A | lädt es als Zubehörprogramm (ALS ZUBEHÖR). F5 öffnet es dann |
 | ^R | die Diskette neu lesen |
-| TAB | das andere Laufwerk (ANDERES LAUFWERK). Ein Programm, das von B: gestartet wurde, kehrt zu B: zurück |
+| TAB | das nächste Laufwerk (NÄCHSTES LAUFWERK): A:, B:, DISK. Ein Programm, das von B: gestartet wurde, kehrt zu B: zurück |
 | Maus | Klick: auswählen, noch einmal: starten |
 
-**Menü DATEI:** STARTEN, ALS ZUBEHÖR, ANDERES LAUFWERK, DISKETTEN NEU LESEN, ZURÜCK ZU BASIC.
+**Menü DATEI:** STARTEN, ALS ZUBEHÖR, NÄCHSTES LAUFWERK, DISKETTEN NEU LESEN, ZURÜCK ZU BASIC.
 
 ## Commander, F3
 
@@ -64,11 +64,21 @@ Modus 1, zwei Felder mit Dateilisten: A: links, B: rechts. Jedes Feld zeigt in s
 | ^D | löschen |
 | ^N | umbenennen |
 | ^R | beide Disketten neu lesen |
+| ^G | das nächste Laufwerk für das aktive Feld: A:, B:, DISK (auch ein Klick auf seinen Titel) |
 | Maus | Klick: auswählen, noch einmal: öffnen |
 
-**Menü DATEI:** ÖFFNEN, DATEI-INFO (^I), INS ANDERE FELD KOPIEREN, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, FORMATIEREN (DATA), ZURÜCK ZU BASIC.
+**Menü DATEI:** ÖFFNEN, DATEI-INFO (^I), INS ANDERE FELD KOPIEREN, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, NÄCHSTES LAUFWERK (^G), FORMATIEREN (DATA), ZURÜCK ZU BASIC.
 
 > FORMATIEREN löscht alle Dateien auf der Diskette des aktiven Feldes. Es fragt vorher.
+
+## DISK: die SD-Karte der M4
+
+Mit einer M4-Karte hat der Schreibtisch ein drittes Laufwerkssymbol, DISK, unter A: und B:, und TAB geht von A: zu B: und zu DISK. Auch die Programme-Ansicht und die Felder des Commanders (^G) erreichen es. Der Titel zeigt den Ordner, in dem du bist, z. B. `DISK:/GAMES/`.
+
+- **Ordner** erscheinen als Ordner (ein Symbol mit Reiter, oder DIR im Commander). RETURN auf einem geht hinein, und `..`, der erste Eintrag, wieder hinauf. In der Programme-Ansicht sind sie auch da, damit du die Programme darin erreichst.
+- **Alles wie auf einer Diskette:** Programme starten von dort, Dateien öffnen sich in ihren Programmen, und ^C, ^D und ^N kopieren, löschen und benennen um. Kopien zwischen DISK und einer Diskette gehen bis 16K. Ordner und Dateien haben Namen wie auf dem CPC (8.3: `NAME.EXT`); längere Namen erscheinen nicht.
+- **M4.SYS** (auf `vos.dsk`) wird von A: geladen, wenn DISK das erste Mal gebraucht wird.
+- **Noch nicht:** ÖFFNEN und SPEICHERN der Programme (NOTEPAD, PAINT…) sehen noch nur A: und B:. DATABASE geht nur auf Disketten, und die SD-Karte wird nicht in V-OS formatiert. V-OS selbst startet weiter von einer Diskette in A: (tippe `|DISC` vor `RUN"VOS"`: mit einer M4-Karte startet der CPC auf der SD-Karte).
 
 ## Optionen, F4
 

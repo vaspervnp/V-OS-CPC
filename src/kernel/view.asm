@@ -352,10 +352,12 @@ ext_call:
         ld (ram_home_cfg),a
         call ram_select
         call .go
-        push af                     ; (its A and flags)
+        push af                     ; (its A, flags and BC)
+        push bc
         ld a,(ext_home)
         ld (ram_home_cfg),a
         call ram_select
+        pop bc
         pop af
         ret
 .go:

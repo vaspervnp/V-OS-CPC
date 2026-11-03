@@ -24,15 +24,15 @@ Modo 1. Una ventana ARCHIVOS muestra los archivos de una unidad como iconos, cua
 | Tecla | Qué hace |
 |---|---|
 | flechas | eligen un archivo (↑/↓ una fila) |
-| TAB | la otra unidad |
+| TAB | la siguiente unidad: A:, B:, DISK (con una tarjeta M4) |
 | RETURN, ENTER | abrir: un programa se ejecuta, un archivo de un tipo conocido se abre en su programa, los demás muestran su información |
-| ^C | copiar a la otra unidad |
+| ^C | copiar a la siguiente unidad (desde DISK: a A:) |
 | ^D | borrar (pregunta antes) |
 | ^N | renombrar |
 | ^R | releer los discos |
 | ratón | clic en un archivo: lo selecciona, otra vez: lo abre. Clic en una unidad: la abre |
 
-- **Menú ARCHIVO:** ABRIR, INFO DEL ARCHIVO (^I), COPIAR A LA OTRA UNIDAD, BORRAR, RENOMBRAR, RELEER LOS DISCOS, SALIR AL BASIC.
+- **Menú ARCHIVO:** ABRIR, INFO DEL ARCHIVO (^I), COPIAR A LA SIGUIENTE, BORRAR, RENOMBRAR, RELEER LOS DISCOS, SALIR AL BASIC.
 - **La ventana ARCHIVOS** se puede arrastrar por su título y se queda ahí, incluso al cambiar de vista.
 - **Abrir según el tipo** (también en el Commander): los `.TXT` se abren en NOTEPAD, los `.MD` en MARKDOWN, los `.PIC` y `.LYR` en PAINT, los `.VDB` en DATABASE, los `.VSH` en SHEET, los `.MUS` en MUSIC, que empieza a tocarlos. El programa se busca en la unidad del archivo, luego en A: y luego en B:. Si no se encuentra, aparece "NINGÚN PROGRAMA PARA ESTE ARCHIVO". Si el programa tiene cambios sin guardar, pregunta primero.
 
@@ -46,10 +46,10 @@ Modo 0, 16 colores. Muestra solo los programas de una unidad (`.BIN`, `.VBN`, `.
 | RETURN, ENTER | ejecuta el programa. Si ya está en marcha, continúa donde estaba |
 | ^A | lo carga como accesorio de escritorio (COMO ACCESORIO). Después F5 lo abre |
 | ^R | releer el disco |
-| TAB | la otra unidad (OTRA UNIDAD). Un programa iniciado desde B: vuelve a B: |
+| TAB | la siguiente unidad (UNIDAD SIGUIENTE): A:, B:, DISK. Un programa iniciado desde B: vuelve a B: |
 | ratón | clic: selecciona, otra vez: ejecuta |
 
-**Menú ARCHIVO:** EJECUTAR, COMO ACCESORIO, OTRA UNIDAD, RELEER LOS DISCOS, SALIR AL BASIC.
+**Menú ARCHIVO:** EJECUTAR, COMO ACCESORIO, UNIDAD SIGUIENTE, RELEER LOS DISCOS, SALIR AL BASIC.
 
 ## Commander, F3
 
@@ -64,11 +64,21 @@ Modo 1, dos paneles con listas de archivos: A: a la izquierda, B: a la derecha. 
 | ^D | borrar |
 | ^N | renombrar |
 | ^R | releer los dos discos |
+| ^G | la siguiente unidad para el panel activo: A:, B:, DISK (también con un clic en su título) |
 | ratón | clic: selecciona, otra vez: abre |
 
-**Menú ARCHIVO:** ABRIR, INFO DEL ARCHIVO (^I), COPIAR AL OTRO PANEL, BORRAR, RENOMBRAR, RELEER LOS DISCOS, FORMATEAR DISCO (DATA), SALIR AL BASIC.
+**Menú ARCHIVO:** ABRIR, INFO DEL ARCHIVO (^I), COPIAR AL OTRO PANEL, BORRAR, RENOMBRAR, RELEER LOS DISCOS, UNIDAD SIGUIENTE (^G), FORMATEAR DISCO (DATA), SALIR AL BASIC.
 
 > FORMATEAR borra todos los archivos del disquete del panel activo. Pregunta antes.
+
+## DISK: la tarjeta SD de la M4
+
+Con una tarjeta M4, el Escritorio tiene un tercer icono de unidad, DISK, debajo de A: y B:, y TAB pasa de A: a B: y a DISK. También llegan a ella Programas y los paneles del Commander (^G). El título muestra la carpeta donde está, p. ej. `DISK:/GAMES/`.
+
+- **Las carpetas** se ven como carpetas (un icono con pestaña, o DIR en el Commander). RETURN sobre una entra en ella, y `..`, la primera entrada, sube. En Programas también aparecen, para llegar a los programas que contienen.
+- **Todo como en un disquete:** los programas se ejecutan desde ella, los archivos se abren en sus programas, y ^C, ^D y ^N copian, borran y renombran. Las copias entre DISK y un disquete llegan hasta 16K. Carpetas y archivos tienen nombres como en el CPC (8.3: `NOMBRE.EXT`); los nombres más largos no aparecen.
+- **M4.SYS** (en `vos.dsk`) se carga desde A: la primera vez que se usa DISK.
+- **Aún no:** ABRIR y GUARDAR de los programas (NOTEPAD, PAINT…) solo ven A: y B:. DATABASE solo funciona en disquetes, y la tarjeta SD no se formatea desde V-OS. V-OS sigue arrancando desde un disquete en A: (escriba `|DISC` antes de `RUN"VOS"`: con una tarjeta M4, el CPC arranca en la tarjeta SD).
 
 ## Ajustes, F4
 

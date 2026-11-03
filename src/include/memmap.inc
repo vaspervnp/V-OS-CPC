@@ -48,8 +48,9 @@ SCREEN_BPL      equ 96              ; bytes per pixel line
 ;   bank 5 (#C5)  the running view, an overlay file (kernel/view.asm)
 ;   bank 6 (#C6)  what menus and dialogs cover (ui/ui.asm), up to
 ;                 ACC_ADDR; from there the desk accessory (view.asm)
-;   bank 7 (#C7)  the language pack, the Commander's file lists, the
-;                 English texts, the kernel extension (kernel/ext.asm)
+;   bank 7 (#C7)  the language pack, M4.SYS (kernel/m4.asm), the
+;                 Commander's file lists, the English texts, the kernel
+;                 extension (kernel/ext.asm)
 ; Kernel code that maps another bank maps the view's bank back
 ; (ram_home), never plain RAM, so a view can call it from #4000.
 ; The language pack: the kernel loads GREEK.LNG from disc into bank 7
@@ -57,10 +58,12 @@ SCREEN_BPL      equ 96              ; bytes per pixel line
 ; GAP0-2.
 LANG_BANK_CFG   equ #C7             ; RAM config: bank 7 at #4000
 LANG_BANK_ADDR  equ #4000
-LANG_MAX        equ #1C00           ; tools/mklng.py MAX_PACK
-LISTS_CFG       equ #C7             ; Commander lists after the pack
-LISTS_ADDR      equ #5C00
-EN_MSG_ADDR     equ #6400           ; ENGLISH.MSG, up to 3K (mklng.py)
+LANG_MAX        equ #1800           ; tools/mklng.py MAX_PACK
+M4_ADDR         equ #5800           ; M4.SYS, the M4 board's SD card
+M4_MAX          equ #600            ; (loaded by m4_ready, kernel/ext.asm)
+LISTS_CFG       equ #C7             ; Commander lists after it
+LISTS_ADDR      equ #5E00
+EN_MSG_ADDR     equ #6600           ; ENGLISH.MSG, up to 2.5K (mklng.py)
 EXT_ADDR        equ #7000           ; the kernel extension, up to 4K,
                                     ; the program slots at its end
 EXT_MAX         equ #1000
@@ -72,10 +75,10 @@ BUF_CFG         equ #C4
 bh_save         equ #B800           ; 30 bytes: VX_BEHIND's (see above)
 EXT2_CFG        equ RAM_BASE_CFG    ; the second extension (kernel/ext2.asm):
 EXT2_ADDR       equ #4100           ; base RAM bank 1, after the loader
-CALC_ADDR       equ #4B80           ; the formula engine (CALC.SYS, loaded
+CALC_ADDR       equ #4D80           ; the formula engine (CALC.SYS, loaded
                                     ; by ext2.asm: calc_entry) after it
                                     ; (and the test script, in tests)
-DB_ADDR         equ #5500           ; the database engine (DB.SYS, loaded by
+DB_ADDR         equ #5680           ; the database engine (DB.SYS, loaded by
 DB_CACHE        equ #7000           ; ext2.asm: db_entry) after it, then its
 DB_SLOTS        equ 4               ; cache: 4 pages of 1K, up to #8000
 BUF_ADDR        equ #4000

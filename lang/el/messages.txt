@@ -9,7 +9,7 @@ ITEM_INFO   ΣΤΟΙΧΕΙΑ ΑΡΧΕΙΟΥ
 ITEM_COPY   ΑΝΤΙΓΡΑΦΗ ΑΠΕΝΑΝΤΙ
 ITEM_DELETE ΔΙΑΓΡΑΦΗ
 ITEM_RENAME ΜΕΤΟΝΟΜΑΣΙΑ
-ITEM_COPY_DRIVE ΑΝΤΙΓΡΑΦΗ ΣΤΗΝ ΑΛΛΗ ΜΟΝΑΔΑ
+ITEM_COPY_DRIVE ΑΝΤΙΓΡΑΦΗ ΣΤΗΝ ΕΠΟΜΕΝΗ
 ITEM_RUN    ΕΚΚΙΝΗΣΗ
 ITEM_DESKTOP ΕΠΙΦΑΝΕΙΑ    F1
 ITEM_LAUNCHER ΠΡΟΓΡΑΜΜΑΤΑ  F2
@@ -79,6 +79,11 @@ ERR_31      ΔΙΑΙΡΕΣΗ ΜΕ ΤΟ ΜΗΔΕΝ
 ERR_32      ΠΟΛΥ ΜΕΓΑΛΟΣ|ΑΡΙΘΜΟΣ
 ERR_33      ΔΕΝ ΥΠΑΡΧΕΙ|ΤΕΤΟΙΟ ΚΕΛΙ
 ERR_34      ΕΝΑ ΚΕΛΙ ΤΟΥ|ΕΧΕΙ ΛΑΘΟΣ
+ERR_35      ΔΕΝ ΥΠΑΡΧΕΙ|ΚΑΡΤΑ M4
+ERR_36      ΠΑΝΩ ΑΠΟ 16K: ΔΕΝ|ΑΝΤΙΓΡΑΦΕΤΑΙ ΕΚΕΙ
+ERR_37      ΕΙΝΑΙ ΗΔΗ|ΣΕ ΑΥΤΗ ΤΗ ΜΟΝΑΔΑ
+ERR_38      Η ΚΑΡΤΑ SD ΔΕΝ|ΔΙΑΜΟΡΦΩΝΕΤΑΙ ΕΔΩ
+ERR_39      ΤΟ M4.SYS ΔΕΝ|ΕΙΝΑΙ ΣΤΟ A:
 RENAME_T    ΜΕΤΟΝΟΜΑΣΙΑ
 INPUT_HINT  RETURN ΕΝΤΑΞΕΙ  ESC ΑΚΥΡΟ
 DT_KEYS     TAB ΜΟΝΑΔΑ ENTER ΑΝΟΙΓΜΑ ^C ΑΝΤΙΓΡ. ^D ΔΙΑΓΡ.
@@ -125,7 +130,8 @@ COL_RED     ΚΟΚΚΙΝΟ
 SET_KEYS    ΠΑΝΩ ΚΑΤΩ ΕΠΙΛΟΓΗ  ΑΡΙΣΤ. ΔΕΞΙΑ ΑΛΛΑΓΗ  ^S
 SET_SAVED   ΑΠΟΘΗΚΕΥΤΗΚΑΝ ΣΤΟ A:SETUP.CFG
 ITEM_ACC    ΩΣ ΑΞΕΣΟΥΑΡ
-ITEM_DRIVE  ΑΛΛΗ ΜΟΝΑΔΑ   TAB
+ITEM_DRIVE  ΕΠΟΜΕΝΗ ΜΟΝΑΔΑ TAB
+ITEM_NEXT_DRIVE ΕΠΟΜΕΝΗ ΜΟΝΑΔΑ
 ITEM_OPEN   ΑΝΟΙΓΜΑ
 ITEM_PROGRAMS ΠΡΟΓΡΑΜΜΑΤΑ  F6
 SW_T        ΠΡΟΓΡΑΜΜΑΤΑ

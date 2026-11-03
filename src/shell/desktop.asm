@@ -3,12 +3,13 @@
 ;
 ; Mode 1. A window shows the files of one drive as icons (the type in
 ; the icon, a play sign beside a .VBN, the name below), four to a row;
-; the drive icons on the right choose which drive. The selected file is
-; dark.
+; the drive icons on the right choose which drive: A:, B: and, with an
+; M4 board, DISK, its SD card, whose folders show as folders (RETURN
+; goes in, ".." up; the title says where). The selected file is dark.
 ;   cursor keys      select (UP/DOWN a row)
-;   TAB              other drive
-;   RETURN/ENTER     file info
-;   ^C copy to the other drive, ^D delete, ^N rename, ^R read again
+;   TAB              the next drive
+;   RETURN/ENTER     open (a folder: go in)
+;   ^C copy to the next drive, ^D delete, ^N rename, ^R read again
 ;   mouse            click a file to select it, again for info; click
 ;                    a drive to open it
 ; The file list is FS_CAT itself, read again on every drive change.
@@ -62,6 +63,11 @@ dt_init:
         ld a,2
         ld (ptr_pen_out),a
         call ptr_clamp
+        ld hl,m4_find               ; an M4 board: a third drive
+        call ext_call
+        sbc a,a
+        inc a
+        ld (dt_m4),a
         ld a,(sys_drive)            ; the file selected in the last view
         ld (dt_drive),a
         call dt_draw_screen
@@ -91,6 +97,11 @@ dt_draw_screen:
         xor a
         call dt_draw_drive
         ld a,1
+        call dt_draw_drive
+        ld a,(dt_m4)
+        or a
+        ret z
+        ld a,2
         ; fall through
 
 ; A = drive: its icon, dark when it is the open one
@@ -139,14 +150,17 @@ dt_draw_drive:
         ld a,(dt_colours + 1)
         ld bc,(dt_colours)
         call ui_colours
+        ld de,dt_line               ; "A:", "B:" or "DISK:"
         ld a,(dt_d)
-        add a,"A"
-        ld (dt_line),a
-        ld a,":"
-        ld (dt_line + 1),a
+        call file_drive_text
         xor a
-        ld (dt_line + 2),a
+        ld (de),a
         ld hl,DT_DRIVE_X + 16
+        ld a,(dt_d)
+        cp 2
+        jr c,.label
+        ld hl,DT_DRIVE_X + 4
+.label:
         ld de,(dt_cy)
         ld a,22
         add a,e
@@ -183,6 +197,35 @@ dt_load:
         ld (dt_free),a
         ld a,(fs_reserved)
         ld (dt_fmt),a
+        ld a,(dt_drive)             ; the SD card: the folder, its last
+        cp 2                        ; 20 characters
+        jr c,.found
+        ld hl,m4_path_e
+        call ext_call
+        ld hl,bank_buf
+        ld bc,0
+.end:
+        ld a,(hl)
+        or a
+        jr z,.cut
+        inc hl
+        inc c
+        jr .end
+.cut:
+        ld a,c
+        sub 20
+        jr c,.short
+        ld c,a
+        ld hl,bank_buf
+        add hl,bc
+        jr .keep
+.short:
+        ld hl,bank_buf
+.keep:
+        ld de,dt_path
+        ld bc,21
+        ldir
+.found:
         call file_find              ; the selected file, if it is here
         jr c,.clamp
         ld (dt_sel),a
@@ -211,19 +254,29 @@ dt_draw_window:
         ld a,UIP_FRAME
         call .box
         call ui_frame
-        ld a,UIP_SEL                ; title: "A: DATA  3 FILES"
-        call .box
+        ld a,UIP_SEL                ; title: "A: DATA  3 FILES",
+        call .box                   ; "DISK:/GAMES/  3 FILES"
         ld a,12
         call ui_rect
         ld de,dt_line
         ld a,(dt_drive)
-        add a,"A"
-        call util_char
-        ld a,":"
-        call util_char
+        call file_drive_text
         ld a,(dt_err)
         or a
         jr nz,.title
+        ld a,(dt_drive)
+        cp 2
+        jr c,.disc
+        ld hl,dt_path
+.path:
+        ld a,(hl)
+        inc hl
+        or a
+        jr z,.count
+        ld (de),a
+        inc de
+        jr .path
+.disc:
         ld a," "
         call util_char
         ld a,(dt_fmt)
@@ -233,6 +286,7 @@ dt_draw_window:
         ld a,MSG_FMT_SYSTEM
 .format:
         call util_msg
+.count:
         ld a," "
         call util_char
         call util_char
@@ -262,6 +316,9 @@ dt_draw_window:
         ld a,MSG_NO_FILES
         jr z,.message
         ld de,dt_line
+        ld a,(dt_drive)             ; (the SD card's free room is more
+        cp 2                        ; than one byte of K says)
+        jr nc,.end_line
         ld a,MSG_FREE
         call util_msg
         ld a," "
@@ -272,6 +329,7 @@ dt_draw_window:
         call util_dec
         ld a,"K"
         call util_char
+.end_line:
         xor a
         ld (de),a
         jr .print
@@ -427,6 +485,22 @@ dt_draw_cell:
         ld bc,dt_line
         call txt_print
         call dt_play
+        ld hl,(dt_ent)              ; a folder: a tab on its page
+        ld de,M4_FOLDER
+        add hl,de
+        ld a,(hl)
+        or a
+        jr z,.named_file
+        ld a,UIP_FRAME
+        ld (ui_fill_pen),a
+        ld hl,(dt_cx)
+        ld de,22
+        add hl,de
+        ld de,(dt_cy)
+        ld bc,12
+        ld a,2
+        call ui_rect
+.named_file:
         ld hl,(dt_ent)              ; name, without the padding, centred
         ld de,dt_line
         ld b,8
@@ -593,15 +667,30 @@ dt_open_drive:
         ld hl,dt_drive
         cp (hl)
         ret z
+        ld b,(hl)
         ld (hl),a
         xor a
         ld (dt_sel),a
-        ld a,(dt_drive)
+        ld a,b                      ; the one it was, then this one
         call dt_draw_drive
         ld a,(dt_drive)
-        xor 1
         call dt_draw_drive
         jp dt_load
+
+; -> A = the drive after dt_drive (A:, B:, DISK with an M4 board)
+dt_next:
+        ld a,(dt_drive)
+        inc a
+        cp 2
+        ret c
+        jr nz,.first
+        ld a,(dt_m4)
+        or a
+        ld a,2
+        ret nz
+.first:
+        xor a
+        ret
 
 ; ---------------------------------------------------------------------
 dt_event:
@@ -636,8 +725,7 @@ dt_event:
         jr z,.move
         cp KEY_TAB
         jr nz,.not_tab
-        ld a,(dt_drive)
-        xor 1
+        call dt_next
         jr dt_open_drive
 .not_tab:
         cp KEY_RETURN
@@ -708,13 +796,25 @@ dt_event:
         or a
         sbc hl,de
         jr c,dt_open_drive_a
+        ld b,2                      ; B:, then DISK
+.next_drive:
+        inc a
         ld de,DT_DRIVE_STEP - DT_DRIVE_H
         sbc hl,de
         ret c
         ld de,DT_DRIVE_H
         sbc hl,de
-        ret nc
-        ld a,1
+        jr c,.on_drive
+        djnz .next_drive
+        ret
+.on_drive:
+        cp 2
+        jr c,dt_open_drive_a
+        ld c,a
+        ld a,(dt_m4)
+        or a
+        ret z
+        ld a,c
         jr dt_open_drive_a
 .window:
         ld hl,(ev_cur + 4)          ; a cell?
@@ -802,6 +902,7 @@ dt_selected:
         add hl,hl
         ld de,FS_CAT
         add hl,de
+        ld (dt_ent_sel),hl
         ld de,file_name
         ld bc,11
         ldir
@@ -817,12 +918,33 @@ dt_info:
 dt_run:
         call dt_selected
         ret c
-        jp file_open
+        call dt_folder
+        ld a,(dt_drive)
+        jp z,file_open
+        ld hl,m4_cd_e               ; a folder of the SD card: into it
+        call ext_call
+        jp c,sys_error
+        xor a
+        ld (dt_sel),a
+        jp dt_load
 
-; the target is the other drive, which is not on the screen
+; -> NZ if the selected file is a folder (an entry of the SD card)
+dt_folder:
+        ld hl,(dt_ent_sel)
+        ld de,M4_FOLDER
+        add hl,de
+        ld a,(hl)
+        or a
+        ret
+
+; the target is the next drive, which is not on the screen
 dt_copy:
         call dt_selected
         ret c
+        push af
+        call dt_next
+        ld (fi_target),a
+        pop af
         jp file_copy
 
 dt_delete:
@@ -857,6 +979,9 @@ dt_menu_file:
 
 ; ---- state ----------------------------------------------------------
 dt_drive:       db 0                ; the open drive
+dt_m4:          db 0                ; 1: an M4 board, DISK its card
+dt_path:        ds 21               ; the card's folder, for the title
+dt_ent_sel:     dw 0
 dt_count:       db 0
 dt_sel:         db 0
 dt_top:         db 0                ; first row on the screen

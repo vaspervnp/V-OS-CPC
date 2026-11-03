@@ -551,3 +551,63 @@ u8_wr:          dw 0
 u8_rem:         dw 0
 u8_cfg:         db 0
 u8_buf:         ds U8_PIECE
+
+; ---------------------------------------------------------------------
+; fs_rename (kernel/files_ext.asm: fx_rename): file_name to fi_new on
+; the disc in the drive selected, in kernel/fs.asm's directory cache
+; (the M4's card: m4_rename, kernel/m4.asm)
+; ---------------------------------------------------------------------
+fs_rename:
+        ld hl,fi_new                ; the new name must be free
+        call fs_set_name
+        call fs_mount
+        ret c
+        xor a
+        call fs_find
+        ld a,FS_ERR_EXISTS
+        ccf
+        ret c
+        ld hl,file_name
+        call fs_set_name
+        xor a
+        ld (fs_count),a
+.entry:
+        ld (fs_e),a
+        call fs_entry
+        call fs_match
+        jr nz,.next
+        inc hl                      ; every extent gets the new name
+        ex de,hl
+        ld hl,fi_new
+        ld bc,11
+        ldir
+        ld hl,fs_count
+        inc (hl)
+.next:
+        ld a,(fs_e)
+        inc a
+        cp FS_ENTRIES
+        jr c,.entry
+        ld a,(fs_count)
+        or a
+        ld a,FS_ERR_NOT_FOUND
+        scf
+        ret z
+        jp fs_write_dir
+
+; fs_format (fx_format): the disc in the drive selected, 40 tracks in
+; DATA format
+fs_format:
+        xor a
+.track:
+        ld (fs_e),a
+        ld d,a
+        ld e,#C1
+        call fdc_format
+        ret c
+        ld a,(fs_e)
+        inc a
+        cp 40
+        jr c,.track
+        ret
+

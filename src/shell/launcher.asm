@@ -1,8 +1,10 @@
 ; =====================================================================
 ; launcher.asm - the Launcher view (B)
 ;
-; Mode 0, 16 colours. The programs on drive A: or B: (.BIN, .VBN and
-; .BAS files, not V-OS's own) as a 3 x 3 grid of coloured tiles, more on the
+; Mode 0, 16 colours. The programs on drive A:, B: or DISK, the M4
+; board's SD card (.BIN, .VBN and .BAS files, not V-OS's own; on DISK
+; its folders too, RETURN goes in, ".." up; no icons there) as a 3 x 3
+; grid of coloured tiles, more on the
 ; next pages. The selected tile is white. A program with an icon
 ; (VOS_ICON in src/api/vos_api.inc) shows it on its tile: the first
 ; time a page is drawn, the first sector of each .BIN and .VBN on it is
@@ -11,7 +13,7 @@
 ; takes it up again.
 ;   cursor keys      move (UP/DOWN a row; past the edge, the next page)
 ;   RETURN/ENTER     start the program (src/api/vos_api.inc)
-;   TAB              the other drive (FILE > OTHER DRIVE); it opens on
+;   TAB              the next drive (FILE > NEXT DRIVE); it opens on
 ;                    the drive of the file selected last (sys_drive)
 ;   ^R read the disc again; mouse: click a tile, again to start it
 ; An overlay (kernel/view.asm).
@@ -44,6 +46,11 @@ ln_init:
         xor a
         ld (ptr_pen_out),a
         call ptr_clamp
+        ld hl,m4_find               ; an M4 board: DISK too
+        call ext_call
+        sbc a,a
+        inc a
+        ld (ln_m4),a
         ld a,(sys_drive)
         ld (ln_drive),a
         call ln_draw_screen
@@ -70,10 +77,20 @@ ln_draw_screen:
         ld de,LN_KEYS_Y
         jp txt_print
 
-; FILE > OTHER DRIVE, TAB
+; FILE > NEXT DRIVE, TAB: A:, B:, DISK (with an M4 board)
 ln_other:
         ld a,(ln_drive)
-        xor 1
+        inc a
+        cp 2
+        jr c,.set
+        jr nz,.first
+        ld a,(ln_m4)
+        or a
+        ld a,2
+        jr nz,.set
+.first:
+        xor a
+.set:
         ld (ln_drive),a
         ; fall through
 
@@ -221,20 +238,24 @@ ln_draw_tiles:
         ld bc,ln_line
         jp txt_print
 
-; "A: " or "B: " -> ln_line, DE after it
+; "A: ", "B: " or "DISK: " -> ln_line, DE after it
 ln_prefix:
         ld de,ln_line
         ld a,(ln_drive)
-        add a,"A"
-        call util_char
-        ld a,":"
-        call util_char
+        call file_drive_text
         ld a," "
         jp util_char
 
 ; HL -> FS_CAT entry -> Z if it is a program: .BIN, .VBN or .BAS, not
-; VOS.BIN
+; VOS.BIN; or a folder of the card
 ln_program:
+        push hl
+        ld de,M4_FOLDER
+        add hl,de
+        ld a,(hl)
+        pop hl
+        dec a
+        ret z
         push hl
         ld de,ln_vos
         ld b,11
@@ -468,6 +489,9 @@ ln_icon_read:
         ld de,(ln_st_ptr)
         ld a,1
         ld (de),a
+        ld a,(ln_drive)             ; not on the card: no disc directory
+        cp 2
+        ret nc
         push hl
         ld de,8
         add hl,de
@@ -700,6 +724,16 @@ ln_run:
         or a
         ret z
         call ln_remember
+        inc hl                      ; a folder of the card: into it
+        inc hl
+        ld a,(hl)
+        or a
+        jr z,.program
+        ld hl,m4_cd_e
+        call ext_call
+        jp c,sys_error
+        jp ln_load
+.program:
         call ln_slot                ; running already: it goes on
         jr nz,.load
         ld (app_wake),a
@@ -798,7 +832,8 @@ ln_bas:         db "BAS"
 
 ; ---- state ----------------------------------------------------------
 ln_files:       db 0
-ln_drive:       db 0                ; 0 A:, 1 B:
+ln_drive:       db 0                ; 0 A:, 1 B:, 2 DISK
+ln_m4:          db 0                ; 1: an M4 board
 ln_err:         db 0
 ln_count:       db 0                ; programs
 ln_sel:         db 0

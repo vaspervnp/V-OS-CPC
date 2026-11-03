@@ -27,13 +27,16 @@
 ; fs_copy       HL = name, B = source drive, C = target drive: the
 ;               whole file, sector by sector, header and all, 16K at
 ;               a time through bank 4; any size
-; fs_rename     HL = name, DE = new name, on the drive selected
+; fs_rename     (kernel/m4.asm) file_name to fi_new, on the drive
+;               selected
 ; fs_exists     HL = name, on the drive selected -> carry if it is not
 ;               there (or the disc cannot be read)
-; fs_format     the drive selected: 40 tracks in DATA format, empty
+; fs_format     (kernel/m4.asm) the drive selected: 40 tracks in DATA
+;               format, empty
 ; fs_delete     HL = name
 ; fs_free_k     -> A = free kilobytes (after a mount)
-; All return carry set and A = FDC_ERR_* or FS_ERR_* on failure.
+; All return carry set and A = FDC_ERR_* or FS_ERR_* on failure. Drive
+; 2 is the M4 board's SD card: fs_m4 sends those calls there.
 ;
 ; The directory is cached in GAP4-GAP6, the sector buffer and the block
 ; map live in GAP3, the block list of a file in GAP2 (see memmap.inc).
@@ -60,7 +63,31 @@ fs_blist        equ GAP2 + 520      ; blocks of the current file, 180
 FS_CAT          equ GAP7
 
 ; ---------------------------------------------------------------------
+; fs_m4 - at the start of the calls above that the M4 board's SD card
+; (drive 2) answers too: there it goes to M4.SYS (kernel/m4.asm: m4_fs,
+; in bank 7, through m4_fs_e) with A, BC and HL in m4_a, m4_bc, m4_hl,
+; DE as it was, and the call's address + 3 in m4_entry; else back, A
+; kept. From the kernel extension (bank 7 home) without ext_call.
+fs_m4:
+        ld (m4_a),a
+        ld a,(fdc_drive)
+        cp 2
+        ld a,(m4_a)
+        ret nz
+        ex (sp),hl
+        ld (m4_entry),hl
+        pop hl
+        ld (m4_hl),hl
+        ld (m4_bc),bc
+        ld hl,m4_fs_e
+        ld a,(ram_home_cfg)
+        cp LANG_BANK_CFG
+        jp nz,ext_call
+        jp (hl)
+
+; ---------------------------------------------------------------------
 fs_mount:
+        call fs_m4
         call fdc_recalibrate
         ret c
         call fdc_read_id
@@ -302,6 +329,7 @@ fs_used:
 
 ; -> A = free blocks (= free kilobytes)
 fs_free_k:
+        call fs_m4
         ld c,0
         ld a,2
 .block:
@@ -437,6 +465,7 @@ fs_set_name:
 ; fs_catalog
 ; ---------------------------------------------------------------------
 fs_catalog:
+        call fs_m4
         call fs_mount
         ret c
         xor a
@@ -485,6 +514,9 @@ fs_catalog:
         inc de
         ld a,(fs_nblocks)
         ld (de),a
+        inc de                      ; not a folder (M4_FOLDER)
+        xor a
+        ld (de),a
         ld hl,fc_count
         inc (hl)
 .next:
@@ -501,6 +533,7 @@ fs_catalog:
 ; fs_load
 ; ---------------------------------------------------------------------
 fs_load:
+        call fs_m4
         ld (fl_ptr),de
         ld a,c
         ld (fl_cfg),a
@@ -706,6 +739,7 @@ fs_header_ok:
 ; fs_delete
 ; ---------------------------------------------------------------------
 fs_delete:
+        call fs_m4
         call fs_set_name
         call fs_mount
         ret c
@@ -722,70 +756,12 @@ fs_delete:
 
 ; ---------------------------------------------------------------------
 fs_exists:
+        call fs_m4
         call fs_set_name
         call fs_mount
         ret c
         xor a
         jp fs_find
-
-fs_format:
-        xor a
-.track:
-        ld (fs_e),a
-        ld d,a
-        ld e,#C1
-        call fdc_format
-        ret c
-        ld a,(fs_e)
-        inc a
-        cp 40
-        jr c,.track
-        ret
-
-; ---------------------------------------------------------------------
-; fs_rename
-; ---------------------------------------------------------------------
-fs_rename:
-        ld (fr_new),de
-        push hl
-        ex de,hl
-        call fs_set_name            ; the new name must be free
-        call fs_mount
-        pop hl
-        ret c
-        push hl
-        xor a
-        call fs_find
-        pop hl
-        ld a,FS_ERR_EXISTS
-        ccf
-        ret c
-        call fs_set_name
-        xor a
-        ld (fs_count),a
-.entry:
-        ld (fs_e),a
-        call fs_entry
-        call fs_match
-        jr nz,.next
-        inc hl                      ; every extent gets the new name
-        ex de,hl
-        ld hl,(fr_new)
-        ld bc,11
-        ldir
-        ld hl,fs_count
-        inc (hl)
-.next:
-        ld a,(fs_e)
-        inc a
-        cp FS_ENTRIES
-        jr c,.entry
-        ld a,(fs_count)
-        or a
-        ld a,FS_ERR_NOT_FOUND
-        scf
-        ret z
-        jp fs_write_dir
 
 ; ---------------------------------------------------------------------
 ; fs_copy
@@ -950,6 +926,7 @@ fs_unlink:
 ; fs_save
 ; ---------------------------------------------------------------------
 fs_save:
+        call fs_m4
         ld (fl_ptr),de
         ld (fl_cfg),a
         ld (fs_length),bc
@@ -1230,7 +1207,6 @@ fs_first_id:    db #C1
 fs_reserved:    db 0
 fs_blocks:      db 180
 fs_name:        ds 11
-fr_new:         dw 0
 fc_drives:      dw 0                ; target, source
 fc_records:     dw 0
 fc_nblocks:     db 0

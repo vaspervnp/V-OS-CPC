@@ -1,9 +1,12 @@
 ; =====================================================================
 ; commander.asm - the Commander view (C): two file panels, A: and B:
 ;
-; Mode 1. The left panel lists drive A:, the right one drive B:. Each
-; shows the format and file count in its title, the files, and the free
-; space. The active panel has a dark title and selection.
+; Mode 1. The left panel lists drive A:, the right one drive B:; ^G (or
+; a click on its title) gives a panel the next drive, DISK too with an
+; M4 board (its SD card: its folders, RETURN goes in, ".." up). Each
+; shows the format (the card: the folder) and file count in its title,
+; the files, and the free space. The active panel has a dark title and
+; selection.
 ;   UP/DOWN          select (SHIFT: a page)
 ;   TAB, LEFT/RIGHT  other panel
 ;   RETURN/ENTER     file info: size, type, load address, first bytes
@@ -40,7 +43,17 @@ cm_init:
         call ui_set_widgets
         xor a
         ld (ptr_keys_on),a
-        ld a,(sys_drive)            ; the file selected in the last view
+        ld hl,m4_find               ; an M4 board: DISK too
+        call ext_call
+        sbc a,a
+        inc a
+        ld (cm_m4),a
+        ld a,(sys_drive)            ; the file selected in the last view:
+        cp 2                        ; on DISK, the right panel shows it
+        jr c,.panel
+        ld (cm_drv + 1),a
+        ld a,1
+.panel:
         ld (cm_active),a
         ld a,1
         call ui_set_mode
@@ -169,7 +182,10 @@ cm_event:
         ld de,CM_ROWS_Y
         or a
         sbc hl,de
-        ret c
+        jr nc,.rows
+        ld a,(cm_active)            ; the title: the next drive
+        jp cm_next_drive_a
+.rows:
         ld a,h
         or a
         ret nz
@@ -218,6 +234,8 @@ cm_command:
         jp z,cm_rename
         cp CMD_FORMAT
         jp z,cm_format
+        cp CMD_DRIVE
+        jp z,cm_next_drive
         cp CMD_RUN
         jp z,cm_run
         jp view_command
@@ -250,15 +268,75 @@ cm_at:
         pop af
         ret
 
-; the current panel's drive for the disc calls
+; the current panel's drive for the disc calls -> A = it
 cm_drive:
+        ld hl,cm_drv
+        call cm_at
+        ld a,(hl)
+        push af
+        call fdc_select
+        pop af
+        ret
+
+; the active panel's next drive: A:, B:, DISK (with an M4 board)
+cm_next_drive:
+        ld a,(cm_active)
+cm_next_drive_a:                    ; A = panel
+        call cm_set_p
+        ld hl,cm_drv
+        call cm_at
+        ld a,(hl)
+        inc a
+        cp 2
+        jr c,.set
+        jr nz,.first
+        ld a,(cm_m4)
+        or a
+        ld a,2
+        jr nz,.set
+.first:
+        xor a
+.set:
+        ld (hl),a
+        xor a
+        ld hl,cm_sel
+        call cm_at
+        ld (hl),a
         ld a,(cm_p)
-        jp fdc_select
+        jp cm_load
+
+; the card's folder -> cm_folder: its last 9 characters (m4_path_e)
+cm_path:
+        ld hl,m4_path_e
+        call ext_call
+        ld hl,bank_buf
+        ld bc,0
+.end:
+        ld a,(hl)
+        or a
+        jr z,.cut
+        inc hl
+        inc c
+        jr .end
+.cut:
+        ld hl,bank_buf
+        ld a,c
+        sub 9
+        jr c,.keep
+        ld c,a
+        add hl,bc
+.keep:
+        ld de,cm_folder
+        ld bc,10
+        ldir
+        jp cm_drive
 
 ; A = panel: read its drive's catalog into bank 5, then draw it
 cm_load:
         call cm_set_p
         call cm_drive
+        cp 2                        ; the card: its folder for the title
+        call nc,cm_path
         call fs_catalog
         jr c,.failed
         ld (cm_n),a
@@ -365,6 +443,11 @@ cm_draw_panel:
         or a
         ret nz
         ld de,cm_line
+        ld hl,cm_drv                ; (the card's free room is more than
+        call cm_at                  ; one byte of K says)
+        ld a,(hl)
+        cp 2
+        jr nc,.end_line
         ld a,MSG_FREE
         call util_msg
         ld a," "
@@ -376,27 +459,43 @@ cm_draw_panel:
         call util_dec
         ld a,"K"
         call util_char
+.end_line:
         xor a
         ld (de),a
         ld a,UIP_TEXT
         ld c,UIP_BAR
         call ui_colours
         ld de,CM_FREE_Y
-        jr cm_print_line
+        jp cm_print_line
 
-; "A: DATA  2 FILES", dark when the panel is active
+; "A: DATA  2 FILES", "DISK:/APPS/  2 FILES", dark when the panel is
+; active
 cm_draw_title:
         ld de,cm_line
-        ld a,(cm_p)
-        add a,"A"
-        call util_char
-        ld a,":"
-        call util_char
+        ld hl,cm_drv
+        call cm_at
+        ld a,(hl)
+        push af
+        call file_drive_text
         ld hl,cm_err
         call cm_at
         ld a,(hl)
+        pop bc
         or a
         jr nz,.text
+        ld a,b
+        cp 2
+        jr c,.disc
+        ld hl,cm_folder
+.path:
+        ld a,(hl)
+        inc hl
+        or a
+        jr z,.count
+        ld (de),a
+        inc de
+        jr .path
+.disc:
         ld a," "
         call util_char
         ld hl,cm_fmt
@@ -408,6 +507,7 @@ cm_draw_title:
         ld a,MSG_FMT_SYSTEM
 .format:
         call util_msg
+.count:
         ld a," "
         call util_char
         call util_char
@@ -542,6 +642,16 @@ cm_draw_row:
         ld hl,cm_ent
         ld de,cm_line
         call util_cat_row
+        ld a,(cm_ent + M4_FOLDER)   ; a folder: no dot, "DIR" for its
+        or a                        ; size
+        jr z,.print
+        ld a," "
+        ld (cm_line + 8),a
+        ld hl,cm_line + 12
+        ld de,cm_dir
+        ex de,hl
+        ld bc,6
+        ldir
 .print:
         ld de,(cm_ry)
         inc de
@@ -673,7 +783,9 @@ cm_selected:
         ld de,file_name
         ld bc,11
         ldir
-        ld a,(cm_p)
+        ld hl,cm_drv
+        call cm_at
+        ld a,(hl)
         or a
         ret
 
@@ -701,11 +813,35 @@ cm_info:
 cm_run:
         call cm_selected
         ret c
-        jp file_open
+        ld b,a
+        ld a,(cm_ent + M4_FOLDER)
+        or a
+        ld a,b
+        jp z,file_open
+        ld hl,m4_cd_e               ; a folder of the card: into it, and
+        call ext_call               ; both panels read again (both may
+        jp c,sys_error              ; show the card)
+        xor a
+        ld hl,cm_sel
+        call cm_at
+        ld (hl),a
+        jp cm_refresh
 
+; the target is the other panel's drive
 cm_copy:
         call cm_selected
         ret c
+        push af
+        ld a,(cm_active)
+        xor 1
+        ld (cm_p),a
+        ld hl,cm_drv
+        call cm_at
+        ld a,(hl)
+        ld (fi_target),a
+        ld a,(cm_active)
+        ld (cm_p),a
+        pop af
         call file_copy
         ld a,(cm_active)            ; the target changed, even on failure
         xor 1
@@ -730,6 +866,8 @@ cm_rename:
 ; format the active panel's drive
 cm_format:
         ld a,(cm_active)
+        call cm_set_p
+        call cm_drive
         call file_format
         ret c
         ld a,(cm_active)
@@ -740,7 +878,7 @@ cm_bar:
         db 3
         dw cm_menu_file, menu_view, menu_help
 cm_menu_file:
-        db MSG_MENU_FILE, 10
+        db MSG_MENU_FILE, 11
         db MSG_ITEM_OPEN, CMD_RUN, 0, 0
         db MSG_ITEM_INFO, CMD_INFO, "I", 0
         db MSG_ITEM_COPY, CMD_COPY, "C", 0
@@ -748,12 +886,17 @@ cm_menu_file:
         db MSG_ITEM_RENAME, CMD_RENAME, "N", 0
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_REFRESH, CMD_REFRESH, "R", 0
+        db MSG_ITEM_NEXT_DRIVE, CMD_DRIVE, "G", 0
         db MSG_ITEM_FORMAT, CMD_FORMAT, 0, 0
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_QUIT, CMD_QUIT, "Q", 0
 
 ; ---- state ----------------------------------------------------------
 cm_active:      db 0                ; panel with the selection
+cm_drv:         db 0, 1             ; per panel: its drive (2: DISK)
+cm_m4:          db 0                ; 1: an M4 board
+cm_folder:      ds 10               ; the card's folder: its last 9
+cm_dir:         db "  DIR", 0
 cm_p:           db 0                ; panel the routines work on
 cm_px:          dw 0
 cm_count:       ds 2                ; per panel (index cm_p)

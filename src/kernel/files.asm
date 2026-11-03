@@ -45,6 +45,25 @@ file_ext:
         ld (fi_drive),a
         jp ext_call
 
+; A = drive -> at DE: "A:", "B:" or "DISK:"
+file_drive_text:
+        cp 2
+        jr nc,.disk
+        add a,"A"
+        call util_char
+        ld a,":"
+        jp util_char
+.disk:
+        ld hl,m4_disk
+.char:
+        ld a,(hl)
+        inc hl
+        call util_char
+        cp ":"
+        jr nz,.char
+        ret
+m4_disk:        db "DISK:"
+
 ; DE = dlg_custom, A = MSG_*: "TEXT|NAME.EXT?", YES / NO -> carry if NO
 file_question:
         call util_msg

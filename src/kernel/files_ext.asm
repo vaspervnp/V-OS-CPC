@@ -92,11 +92,14 @@ fx_info:
         ld hl,dlg_file
         jp dialog_run
 
-; the target is the other drive
+; to fi_target, which the view sets
 fx_copy:
         ld a,(fi_drive)
-        xor 1
-        ld (fi_target),a
+        ld hl,fi_target
+        cp (hl)
+        ld a,M4_ERR_SAME
+        jp z,sys_error_nc           ; the drive it is on
+        ld a,(hl)
         call fdc_select
         ld hl,file_name
         call fs_exists
@@ -112,8 +115,15 @@ fx_copy:
         ld b,a
         ld a,(fi_target)
         ld c,a
+        or b
+        and 2
+        jr nz,.m4                   ; to or from the M4's card: M4.SYS
         ld hl,file_name
         call fs_copy
+        jr .copied
+.m4:
+        call m4_copy_e
+.copied:
         push af
         call ui_restore
         pop af
@@ -122,10 +132,7 @@ fx_copy:
         ld a,MSG_COPIED
         call file_label
         ld a,(fi_target)
-        add a,"A"
-        call util_char
-        ld a,":"
-        call util_char
+        call file_drive_text
         call file_newline
         call file_name_text
         xor a
@@ -162,9 +169,15 @@ fx_rename:
         jp c,sys_error_nc
         ld a,(fi_drive)
         call fdc_select
-        ld hl,file_name
-        ld de,fi_new
-        call fs_rename
+        ld a,(fi_drive)
+        cp 2
+        jr z,.m4
+        ld hl,fs_rename             ; a disc: kernel/ext2.asm
+        call ext2_call
+        jr .done
+.m4:
+        call m4_rename_e            ; the M4's card: M4.SYS
+.done:
         jp c,sys_error_nc
         ret
 
@@ -173,10 +186,7 @@ fx_format:
         ld a,MSG_FORMAT_Q
         call file_label
         ld a,(fi_drive)
-        add a,"A"
-        call util_char
-        ld a,":"
-        call util_char
+        call file_drive_text
         ld a,MSG_QMARK
         call util_msg
         call file_newline
@@ -187,7 +197,12 @@ fx_format:
         call ui_busy
         ld a,(fi_drive)
         call fdc_select
-        call fs_format
+        ld a,(fi_drive)
+        cp 2
+        ld a,M4_ERR_FORMAT          ; not the M4's card
+        scf
+        ld hl,fs_format             ; (kernel/ext2.asm)
+        call nz,ext2_call
         push af
         call ui_restore
         pop af
@@ -521,3 +536,57 @@ m4_find:                            ; (VX_M4, kernel/api.asm)
         ret
 
 m4_name:        db "M4 BOAR", "D" + #80
+
+; ---------------------------------------------------------------------
+; M4.SYS (kernel/m4.asm), in this bank at M4_ADDR: its jumps, loaded
+; from drive A: the first time -> carry, A = error (M4_ERR_SYS: it is
+; not there). The views reach m4_cd_e and m4_path_e with ext_call.
+; ---------------------------------------------------------------------
+m4_fs_e:                            ; (kernel/fs.asm: fs_m4)
+        ld hl,M4_ADDR
+        jr m4_go_e
+m4_copy_e:
+        ld hl,M4_ADDR + 3
+        jr m4_go_e
+m4_rename_e:
+        ld hl,M4_ADDR + 6
+        jr m4_go_e
+m4_cd_e:
+        ld hl,M4_ADDR + 9
+        jr m4_go_e
+m4_path_e:
+        ld hl,M4_ADDR + 12
+m4_go_e:
+        ld a,(m4_sys)
+        or a
+        jr nz,.go
+        push hl
+        push de
+        ld a,(fdc_drive)
+        push af
+        xor a
+        call fdc_select
+        ld hl,m4_sys_file
+        ld de,M4_ADDR
+        ld c,LANG_BANK_CFG
+        call fs_load
+        pop hl
+        push af
+        ld a,h                      ; the drive it was
+        call fdc_select
+        pop af
+        pop de
+        pop hl
+        ld a,M4_ERR_SYS
+        ret c
+        ld a,(M4_ADDR + 15)
+        cp "M"
+        scf
+        ld a,M4_ERR_SYS
+        ret nz
+        ld (m4_sys),a
+.go:
+        jp (hl)
+m4_sys:         db 0                ; 1: M4.SYS is there
+m4_sys_file:    db "M4      SYS"
+

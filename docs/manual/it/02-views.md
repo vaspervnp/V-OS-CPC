@@ -24,15 +24,15 @@ Modo 1. Una finestra FILE mostra i file di un'unità come icone, quattro per rig
 | Tasto | Cosa fa |
 |---|---|
 | frecce | scelgono un file (↑/↓ una riga) |
-| TAB | l'altra unità |
+| TAB | l'unità seguente: A:, B:, DISK (con una scheda M4) |
 | RETURN, ENTER | apri: un programma si avvia, un file di un tipo noto si apre nel suo programma, gli altri mostrano le loro informazioni |
-| ^C | copia sull'altra unità |
+| ^C | copia sull'unità seguente (da DISK: su A:) |
 | ^D | elimina (chiede prima) |
 | ^N | rinomina |
 | ^R | rilegge i dischi |
 | mouse | clic su un file: selezione, di nuovo: apertura. Clic su un'unità: la apre |
 
-- **Menu FILE:** APRI, INFO SUL FILE (^I), COPIA SULL'ALTRA UNITÀ, ELIMINA, RINOMINA, RILEGGI I DISCHI, ESCI IN BASIC.
+- **Menu FILE:** APRI, INFO SUL FILE (^I), COPIA SULL'UNITÀ SEGUENTE, ELIMINA, RINOMINA, RILEGGI I DISCHI, ESCI IN BASIC.
 - **La finestra FILE** si può trascinare per il suo titolo e resta lì, anche quando cambi vista.
 - **Apertura per tipo** (anche nel Commander): i `.TXT` si aprono in NOTEPAD, i `.MD` in MARKDOWN, i `.PIC` e `.LYR` in PAINT, i `.VDB` in DATABASE, i `.VSH` in SHEET, i `.MUS` in MUSIC, che comincia a suonarli. Il programma si cerca sull'unità del file, poi su A:, poi su B:. Se non si trova, appare "NESSUN PROGRAMMA PER QUESTO FILE". Se il programma ha modifiche non salvate, chiede prima.
 
@@ -46,10 +46,10 @@ Modo 0, 16 colori. Mostra solo i programmi di un'unità (`.BIN`, `.VBN`, `.BAS`)
 | RETURN, ENTER | avvia il programma. Se è già in esecuzione, riprende da dove era |
 | ^A | lo carica come accessorio di scrivania (COME ACCESSORIO). Poi F5 lo apre |
 | ^R | rilegge il dischetto |
-| TAB | l'altra unità (ALTRA UNITÀ). Un programma avviato da B: torna a B: |
+| TAB | l'unità seguente (UNITÀ SEGUENTE): A:, B:, DISK. Un programma avviato da B: torna a B: |
 | mouse | clic: selezione, di nuovo: avvio |
 
-**Menu FILE:** AVVIA, COME ACCESSORIO, ALTRA UNITÀ, RILEGGI I DISCHI, ESCI IN BASIC.
+**Menu FILE:** AVVIA, COME ACCESSORIO, UNITÀ SEGUENTE, RILEGGI I DISCHI, ESCI IN BASIC.
 
 ## Commander, F3
 
@@ -64,11 +64,21 @@ Modo 1, due pannelli con elenchi di file: A: a sinistra, B: a destra. Ogni panne
 | ^D | elimina |
 | ^N | rinomina |
 | ^R | rilegge entrambi i dischi |
+| ^G | l'unità seguente per il pannello attivo: A:, B:, DISK (anche con un clic sul suo titolo) |
 | mouse | clic: selezione, di nuovo: apertura |
 
-**Menu FILE:** APRI, INFO SUL FILE (^I), COPIA DI FRONTE, ELIMINA, RINOMINA, RILEGGI I DISCHI, FORMATTA IL DISCO (DATA), ESCI IN BASIC.
+**Menu FILE:** APRI, INFO SUL FILE (^I), COPIA DI FRONTE, ELIMINA, RINOMINA, RILEGGI I DISCHI, UNITÀ SEGUENTE (^G), FORMATTA IL DISCO (DATA), ESCI IN BASIC.
 
 > FORMATTA IL DISCO cancella tutti i file sul dischetto del pannello attivo. Chiede prima.
+
+## DISK: la scheda SD della M4
+
+Con una scheda M4, la Scrivania ha una terza icona di unità, DISK, sotto A: e B:, e TAB passa da A: a B: e a DISK. Ci arrivano anche il Launcher e i pannelli del Commander (^G). Il titolo mostra la cartella in cui sei, ad es. `DISK:/GAMES/`.
+
+- **Le cartelle** appaiono come cartelle (un'icona con linguetta, o DIR nel Commander). RETURN su una ci entra, e `..`, la prima voce, risale. Nel Launcher ci sono anche loro, per arrivare ai programmi che contengono.
+- **Tutto come su un dischetto:** i programmi si avviano da lì, i file si aprono nei loro programmi, e ^C, ^D e ^N copiano, eliminano e rinominano. Le copie tra DISK e un dischetto arrivano fino a 16K. Cartelle e file hanno nomi come sul CPC (8.3: `NOME.EXT`); i nomi più lunghi non appaiono.
+- **M4.SYS** (su `vos.dsk`) viene caricato da A: la prima volta che si usa DISK.
+- **Non ancora:** APRI e SALVA dei programmi (NOTEPAD, PAINT…) vedono ancora solo A: e B:. DATABASE funziona solo sui dischetti, e la scheda SD non si formatta da V-OS. V-OS stesso parte ancora da un dischetto in A: (scrivi `|DISC` prima di `RUN"VOS"`: con una scheda M4, il CPC parte sulla scheda SD).
 
 ## Impostazioni, F4
 

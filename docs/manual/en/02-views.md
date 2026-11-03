@@ -24,15 +24,15 @@ Mode 1. A FILES window shows the files of a drive as icons, four in each row. Th
 | Key | What it does |
 |---|---|
 | arrows | choose a file (↑/↓ one row) |
-| TAB | the other drive |
+| TAB | the next drive: A:, B:, DISK (with an M4 board) |
 | RETURN, ENTER | open: a program runs, a file of a known type opens in its program, others show their info |
-| ^C | copy to the other drive |
+| ^C | copy to the next drive (from DISK: to A:) |
 | ^D | delete (asks first) |
 | ^N | rename |
 | ^R | read the discs again |
 | mouse | click on a file: select, again: open. Click on a drive: opens it |
 
-- **FILE menu:** OPEN, FILE INFO (^I), COPY TO OTHER DRIVE, DELETE, RENAME, READ DISCS AGAIN, EXIT TO BASIC.
+- **FILE menu:** OPEN, FILE INFO (^I), COPY TO NEXT DRIVE, DELETE, RENAME, READ DISCS AGAIN, EXIT TO BASIC.
 - **The FILES window** can be dragged by its title and stays there, even when you switch view.
 - **Opening by type** (also in the Commander): `.TXT` files open in NOTEPAD, `.MD` in MARKDOWN, `.PIC` and `.LYR` in PAINT, `.VDB` in DATABASE, `.VSH` in SHEET, `.MUS` in MUSIC, which starts playing them. The program is looked for on the file's drive, then on A:, then on B:. If it is not found, "NO PROGRAM FOR THIS FILE" is shown. If the program has unsaved changes, it asks first.
 
@@ -46,10 +46,10 @@ Mode 0, 16 colors. Shows only the programs of one drive (`.BIN`, `.VBN`, `.BAS`)
 | RETURN, ENTER | runs the program. If it is already running, it resumes where it was |
 | ^A | loads it as the desk accessory (AS ACCESSORY). F5 then opens it |
 | ^R | read the disc again |
-| TAB | the other drive (OTHER DRIVE). A program started from B: comes back to B: |
+| TAB | the next drive (NEXT DRIVE): A:, B:, DISK. A program started from B: comes back to B: |
 | mouse | click: select, again: run |
 
-**FILE menu:** RUN, AS ACCESSORY, OTHER DRIVE, READ DISCS AGAIN, EXIT TO BASIC.
+**FILE menu:** RUN, AS ACCESSORY, NEXT DRIVE, READ DISCS AGAIN, EXIT TO BASIC.
 
 ## Commander, F3
 
@@ -64,11 +64,21 @@ Mode 1, two panels with file lists: A: on the left, B: on the right. Each panel 
 | ^D | delete |
 | ^N | rename |
 | ^R | read both discs again |
+| ^G | the next drive for the active panel: A:, B:, DISK (also a click on its title) |
 | mouse | click: select, again: open |
 
-**FILE menu:** OPEN, FILE INFO (^I), COPY TO OTHER PANEL, DELETE, RENAME, READ DISCS AGAIN, FORMAT DISC (DATA), EXIT TO BASIC.
+**FILE menu:** OPEN, FILE INFO (^I), COPY TO OTHER PANEL, DELETE, RENAME, READ DISCS AGAIN, NEXT DRIVE (^G), FORMAT DISC (DATA), EXIT TO BASIC.
 
 > FORMAT erases all the files on the disc of the active panel. It asks first.
+
+## DISK: the M4 board's SD card
+
+With an M4 board, the Desktop has a third drive icon, DISK, under A: and B:, and TAB goes A: → B: → DISK. The Launcher and the Commander's panels (^G) reach it too. The title shows the folder you are in, e.g. `DISK:/GAMES/`.
+
+- **Folders** show as folders (an icon with a tab, or DIR in the Commander). RETURN on one goes into it, and `..`, the first entry, goes back up. In the Launcher, folders are there too, so that you can reach the programs inside them.
+- **Everything as on a disc:** programs run from it, files open in their programs, and ^C, ^D and ^N copy, delete and rename. Copies between DISK and a disc go up to 16K. Folders and files are named as on the CPC (8.3: `NAME.EXT`); names that are longer do not show.
+- **M4.SYS** (on `vos.dsk`) is loaded from A: the first time DISK is used.
+- **Not yet:** the programs' OPEN and SAVE (NOTEPAD, PAINT…) still see only A: and B:. DATABASE works only on discs, and the SD card is not formatted from V-OS. V-OS itself still starts from a disc in A: (type `|DISC` before `RUN"VOS"`: with an M4 board, the CPC starts on the SD card).
 
 ## Setup, F4
 

@@ -147,7 +147,7 @@ command: ...
 | `VOS_INPUT` | A = title, HL → text, C = maximum → carry if cancelled | text input (needs C + 2 bytes) |
 | `VOS_SET_WIDGETS`, `VOS_DRAW_WIDGETS` | HL → buttons | |
 | `VOS_MENU_VIEW`, `VOS_MENU_HELP` | → HL | the shared menus |
-| `VOS_CATALOG` | A = drive → A = files, HL → list | 16 bytes each: 11 the name, at +12 the size in K. With A = drive + `VOS_CAT_EXT` and HL → `"EXT"`, only the files with that extension |
+| `VOS_CATALOG` | A = drive → A = files, HL → list | 16 bytes each: 11 the name, at +12 the size in K, at +13 1 for a folder (drive 2). With A = drive + `VOS_CAT_EXT` and HL → `"EXT"`, only the files with that extension |
 | `VOS_FILE_PICK` | A = title → A = file, carry if cancelled | picker dialog, after `VOS_CATALOG` |
 | `VOS_LOAD` | A = drive, HL → name, DE = where → BC = length | |
 | `VOS_SAVE` | A = drive, HL → name, DE = from, BC = length | binary file, replacing the old one. With A + `VOS_LOAD_IX` (#40, version 20) its header says it loads at IX, not at DE (a `.SCR`: IX = #C000) |
@@ -165,6 +165,8 @@ command: ...
 | `VOS_DRAG` | HL = x, DE = y, BC = w, A = h → carry: new HL, DE | dragging a window by its title |
 | `VOS_FIT` | same → HL, DE | brings a window inside the screen |
 | `VOS_EXT` | A = a `VX_*` call, BC, DE, HL as it wants → A, HL, C, DE, carry | the calls after the table (version 15), below |
+
+**Drives:** 0 = A:, 1 = B:, 2 = DISK, the SD card of an M4 board (version 28), in the folder the Desktop or the Commander last went into. File calls and `VX_FREE` work there as on a disc (8.3 names; without an M4 board: carry, A = 35). Databases are only on discs.
 
 **The `VOS_EXT` calls:** `VX_VERSION` → A = API, HL = V-OS version (BCD). `VX_FREE` C = drive → A = free K. Unknown: carry `VX_CLIP_PUT` HL = text, BC = bytes → the clipboard (up to 1K). `VX_CLIP_GET` DE = where, BC = room → HL = size (version 16). `VX_M4` HL → a command for the M4 board (db size, dw command, data), DE → the response, BC = bytes; carry: no M4 board (version 17). `VX_MEM` → HL = the RAM in K, DE = the K free for programs (version 18). `VX_BEHIND` DE → db drive, 11-byte name of a file: its program (by type) starts behind this one, with `init` A = 3 and the file in `VOS_OPEN` (version 19; MUSIC knows it). `VX_DATA` → A = 1 if the data bank is the program's own (memory expansion), 0 if it is the shared bank 4 (version 21; NOTEPAD keeps text up to 16K this way). `VX_DB` C = a `DB_*` call, DE, HL → a database (version 22, below). `VX_UTF8` HL → text, BC = bytes, E = 0 in the program's memory or `VOS_DATA` in its data bank: if it is UTF-8 (from a PC or the web), it becomes the V-OS character set there → BC = bytes now, A = 1; A = 0: it was not UTF-8 and stays as it was (version 23; NOTEPAD and READER do this). `VX_CALC` C = a `CALC_*` call, DE → a block, HL → text → formulas and numbers (version 24, below). `VX_LANG` → HL = the code of the language V-OS shows (`"EN"`, `"EL"`, `"FR"`…; L the first letter) (version 26; VBRUN shows the translations of Studio's programs this way). `VX_IRQ` HL = a routine of the program → the kernel calls it once a frame from the interrupt, in front or behind, with its bank there and interrupts off; 0 stops it, and so does the program's end; carry: not for an accessory or a program alone in bank 5 (version 27; MUSIC plays its songs this way, so they do not stop while another program loads or draws). It must be short, keep IY, EXX and AF', write only its own memory and the AY, and call nothing of V-OS.
 

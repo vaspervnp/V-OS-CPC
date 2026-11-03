@@ -25,7 +25,7 @@
 
         IFDEF CALC_HARNESS
         include "api/vos_api.inc"
-CALC_ADDR       equ #4B80
+CALC_ADDR       equ #4D80
         org CALC_ADDR
         ENDIF
 

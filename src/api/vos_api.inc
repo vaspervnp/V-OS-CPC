@@ -66,6 +66,12 @@
 ; keeps interrupts off (16 ms a sector), so it waits then. MUSIC plays
 ; its songs this way (myapps/music, irq_play).
 ;
+; Drives (version 28): 0 A:, 1 B:, 2 DISK, the SD card of an M4 board
+; (VOS_CATALOG, VOS_LOAD, VOS_SAVE, VOS_DELETE, VX_FREE), in its folder
+; now: the Desktop's and Commander's RETURN on a folder goes into it.
+; Its catalog has the folders too, byte 13 of their entries 1 (VOS_CAT_EXT
+; leaves them out). Names are 8.3. Without an M4 board: carry, A = 35.
+;
 ; Windows that move (version 10): on a VE_PTR_DOWN, VOS_DRAG with the
 ; window (HL = x, DE = y, BC = width, A = height) takes it, if the
 ; click is on its top 10 rows: until the button goes up, a dashed
@@ -94,7 +100,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 27              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 28              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -108,7 +114,8 @@ VOS_API_VERSION equ 27              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 20: VOS_LOAD_IX, 21: VX_DATA,
                                     ; 22: VX_DB, databases, 23: VX_UTF8,
                                     ; 24: VX_CALC, formulas, 25: mode 2,
-                                    ; 26: VX_LANG, 27: VX_IRQ
+                                    ; 26: VX_LANG, 27: VX_IRQ,
+                                    ; 28: drive 2, the M4's SD card
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE

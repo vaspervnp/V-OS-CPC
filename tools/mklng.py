@@ -47,7 +47,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import voscs  # noqa: E402,F401  (registers the codec "vos")
 
-MAX_PACK = 7168                     # LANG_MAX in src/include/memmap.inc
+MAX_PACK = 6144                     # LANG_MAX in src/include/memmap.inc
 DEAD_FIRST = 1
 DEAD_LAST = 7
 
@@ -318,7 +318,7 @@ def asm_bytes(data, per_line=16):
     return out
 
 
-MAX_ENGLISH = 3072                  # EN_MSG_ADDR .. EXT_ADDR, memmap.inc
+MAX_ENGLISH = 2560                  # EN_MSG_ADDR .. EXT_ADDR, memmap.inc
 
 
 def build_kernel(src, outdir, msg_file):

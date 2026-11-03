@@ -322,6 +322,73 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 34
+; make test-m4 (-DTEST_SCRIPT=34, in the 1984 emulator with an M4 board
+; whose SD card holds HELLO.TXT and APPS/NOTEPAD.BIN). Expected:
+;   frame  300, 350 TAB x2   -> the Desktop on DISK: "DISK:/", HELLO.TXT
+;                               (selected) and APPS (a folder)
+;   frame  500  CONTROL+C    -> HELLO.TXT copied to A: (the next drive):
+;                               COPIED TO A:
+;   frame  700  RETURN       -> the dialog closed
+;   frame  800  RIGHT, 850 RETURN -> into APPS: "DISK:/APPS/", .. and
+;                               NOTEPAD.BIN
+;   frame 1000  RIGHT, 1050 RETURN -> NOTEPAD runs, from the SD card
+;   frame 1300  CONTROL+Q    -> the Desktop again, in APPS, NOTEPAD
+;                               selected
+;   frame 1450  LEFT, 1500 RETURN on .. -> DISK:/ again
+;   frame 1700  RIGHT, 1750 RETURN -> APPS again
+;   frame 1900, 2000, 2100 TAB -> A: (HELLO.TXT on it), B:, DISK:/APPS
+;   frame 2200  RIGHT, 2250 RETURN -> NOTEPAD again
+test_keys:
+        dw  300 : db   4, 8, %00010000   ; TAB
+        dw  350 : db   4, 8, %00010000   ; TAB
+        dw  495 : db  15, 2, %10000000   ; CONTROL
+        dw  500 : db   4, 7, %01000000   ; C
+        dw  700 : db   4, 2, %00000100   ; RETURN
+        dw  800 : db   4, 0, %00000010   ; RIGHT
+        dw  850 : db   4, 2, %00000100   ; RETURN
+        dw 1000 : db   4, 0, %00000010   ; RIGHT
+        dw 1050 : db   4, 2, %00000100   ; RETURN
+        dw 1295 : db  15, 2, %10000000   ; CONTROL
+        dw 1300 : db   4, 8, %00001000   ; Q
+        dw 1450 : db   4, 1, %00000001   ; LEFT
+        dw 1500 : db   4, 2, %00000100   ; RETURN
+        dw 1700 : db   4, 0, %00000010   ; RIGHT
+        dw 1750 : db   4, 2, %00000100   ; RETURN
+        dw 1900 : db   4, 8, %00010000   ; TAB
+        dw 2000 : db   4, 8, %00010000   ; TAB
+        dw 2100 : db   4, 8, %00010000   ; TAB
+        dw 2200 : db   4, 0, %00000010   ; RIGHT
+        dw 2250 : db   4, 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 35
+; make test-m4 too (-DTEST_SCRIPT=35, the same SD card): the Commander
+; and the Launcher on DISK. Expected:
+;   frame  300  F3           -> the Commander, A: and B:
+;   frame  500, 700 CONTROL+G -> the left panel B:, then DISK:/
+;                               (HELLO.TXT, APPS  DIR)
+;   frame  900  DOWN, 1000 RETURN -> DISK:/APPS: .., NOTEPAD.BIN
+;   frame 1200  CONTROL+C    -> NOTEPAD.BIN copied to B:
+;   frame 1400  RETURN       -> the dialog closed
+;   frame 1600  F2           -> the Launcher on DISK:/APPS: .., NOTEPAD
+;   frame 1800  RIGHT, 1900 RETURN -> NOTEPAD runs
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  495 : db  15, 2, %10000000   ; CONTROL
+        dw  500 : db   4, 6, %00010000   ; G
+        dw  695 : db  15, 2, %10000000   ; CONTROL
+        dw  700 : db   4, 6, %00010000   ; G
+        dw  900 : db   4, 0, %00000100   ; DOWN
+        dw 1000 : db   4, 2, %00000100   ; RETURN
+        dw 1195 : db  15, 2, %10000000   ; CONTROL
+        dw 1200 : db   4, 7, %01000000   ; C
+        dw 1400 : db   4, 2, %00000100   ; RETURN
+        dw 1600 : db   4, 1, %01000000   ; F2
+        dw 1800 : db   4, 0, %00000010   ; RIGHT
+        dw 1900 : db   4, 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 33
 ; make test-paint-big (-DTEST_SCRIPT=33, 576K): PAINT on the whole
 ; screen, 160 x 200, its window moved by the scroll bars. Expected:
@@ -1721,6 +1788,8 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

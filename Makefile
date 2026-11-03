@@ -25,6 +25,8 @@
 #   make test-lang   English at boot, Greek saved in Setup, then V-OS
 #                 again starts in Greek (TEST_SCRIPT=3)
 #   make test-paint-big PAINT on the whole screen (576K): the bars, .SCR
+#   make test-m4     the M4 board's SD card in the 1984 emulator: DISK
+#                 on the Desktop, a copy, a folder, a program from it
 #   make test-scr    PAINT's EXPORT .SCR (run in a Z80 emulator, tools/scr_check.py)
 #                 loaded in BASIC from a disc, and every pixel checked
 #   make test-notepad-big NOTEPAD's text window in a Z80 emulator: 12K and
@@ -86,7 +88,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -1150,6 +1152,34 @@ test-paint: $(PAINT_DSK) $(TEST_DSK_B)
 	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
+
+# The M4 board's SD card in the 1984 emulator for Windows (tools/
+# m4_shot.sh, VOS_1984): the Desktop on DISK, a copy to A:, folders,
+# NOTEPAD run from the card (TEST_SCRIPT=34, build/shots/NNNN.png); the
+# Commander and the Launcher on DISK (35, build/shots/v-NNNN.png).
+# M4.SYS is on these discs only.
+M4_DSK := $(BUILD)/vos_m4.dsk
+M4V_DSK := $(BUILD)/vos_m4v.dsk
+M4_SHOTS = 900 1200 1500 1800 2050 2300 2500 2700
+M4V_SHOTS = 500 900 1200 1500 1800 2100 2400
+$(BUILD)/vos_m4%.dsk: $(SOURCES) $(LANG_KERNEL) $(PACKS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(basename $@) \
+	  -DTEST_SCRIPT=$(if $(findstring m4v,$@),35,34) -s
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-m4: $(M4_DSK) $(M4V_DSK) $(BUILD)/NOTEPAD.BIN
+	rm -rf $(BUILD)/shots
+	for d in $(M4_SHOTS); do \
+	  cp $(M4_DSK) $(BUILD)/vos_run.dsk; bash tools/m4_shot.sh $$d; \
+	done
+	for d in $(M4V_SHOTS); do \
+	  cp $(M4V_DSK) $(BUILD)/vos_run.dsk; \
+	  M4_SYM=$(BUILD)/vos_m4v.sym M4_SHOT=v-$$d bash tools/m4_shot.sh $$d; \
+	done
 
 # PAINT on the whole screen (TEST_SCRIPT=33, 576K: a data bank of its
 # own): lines, the window moved by its bars, saved as B:NONAME.SCR and

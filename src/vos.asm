@@ -193,6 +193,20 @@ setup_end:
         save "CALC.SYS", CALC_ADDR, calc_stop - CALC_ADDR, DSK, "build/vos.dsk"
         ENDIF
 
+; ---- the M4 board's SD card: M4.SYS, loaded into bank 7 -------------
+        BANK
+        org M4_ADDR
+        include "kernel/m4.asm"
+m4_stop:
+        assert m4_stop <= M4_ADDR + M4_MAX
+        IFDEF TEST_SCRIPT                     ; on the M4's test disc only: the
+        IF TEST_SCRIPT >= 34                  ; others have no room for it
+        save "M4.SYS", M4_ADDR, m4_stop - M4_ADDR, DSK, "build/vos_test.dsk"
+        ENDIF
+        ELSE
+        save "M4.SYS", M4_ADDR, m4_stop - M4_ADDR, DSK, "build/vos.dsk"
+        ENDIF
+
 ; ---- the database engine: DB.SYS, loaded into base RAM bank 1 -------
         BANK
         org DB_ADDR

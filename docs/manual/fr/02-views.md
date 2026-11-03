@@ -24,15 +24,15 @@ Mode 1. Une fenêtre FICHIERS montre les fichiers d'un lecteur sous forme d'icô
 | Touche | Ce qu'elle fait |
 |---|---|
 | flèches | choisir un fichier (↑/↓ une rangée) |
-| TAB | l'autre lecteur |
+| TAB | le lecteur suivant : A:, B:, DISK (avec une carte M4) |
 | RETURN, ENTER | ouvrir : un programme se lance, un fichier d'un type connu s'ouvre dans son programme, les autres montrent leurs infos |
-| ^C | copier sur l'autre lecteur |
+| ^C | copier sur le lecteur suivant (depuis DISK : sur A:) |
 | ^D | supprimer (demande d'abord) |
 | ^N | renommer |
 | ^R | relire les disques |
 | souris | clic sur un fichier : sélection, encore : ouverture. Clic sur un lecteur : l'ouvre |
 
-- **Menu FICHIER :** OUVRIR, INFOS DU FICHIER (^I), COPIER SUR L'AUTRE LECTEUR, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, QUITTER VERS LE BASIC.
+- **Menu FICHIER :** OUVRIR, INFOS DU FICHIER (^I), COPIER AU LECTEUR SUIVANT, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, QUITTER VERS LE BASIC.
 - **La fenêtre FICHIERS** se déplace par son titre et reste là où vous la mettez, même quand vous changez de vue.
 - **Ouverture selon le type** (aussi dans le Commander) : les `.TXT` s'ouvrent dans NOTEPAD, les `.MD` dans MARKDOWN, les `.PIC` et `.LYR` dans PAINT, les `.VDB` dans DATABASE, les `.VSH` dans SHEET, les `.MUS` dans MUSIC, qui commence à les jouer. Le programme est cherché sur le lecteur du fichier, puis sur A:, puis sur B:. S'il n'est pas trouvé, « AUCUN PROGRAMME POUR CE FICHIER » s'affiche. Si le programme a des modifications non enregistrées, il demande d'abord.
 
@@ -46,10 +46,10 @@ Mode 0, 16 couleurs. Il ne montre que les programmes d'un lecteur (`.BIN`, `.VBN
 | RETURN, ENTER | lance le programme. S'il tourne déjà, il reprend là où il en était |
 | ^A | le charge comme accessoire de bureau (COMME ACCESSOIRE). F5 l'ouvre ensuite |
 | ^R | relire la disquette |
-| TAB | l'autre lecteur (AUTRE LECTEUR). Un programme lancé depuis B: revient sur B: |
+| TAB | le lecteur suivant (LECTEUR SUIVANT) : A:, B:, DISK. Un programme lancé depuis B: revient sur B: |
 | souris | clic : sélection, encore : lancement |
 
-**Menu FICHIER :** LANCER, COMME ACCESSOIRE, AUTRE LECTEUR, RELIRE LES DISQUES, QUITTER VERS LE BASIC.
+**Menu FICHIER :** LANCER, COMME ACCESSOIRE, LECTEUR SUIVANT, RELIRE LES DISQUES, QUITTER VERS LE BASIC.
 
 ## Commander, F3
 
@@ -64,11 +64,21 @@ Mode 1, deux panneaux avec des listes de fichiers : A: à gauche, B: à droite. 
 | ^D | supprimer |
 | ^N | renommer |
 | ^R | relire les deux disquettes |
+| ^G | le lecteur suivant pour le panneau actif : A:, B:, DISK (aussi un clic sur son titre) |
 | souris | clic : sélection, encore : ouverture |
 
-**Menu FICHIER :** OUVRIR, INFOS DU FICHIER (^I), COPIER EN FACE, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, FORMATER LE DISQUE (DATA), QUITTER VERS LE BASIC.
+**Menu FICHIER :** OUVRIR, INFOS DU FICHIER (^I), COPIER EN FACE, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, LECTEUR SUIVANT (^G), FORMATER LE DISQUE (DATA), QUITTER VERS LE BASIC.
 
 > FORMATER efface tous les fichiers de la disquette du panneau actif. Une confirmation est demandée.
+
+## DISK : la carte SD de la carte M4
+
+Avec une carte M4, le Bureau a une troisième icône de lecteur, DISK, sous A: et B:, et TAB passe de A: à B: puis à DISK. Le Lanceur et les panneaux du Commander (^G) y accèdent aussi. Le titre montre le dossier où vous êtes, par ex. `DISK:/GAMES/`.
+
+- **Les dossiers** apparaissent comme des dossiers (une icône avec un onglet, ou DIR dans le Commander). RETURN sur l'un d'eux y entre, et `..`, la première entrée, remonte. Dans le Lanceur, ils sont là aussi, pour atteindre les programmes qu'ils contiennent.
+- **Tout comme sur une disquette :** les programmes s'y lancent, les fichiers s'ouvrent dans leurs programmes, et ^C, ^D et ^N copient, suppriment et renomment. Les copies entre DISK et une disquette vont jusqu'à 16K. Dossiers et fichiers ont des noms comme sur le CPC (8.3 : `NOM.EXT`) ; les noms plus longs n'apparaissent pas.
+- **M4.SYS** (sur `vos.dsk`) est chargé depuis A: la première fois que DISK sert.
+- **Pas encore :** OUVRIR et ENREGISTRER des programmes (NOTEPAD, PAINT…) ne voient encore que A: et B:. DATABASE ne marche que sur disquette, et la carte SD ne se formate pas depuis V-OS. V-OS démarre toujours depuis une disquette en A: (tapez `|DISC` avant `RUN"VOS"` : avec une carte M4, le CPC démarre sur la carte SD).
 
 ## Réglages, F4
 
