@@ -37,7 +37,11 @@ DT_BAR_W        equ 8               ; the scroll bar
 DT_CELL_W       equ 72
 DT_CELL_H       equ 38
 DT_DRIVE_X      equ 328             ; drive icons
-DT_DRIVE_Y      equ 28
+        IFDEF DEMO                  ; the videos (tools/video): in the 1984
+DT_DRIVE_Y      equ 40              ; emulator A:'s icon must not put #FF at
+        ELSE                        ; #B1FC (x 368, y 38), where 1984 looks
+DT_DRIVE_Y      equ 28              ; for the 464 firmware's inks
+        ENDIF
 DT_DRIVE_W      equ 48
 DT_DRIVE_H      equ 36
 DT_DRIVE_STEP   equ 52

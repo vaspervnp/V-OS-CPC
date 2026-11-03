@@ -1,0 +1,16 @@
+WELCOME TO V-OS
+
+V-OS turns the Amstrad CPC 6128 into a
+desktop computer: windows, menus, a
+mouse, and its own programs.
+
+- F1 the Desktop, F2 the Launcher,
+  F3 the Commander, F4 Setup
+- drives A:, B: and the M4 SD card
+- several programs at once
+- NOTEPAD, PAINT, SHEET, DATABASE,
+  MUSIC, MARKDOWN, games...
+- Studio: programs made of blocks
+- six languages, one character set
+
+Written in Z80 assembly. RUN"VOS

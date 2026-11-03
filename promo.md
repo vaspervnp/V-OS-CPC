@@ -53,6 +53,18 @@ assembly, and it runs from a standard 3" disc. On the CPC: `RUN"VOS"`.
 - **One character set for all six**, so languages can be mixed in the same text, with their keyboards a key away and sorting that ignores case and accents.
 - **The manual is in all six languages**, as PDF too.
 
+## Screenshots
+
+In the dark theme, in English:
+
+| | |
+|---|---|
+| ![The desk with its picture](docs/promo/01-desktop-picture.png) | ![The Desktop's window on B:](docs/promo/02-desktop-window.png) |
+| ![NOTEPAD](docs/promo/03-notepad.png) | ![PAINT](docs/promo/04-paint.png) |
+| ![The Launcher](docs/promo/05-launcher.png) | ![The Commander](docs/promo/06-commander.png) |
+| ![The Commander's FILE menu](docs/promo/07-commander-menu.png) | ![Setup](docs/promo/08-setup.png) |
+| ![F6: the programs running](docs/promo/09-programs.png) | |
+
 ---
 
 *V-OS, by Revive8bit, 2026.*

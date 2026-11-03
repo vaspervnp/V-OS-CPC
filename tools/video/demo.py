@@ -158,12 +158,13 @@ def part1():
     d.wait(5)
 
     # ---- the views
-    C({"en": "The Desktop (f1): the files of a drive as icons",
-       "el": "Η Επιφάνεια (f1): τα αρχεία μιας μονάδας ως εικονίδια",
-       "fr": "Le Bureau (f1) : les fichiers d'un lecteur en icônes",
-       "es": "El Escritorio (f1): los archivos de una unidad como iconos",
-       "de": "Der Desktop (f1): die Dateien eines Laufwerks als Symbole",
-       "it": "Il Desktop (f1): i file di un'unità come icone"}, False)
+    C({"en": "The Desktop (f1): a window with the files of a drive as icons",
+       "el": "Η Επιφάνεια (f1): ένα παράθυρο με τα αρχεία μιας μονάδας ως εικονίδια",
+       "fr": "Le Bureau (f1) : une fenêtre avec les fichiers d'un lecteur en icônes",
+       "es": "El Escritorio (f1): una ventana con los archivos de una unidad como iconos",
+       "de": "Der Desktop (f1): ein Fenster mit den Dateien eines Laufwerks als Symbolen",
+       "it": "Il Desktop (f1): una finestra con i file di un'unità come icone"}, False)
+    d.key("TAB", 2.0)                   # at first no window: A:
     for _ in range(5):
         d.key("RIGHT", 0.5)
     d.key("DOWN", 0.8)

@@ -364,6 +364,40 @@ test_keys:
         dw 2250 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 41
+; make promo (-DTEST_SCRIPT=41, 576K): screenshots for promo.md, in the
+; dark theme and in English (A:SETUP.CFG, the desk's picture
+; B:NIGHT.SCR); B: the release's programs (apps.dsk), README.TXT,
+; SUNSET.SCR and NIGHT.SCR. Expected:
+;   at first                 -> the desk with its picture
+;   frame  250, 300 TAB x2   -> the Desktop: the window on B:
+;   frame  400-500 DOWN x3, 550-580 RIGHT x2 -> README.TXT
+;   frame  700  RETURN       -> NOTEPAD with README.TXT
+;   frame 1000  F1, 1100 RIGHT, 1150 RETURN -> PAINT with SUNSET.SCR
+;   frame 1500  F2           -> the Launcher on B:
+;   frame 1700  F3, 1850 ESC -> the Commander, its FILE menu
+;   frame 1950  ESC, 2050 F4 -> Setup
+;   frame 2250  F6           -> the programs: NOTEPAD and PAINT
+test_keys:
+        dw  250 : db   4, 8, %00010000   ; TAB: A:
+        dw  300 : db   4, 8, %00010000   ; TAB: B:
+        dw  400 : db   4, 0, %00000100   ; DOWN
+        dw  450 : db   4, 0, %00000100   ; DOWN
+        dw  500 : db   4, 0, %00000100   ; DOWN
+        dw  550 : db   4, 0, %00000010   ; RIGHT
+        dw  580 : db   4, 0, %00000010   ; RIGHT
+        dw  700 : db   4, 2, %00000100   ; RETURN: NOTEPAD
+        dw 1000 : db   4, 1, %00100000   ; F1
+        dw 1100 : db   4, 0, %00000010   ; RIGHT
+        dw 1150 : db   4, 2, %00000100   ; RETURN: PAINT
+        dw 1500 : db   4, 1, %01000000   ; F2
+        dw 1700 : db   4, 0, %00100000   ; F3
+        dw 1850 : db   4, 8, %00000100   ; ESC
+        dw 1950 : db   4, 8, %00000100   ; ESC
+        dw 2050 : db   4, 2, %00010000   ; F4
+        dw 2250 : db   4, 0, %00010000   ; F6
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 40
 ; make test-window (-DTEST_SCRIPT=40): the Desktop's window. Expected:
 ;   at first                 -> no window, no drive dark: the desk
@@ -1945,6 +1979,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

@@ -88,7 +88,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -1105,6 +1105,40 @@ test-theme: $(THEME_DSK) $(TEST_DSK_B)
 	  snap run --shell caprice32.launcher -c "VOS_TIMEOUT=90 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	ls $(BUILD)/shots/*/*.png
+
+# Screenshots for promo.md (TEST_SCRIPT=41, 576K): dark, in English,
+# the desk's picture B:NIGHT.SCR; B: the release's programs, a text
+# and two pictures. One run per shot: build/promo/<delay>/*.png
+PROMO_DSK := $(BUILD)/vos_promo.dsk
+PROMO_DSK_B := $(BUILD)/vos_promo_b.dsk
+PROMO_SHOTS ?= 140 170 240 290 330 370 450 470 490 590 630
+$(PROMO_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_promo -DTEST_SCRIPT=41
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	printf 'VCFG\004\000\000\031\003\001\001\001\000\000\001\001NIGHT   SCR' > $(BUILD)/SETUP.CFG
+	$(IDSK) $@ -i $(BUILD)/SETUP.CFG -t 1 > /dev/null
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+$(PROMO_DSK_B): $(APPS_DSK) tools/mk_promo_scr.py tools/promo.txt
+	cp $(APPS_DSK) $@
+	$(PYTHON) -I -c "import sys; open('$(BUILD)/README.TXT','wb').write(open('tools/promo.txt','rb').read().replace(b'\n',b'\r\n')+b'\x1a')"
+	$(PYTHON) -I tools/mk_promo_scr.py $(BUILD)/SUNSET.SCR
+	$(PYTHON) -I tools/mk_promo_scr.py $(BUILD)/NIGHT.SCR night
+	$(IDSK) $@ -i $(BUILD)/README.TXT -t 0 > /dev/null
+	$(IDSK) $@ -i $(BUILD)/SUNSET.SCR -t 1 -c C000 -e C000 > /dev/null
+	$(IDSK) $@ -i $(BUILD)/NIGHT.SCR -t 1 -c C000 -e C000 > /dev/null
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+promo: $(PROMO_DSK) $(PROMO_DSK_B)
+	rm -rf $(BUILD)/promo
+	for d in $(PROMO_SHOTS); do \
+	  cp $(PROMO_DSK) $(BUILD)/vos_run.dsk; cp $(PROMO_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_TIMEOUT=90 VOS_SHOTS=$(abspath $(BUILD))/promo/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/promo/*/*.png
 
 # The Desktop's window (TEST_SCRIPT=40): closed at first, TAB, its X,
 # a drive icon, the corner that sizes it, its scroll bar
