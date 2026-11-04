@@ -577,20 +577,27 @@ test_keys:
 ; SUNSET.SCR and NIGHT.SCR. Expected:
 ;   at first                 -> the desk with its picture
 ;   frame  250, 300 TAB x2   -> the Desktop: the window on B:
-;   frame  400-500 DOWN x3, 550-580 RIGHT x2 -> README.TXT
+;   frame  400-530 DOWN x4, 580 RIGHT -> README.TXT
 ;   frame  700  RETURN       -> NOTEPAD with README.TXT
 ;   frame 1000  F1, 1100 RIGHT, 1150 RETURN -> PAINT with SUNSET.SCR
 ;   frame 1500  F2           -> the Launcher on B:
 ;   frame 1700  F3, 1850 ESC -> the Commander, its FILE menu
 ;   frame 1950  ESC, 2050 F4 -> Setup
 ;   frame 2250  F6           -> the programs: NOTEPAD and PAINT
+;   frame 2400  RETURN       -> NOTEPAD again
+;   frame 2550  CONTROL+F, "mouse" -> FIND; 2900 RETURN -> found
+;   frame 3050  F3, DOWN x22, UP x2, CONTROL+V -> the Commander shows
+;                               README.TXT's first lines on the left
+;   frame 3890  F2, UP x8, LEFT x3, DOWN x3, RIGHT, RETURN -> DIARY
+;   then CONTROL+A "release party", RIGHT x2, CONTROL+A "retro
+;   meeting"                 -> January 2026, the 1st and 3rd marked
 test_keys:
         dw  250 : db   4, 8, %00010000   ; TAB: A:
         dw  300 : db   4, 8, %00010000   ; TAB: B:
         dw  400 : db   4, 0, %00000100   ; DOWN
         dw  450 : db   4, 0, %00000100   ; DOWN
         dw  500 : db   4, 0, %00000100   ; DOWN
-        dw  550 : db   4, 0, %00000010   ; RIGHT
+        dw  530 : db   4, 0, %00000100   ; DOWN
         dw  580 : db   4, 0, %00000010   ; RIGHT
         dw  700 : db   4, 2, %00000100   ; RETURN: NOTEPAD
         dw 1000 : db   4, 1, %00100000   ; F1
@@ -602,6 +609,93 @@ test_keys:
         dw 1950 : db   4, 8, %00000100   ; ESC
         dw 2050 : db   4, 2, %00010000   ; F4
         dw 2250 : db   4, 0, %00010000   ; F6
+        dw 2400 : db   4, 2, %00000100   ; RETURN: NOTEPAD
+        dw 2545 : db  15, 2, %10000000   ; CONTROL
+        dw 2550 : db   4, 6, %00100000   ; F: FIND
+        dw 2650 : db   4, 4, %01000000   ; M
+        dw 2675 : db   4, 4, %00000100   ; O
+        dw 2700 : db   4, 5, %00000100   ; U
+        dw 2725 : db   4, 7, %00010000   ; S
+        dw 2750 : db   4, 7, %00000100   ; E
+        dw 2900 : db   4, 2, %00000100   ; RETURN: found
+        dw 3050 : db   4, 0, %00100000   ; F3: the Commander
+        dw 3250 : db   4, 0, %00000100   ; DOWN
+        dw 3265 : db   4, 0, %00000100   ; DOWN
+        dw 3280 : db   4, 0, %00000100   ; DOWN
+        dw 3295 : db   4, 0, %00000100   ; DOWN
+        dw 3310 : db   4, 0, %00000100   ; DOWN
+        dw 3325 : db   4, 0, %00000100   ; DOWN
+        dw 3340 : db   4, 0, %00000100   ; DOWN
+        dw 3355 : db   4, 0, %00000100   ; DOWN
+        dw 3370 : db   4, 0, %00000100   ; DOWN
+        dw 3385 : db   4, 0, %00000100   ; DOWN
+        dw 3400 : db   4, 0, %00000100   ; DOWN
+        dw 3415 : db   4, 0, %00000100   ; DOWN
+        dw 3430 : db   4, 0, %00000100   ; DOWN
+        dw 3445 : db   4, 0, %00000100   ; DOWN
+        dw 3460 : db   4, 0, %00000100   ; DOWN
+        dw 3475 : db   4, 0, %00000100   ; DOWN
+        dw 3490 : db   4, 0, %00000100   ; DOWN
+        dw 3505 : db   4, 0, %00000100   ; DOWN
+        dw 3520 : db   4, 0, %00000100   ; DOWN
+        dw 3535 : db   4, 0, %00000100   ; DOWN
+        dw 3550 : db   4, 0, %00000100   ; DOWN
+        dw 3565 : db   4, 0, %00000100   ; DOWN
+        dw 3580 : db   4, 0, %00000001   ; UP
+        dw 3595 : db   4, 0, %00000001   ; UP: README.TXT
+        dw 3625 : db  15, 2, %10000000   ; CONTROL
+        dw 3630 : db   4, 6, %10000000   ; V: README.TXT shown
+        dw 3890 : db   4, 1, %01000000   ; F2: the Launcher
+        dw 4040 : db   4, 0, %00000001   ; UP
+        dw 4060 : db   4, 0, %00000001   ; UP
+        dw 4080 : db   4, 0, %00000001   ; UP
+        dw 4100 : db   4, 0, %00000001   ; UP
+        dw 4120 : db   4, 0, %00000001   ; UP
+        dw 4140 : db   4, 0, %00000001   ; UP
+        dw 4160 : db   4, 0, %00000001   ; UP
+        dw 4180 : db   4, 0, %00000001   ; UP
+        dw 4200 : db   4, 1, %00000001   ; LEFT
+        dw 4220 : db   4, 1, %00000001   ; LEFT
+        dw 4240 : db   4, 1, %00000001   ; LEFT
+        dw 4290 : db   4, 0, %00000100   ; DOWN
+        dw 4320 : db   4, 0, %00000100   ; DOWN
+        dw 4350 : db   4, 0, %00000100   ; DOWN
+        dw 4380 : db   4, 0, %00000010   ; RIGHT
+        dw 4430 : db   4, 2, %00000100   ; RETURN: DIARY
+        dw 4825 : db  15, 2, %10000000   ; CONTROL
+        dw 4830 : db   4, 8, %00100000   ; A: a note
+        dw 4930 : db   4, 6, %00000100   ; R
+        dw 4955 : db   4, 7, %00000100   ; E
+        dw 4980 : db   4, 4, %00010000   ; L
+        dw 5005 : db   4, 7, %00000100   ; E
+        dw 5030 : db   4, 8, %00100000   ; A
+        dw 5055 : db   4, 7, %00010000   ; S
+        dw 5080 : db   4, 7, %00000100   ; E
+        dw 5105 : db   4, 5, %10000000   ; SPACE
+        dw 5130 : db   4, 3, %00001000   ; P
+        dw 5155 : db   4, 8, %00100000   ; A
+        dw 5180 : db   4, 6, %00000100   ; R
+        dw 5205 : db   4, 6, %00001000   ; T
+        dw 5230 : db   4, 5, %00001000   ; Y
+        dw 5255 : db   4, 2, %00000100   ; RETURN
+        dw 5405 : db   4, 0, %00000010   ; RIGHT
+        dw 5435 : db   4, 0, %00000010   ; RIGHT
+        dw 5490 : db  15, 2, %10000000   ; CONTROL
+        dw 5495 : db   4, 8, %00100000   ; A: a note
+        dw 5595 : db   4, 6, %00000100   ; R
+        dw 5620 : db   4, 7, %00000100   ; E
+        dw 5645 : db   4, 6, %00001000   ; T
+        dw 5670 : db   4, 6, %00000100   ; R
+        dw 5695 : db   4, 4, %00000100   ; O
+        dw 5720 : db   4, 5, %10000000   ; SPACE
+        dw 5745 : db   4, 4, %01000000   ; M
+        dw 5770 : db   4, 7, %00000100   ; E
+        dw 5795 : db   4, 7, %00000100   ; E
+        dw 5820 : db   4, 6, %00001000   ; T
+        dw 5845 : db   4, 4, %00001000   ; I
+        dw 5870 : db   4, 5, %01000000   ; N
+        dw 5895 : db   4, 6, %00010000   ; G
+        dw 5920 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 40

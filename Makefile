@@ -1127,10 +1127,12 @@ test-theme: $(THEME_DSK) $(TEST_DSK_B)
 
 # Screenshots for promo.md (TEST_SCRIPT=41, 576K): dark, in English,
 # the desk's picture B:NIGHT.SCR; B: the release's programs, a text
-# and two pictures. One run per shot: build/promo/<delay>/*.png
+# and two pictures. One run per shot: build/promo/<delay>/*.png, copied
+# by hand to docs/promo/01..12 (the order of promo.md; the Launcher is
+# 05 but taken at 1620, on the way to DIARY)
 PROMO_DSK := $(BUILD)/vos_promo.dsk
 PROMO_DSK_B := $(BUILD)/vos_promo_b.dsk
-PROMO_SHOTS ?= 140 170 240 290 330 370 450 470 490 590 630
+PROMO_SHOTS ?= 220 340 420 620 740 780 880 940 1100 1500 1620 2340
 $(PROMO_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)

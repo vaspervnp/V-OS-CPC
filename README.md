@@ -5,8 +5,8 @@ A graphical operating system for the Amstrad CPC 6128, written in Z80 assembly.
 | | |
 |---|---|
 | ![The desk with its picture](docs/promo/01-desktop-picture.png) | ![The Desktop's window on B:](docs/promo/02-desktop-window.png) |
-| ![NOTEPAD](docs/promo/03-notepad.png) | ![PAINT](docs/promo/04-paint.png) |
-| ![The Launcher](docs/promo/05-launcher.png) | ![F6: the programs running](docs/promo/09-programs.png) |
+| ![NOTEPAD's FIND](docs/promo/10-notepad-find.png) | ![PAINT](docs/promo/04-paint.png) |
+| ![DIARY](docs/promo/12-diary.png) | ![The Commander shows a text without opening it](docs/promo/11-commander-preview.png) |
 
 *In the dark theme, in English. More, and what V-OS does: [promo.md](promo.md).*
 

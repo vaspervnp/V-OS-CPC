@@ -5,8 +5,8 @@
 | | |
 |---|---|
 | ![Η επιφάνεια με την εικόνα της](docs/promo/01-desktop-picture.png) | ![Το παράθυρο του Desktop στο B:](docs/promo/02-desktop-window.png) |
-| ![NOTEPAD](docs/promo/03-notepad.png) | ![PAINT](docs/promo/04-paint.png) |
-| ![Ο Launcher](docs/promo/05-launcher.png) | ![F6: τα προγράμματα που τρέχουν](docs/promo/09-programs.png) |
+| ![Η ΑΝΑΖΗΤΗΣΗ του NOTEPAD](docs/promo/10-notepad-find.png) | ![PAINT](docs/promo/04-paint.png) |
+| ![DIARY](docs/promo/12-diary.png) | ![Ο Commander δείχνει ένα κείμενο χωρίς να το ανοίξει](docs/promo/11-commander-preview.png) |
 
 *Στο σκούρο θέμα, στα Αγγλικά. Περισσότερα, και τι κάνει το V-OS (στα Αγγλικά): [promo.md](promo.md).*
 

@@ -82,7 +82,8 @@ In the dark theme, in English:
 | ![NOTEPAD](docs/promo/03-notepad.png) | ![PAINT](docs/promo/04-paint.png) |
 | ![The Launcher](docs/promo/05-launcher.png) | ![The Commander](docs/promo/06-commander.png) |
 | ![The Commander's FILE menu](docs/promo/07-commander-menu.png) | ![Setup](docs/promo/08-setup.png) |
-| ![F6: the programs running](docs/promo/09-programs.png) | |
+| ![F6: the programs running](docs/promo/09-programs.png) | ![NOTEPAD's FIND](docs/promo/10-notepad-find.png) |
+| ![The Commander shows a text without opening it](docs/promo/11-commander-preview.png) | ![DIARY](docs/promo/12-diary.png) |
 
 ---
 
