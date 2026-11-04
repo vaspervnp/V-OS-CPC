@@ -113,6 +113,23 @@ cm_redraw:
 ; cm_event - ev_cur from the main loop
 ; ---------------------------------------------------------------------
 cm_event:
+        ld a,(cm_pic)               ; a picture shown: a key or a click
+        or a                        ; ends it
+        jr z,.not_pic
+        ld a,(ev_cur)
+        cp EV_KEY_DOWN
+        jr z,.pic_end
+        cp EV_PTR_DOWN
+        ret nz
+.pic_end:
+        xor a
+        ld (cm_pic),a
+        inc a
+        call ui_set_mode
+        ld hl,palette_mode1
+        call ga_set_palette
+        jp cm_redraw
+.not_pic:
         ld a,(ui_open)              ; menus handle their own keys
         cp UI_NONE
         jr nz,.ui
@@ -1127,6 +1144,23 @@ cm_peek:
         ld c,BUF_CFG
         call fs_load
         jp c,sys_error
+        ld a,b                      ; a picture: shown as one
+        cp #3E
+        jr c,.text
+        ld hl,file_name + 8
+        ld de,cm_ext_scr
+        ld b,3
+.ext:
+        ld a,(de)
+        cp (hl)
+        jr nz,.text_b
+        inc hl
+        inc de
+        djnz .ext
+        jp cm_picture
+.text_b:
+        ld bc,(fs_length)
+.text:
         ld (cm_rd_left),bc
         ld hl,BUF_ADDR
         ld (cm_rd_at),hl
@@ -1205,6 +1239,86 @@ cm_peek:
         add hl,bc
         pop bc
         djnz .line
+        ret
+
+; SHOW THE TEXT on a .SCR (16K, in bank 4): the picture on the whole
+; screen in mode 0, in the middle, with its inks (PAINT's at #07D0) or
+; the Launcher's; a key or a click brings the Commander back (cm_event)
+CM_PIC_Y        equ 30
+cm_picture:
+        ld a,1
+        ld (cm_pic),a
+        call ptr_hide
+        xor a
+        call ui_set_mode
+        ld hl,palette_mode0
+        call ga_set_palette
+        xor a
+        call gfx_cls
+        ld hl,BUF_ADDR + #07D0      ; its inks, if they are inks
+        ld de,bank_buf
+        ld bc,17
+        ld a,BUF_CFG
+        call bank_get
+        ld hl,bank_buf
+        ld b,17
+.ink:
+        ld a,(hl)
+        inc hl
+        cp 27
+        jr nc,.rows
+        djnz .ink
+        ld hl,bank_buf
+        call ga_set_palette
+.rows:
+        call ptr_hide
+        ld b,0
+.row:                               ; (row & 7) * #800 + (row / 8) * 80
+        push bc
+        ld a,b
+        and 7
+        add a,a
+        add a,a
+        add a,a
+        add a,BUF_ADDR >> 8
+        ld d,a
+        ld a,b
+        and #F8
+        ld l,a
+        ld h,0
+        add hl,hl
+        ld c,l
+        ld b,h
+        add hl,hl
+        add hl,hl
+        add hl,bc
+        ld e,0
+        add hl,de
+        pop bc
+        push bc
+        push hl
+        ld a,b                      ; its line on the screen, 16 pixels
+        add a,CM_PIC_Y              ; in
+        ld l,a
+        ld h,0
+        add hl,hl
+        ld de,gfx_lines
+        add hl,de
+        ld e,(hl)
+        inc hl
+        ld d,(hl)
+        ld hl,8
+        add hl,de
+        ex de,hl
+        pop hl
+        ld bc,80
+        ld a,BUF_CFG
+        call bank_get
+        pop bc
+        inc b
+        ld a,b
+        cp 200
+        jr c,.row
         ret
 
 ; -> A = the next byte of the file in bank 4, 32 at a time through
@@ -1427,6 +1541,8 @@ cm_menu_file:
 ; ---- state ----------------------------------------------------------
 cm_active:      db 0                ; panel with the selection
 cm_drv:         db 0, 1             ; per panel: its drive (2: DISK)
+cm_pic:         db 0                ; 1: a picture on the screen
+cm_ext_scr:     db "SCR"
 cm_m4:          db 0                ; 1: an M4 board
 cm_folder:      ds 10               ; the card's folder: its last 9
 cm_p:           db 0                ; panel the routines work on

@@ -643,14 +643,16 @@ ui_bar_body:
         inc a
         jr .title
 .done:
-        ld hl,(ub_x)                ; room left for the indicator?
-        ld de,24
-        add hl,de
-        ld de,(gfx_width)
-        ex de,hl
-        or a
+        ld hl,(gfx_width)           ; room left for the indicator (1),
+        ld de,(ub_x)                ; and the clock too (2, ext2.asm)?
+        xor a
         sbc hl,de
-        ld a,0
+        ld de,24
+        sbc hl,de
+        jr c,.no_room
+        inc a
+        ld e,48
+        sbc hl,de
         jr c,.no_room
         inc a
 .no_room:

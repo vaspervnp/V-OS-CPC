@@ -11,6 +11,10 @@ LIST        | BACK TO THE LIST      | ΠΙΣΩ ΣΤΗ ΛΙΣΤΑ
 DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
 PRINT       | PRINT                 | ΕΚΤΥΠΩΣΗ
 CSV         | IMPORT CSV...         | ΕΙΣΑΓΩΓΗ CSV...
+LETTERS     | PRINT LETTERS...      | ΕΚΤΥΠΩΣΗ ΕΠΙΣΤΟΛΩΝ...
+PICK_TXT    | THE LETTER (.TXT)     | Η ΕΠΙΣΤΟΛΗ (.TXT)
+NO_TXT      | NO TEXT (.TXT)|ON THIS DRIVE | ΚΑΝΕΝΑ ΚΕΙΜΕΝΟ (.TXT)|ΣΕ ΑΥΤΗ ΤΗ ΜΟΝΑΔΑ
+PRINTED     | PRINTED               | ΤΥΠΩΘΗΚΑΝ
 PICK_CSV    | IMPORT A .CSV         | ΕΙΣΑΓΩΓΗ .CSV
 IMPORTED    | IMPORTED              | ΕΙΣΗΧΘΗΚΑΝ
 ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ

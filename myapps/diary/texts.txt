@@ -1,0 +1,31 @@
+# DIARY's texts: NAME | English | Greek (tools/mktexts.py). "|" with
+# no spaces around it starts a new line in a dialog.
+MENU        | DIARY                 | ΗΜΕΡΟΛΟΓΙΟ
+ADD         | ADD A NOTE...         | ΝΕΑ ΣΗΜΕΙΩΣΗ...
+CHANGE      | CHANGE THE NOTE...    | ΑΛΛΑΓΗ ΣΗΜΕΙΩΣΗΣ...
+DELETE      | DELETE THE NOTE       | ΔΙΑΓΡΑΦΗ ΣΗΜΕΙΩΣΗΣ
+TODAY       | TODAY                 | ΣΗΜΕΡΑ
+PREV_M      | PREVIOUS MONTH   <    | ΠΡΟΗΓΟΥΜΕΝΟΣ ΜΗΝΑΣ  <
+NEXT_M      | NEXT MONTH       >    | ΕΠΟΜΕΝΟΣ ΜΗΝΑΣ  >
+DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+ABOUT_TEXT  | DIARY|DAYS AND WHAT IS ON THEM,|IN DIARY.VDB (DB.SYS),|FOR V-OS, FROM THE SDK | ΗΜΕΡΟΛΟΓΙΟ|ΟΙ ΜΕΡΕΣ ΚΑΙ Ο,ΤΙ ΕΧΟΥΝ,|ΣΤΟ DIARY.VDB (DB.SYS),|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+WEEK        | MO TU WE TH FR SA SU  | ΔΕ ΤΡ ΤΕ ΠΕ ΠΑ ΣΑ ΚΥ
+M1          | JANUARY               | ΙΑΝΟΥΑΡΙΟΣ
+M2          | FEBRUARY              | ΦΕΒΡΟΥΑΡΙΟΣ
+M3          | MARCH                 | ΜΑΡΤΙΟΣ
+M4          | APRIL                 | ΑΠΡΙΛΙΟΣ
+M5          | MAY                   | ΜΑΙΟΣ
+M6          | JUNE                  | ΙΟΥΝΙΟΣ
+M7          | JULY                  | ΙΟΥΛΙΟΣ
+M8          | AUGUST                | ΑΥΓΟΥΣΤΟΣ
+M9          | SEPTEMBER             | ΣΕΠΤΕΜΒΡΙΟΣ
+M10         | OCTOBER               | ΟΚΤΩΒΡΙΟΣ
+M11         | NOVEMBER              | ΝΟΕΜΒΡΙΟΣ
+M12         | DECEMBER              | ΔΕΚΕΜΒΡΙΟΣ
+NOTE_T      | THE NOTE              | Η ΣΗΜΕΙΩΣΗ
+NOTHING     | NOTHING ON THIS DAY: ^A ADDS A NOTE | ΤΙΠΟΤΑ ΑΥΤΗ ΤΗ ΜΕΡΑ: ^A ΝΕΑ ΣΗΜΕΙΩΣΗ
+DEL_Q       | DELETE THE NOTE?      | ΔΙΑΓΡΑΦΗ ΤΗΣ ΣΗΜΕΙΩΣΗΣ;
+NO_TIME     | NO M4 BOARD:|NO DATE FOR TODAY | ΧΩΡΙΣ ΚΑΡΤΑ M4:|ΧΩΡΙΣ ΣΗΜΕΡΙΝΗ ΗΜΕΡΟΜΗΝΙΑ
+HINT        | ARROWS DAY  < > MONTH  TAB NOTES  ^A ADD | ΒΕΛΗ ΜΕΡΑ  < > ΜΗΝΑΣ  TAB ΣΗΜΕΙΩΣΕΙΣ  ^A ΝΕΑ

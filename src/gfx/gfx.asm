@@ -337,6 +337,8 @@ gfx_blit:
 gfx_cls:
         push ix
         ld (gfx_cls_rect + 8),a
+        xor a                       ; no bar now, nor a clock on it
+        ld (ui_ind_room),a
         ld hl,(gfx_width)
         ld (gfx_cls_rect + 4),hl
         ld ix,gfx_cls_rect

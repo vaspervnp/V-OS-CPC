@@ -32,7 +32,8 @@ Modus 1. Ein Fenster DATEIEN zeigt die Dateien eines Laufwerks als Symbole, vier
 | ^R | die Disketten neu lesen |
 | Maus | Klick auf eine Datei: auswählen, noch einmal: öffnen. Klick auf ein Laufwerk: öffnet es |
 
-- **Menü DATEI:** ÖFFNEN, DATEI-INFO (^I), AUFS NÄCHSTE LAUFWERK, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, ZURÜCK ZU BASIC.
+- **Menü DATEI:** ÖFFNEN, DATEI-INFO (^I), AUFS NÄCHSTE LAUFWERK, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, DESKTOP BEHALTEN (^S), ZURÜCK ZU BASIC.
+- **DESKTOP BEHALTEN** (^S) schreibt das Dateifenster so, wie es ist (wo, seine Größe, sein Laufwerk oder geschlossen), in `A:SETUP.CFG`: beim nächsten Start öffnet der Desktop es gleich so. Das ^S von Setup behält es auch.
 - **Das Fenster DATEIEN** lässt sich an seinem Titel verschieben und bleibt dort, auch wenn du die Ansicht wechselst.
 - **Am Anfang gibt es kein Fenster und kein gewähltes Laufwerk:** man sieht den Hintergrund (und sein Bild). Ein Laufwerk (ein Klick auf sein Symbol, oder TAB) öffnet sein Fenster; das X im Titel schließt es, ebenso ein Klick auf das offene Laufwerk. Das kleine Quadrat in der Ecke unten rechts macht das Fenster in ganzen Symbolen größer oder kleiner (2–5 pro Reihe, 1–5 Reihen; am Anfang vier mal fünf), und die Leiste rechts zeigt, welcher Teil der Liste zu sehen ist: ein Klick über oder unter ihrem dunklen Teil blättert um ein Fenster. Die Größe bleibt, wie der Platz.
 - **Öffnen nach Typ** (auch im Commander): `.TXT`-Dateien öffnen sich in NOTEPAD, `.MD` in MARKDOWN, `.PIC` und `.LYR` in PAINT, `.VDB` in DATABASE, `.VSH` in SHEET, `.MUS` in MUSIC, das sie gleich abspielt. Das Programm wird auf dem Laufwerk der Datei gesucht, dann auf A:, dann auf B:. Wird es nicht gefunden, erscheint „KEIN PROGRAMM FÜR DIESE DATEI“. Hat das Programm ungespeicherte Änderungen, fragt es zuerst.
@@ -67,7 +68,7 @@ Modus 1, zwei Felder mit Dateilisten: A: links, B: rechts. Jedes Feld zeigt in s
 | ^R | beide Disketten neu lesen |
 | ^G | das nächste Laufwerk für das aktive Feld: A:, B:, DISK (auch ein Klick auf seinen Titel) |
 | ^F | Dateien suchen: ein Name mit `*` und `?` (`*.TXT`, `README.*`, `NOTE?AD.BIN`; ohne Punkt jede Endung), gesucht auf A:, B: und DISK (in dem Ordner, in dem du bist). Das aktive Feld listet, was gefunden wurde, bis zu 64 Dateien, jede mit ihrem Laufwerk (`B:README.TXT`). RETURN geht zur Datei auf ihrem Laufwerk; ^C, ^D, ^N und ^V wirken auf die gefundenen Dateien, so wie sie sind; ^R oder ^G beendet die Liste |
-| ^V | Text zeigen: die ersten Zeilen der gewählten Datei im anderen Feld, bis es neu gezeichnet wird |
+| ^V | Text zeigen: die ersten Zeilen der gewählten Datei im anderen Feld, bis es neu gezeichnet wird. Ein Bild (`.SCR`, wie PAINT und CHART von SHEET es speichern) erscheint im ganzen Bildschirm in Modus 0 mit seinen eigenen Farben; eine Taste oder ein Klick bringt den Commander zurück |
 | ^E | Diskette kopieren: die ganze Diskette des aktiven Feldes auf die des anderen Feldes (A: und B:), Spur für Spur, jede Spur zuerst wie die der Quelle formatiert (DATA oder SYSTEM). Es fragt vorher: die Dateien der anderen Diskette gehen verloren |
 | Maus | Klick: auswählen, noch einmal: öffnen |
 
@@ -82,6 +83,7 @@ Mit einer M4-Karte hat der Schreibtisch ein drittes Laufwerkssymbol, DISK, unter
 - **Ordner** erscheinen als Ordner (ein Symbol mit Reiter, oder DIR im Commander). RETURN auf einem geht hinein, und `..`, der erste Eintrag, wieder hinauf. In der Programme-Ansicht sind sie auch da, damit du die Programme darin erreichst.
 - **Alles wie auf einer Diskette:** Programme starten von dort, Dateien öffnen sich in ihren Programmen, und ^C, ^D und ^N kopieren, löschen und benennen um. Kopien zwischen DISK und einer Diskette gehen bis 16K. Ordner und Dateien haben Namen wie auf dem CPC (8.3: `NAME.EXT`); längere Namen erscheinen nicht.
 - **M4.SYS** (auf `vos.dsk`) wird von A: geladen, wenn DISK das erste Mal gebraucht wird.
+- **Uhrzeit und Datum:** Die Menüleiste zeigt die Uhrzeit der M4 („09:25“, links von der Tastatursprache) in jeder Ansicht und jedem Programm, wo Platz ist, und DATEI-INFO (^I) nennt unter der Größe Datum und Uhrzeit einer Datei auf der Karte. Die Zeit kommt vom Zeitserver der M4 (mit `NETSET` am CPC eingestellt).
 - **In den Programmen:** OTHER DRIVE (^W in SHEET) geht A: → B: → DISK, und die untere Zeile zeigt `DISK:NAME.TXT`. Die Liste von OPEN zeigt auch die Ordner: RETURN auf einem (oder auf `..`) zeigt diesen Ordner, und SAVE schreibt in den Ordner, aus dem geöffnet wurde. READER schreibt die Karte als `C:` in seinen Adressen.
 - **Datenbanken** gehen auch auf DISK: das ^W von DATABASE erreicht es, und STREETS, von der Karte gestartet, hält dort seine STREETS.VDB.
 - **Noch nicht:** die SD-Karte wird nicht in V-OS formatiert. V-OS selbst startet weiter von einer Diskette in A: (tippe `|DISC` vor `RUN"VOS"`: mit einer M4-Karte startet der CPC auf der SD-Karte).

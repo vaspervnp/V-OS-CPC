@@ -21,10 +21,12 @@
 ; window's middle goes there). Under the colours: where the pointer is
 ; in the picture, and the window's top left (VIEW).
 ; The pointer draws: the AMX mouse, or the cursor keys with COPY as its
-; button. The tools, on the right (or P B L X F):
+; button. The tools, on the right (or P B L X F C):
 ;   PENCIL, BRUSH (3 x 3)  draw while the button is down
 ;   LINE, BOX              from where it went down to where it came up
 ;   FILL                   the area of one colour around the pointer
+;   CIRCLE                 around where it went down, through where it
+;                          came up
 ; The colours, below the picture (or TAB: the next one). With layers,
 ; under the tools, the layers from the top (a click chooses one), and
 ; keys: 1-3 choose one, H hides or shows it, U and D move it up or
@@ -79,7 +81,8 @@ T_BRUSH_        equ 1
 T_LINE_         equ 2
 T_BOX_          equ 3
 T_FILL_         equ 4
-TOOLS           equ 5
+T_CIRCLE_       equ 5
+TOOLS           equ 6
 
 CMD_NEW         equ VC_APP + 1
 CMD_NEW_L       equ VC_APP + 2
@@ -648,6 +651,8 @@ ptr_up:
         call ptr_at
         call clamp
         ld a,(tool)
+        cp T_CIRCLE_
+        jp z,circle
         cp T_LINE_
         ret c
         jp nz,box
@@ -1714,6 +1719,130 @@ line:
         ld (hl),a
         jr .point
 
+; CIRCLE: around x0, y0, through C, B (its radius the larger of the
+; two distances), a pixel at each point (the midpoint way), none off
+; the picture
+circle:
+        ld a,(x0)
+        sub c
+        jr nc,.dx
+        neg
+.dx:
+        ld d,a
+        ld a,(y0)
+        sub b
+        jr nc,.dy
+        neg
+.dy:
+        cp d
+        jr nc,.r
+        ld a,d
+.r:
+        ld (c_x),a                  ; x = r, y = 0, err = 1 - r
+        ld e,a
+        ld d,0
+        ld hl,1
+        or a
+        sbc hl,de
+        ld (c_err),hl
+        xor a
+        ld (c_y),a
+.point:
+        ld a,(c_x)
+        ld hl,c_y
+        cp (hl)
+        ret c                       ; x < y: all of it
+        ld a,(c_x)                  ; the eight points
+        ld d,a
+        ld a,(c_y)
+        ld e,a
+        call .four
+        ld a,(c_y)
+        ld d,a
+        ld a,(c_x)
+        ld e,a
+        call .four
+        ld hl,c_y
+        inc (hl)
+        ld hl,(c_err)
+        bit 7,h
+        jr z,.step_x
+        ld a,(c_y)                  ; err += 2 y + 1
+        ld e,a
+        ld d,0
+        add hl,de
+        add hl,de
+        inc hl
+        ld (c_err),hl
+        jr .point
+.step_x:
+        ld hl,c_x                   ; x - 1, err += 2 (y - x) + 1
+        dec (hl)
+        ld a,(c_y)
+        ld l,a
+        ld h,0
+        ld a,(c_x)
+        ld e,a
+        ld d,0
+        or a
+        sbc hl,de
+        add hl,hl
+        inc hl
+        ld de,(c_err)
+        add hl,de
+        ld (c_err),hl
+        jr .point
+.four:                              ; x0 +- D, y0 +- E
+        xor a
+        call c_one
+        ld a,1
+        call c_one
+        ld a,2
+        call c_one
+        ld a,3
+        ; fall through
+; A bit 0: x0 - D (else + D), bit 1: y0 - E (else + E): that pixel, if
+; on the picture. DE kept
+c_one:
+        push de
+        ld c,a
+        ld a,(x0)
+        ld l,a
+        ld h,0
+        push de
+        ld e,d
+        ld d,0
+        call .add
+        pop de
+        jr nz,.off
+        push hl
+        ld a,(y0)
+        ld l,a
+        ld h,0
+        ld d,0
+        srl c
+        call .add
+        pop de
+        jr nz,.off
+        ld b,l
+        ld c,e
+        call put
+.off:
+        pop de
+        ret
+.add:                               ; C bit 0: HL - DE, else HL + DE;
+        bit 0,c                     ; Z: 0..255
+        jr z,.plus
+        or a
+        sbc hl,de
+        jr .h
+.plus:
+        add hl,de
+.h:
+        ld a,h
+        or a
+        ret
+
 ; BOX: filled, from x0, y0 to C, B; all drawn again
 box:
         ld a,(x0)                   ; the left and right
@@ -2588,7 +2717,7 @@ pen_bytes:      db #00, #C0, #0C, #CC, #30, #F0, #3C, #FC
 bits:           db 128, 64, 32, 16, 8, 4, 2, 1
 lbase:          dw canvas, canvas + LAYER, canvas + 2 * LAYER
 layers0:        db 0, 1, 2, 1, 1, 1 ; new layers: the order, all shown
-tool_keys:      db "pblxf"
+tool_keys:      db "pblxfc"
 
 bar:            db 3
                 dw menu, 0, 0
@@ -2662,6 +2791,9 @@ y0:             db 0
 lnx:            db 0                ; line: from, to, steps, error
 lny:            db 0
 lnx1:           db 0
+c_x:            db 0                ; CIRCLE
+c_y:            db 0
+c_err:          dw 0
 lny1:           db 0
 lsx:            db 0
 lsy:            db 0

@@ -65,7 +65,9 @@ Chaque ligne : ce qu'il faut faire, et ce que vous devez voir.
 **La carte M4** (si vous en avez une)
 - [ ] TAB sur le Bureau passe de B: à DISK, la carte SD, avec ses dossiers.
 - [ ] NOTEPAD enregistre un fichier sur DISK, et le rouvre.
+- [ ] La barre de menus montre l'heure de la M4 ; INFOS DU FICHIER d'un fichier sur DISK donne sa date.
 - [ ] WEBGET télécharge un fichier ; READER ouvre une page du web.
+- [ ] TELNET se connecte à un serveur (un BBS) et montre ce qu'il envoie.
 
 **La vitesse** (combien de temps, montre en main)
 - [ ] De `RUN"VOS` jusqu'au Bureau.

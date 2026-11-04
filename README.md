@@ -42,7 +42,12 @@ make test-print  # NOTEPAD and SHEET print to Caprice32's printer file, checked;
 make test-find   # FIND and SHOW THE TEXT in the Commander
 make test-dcopy  # COPY THE DISC in the Commander: B: as A: after it
 make test-saver  # the Desktop's screen saver (576K)
-make test-show test-clock test-paint-undo  # SHOW, CLOCK's M4 time, PAINT's UNDO (Z80)
+make test-show test-clock test-paint-undo  # SHOW, CLOCK's M4 time, PAINT's UNDO and CIRCLE (Z80)
+make test-pic    # a .SCR shown by the Commander's SHOW THE TEXT
+make test-keep   # KEEP THE DESKTOP: the window as it was after RUN"VOS again
+make test-diary test-telnet  # DIARY and TELNET (Z80; TELNET with an M4 board in Python)
+make test-diary-cap  # DIARY from A: in Caprice32, with DB.SYS: a note added and read back
+make test-telnet-m4  # TELNET in the 1984 emulator, to a server on this PC
 make release     # build/V-OS-<version>.zip: the discs, the PDFs, the pictures and the videos, for a GitHub Release
 make docs        # the PDFs of the manual: docs/V-OS.pdf (Greek) and docs/V-OS-en/fr/es/de/it.pdf
 ```
@@ -88,7 +93,7 @@ Hex numbers in the code are written with `#` (e.g. `#C000`), because RASM reads 
 
 ## Status
 
-V-OS is at **M64** (version 0.35 beta; each milestone adds 0.01). What each milestone added and how it was tested: [MILESTONES.md](MILESTONES.md).
+V-OS is at **M72** (version 0.43 beta; each milestone adds 0.01). What each milestone added and how it was tested: [MILESTONES.md](MILESTONES.md).
 
 ## Licence
 

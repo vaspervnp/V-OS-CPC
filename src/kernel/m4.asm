@@ -24,6 +24,7 @@
         jp m4_cd
         jp m4_path_text
         db "M4"                     ; at +15: checked when loaded
+        jp m4_date                  ; +17
 
 C_OPEN          equ #01             ; (#43xx)
 C_WRITE         equ #03
@@ -37,6 +38,7 @@ C_FSIZE         equ #11
 C_READ          equ #02
 C_GETPATH       equ #13
 C_DIRSETARGS    equ #25
+C_FSTAT         equ #16
 M4_MODE_R       equ #81             ; C_OPEN: FatFS, read
 M4_MODE_W       equ #8A             ; FatFS, write, a new file always
 M4_PIECE        equ 252
@@ -486,6 +488,83 @@ m4_ten:
         inc h
         ret nz
         inc c
+        ret
+
+; fs_name's date and time at DE, a line "2026-11-04 09:30" for FILE
+; INFO (C_FSTAT), DE after them; nothing when the board does not give them
+m4_date:
+        push de
+        ld a,C_FSTAT
+        call m4_named
+        pop de
+        ret c
+        ret nz
+        ld a,(m4_rsp)               ; data up to the time
+        cp 3 + 9
+        ret c
+        call file_newline
+        ld hl,(m4_rsp + 3 + 5)      ; the date: year - 1980 (7 bits),
+        push hl                     ; month (4), day (5)
+        ld a,h
+        srl a
+        ld l,a
+        ld h,0
+        ld bc,1980
+        add hl,bc
+        call util_dec
+        pop hl
+        ld a,l                      ; the month
+        rlca
+        rlca
+        rlca
+        and 7
+        bit 0,h
+        jr z,.month
+        or 8
+.month:
+        call .two
+        ld a,l
+        and 31
+        call .two
+        ld hl,(m4_rsp + 3 + 7)      ; the time: hour (5), minute (6)
+        ld a,h
+        rrca
+        rrca
+        rrca
+        and 31
+        ld c," "
+        call .two_c
+        ld a,h
+        and 7
+        add a,a
+        add a,a
+        add a,a
+        ld b,a
+        ld a,l
+        rlca
+        rlca
+        rlca
+        and 7
+        or b
+        ld c,":"
+        jr .two_c
+.two:                               ; "-", then A as two digits
+        ld c,"-"
+.two_c:                             ; C, then A as two digits
+        ex de,hl
+        ld (hl),c
+        inc hl
+        ld b,"0" - 1
+.tens:
+        inc b
+        sub 10
+        jr nc,.tens
+        add a,"0" + 10
+        ld (hl),b
+        inc hl
+        ld (hl),a
+        inc hl
+        ex de,hl
         ret
 
 ; A -> A in capitals

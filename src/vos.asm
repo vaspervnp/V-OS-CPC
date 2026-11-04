@@ -127,7 +127,15 @@ EXT_SIZE        equ ext_end - ext_start
         assert ext_end == EXT_ADDR + EXT_MAX
         assert ext2_image + EXT2_SIZE <= #A000  ; below AMSDOS
         assert loader_end <= EXT2_ADDR
+        IFDEF TEST_SCRIPT                     ; CALC.SYS on SHEET's test discs
+        IF TEST_SCRIPT == 32 || TEST_SCRIPT == 42 ; only: the others have
+        assert ext2_end <= CALC_ADDR          ; its room for the script
+        ELSE
+        assert ext2_end <= DB_ADDR
+        ENDIF
+        ELSE
         assert ext2_end <= CALC_ADDR
+        ENDIF
 
         IFDEF TEST_SCRIPT
         save "VOS.BIN", loader_start, ext2_image + EXT2_SIZE - loader_start, DSK, "build/vos_test.dsk"

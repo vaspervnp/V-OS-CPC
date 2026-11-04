@@ -19,6 +19,10 @@ fx_info:
         call file_label
         ld hl,(fs_length)
         call util_dec
+        ld a,(fi_drive)             ; on DISK: its date and time
+        cp 2
+        ld hl,M4_ADDR + 17
+        call z,m4_go_e
         call file_newline
         ld a,MSG_TYPE               ; TYPE ...
         call file_label

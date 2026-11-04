@@ -1,0 +1,17 @@
+# TELNET's texts: NAME | English | Greek (tools/mktexts.py). "|" with
+# no spaces around it starts a new line in a dialog.
+MENU        | TELNET                | TELNET
+CONNECT     | CONNECT...            | ΣΥΝΔΕΣΗ...
+CLOSE       | CLOSE                 | ΑΠΟΣΥΝΔΕΣΗ
+CLEAR       | CLEAR THE SCREEN      | ΚΑΘΑΡΙΣΜΑ ΟΘΟΝΗΣ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+ABOUT_TEXT  | TELNET|TEXT OVER THE NETWORK|WITH THE M4 BOARD (TCP),|FOR V-OS, FROM THE SDK | TELNET|ΚΕΙΜΕΝΟ ΜΕΣΑ ΑΠΟ ΤΟ ΔΙΚΤΥΟ|ΜΕ ΤΗΝ ΚΑΡΤΑ M4 (TCP),|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+ADDR_T      | HOST:PORT             | ΔΙΕΥΘΥΝΣΗ:ΘΥΡΑ
+CLOSED      | NOT CONNECTED         | ΧΩΡΙΣ ΣΥΝΔΕΣΗ
+LOOKING     | LOOKING UP THE NAME   | ΑΝΑΖΗΤΗΣΗ ΟΝΟΜΑΤΟΣ
+CONNECTING  | CONNECTING            | ΣΥΝΔΕΣΗ
+CONNECTED   | CONNECTED             | ΣΥΝΔΕΘΗΚΕ
+FAILED      | NO CONNECTION         | ΑΠΟΤΥΧΙΑ ΣΥΝΔΕΣΗΣ
+NO_M4       | NO M4 BOARD           | ΧΩΡΙΣ ΚΑΡΤΑ M4
+HINT        | ^O CONNECT  ^D CLOSE  RETURN SENDS  ^Q BACK | ^O ΣΥΝΔΕΣΗ  ^D ΤΕΛΟΣ  RETURN ΣΤΕΛΝΕΙ  ^Q ΠΙΣΩ

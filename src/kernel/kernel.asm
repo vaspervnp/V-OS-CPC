@@ -55,6 +55,8 @@ kernel_entry:
 .no_ticks:
         call nz,.event
         call bg_frame
+        ld hl,clk_frame             ; the clock on the bar (ext2.asm)
+        call ext2_call
         call ptr_update
         jr .main
 .event:

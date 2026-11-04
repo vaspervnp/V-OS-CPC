@@ -4,6 +4,51 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M72 (the Desktop kept; version 0.43):**
+- **KEEP THE DESKTOP** (^S, the Desktop's FILE menu) writes the files window as it is (where, its size in cells, its drive, or closed) into `A:SETUP.CFG`; at the next start the Desktop opens it so at once, instead of closed. Setup's ^S keeps it too, as part of the settings.
+- **SETUP.CFG version 5:** five more bytes (`CFG_WIN_X` the window's x / 2, `CFG_WIN_Y` its y, 0 when none is kept, `CFG_WIN_COLS`, `CFG_WIN_ROWS`, `CFG_WIN_DRIVE`, #FF closed); versions 2–4 are read as before.
+- **Fixed on the way:** the kept drive is given to the Desktop through a variable of its own (`dt_kd`): `sys_drive` is set again at the start.
+- **Tested:** `make test-keep` (new, Caprice32, scenario 49: the window opened on A:, dragged by its title bar, on B:, ^S, BASIC, `RUN"VOS` again: the window open on B: where it was; the shot comes before the script, which runs again, presses anything).
+
+**M71 (TELNET; version 0.42):**
+- **TELNET** (`myapps/telnet`, on `apps.dsk`): text over the network with the M4 board. CONNECT ^O asks for `HOST:PORT` (a name or numbers; 23 without a port) and connects by TCP: `C_NETHOSTIP` for a name, `C_NETSOCKET`, `C_NETCONNECT` (the ip and the port low byte first, as the M4's own telnet example has them). What comes (`C_NETRECV`, up to 128 bytes a frame) is written in a window of 20 rows that scrolls up at its end: CR, LF, TAB and backspace as on a terminal, ANSI escape sequences left out, the letters over 160 as the V-OS set has them (Greek in ISO 8859-7); the telnet options the other end asks for are refused (DO: WONT, WILL: DONT). The line typed at the bottom goes with RETURN and CR LF (`C_NETSEND`). CLOSE ^D, or the other end, ends it.
+- **`VX_M4` with HL = 0** (API 32) copies the M4 ROM's `sock_info` (pointed to by #FF06) to the program: each socket's status, its bytes received, an ip; TELNET waits on it for a name, a connection and what comes, ten seconds at most.
+- **Tested:** `make test-telnet` (new, Z80, with an M4 board in Python whose sockets connect a few frames late to a server that greets, asks an option, sends ANSI colours, Greek and 30 lines, answers in capitals and closes on BYE; by number and by name, a port and the default, an address that answers nothing, no board), `make test-telnet-m4` (new, the 1984 emulator's M4 board connected to `tools/tcp_server.py` on this PC: the greeting, the option refused, "hi" sent and "> HI" back).
+
+**M70 (DIARY; version 0.41):**
+- **DIARY** (`myapps/diary`, on `apps.dsk`): days and what is on them. The month in mode 1, a week a row from Monday, the chosen day inverted, the days with notes marked `*`; under it the chosen day's notes (up to 10, of 40 characters). ARROWS a day or a week (into the months around), `<` `>` a month, TAB the notes: UP/DOWN, RETURN changes one, DEL deletes it; ^A adds one, ^T goes to today. It starts on the M4's day (`C_TIME`), else on the last day with a note, else on 2026-01-01.
+- **The notes** are in `DIARY.VDB` on its drive (^W), a table DAYS of DATE ("2026-11-04", its key) and NOTE, made the first time; opened for each change and closed again, so another program may use a database meanwhile. The month's marks come from one `DB_FIND` of "2026-11" and `DB_NEXT`; the weekdays from Sakamoto's way, the leap years by 4, 100 and 400.
+- **Fixed on the way (in the test):** `DB_FIND` gives the record where the key was, so DIARY gives it the key in its record buffer.
+- **Tested:** `make test-diary` (new, Z80, with `tools/database_check.py`'s model of DB.SYS, now answering `C_TIME` too: the M4's day, November 2026 from a Sunday, notes added, marked, changed, deleted in `DIARY.VDB`; days and weeks into October and back, months on to February 2028 with its 29th, TODAY with and without an M4, the last day with a note at the start); `make test-diary-cap` (new, Caprice32 with DB.SYS, scenario 50: DIARY from A:, January 2026, A:DIARY.VDB made, a note "hi" added on the 1st and marked, read back after moving away and back).
+
+**M69 (letters from a database; version 0.40):**
+- **PRINT LETTERS ^L** in DATABASE: a `.TXT` of the drive (a letter written in NOTEPAD, in UTF-8 too) printed once for each record of the table in use, in its order, a page each. A field's name in braces, `{NAME}`, becomes what the record has in it, without the spaces around it; names without case; a name the table does not have stays as it is. Without a `.TXT` on the drive it says so.
+- **IMPORT CSV and PRINT LETTERS** pick and load their file the same way now (`pick_load`).
+- **`VX_PRINT`:** BC = 0 with HL = 0 starts a printout without headings (letters have none).
+- **Tested:** `make test-database-z80` (Z80: three letters with {name}, {AGE}, {Name} and an unknown {nope}, in key order, Greek from UTF-8, a form feed after each; PRINTED said; a drive without a `.TXT`).
+
+**M68 (FIND and REPLACE in NOTEPAD, CIRCLE in PAINT; version 0.39):**
+- **NOTEPAD:** FIND ^F (EDIT menu) asks for a text (up to 20 characters) and looks from the cursor on, in all of the text, even the parts in the data bank: A–Z without case. Found, it is selected and the cursor goes after it (the window moves there); FIND AGAIN ^G looks for the next. REPLACE ^R asks for the text and what to put instead and changes it in all of the text, from the start; it cannot be undone. NOT FOUND when there is none.
+- **PAINT:** a sixth tool, CIRCLE (C): from its centre, where the button goes down, to where it comes up (the radius is the larger of the two distances), a pixel at each point, as LINE draws; UNDO takes it back. (LINE and BOX were already there.)
+- **Tested:** `make test-notepad-big` (Z80: FIND in lower case far into a 300-line file, with and without a data bank of its own, the selection and the cursor; FIND AGAIN past the last; REPLACE of SOME with ANY OLD in every line; a REPLACE of nothing), `make test-paint-undo` (Z80: CIRCLE of radius 20, its pixels between 18 and 22 from the centre and the four ends there, UNDO and UNDO again, on a small picture and on the whole screen).
+
+**M67 (pages in printouts; version 0.38):**
+- **Pages:** `VX_PRINT` counts the lines: after 60 (on a page of 66) a form feed goes out by itself. A printout started with BC = 0 and HL → its file's 11-byte name (API 31) has a heading at the top of each page, the name and the page's number (`NOTES.TXT  PAGE 2`, PAGE in the language V-OS shows, as plain ASCII), then an empty line; a form feed asked for (12) starts a new page with its heading too.
+- **NOTEPAD, SHEET and DATABASE** start their printouts so, with the file's name.
+- **Memory:** `CALC_ADDR` #4F00 and `DB_ADDR` #5800 (DB.SYS now ends at #6FFB, right before its cache), for the second extension's room; SHEET's test builds (32, 42) leave out the SD card's databases (`DM_NONE`).
+- **Tested:** `make test-print`, longer: NOTEPAD's text has 65 lines, so two pages with their headings, then SHEET's page with its own (`tools/print_check.py` makes what the printer must get, page by page); scenario 42's chart later, after the printing.
+
+**M66 (pictures in the Commander; version 0.37):**
+- **SHOW THE TEXT (^V) on a `.SCR`** (16K, as PAINT and SHEET's CHART save them) shows the picture on the whole screen in mode 0, in the middle, with its inks (PAINT's at #07D0) or the Launcher's; a key or a click brings the Commander back as it was.
+- **Tested:** `make test-pic` (new, Caprice32, scenario 47: B:NIGHT.SCR chosen, ^V, the picture, RETURN, the Commander).
+
+**M65 (room in the kernel; the time on the menu bar, the dates of DISK's files; version 0.36):**
+- **Room in the kernel:** reading and writing `SETUP.CFG` moved to the second extension (`kernel/ext2.asm`: `cfg_load_x`, `cfg_save_x`; the kernel keeps two jumps). The kernel ends at #3D86: 122 bytes free, from 4. Test builds without CALC.SYS (all but SHEET's, 32 and 42) may now fill the second extension up to `DB_ADDR`.
+- **The clock on the menu bar:** with an M4 board, once a second the main loop asks it for the time (`C_TIME`) and writes "hh:mm" on the bar, left of the keyboard's language, wherever the bar has room for both (`ui_ind_room` 2; a `gfx_cls` takes the bar away until it is drawn again). Without an M4 board nothing changes.
+- **Dates on DISK:** FILE INFO (^I) on a file of the SD card has a line with its date and time, "2026-11-04 09:27", under its size (`C_FSTAT` #4316, a new jump of M4.SYS at +17).
+- **Tested:** `make test-m4` with a new scenario 46 (1984 emulator: the time on the Desktop's bar, then FILE INFO on DISK's HELLO.TXT with its date); `test-theme`, `test-saver`, `test-langs` (SETUP.CFG read and written from the second extension), `test-print`, `test-sheet`; every test scenario (1–46) assembled.
+- **Not tested:** on a real M4 board.
+
 **M64 (smaller ones: SHOW, COPY THE DISC, CSV, the screen saver; version 0.35):**
 - **SHOW** (`myapps/show`, on `apps.dsk`): the `.SCR` pictures of a drive one after the other, in mode 0 with their inks (PAINT's at #07D0, else PAINT's palette): the next every 5 seconds, RIGHT and LEFT by hand, SPACE stops and goes on, ^W the other drive. Each is loaded into the data bank and drawn with `VOS_BLIT` a row at a time.
 - **COPY THE DISC** (Commander, ^E): the active panel's disc onto the other's, A: and B:, a track at a time: its nine sectors into bank 4, then the target's track formatted as the source's (DATA or SYSTEM, from track 0's first sector) and written. Asked first.

@@ -32,7 +32,8 @@ Mode 1. A FILES window shows the files of a drive as icons, four in each row. Th
 | ^R | read the discs again |
 | mouse | click on a file: select, again: open. Click on a drive: opens it |
 
-- **FILE menu:** OPEN, FILE INFO (^I), COPY TO NEXT DRIVE, DELETE, RENAME, READ DISCS AGAIN, EXIT TO BASIC.
+- **FILE menu:** OPEN, FILE INFO (^I), COPY TO NEXT DRIVE, DELETE, RENAME, READ DISCS AGAIN, KEEP THE DESKTOP (^S), EXIT TO BASIC.
+- **KEEP THE DESKTOP** (^S) writes the files window as it is (where, its size, its drive, or closed) into `A:SETUP.CFG`: at the next start the Desktop opens it so at once. Setup's ^S keeps it too.
 - **The FILES window** can be dragged by its title and stays there, even when you switch view.
 - **At first there is no window and no drive is chosen:** the desk (and its picture) shows. A drive (a click on its icon, or TAB) opens its window; the X on its title closes it, and so does a click on the open drive. The small square in the corner below on the right makes the window larger or smaller in whole icons (2–5 in a row, 1–5 rows; four by five at first), and the bar on the right shows which part of the list is in view: a click above or below its dark part scrolls a window's worth up or down. The size is kept, like the place.
 - **Opening by type** (also in the Commander): `.TXT` files open in NOTEPAD, `.MD` in MARKDOWN, `.PIC` and `.LYR` in PAINT, `.VDB` in DATABASE, `.VSH` in SHEET, `.MUS` in MUSIC, which starts playing them. The program is looked for on the file's drive, then on A:, then on B:. If it is not found, "NO PROGRAM FOR THIS FILE" is shown. If the program has unsaved changes, it asks first.
@@ -67,7 +68,7 @@ Mode 1, two panels with file lists: A: on the left, B: on the right. Each panel 
 | ^R | read both discs again |
 | ^G | the next drive for the active panel: A:, B:, DISK (also a click on its title) |
 | ^F | find files: a name with `*` and `?` (`*.TXT`, `README.*`, `NOTE?AD.BIN`; without a dot, any extension), looked for on A:, B: and DISK (the folder it is in). The active panel lists what was found, up to 64 files, each with its drive (`B:README.TXT`). RETURN goes to the file on its drive; ^C, ^D, ^N and ^V work on the found files as they are; ^R or ^G ends the list |
-| ^V | show the text: the chosen file's first lines in the other panel, until it is drawn again |
+| ^V | show the text: the chosen file's first lines in the other panel, until it is drawn again. A picture (`.SCR`, as PAINT and SHEET's CHART save them) shows on the whole screen in mode 0 with its own inks; a key or a click brings the Commander back |
 | ^E | copy the disc: the whole disc of the active panel onto the other panel's (A: and B:), track by track, each track formatted first as the source's (DATA or SYSTEM). It asks first: the other disc's files are lost |
 | mouse | click: select, again: open |
 
@@ -82,6 +83,7 @@ With an M4 board, the Desktop has a third drive icon, DISK, under A: and B:, and
 - **Folders** show as folders (an icon with a tab, or DIR in the Commander). RETURN on one goes into it, and `..`, the first entry, goes back up. In the Launcher, folders are there too, so that you can reach the programs inside them.
 - **Everything as on a disc:** programs run from it, files open in their programs, and ^C, ^D and ^N copy, delete and rename. Copies between DISK and a disc go up to 16K. Folders and files are named as on the CPC (8.3: `NAME.EXT`); names that are longer do not show.
 - **M4.SYS** (on `vos.dsk`) is loaded from A: the first time DISK is used.
+- **The time and the dates:** the menu bar shows the M4's time ("09:25", left of the keyboard's language) in every view and program that has room for it, and FILE INFO (^I) gives a file's date and time on the card under its size. The time comes from the M4's time server (set with `NETSET` on the CPC).
 - **In the programs:** OTHER DRIVE (^W in SHEET) goes A: → B: → DISK, and the bottom line says `DISK:NAME.TXT`. OPEN's list shows the folders too: RETURN on one (or on `..`) lists that folder, and SAVE writes in the folder you opened from. READER writes the card as `C:` in its places.
 - **Databases** go on DISK too: DATABASE's ^W reaches it, and STREETS run from the card keeps its STREETS.VDB there.
 - **Not yet:** the SD card is not formatted from V-OS. V-OS itself still starts from a disc in A: (type `|DISC` before `RUN"VOS"`: with an M4 board, the CPC starts on the SD card).

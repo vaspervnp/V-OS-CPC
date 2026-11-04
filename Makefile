@@ -71,6 +71,9 @@
 #                 printer file, checked; with no printer, the error
 #   make test-find / test-dcopy / test-saver  the Commander's FIND and
 #                 COPY THE DISC, the Desktop's screen saver (Caprice32)
+#   make test-diary  DIARY in a Z80 emulator: the month, its notes
+#   make test-telnet TELNET in a Z80 emulator, an M4 board's sockets in
+#                 Python: a server greets, answers, closes
 #   make test-show / test-clock / test-paint-undo  SHOW, CLOCK's M4 time,
 #                 PAINT's UNDO (Z80 emulator)
 #   make release   build/V-OS-<version>.zip: the discs, the manual's PDFs,
@@ -96,7 +99,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-diary-cap test-keep test-telnet-m4 test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -1217,6 +1220,66 @@ test-find: $(FIND_DSK) $(PROMO_DSK_B)
 	done
 	ls $(BUILD)/shots/*/*.png
 
+# DIARY with DB.SYS (TEST_SCRIPT=50): started from A:, a note added and
+# read back from A:DIARY.VDB
+DIARY_DSK := $(BUILD)/vos_diary.dsk
+DIARY_SHOTS ?= 270 420 650
+$(DIARY_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(BUILD)/DIARY.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_diary -DTEST_SCRIPT=50
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(BUILD)/DIARY.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-diary-cap: $(DIARY_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(DIARY_SHOTS); do \
+	  cp $(DIARY_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_TIMEOUT=60 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done; true
+	ls $(BUILD)/shots/*/*.png
+
+# KEEP THE DESKTOP (TEST_SCRIPT=49): the window moved, on B:, kept in
+# SETUP.CFG; then BASIC and RUN"VOS again: the window as it was
+KEEP_DSK := $(BUILD)/vos_keep.dsk
+$(KEEP_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_keep -DTEST_SCRIPT=49
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-keep: $(KEEP_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	cp $(KEEP_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/190 VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) 190"
+	cp $(KEEP_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/reboot VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk VOS_REBOOT_WAIT=85 bash $(abspath tools/cap32_reboot_check.sh) 400" || true
+	ls $(BUILD)/shots/*/*.png
+
+# SHOW THE TEXT on a .SCR (TEST_SCRIPT=47): the picture in the
+# Commander, then the Commander again
+PIC_DSK := $(BUILD)/vos_pic.dsk
+PIC_SHOTS ?= 240 320 430
+$(PIC_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_pic -DTEST_SCRIPT=47
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-pic: $(PIC_DSK) $(PROMO_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(PIC_SHOTS); do \
+	  cp $(PIC_DSK) $(BUILD)/vos_run.dsk; cp $(PROMO_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
 # The printer (TEST_SCRIPT=42, 576K): NOTEPAD prints B:PRINT.TXT, with
 # Greek and accented letters, and SHEET B:T.VSH, to Caprice32's printer
 # file, which is checked (tools/print_check.py); with no printer, a
@@ -1227,7 +1290,7 @@ PRINT_DSK_B := $(BUILD)/vos_print_b.dsk
 # Caprice32's printer file): with a printer at the end, SHEET; without
 # (at 128K: at 576K its BUSY is off then), NOTEPAD's error; then SHEET's
 # CHART of A2:A4
-PRINT_SHOTS ?= 1:576:720 0:128:345 1:576:850
+PRINT_SHOTS ?= 1:576:950 0:128:345 1:576:1100
 $(PRINT_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(BUILD)/NOTEPAD.BIN $(BUILD)/SHEET.BIN
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
@@ -1299,6 +1362,20 @@ test-wall: $(WALL_DSK) $(TEST_DSK_B)
 
 # SHOW, the .SCR pictures one after the other (tools/show_check.py, a
 # Z80 emulator)
+# DIARY in a Z80 emulator (tools/diary_check.py, with database_check's
+# model of DB.SYS): the month, notes added, changed, deleted, moving
+test-diary: $(BUILD)/DIARY.BIN
+	@mkdir -p $(SCR_TEST)
+	$(RASM) myapps/diary/diary.asm -I src -I $(BUILD)/myapp_diary -I myapps/diary -o $(SCR_TEST)/diary -s > $(SCR_TEST)/rasm_diary.log
+	$(PYTHON) tools/diary_check.py $(SCR_TEST)/diary.bin $(SCR_TEST)/diary.sym
+
+# TELNET in a Z80 emulator (tools/telnet_check.py): an M4 board's
+# sockets in Python, with a server at the other end
+test-telnet: $(BUILD)/TELNET.BIN
+	@mkdir -p $(SCR_TEST)
+	$(RASM) myapps/telnet/telnet.asm -I src -I $(BUILD)/myapp_telnet -I myapps/telnet -o $(SCR_TEST)/telnet -s > $(SCR_TEST)/rasm_telnet.log
+	$(PYTHON) tools/telnet_check.py $(SCR_TEST)/telnet.bin $(SCR_TEST)/telnet.sym
+
 test-show: $(BUILD)/SHOW.BIN
 	@mkdir -p $(SCR_TEST)
 	$(RASM) myapps/show/show.asm -I src -I $(BUILD)/myapp_show -I myapps/show -o $(SCR_TEST)/show -s > $(SCR_TEST)/rasm_show.log
@@ -1403,17 +1480,38 @@ M4_SHOTS = 900 1200 1500 1800 2050 2300 2500 2700
 M4V_SHOTS = 500 900 1200 1500 1800 2100 2400
 M4O_SHOTS = 900 1250 1400 1800 2700 3000 3500
 M4D_SHOTS = 1100 1800 2400
+M4I_DSK := $(BUILD)/vos_m4i.dsk
+M4I_SHOTS = 900 1700
+M4N_DSK := $(BUILD)/vos_m4n.dsk
+M4N_SHOTS = 1200 2600 3200
 $(BUILD)/vos_m4%.dsk: $(SOURCES) $(LANG_KERNEL) $(PACKS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(basename $@) \
-	  -DTEST_SCRIPT=$(if $(findstring m4v,$@),35,$(if $(findstring m4o,$@),36,$(if $(findstring m4d,$@),37,34))) -s
+	  -DTEST_SCRIPT=$(if $(findstring m4v,$@),35,$(if $(findstring m4o,$@),36,$(if $(findstring m4d,$@),37,$(if $(findstring m4i,$@),46,$(if $(findstring m4n,$@),48,34))))) -s
 	mv $(TEST_DSK) $@
 	$(call add_test_packs,$@)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
-test-m4: $(M4_DSK) $(M4V_DSK) $(M4O_DSK) $(M4D_DSK) $(BUILD)/NOTEPAD.BIN $(BUILD)/STREETS.BIN
+# TELNET in the 1984 emulator (TEST_SCRIPT=48): the M4 board connects to
+# tools/tcp_server.py on this PC's port 2323 (1984 runs on Windows: WSL's
+# port is its localhost's); what TELNET sent is in build/tcp_server.log
+test-telnet-m4: $(M4N_DSK) $(BUILD)/TELNET.BIN
+	rm -rf $(BUILD)/shots $(BUILD)/tcp_server.log
+	$(PYTHON) tools/tcp_server.py 2323 & echo $$! > $(BUILD)/tcp_server.pid; \
+	for d in $(M4N_SHOTS); do \
+	  cp $(M4N_DSK) $(BUILD)/vos_run.dsk; \
+	  M4_CARD=net M4_SYM=$(BUILD)/vos_m4n.sym M4_SHOT=n-$$d bash tools/m4_shot.sh $$d; \
+	done; kill $$(cat $(BUILD)/tcp_server.pid)
+	grep -aq "hi" $(BUILD)/tcp_server.log
+	grep -aq "$$(printf '\377\374\030')" $(BUILD)/tcp_server.log
+
+test-m4: $(M4_DSK) $(M4V_DSK) $(M4O_DSK) $(M4D_DSK) $(M4I_DSK) $(BUILD)/NOTEPAD.BIN $(BUILD)/STREETS.BIN
 	rm -rf $(BUILD)/shots
+	for d in $(M4I_SHOTS); do \
+	  cp $(M4I_DSK) $(BUILD)/vos_run.dsk; \
+	  M4_SYM=$(BUILD)/vos_m4i.sym M4_SHOT=i-$$d bash tools/m4_shot.sh $$d; \
+	done
 	for d in $(M4_SHOTS); do \
 	  cp $(M4_DSK) $(BUILD)/vos_run.dsk; bash tools/m4_shot.sh $$d; \
 	done

@@ -322,6 +322,133 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 50
+; make test-diary-cap (-DTEST_SCRIPT=50): A: has DIARY.BIN after the
+; system's files, no M4 board. Expected:
+;   frame  250  TAB          -> the Desktop's window on A:
+;   frame  300, 330 DOWN x2, 360 RIGHT -> DIARY.BIN; 450 RETURN: DIARY on
+;                               January 2026, the 1st chosen (A:DIARY.VDB
+;                               made)
+;   frame  900  CONTROL+A, 1000-1040 H I, 1100 RETURN -> the note "hi" on
+;                               the 1st, the day marked
+;   frame 1300  RIGHT x2, 1400 DOWN -> the 10th; 1500 LEFT x2 back...
+;   frame 1700  UP, 1750 LEFT, 1800 LEFT -> the 1st again, "hi" read back
+test_keys:
+        dw  250 : db   4, 8, %00010000   ; TAB: A:'s window
+        dw  300 : db   4, 0, %00000100   ; DOWN
+        dw  330 : db   4, 0, %00000100   ; DOWN
+        dw  360 : db   4, 0, %00000010   ; RIGHT
+        dw  450 : db   4, 2, %00000100   ; RETURN: DIARY
+        dw  895 : db  15, 2, %10000000   ; CONTROL
+        dw  900 : db   4, 8, %00100000   ; A: ADD A NOTE
+        dw 1000 : db   4, 5, %00010000   ; H
+        dw 1040 : db   4, 4, %00001000   ; I
+        dw 1100 : db   4, 2, %00000100   ; RETURN
+        dw 1300 : db   4, 0, %00000010   ; RIGHT
+        dw 1350 : db   4, 0, %00000010   ; RIGHT
+        dw 1400 : db   4, 0, %00000100   ; DOWN: the 10th
+        dw 1700 : db   4, 0, %00000001   ; UP
+        dw 1750 : db   4, 1, %00000001   ; LEFT
+        dw 1800 : db   4, 1, %00000001   ; LEFT: the 1st
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 49
+; make test-keep (-DTEST_SCRIPT=49): KEEP THE DESKTOP. Expected:
+;   frame  250  TAB          -> the Desktop's window on A:
+;   frame  300-450           -> dragged right and down by its title bar
+;   frame  500  TAB          -> on B:
+;   frame  600  CONTROL+S    -> KEEP THE DESKTOP: SETUP.CFG written
+;   frame  800  CONTROL+Q, 900 RETURN -> BASIC; then RUN"VOS
+;                               (tools/cap32_reboot_check.sh): the window
+;                               open on B: at once, where it was
+test_keys:
+        dw  250 : db   4, 8, %00010000   ; TAB: A:'s window
+        dw  300 : db 120, #80, 1         ; COPY and the cursor keys
+        dw  300 : db  40, #81, 50        ; its title bar (100, 23)
+        dw  300 : db  40, #82, 23
+        dw  340 : db  80, 1, %00000010   ; COPY held
+        dw  350 : db  30, 0, %00000010   ; RIGHT
+        dw  350 : db  15, 0, %00000100   ; DOWN
+        dw  450 : db   1, #80, 0
+        dw  500 : db   4, 8, %00010000   ; TAB: B:
+        dw  595 : db  15, 2, %10000000   ; CONTROL
+        dw  600 : db   4, 7, %00010000   ; S: KEEP THE DESKTOP
+        dw  795 : db  15, 2, %10000000   ; CONTROL
+        dw  800 : db   4, 8, %00001000   ; Q
+        dw  900 : db   4, 2, %00000100   ; RETURN: BASIC
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 48
+; make test-telnet-m4 (-DTEST_SCRIPT=48, in the 1984 emulator with an M4
+; board whose SD card holds TELNET.BIN alone, and tools/tcp_server.py on
+; port 2323 of this PC). Expected:
+;   frame  300-400 TAB x3    -> the Desktop on DISK, TELNET.BIN chosen
+;   frame  900  RETURN       -> TELNET
+;   frame 1300  CONTROL+O    -> HOST:PORT asked
+;   frame 1500-2020          -> "127.0.0.1:2323" typed, 2100 RETURN:
+;                               CONNECTED, the server's greeting
+;   frame 2700  h, i, RETURN -> "> HI" from the server
+test_keys:
+        dw  300 : db   4, 8, %00010000   ; TAB
+        dw  350 : db   4, 8, %00010000   ; TAB
+        dw  400 : db   4, 8, %00010000   ; TAB
+        dw  900 : db   4, 2, %00000100   ; RETURN
+        dw 1295 : db  15, 2, %10000000   ; CONTROL
+        dw 1300 : db   4, 4, %00000100   ; O
+        dw 1500 : db   4, 8, %00000001   ; 1
+        dw 1540 : db   4, 8, %00000010   ; 2
+        dw 1580 : db   4, 5, %00000010   ; 7
+        dw 1620 : db   4, 3, %10000000   ; .
+        dw 1660 : db   4, 4, %00000001   ; 0
+        dw 1700 : db   4, 3, %10000000   ; .
+        dw 1740 : db   4, 4, %00000001   ; 0
+        dw 1780 : db   4, 3, %10000000   ; .
+        dw 1820 : db   4, 8, %00000001   ; 1
+        dw 1860 : db   4, 3, %00100000   ; :
+        dw 1900 : db   4, 8, %00000010   ; 2
+        dw 1940 : db   4, 7, %00000010   ; 3
+        dw 1980 : db   4, 8, %00000010   ; 2
+        dw 2020 : db   4, 7, %00000010   ; 3
+        dw 2100 : db   4, 2, %00000100   ; RETURN
+        dw 2700 : db   4, 5, %00010000   ; H
+        dw 2740 : db   4, 4, %00001000   ; I
+        dw 2800 : db   4, 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 47
+; make test-pic (-DTEST_SCRIPT=47): B: the release's programs, README.TXT,
+; SUNSET.SCR and NIGHT.SCR, the last. Expected:
+;   frame  300  F3           -> the Commander
+;   frame  500  RIGHT        -> the right panel, B:
+;   frame  650  SHIFT+DOWN   -> a page down: NIGHT.SCR, the last
+;   frame  800  CONTROL+V    -> NIGHT.SCR on the whole screen, mode 0,
+;                               its own inks
+;   frame 1100  RETURN       -> the Commander again, NIGHT.SCR chosen
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  500 : db   4, 0, %00000010   ; RIGHT
+        dw  645 : db  15, 2, %00100000   ; SHIFT
+        dw  650 : db   4, 0, %00000100   ; DOWN
+        dw  795 : db  15, 2, %10000000   ; CONTROL
+        dw  800 : db   4, 6, %10000000   ; V: SHOW THE TEXT
+        dw 1100 : db   4, 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 46
+; make test-m4 (-DTEST_SCRIPT=46, in the 1984 emulator with an M4 board,
+; as 34). Expected:
+;   frame  300-400 TAB x3    -> the Desktop on DISK, HELLO.TXT selected,
+;                               the M4's time on the bar ("hh:mm")
+;   frame 1000  CONTROL+I    -> FILE INFO: HELLO.TXT, its size, then
+;                               its date and time on the card
+test_keys:
+        dw  300 : db   4, 8, %00010000   ; TAB
+        dw  350 : db   4, 8, %00010000   ; TAB
+        dw  400 : db   4, 8, %00010000   ; TAB
+        dw  995 : db  15, 2, %10000000   ; CONTROL
+        dw 1000 : db   4, 4, %00001000   ; I
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 34
 ; make test-m4 (-DTEST_SCRIPT=34, in the 1984 emulator with an M4 board
 ; whose SD card holds HELLO.TXT and APPS/NOTEPAD.BIN). Expected:
@@ -421,8 +548,10 @@ test_keys:
 ;                               1300)
 ;   frame 1400  F1, 1500 RIGHT, 1600 RETURN -> SHEET with T.VSH
 ;   frame 2100  CONTROL+P    -> printed: A-H, then I-P
-;   frame 2300  DOWN, 2400 CONTROL+G, 2550 RETURN -> SHEET's CHART of
+;   frame 2900  DOWN, 3000 CONTROL+G, 3150 RETURN -> SHEET's CHART of
 ;                               A2:A4: bars of 12, 30, 42
+; (Caprice32's printer takes about two frames a byte: NOTEPAD's 65
+; lines, two pages, and SHEET's take a while)
 test_keys:
         dw  250 : db   4, 8, %00010000   ; TAB: A:
         dw  300 : db   4, 8, %00010000   ; TAB: B:
@@ -435,10 +564,10 @@ test_keys:
         dw 1600 : db   4, 2, %00000100   ; RETURN: SHEET
         dw 2095 : db  15, 2, %10000000   ; CONTROL
         dw 2100 : db   4, 3, %00001000   ; P
-        dw 2300 : db   4, 0, %00000100   ; DOWN: A2
-        dw 2395 : db  15, 2, %10000000   ; CONTROL
-        dw 2400 : db   4, 6, %00010000   ; G: CHART
-        dw 2550 : db   4, 2, %00000100   ; RETURN: A2:A4
+        dw 2900 : db   4, 0, %00000100   ; DOWN: A2
+        dw 2995 : db  15, 2, %10000000   ; CONTROL
+        dw 3000 : db   4, 6, %00010000   ; G: CHART
+        dw 3150 : db   4, 2, %00000100   ; RETURN: A2:A4
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 41
@@ -2056,6 +2185,11 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
+        ENDIF
+        ENDIF
+        ENDIF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

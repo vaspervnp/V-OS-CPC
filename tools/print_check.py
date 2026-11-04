@@ -8,7 +8,9 @@ the printer must get.
                                    NOTEPAD's lines with CR LF, the letters
                                    over 127 as plain ASCII, a new page;
                                    then SHEET's cells as its page shows
-                                   them, A-H and I-P, a new page
+                                   them, A-H and I-P, a new page; each
+                                   page with its heading ("PRINT.TXT
+                                   PAGE 1"), a new page after 60 lines
 """
 import os
 import sys
@@ -18,7 +20,8 @@ import voscs                        # noqa: E402
 
 TEXT = ["Hello, printer!",
         "Καλημέρα κόσμε: ΘΞΨ θξψ ς",
-        "Été, señor, Grüße, città «€»"]
+        "Été, señor, Grüße, città «€»"] + [str(n) for n in range(4, 66)]
+PAGE_LINES = 60                     # kernel/ext2.asm: PRT_LINES
 
 
 # the sheet: a cell, its text, and what it shows (a number on the right)
@@ -59,11 +62,30 @@ def sheet():
     return out + b"\x0c"
 
 
+def pages(title, data):
+    """data as VX_PRINT sends it after a start with title: a heading
+    before the first byte of each page, a form feed after its 60th line"""
+    out, line, page, head = b"", 0, 1, True
+    for c in data:
+        if head and c != 12:
+            out += title + b"  PAGE %d\r\n\r\n" % page
+            line, head = 2, False
+        out += bytes([c])
+        if c == 10:
+            line += 1
+            if line >= PAGE_LINES:
+                out += b"\x0c"
+                c = 12
+        if c == 12:
+            line, page, head = 0, page + 1, True
+    return out
+
+
 def expected():
     out = b""
     for line in TEXT:
         out += plain(line) + b"\r\n"
-    return out + b"\x0c" + sheet()
+    return pages(b"PRINT.TXT", out + b"\x0c") + pages(b"T.VSH", sheet())
 
 
 if __name__ != "__main__":

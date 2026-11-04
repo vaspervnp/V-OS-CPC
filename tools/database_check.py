@@ -13,6 +13,7 @@ returned). A database is made, a table with a DB_ALPHA key and a
 number, records added in the form; then the list must show them in the
 key's order without case, PRINT must print them (VX_PRINT, and
 without a printer its error), IMPORT CSV must add a .CSV's lines,
+PRINT LETTERS print a .TXT once a record with its {FIELD}s filled in,
 FIND must go to them, a change saved must be
 there, a deletion gone, and the list must scroll over 40 records. A
 second table without a key, TAB between them. Exits 1 on the first
@@ -37,11 +38,12 @@ VX_UTF8 = 9
 CAT = 0x9100
 VX_DB = 8
 VX_PRINT = 14
+VX_M4 = 4
 VE_KEY_DOWN = 1
 VK = dict(UP=0, RIGHT=1, DOWN=2, LEFT=8, RETURN=18, TAB=68, DEL=79)
 VC_APP = 32
 CMD = dict(NEW_DB=1, OPEN_DB=2, NEW_TABLE=3, ADD=4, DELETE=5, SAVE=6, LIST=7,
-           DRIVE=8, ABOUT=9, BACK=10, PRINT=11, CSV=12)
+           DRIVE=8, ABOUT=9, BACK=10, PRINT=11, CSV=12, LETTERS=13)
 DB = dict(CREATE=0, OPEN=1, CLOSE=2, TABLE=3, USE=4, INFO=5, ADD=6, GET=7,
           PUT=8, DEL=9, FIND=10, FIRST=11, LAST=12, NEXT=13, PREV=14, COUNT=15)
 ERR_NO_FILE, ERR_EXISTS, ERR_TABLE, ERR_RID, ERR_END = 7, 10, 17, 20, 21
@@ -198,6 +200,7 @@ class App:
         self.exited = False
         self.printed = b''
         self.printer = True                 # ready
+        self.m4 = None                      # C_TIME's answer, or no board
         self.files, self.bank, self.picks = {}, bytearray(0x4000), []
 
     def text(self, n):
@@ -246,6 +249,8 @@ class App:
                     m.set_memory_block(m.hl, ans.encode('vos') + b'\0')
             elif n == DIALOG:
                 m.a = self.buttons.pop(0)
+            elif n == UI_EVENT:                  # not a menu's
+                m.a = 0
             elif n == ERROR:
                 self.errors.append(m.a)
             elif n == CATALOG:
@@ -270,6 +275,14 @@ class App:
                     m.bc, m.a = len(out), 1
             elif n == EXIT:
                 self.exited = True
+            elif n == EXT and m.a == VX_M4 and hasattr(self, 'm4_call'):
+                self.m4_call(m)                  # (tools/telnet_check.py)
+            elif n == EXT and m.a == VX_M4:   # C_TIME only
+                if self.m4 is None:
+                    m.f |= 1
+                else:
+                    rsp = bytes([3 + len(self.m4)]) + b'\x24\x43' + self.m4.encode()
+                    m.set_memory_block(m.de, rsp[:m.bc])
             elif n == EXT and m.a == VX_PRINT:
                 if self.printer:
                     self.printed += bytes(m.memory[m.hl:m.hl + m.bc])
@@ -353,6 +366,38 @@ def import_csv(prog, sym):
         sys.exit('database_check: IMPORT CSV: errors %r' % app.errors)
     print('database_check: IMPORT CSV by semicolons and commas, heads, quotes, long texts, '
           'a big number, UTF-8: all right')
+
+
+def letters(prog, sym):
+    """PRINT LETTERS: a .TXT once a record, a page each, {NAME} and {AGE}
+    as the record has them (without the spaces around), {NOPE} as it is."""
+    app = App(prog, sym)
+    app.call('INIT', a=0)
+    app.inputs = ['club', 'pals', 'name', '12', 'age', '']
+    app.buttons = [0, 1, 0]
+    app.command('NEW_DB')
+    app.files[(1, b'PEOPLE  CSV')] = 'kostas;55\r\nΕλένη;7\r\nbo;123\r\n'.encode('utf-8')
+    app.picks = [0]
+    app.command('CSV')
+    text = 'Dear {name},\r\nyou are {AGE} years old. {nope} {Name}!\r\n'
+    app.files[(1, b'LETTER  TXT')] = text.encode('utf-8') + b'\x1a'
+    app.picks = [0]
+    app.printed = b''
+    app.command('LETTERS')
+    want = b''
+    for name, age in (('bo', 123), ('kostas', 55), ('Ελένη', 7)):
+        want += (text.replace('{name}', name).replace('{AGE}', str(age))
+                 .replace('{Name}', name).encode('vos')) + b'\x0c'
+    check('PRINT LETTERS', app.printed, want)
+    check('PRINTED said', app.line(238), 'PRINTED')
+    app.files = {}
+    app.buttons = [0]
+    app.command('LETTERS')
+    check('PRINT LETTERS without a .TXT: nothing', app.printed, want)
+    if app.errors:
+        sys.exit('database_check: PRINT LETTERS: errors %r' % app.errors)
+    print('database_check: PRINT LETTERS: three letters with their fields, a page each; '
+          'no .TXT: said: all right')
 
 
 def main():
@@ -493,6 +538,7 @@ def main():
           'all right'
           % (5 + 40 + 2))
     import_csv(prog, sym)
+    letters(prog, sym)
 
 
 if __name__ == '__main__':

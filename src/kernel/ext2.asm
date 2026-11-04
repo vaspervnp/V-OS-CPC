@@ -559,8 +559,13 @@ u8_buf:         ds U8_PIECE
 ; over 127 as ASCII (prt_ascii: the port has 7 bits). Carry, A =
 ; PRT_ERR: the printer stayed busy for two seconds (there is none, it
 ; is off line or out of paper).
+; Pages: after PRT_LINES lines (LFs) a form feed (12) goes out by
+; itself. BC = 0 starts a printout: HL -> its file's name, 11 bytes as
+; in a catalog ("NOTES   TXT"); then each page begins with a heading,
+; "NOTES.TXT  PAGE 2" and an empty line (HL = 0: none).
 ; ---------------------------------------------------------------------
 PRT_ERR         equ 41              ; THE PRINTER IS NOT READY
+PRT_LINES       equ 60              ; on a page of 66, a margin at its end
 
         IFDEF TEST_SCRIPT           ; the test builds have no room for it
         IF TEST_SCRIPT != 42        ; (the scripts are here), but make
@@ -576,6 +581,29 @@ prt_entry:
 prt_entry:
         ld b,d
         ld hl,(xa_hl)
+        ld a,b                      ; BC = 0: a new printout, its title
+        or c
+        jr nz,.text
+        ld (prt_line),a
+        ld (prt_title),a
+        ld (prt_head),a
+        inc a
+        ld (prt_page),a
+        ld a,h                      ; HL = 0: no headings
+        or l
+        ret z
+        ld (prt_head),a
+        ld a,(vw_cfg)               ; (through bank_buf: this bank is
+        ld de,bank_buf              ; not mapped while it copies)
+        ld bc,11
+        call bank_get
+        ld hl,bank_buf
+        ld de,prt_title
+        call util_fcb_text
+        xor a
+        ld (de),a
+        ret
+.text:
         ld (u8_at),hl
         ld (u8_len),bc
         ld a,(vw_cfg)
@@ -592,7 +620,7 @@ prt_entry:
         ld a,(hl)
         inc hl
         push bc
-        call prt_char
+        call prt_page_char
         pop bc
         jr c,.busy
         dec bc
@@ -606,6 +634,97 @@ prt_entry:
         pop bc
         ld a,PRT_ERR
         ret
+
+; A -> the printer, a page's heading before it (prt_head) and a form
+; feed after its last line. Carry: busy
+prt_page_char:
+        push hl
+        ld c,a
+        ld hl,prt_head              ; the heading first?
+        ld a,(hl)
+        or a
+        jr z,.char
+        ld a,c
+        cp 12
+        jr z,.char
+        ld (hl),0
+        push bc
+        ld a,(prt_page)             ; "NOTES.TXT  PAGE 2", an empty line
+        ld l,a
+        ld h,0
+        ld de,prt_num
+        ld a," "
+        ld (de),a
+        inc de
+        call util_dec
+        ld hl,prt_crlf2
+        ld bc,5
+        ldir
+        ld hl,prt_title
+        call prt_text
+        jr c,.head_busy
+        ld hl,prt_gap
+        call prt_text
+        jr c,.head_busy
+        ld a,MSG_PAGE
+        call lang_msg
+        call prt_text
+        jr c,.head_busy
+        ld hl,prt_num
+        call prt_text
+.head_busy:
+        pop bc
+        jr c,.done
+        ld a,2
+        ld (prt_line),a
+.char:
+        ld a,c
+        call prt_char
+        jr c,.done
+        ld a,c
+        ld hl,prt_line
+        cp 12                       ; a new page, asked for
+        jr z,.page
+        cp 10
+        jr nz,.done
+        inc (hl)
+        ld a,(hl)
+        cp PRT_LINES
+        ccf
+        jr nc,.done
+        ld a,12
+        call prt_char
+        jr c,.done
+.page:
+        ld (hl),0
+        ld hl,prt_page
+        inc (hl)
+        ld a,(prt_title)            ; a heading on it, with a title
+        or a
+        jr z,.done
+        ld a,1
+        ld (prt_head),a
+.done:
+        pop hl
+        ret
+
+; HL -> text, a 0 at its end: to the printer. Carry: busy
+prt_text:
+        ld a,(hl)
+        or a
+        ret z
+        inc hl
+        call prt_char
+        ret c
+        jr prt_text
+
+prt_title:      ds 13               ; (0: none, no headings)
+prt_page:       db 1
+prt_line:       db 0
+prt_head:       db 0
+prt_num:        ds 1 + 3 + 5        ; " " and the page's number, prt_crlf2
+prt_gap:        db "  ", 0
+prt_crlf2:      db 13, 10, 13, 10, 0
 
 ; A -> the printer, when its BUSY (PPI port B, bit 6) is off: the byte
 ; on #EFxx, then STROBE (bit 7) on and off. Carry: busy for 2 s.
@@ -1048,14 +1167,28 @@ dk_append:
         ret c
         jp dk_blocks
 
-; ---- a database on the SD card (db_drive 2): the file opened, a page
-; read or written at page * 1024 (C_SEEK), closed; commands and
-; responses in fs_buf from +252, as kernel/m4.asm's, through VX_M4
-; (xa_m4), straight into the engine's cache in this bank
 M4_MODE_RW      equ #93                 ; FatFS, read and write, open
                                         ; always: a write past its end
                                         ; makes it longer (in 1984 too)
                                         ; (M4_MODE_R: kernel/m4.asm)
+; ---- SHEET's test builds have no room for a database on the SD card
+        IFDEF TEST_SCRIPT
+        IF TEST_SCRIPT == 32 || TEST_SCRIPT == 42
+DM_NONE         equ 1
+        ENDIF
+        ENDIF
+        IFDEF DM_NONE
+dm_open_db:
+dm_page:
+dm_grow:
+        ld a,35                     ; (no M4 board)
+        scf
+        ret
+        ELSE
+; ---- a database on the SD card (db_drive 2): the file opened, a page
+; read or written at page * 1024 (C_SEEK), closed; commands and
+; responses in fs_buf from +252, as kernel/m4.asm's, through VX_M4
+; (xa_m4), straight into the engine's cache in this bank
 DM_ZERO         equ 0                   ; dm_page: a page of zeros
 DM_BUF          equ fs_buf + 252        ; db size, dw command, data
 DM_PIECE        equ 128
@@ -1270,6 +1403,8 @@ dm_fd:          db 0
 dm_mode:        db 0
 dm_ptr:         dw 0
 
+        ENDIF
+
 ; the dark theme (Setup's THEME, CFG_THEME 1; ui/ui.asm: ui_set_mode):
 ; the bars, menus, dialogs and lists in the text's pen and their text in
 ; theirs, the selection the other way round, the shadow in the bar's
@@ -1299,3 +1434,122 @@ ui_dark:
         inc hl
         ld (hl),a
         ret
+
+; ---------------------------------------------------------------------
+; SETUP.CFG (kernel/setup.asm: cfg_load, cfg_save come here)
+; ---------------------------------------------------------------------
+cfg_load_x:
+        xor a
+        call fdc_select
+        ld hl,cfg_file
+        ld de,BUF_ADDR
+        ld c,BUF_CFG
+        call fs_load
+        jr c,.apply                 ; no file: the defaults
+        ld hl,BUF_ADDR
+        ld de,cfg_head
+        ld bc,CFG_SIZE
+        ld a,BUF_CFG
+        call bank_get
+        ld hl,cfg_head
+        ld de,cfg_magic
+        ld b,4
+.magic:
+        ld a,(de)
+        cp (hl)
+        jr nz,.apply
+        inc hl
+        inc de
+        djnz .magic
+        ld a,(hl)                   ; the version
+        inc hl
+        ld bc,CFG_COUNT
+        cp 5
+        jr z,.copy
+        ld c,CFG_WIN_X              ; up to the picture's name
+        cp 4
+        jr z,.copy
+        ld c,CFG_THEME              ; up to CFG_KBDS
+        cp 3
+        jr z,.copy
+        dec c                       ; up to CFG_DESK
+        cp 2
+        jr nz,.apply
+.copy:
+        ld de,cfg_data
+        ldir
+.apply:
+        ld a,(cfg_data + CFG_VIEW)
+        ld (view_next),a
+        jp cfg_apply
+
+; cfg_data -> A:SETUP.CFG. Carry and A = error on failure
+cfg_save_x:
+        ld hl,cfg_magic
+        ld de,cfg_head
+        ld bc,5
+        ldir
+        ld hl,cfg_data
+        ld bc,CFG_COUNT
+        ldir
+        xor a
+        call fdc_select
+        ld a,2
+        ld (fs_hdr_type),a
+        ld hl,0
+        ld (fs_hdr_load),hl
+        ld (fs_hdr_exec),hl
+        ld hl,cfg_file
+        ld de,cfg_head
+        ld bc,CFG_SIZE
+        ld a,BUF_CFG                ; (the source is below #4000)
+        jp fs_save
+
+cfg_file:       db "SETUP   CFG"
+cfg_magic:      db "VCFG", 5
+
+; ---------------------------------------------------------------------
+; the clock on the menu bar, with an M4 board: every frame from the main
+; loop (kernel/kernel.asm); once a second its time (C_TIME) as "hh:mm",
+; left of the keyboard's language, while the bar has room for it
+; (ui_ind_room 2, ui/ui.asm; gfx_cls takes it away)
+; ---------------------------------------------------------------------
+clk_frame:
+        ld hl,clk_wait
+        dec (hl)
+        ret nz
+        ld (hl),50
+        ld a,(ui_ind_room)
+        cp 2
+        ret nz
+        ld hl,clk_cmd
+        ld de,clk_rsp
+        ld bc,3 + 5
+        call xa_m4
+        ret c                       ; no M4 board
+        ld a,(clk_rsp)              ; its answer, "hh:mm..."
+        cp 3 + 5
+        ret c
+        ld a,(clk_rsp + 5)
+        cp ":"
+        ret nz
+        xor a
+        ld (clk_rsp + 3 + 5),a
+        ld b,1                      ; in the bar's band
+        ld hl,.body
+        jp ui_in_band
+.body:
+        ld a,UIP_TEXT
+        ld c,UIP_BAR
+        call ui_colours
+        ld hl,(gfx_width)
+        ld de,-24 - 48
+        add hl,de
+        ld de,1
+        ld bc,clk_rsp + 3
+        jp txt_print
+
+clk_wait:       db 1
+clk_cmd:        db 2
+                dw #4324            ; C_TIME
+clk_rsp:        ds 3 + 6

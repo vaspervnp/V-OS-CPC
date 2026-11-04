@@ -17,7 +17,11 @@
 ;   NOTEPAD menu: NEW ^N, OPEN ^O, SAVE ^S, SAVE AS, OTHER DRIVE (the
 ;   drive OPEN and SAVE use, A:, B: or DISK), PAGE ^M, PRINT ^P (VX_PRINT,
 ;   API 30: the lines with CR LF, then a new page), ABOUT, BACK ^Q
-;   EDIT menu: UNDO ^Z, COPY ^C, CUT ^X, PASTE ^V, SELECT ALL ^A
+;   EDIT menu: UNDO ^Z, COPY ^C, CUT ^X, PASTE ^V, SELECT ALL ^A, FIND ^F,
+;   FIND AGAIN ^G, REPLACE ^R
+; FIND looks from the cursor on in all of the text (A-Z without case)
+; and chooses what it finds, the cursor after it; REPLACE asks for the
+; text and what to put instead, and does so in all of the text.
 ; UNDO takes back the last change: a run typed or pasted, or what DEL,
 ; CLR, CUT or typing over a selection took out (up to U_MAX bytes);
 ; UNDO again does it again. Its place is kept in all of the text (whole),
@@ -64,6 +68,10 @@ CMD_CUT         equ VC_APP + 9
 CMD_PASTE       equ VC_APP + 10
 CMD_ALL         equ VC_APP + 11
 CMD_UNDO        equ VC_APP + 14
+CMD_FIND        equ VC_APP + 15
+CMD_AGAIN       equ VC_APP + 16
+CMD_REPLACE     equ VC_APP + 17
+FIND_MAX        equ 20                  ; FIND, REPLACE: the texts' room
 U_MAX           equ 256             ; UNDO: the bytes taken out it keeps
 U_IN            equ 1               ; u_kind: a run put in,
 U_OUT           equ 2               ; or taken out
@@ -539,6 +547,15 @@ command:
         cp CMD_UNDO
         ld hl,do_undo
         jp z,edit
+        cp CMD_FIND
+        ld hl,do_find
+        jp z,edit
+        cp CMD_AGAIN
+        ld hl,do_again
+        jp z,edit
+        cp CMD_REPLACE
+        ld hl,do_replace
+        jp z,edit
         cp CMD_NEW
         jr nz,.not_new
         call discard_ok
@@ -953,6 +970,192 @@ do_all:
         jp redo_all
 
 ; ---------------------------------------------------------------------
+; FIND, REPLACE
+; ---------------------------------------------------------------------
+; ^F: the text to find, then as ^G
+do_find:
+        ld a,T_FIND_T
+        ld hl,find_in
+        ld c,FIND_MAX
+        call VOS_INPUT
+        ret c
+        ; fall through
+; ^G: find_in again, from the cursor on; NOT FOUND if it is not there
+do_again:
+        call find_next
+        ret nc
+not_found:
+        ld hl,dlg_none
+        jp VOS_DIALOG
+
+; ^R: the text, what instead, then each one in all of the text, from
+; its start; no UNDO for it
+do_replace:
+        ld a,T_FIND_T
+        ld hl,find_in
+        ld c,FIND_MAX
+        call VOS_INPUT
+        ret c
+        ld a,T_REPL_T
+        ld hl,repl_in
+        ld c,FIND_MAX
+        call VOS_INPUT
+        ret c
+        call win_flush              ; the cursor at the start
+        ld hl,0
+        ld (cur_a),hl
+        ld (sel_a),hl
+        ld (top_a),hl
+        call win_go
+        xor a
+        ld (sel_on),a
+        ld (f_count),a
+.next:
+        call find_next
+        jr c,.done
+        call sel_delete
+        ld hl,repl_in
+.char:
+        ld a,(hl)
+        or a
+        jr z,.replaced
+        push hl
+        call insert
+        pop hl
+        jr c,.done                  ; no room
+        inc hl
+        jr .char
+.replaced:
+        ld a,1
+        ld (f_count),a
+        jr .next
+.done:
+        xor a
+        ld (u_kind),a
+        call redo_all
+        ld a,(f_count)
+        or a
+        ret nz
+        jr not_found
+
+; find_in from the cursor on -> carry: not there, all as it was; else
+; chosen (sel at its start), the cursor after it, the window around it
+find_next:
+        ld hl,find_in
+        ld c,0
+.len:
+        ld a,(hl)
+        or a
+        jr z,.counted
+        inc hl
+        inc c
+        jr .len
+.counted:
+        ld a,c
+        or a
+        scf
+        ret z
+        ld (f_len),a
+        call win_flush              ; all of the text after the window,
+        ld hl,0                     ; through the buffer a piece at a
+        call bound                  ; time
+        ld hl,(cur_a)
+        ld (f_pos),hl
+.piece:
+        ld hl,(slen)                ; what is left from f_pos
+        ld de,(f_pos)
+        or a
+        sbc hl,de
+        jr c,.none
+        call chunk                  ; BC bytes of it
+        ld a,(f_len)
+        ld e,a
+        ld d,0
+        ld h,b
+        ld l,c
+        sbc hl,de                   ; (no carry)
+        jr c,.none                  ; shorter than the text
+        inc hl
+        ld (f_n),hl                 ; the places to try in it
+        push bc
+        call s_start
+        ld hl,(f_pos)
+        add hl,de
+        pop bc
+        ld de,text
+        call VOS_BANK_GET
+        ld hl,text
+.try:
+        call f_match
+        jr z,.found
+        inc hl
+        ld de,(f_n)
+        dec de
+        ld (f_n),de
+        ld a,d
+        or e
+        jr nz,.try
+        ld de,text                  ; the next piece from the first
+        or a                        ; place not tried
+        sbc hl,de
+        ld de,(f_pos)
+        add hl,de
+        ld (f_pos),hl
+        jr .piece
+.found:
+        ld de,text
+        or a
+        sbc hl,de
+        ld de,(f_pos)
+        add hl,de
+        ld (sel_a),hl
+        ld a,(f_len)
+        ld e,a
+        ld d,0
+        add hl,de
+        ld (cur_a),hl
+        ld a,1
+        ld (sel_on),a
+        call win_go
+        call redo_all
+        or a
+        ret
+.none:
+        call win_go
+        call redo_all
+        scf
+        ret
+
+; HL -> f_len bytes: find_in? (A-Z without case) Z: yes. HL kept
+f_match:
+        push hl
+        ld de,find_in
+        ld a,(f_len)
+        ld b,a
+.char:
+        ld a,(de)
+        call f_upper
+        ld c,a
+        ld a,(hl)
+        call f_upper
+        cp c
+        jr nz,.end
+        inc hl
+        inc de
+        djnz .char
+.end:
+        pop hl
+        ret
+
+f_upper:
+        cp "a"
+        ret c
+        cp "z" + 1
+        ret nc
+        sub " "
+        ret
+
+; ---------------------------------------------------------------------
 ; files
 ; ---------------------------------------------------------------------
 ; OPEN: a .TXT file of fdrive into the data bank, then here, without CR
@@ -1098,6 +1301,11 @@ save_as:
 
 ; PRINT: as write, each piece to the printer instead
 print_doc:
+        ld hl,fname
+        ld bc,0                     ; a printout of this file: a heading
+        ld e,c                      ; on each page (API 31)
+        ld a,VX_PRINT
+        call VOS_EXT
         ld a,1
         ld (to_prt),a
         call win_flush
@@ -2282,7 +2490,7 @@ menu:           db T_MENU, 10
                 db T_ABOUT, CMD_ABOUT, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
-edit_menu:      db T_EDIT, 7
+edit_menu:      db T_EDIT, 11
                 db T_UNDO, CMD_UNDO, "Z", 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_COPY, CMD_COPY, "C", 0
@@ -2290,9 +2498,14 @@ edit_menu:      db T_EDIT, 7
                 db T_PASTE, CMD_PASTE, "V", 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_ALL, CMD_ALL, "A", 0
+                db VOS_SEPARATOR, 0, 0, 0
+                db T_FIND, CMD_FIND, "F", 0
+                db T_AGAIN, CMD_AGAIN, "G", 0
+                db T_REPLACE, CMD_REPLACE, "R", 0
 dlg_about:      db T_MENU, T_ABOUT_TEXT, 1, VM_OK
 dlg_discard:    db T_MENU, T_DISCARD, 2, VM_YES, VM_NO
 dlg_big:        db T_MENU, T_TOO_BIG, 1, VM_OK
+dlg_none:       db T_MENU, T_NOT_FOUND, 1, VM_OK
 noname:         db "NONAME  TXT"
 ext_txt:        db "TXT"
 form_feed:      db 12
@@ -2304,6 +2517,12 @@ fdrive:         db 0                ; OPEN and SAVE: 0 A:, 1 B:, 2 DISK
 fname:          ds 11
 name_tmp:       ds 11
 name_in:        ds 10               ; VOS_INPUT: 8 + 2
+find_in:        ds FIND_MAX + 2     ; FIND's text, REPLACE's
+repl_in:        ds FIND_MAX + 2
+f_len:          db 0
+f_pos:          dw 0                ; where the piece starts (whole)
+f_n:            dw 0
+f_count:        db 0                ; REPLACE: 1, it found one
 modified:       db 0
 to_prt:         db 0                ; 1: write goes to the printer
 u_kind:         db 0                ; UNDO: 0 nothing, U_IN, U_OUT

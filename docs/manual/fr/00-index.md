@@ -33,4 +33,4 @@ Le même contenu existe aussi en PDF, dans [`docs/V-OS-fr.pdf`](../../V-OS-fr.pd
 - [`docs/REQUIREMENTS.md`](../../REQUIREMENTS.md) : les exigences et la conception, avec les détails de réalisation de chaque étape.
 - [`src/api/vos_api.inc`](../../../src/api/vos_api.inc) : l'API, avec toutes ses règles en commentaires.
 
-> Cette documentation couvre V-OS jusqu'à M64 inclus. Elle est mise à jour à chaque étape.
+> Cette documentation couvre V-OS jusqu'à M72 inclus. Elle est mise à jour à chaque étape.

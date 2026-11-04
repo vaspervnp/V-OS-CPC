@@ -7,7 +7,8 @@ Runs PAINT (assembled at #4000, with its symbols) in a Z80 emulator (the
 z80 package) with the V-OS calls stubbed: a 16K data bank for
 VOS_BANK_GET and VOS_BANK_PUT, VX_DATA saying whether it is PAINT's own
 (the whole screen) or not (a picture of 128 x 128 in PAINT's memory).
-BOX, LINE and PENCIL draw with the pointer; then UNDO must give the
+BOX, LINE and PENCIL draw with the pointer, CIRCLE a ring of pixels
+round its centre (none far from it or at it); then UNDO must give the
 picture as it was before the last tool, UNDO again as it was after it,
 and on the whole screen in a window scrolled away too. FILL must be
 taken back on a small picture; on the whole screen it leaves nothing
@@ -138,6 +139,28 @@ def run(prog, sym, big):
         p.call('COMMAND', a=CMD_UNDO)
         p.m.set_memory_block(sym['VX'], bytes([0, 0]))
     check('the dot again', p.picture(), dot)
+    p.tool('c')                                  # CIRCLE: radius 20
+    p.drag(60, 60, 80, 60)
+    ring = p.picture()
+    changed = set()
+    for at in range(len(ring)):
+        if ring[at] != dot[at]:
+            if big:
+                y = (at // 0x800) + (at % 0x800) // 80 * 8
+                xb = at % 0x800 % 80
+            else:
+                y, xb = divmod(at, 64)
+            changed.add((y, xb))
+    for y, xb in [(60, 40), (60, 20), (80, 30), (40, 30), (74, 37), (46, 23)]:
+        check('CIRCLE: nothing at %d, %d' % (xb * 2, y), (y, xb) in changed, True)
+    for y, xb in changed:
+        d = ((xb * 2 + 0.5 - 60) ** 2 + (y - 60) ** 2) ** 0.5
+        check('CIRCLE: a pixel at %d, %d' % (xb * 2, y), 18 <= d <= 22, True)
+    p.call('COMMAND', a=CMD_UNDO)
+    check('UNDO: the CIRCLE taken back', p.picture(), dot)
+    p.call('COMMAND', a=CMD_UNDO)
+    check('the CIRCLE again', p.picture(), ring)
+    dot = ring
     p.tool('f')                                  # FILL the white around
     p.event(VE_PTR_DOWN, x=120, y=CY + 120)
     filled = p.picture()
@@ -147,8 +170,8 @@ def run(prog, sym, big):
         check('FILL on the whole screen: nothing to undo', p.picture(), filled)
     else:
         check('UNDO: the FILL taken back', p.picture(), dot)
-    print('paint_check: %s: BOX, LINE, PENCIL%s and FILL, UNDO and UNDO again: all right'
-          % ('the whole screen' if big else 'a picture', ', scrolled away,' if big else ''))
+    print('paint_check: %s: BOX, LINE, PENCIL%s, CIRCLE and FILL, UNDO and UNDO again: all right'
+          % ('the whole screen' if big else 'a picture', ' (scrolled away)' if big else ''))
 
 
 def main():

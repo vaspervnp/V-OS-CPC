@@ -32,7 +32,8 @@ Modo 1. Una finestra FILE mostra i file di un'unità come icone, quattro per rig
 | ^R | rilegge i dischi |
 | mouse | clic su un file: selezione, di nuovo: apertura. Clic su un'unità: la apre |
 
-- **Menu FILE:** APRI, INFO SUL FILE (^I), COPIA SULL'UNITÀ SEGUENTE, ELIMINA, RINOMINA, RILEGGI I DISCHI, ESCI IN BASIC.
+- **Menu FILE:** APRI, INFO SUL FILE (^I), COPIA SULL'UNITÀ SEGUENTE, ELIMINA, RINOMINA, RILEGGI I DISCHI, MANTIENI IL DESKTOP (^S), ESCI IN BASIC.
+- **MANTIENI IL DESKTOP** (^S) scrive la finestra dei file così com'è (dove, la sua dimensione, la sua unità, o chiusa) in `A:SETUP.CFG`: al prossimo avvio il Desktop la apre subito così. Anche il ^S di Setup la mantiene.
 - **La finestra FILE** si può trascinare per il suo titolo e resta lì, anche quando cambi vista.
 - **All'inizio non c'è finestra né unità scelta:** si vede lo sfondo (e la sua immagine). Un'unità (un clic sulla sua icona, o TAB) apre la sua finestra; la X del titolo la chiude, come un clic sull'unità aperta. Il quadratino nell'angolo in basso a destra ingrandisce o rimpicciolisce la finestra a icone intere (2–5 per riga, 1–5 righe; quattro per cinque all'inizio), e la barra a destra mostra quale parte della lista si vede: un clic sopra o sotto la sua parte scura scorre di una finestra. La dimensione resta, come il posto.
 - **Apertura per tipo** (anche nel Commander): i `.TXT` si aprono in NOTEPAD, i `.MD` in MARKDOWN, i `.PIC` e `.LYR` in PAINT, i `.VDB` in DATABASE, i `.VSH` in SHEET, i `.MUS` in MUSIC, che comincia a suonarli. Il programma si cerca sull'unità del file, poi su A:, poi su B:. Se non si trova, appare "NESSUN PROGRAMMA PER QUESTO FILE". Se il programma ha modifiche non salvate, chiede prima.
@@ -67,7 +68,7 @@ Modo 1, due pannelli con elenchi di file: A: a sinistra, B: a destra. Ogni panne
 | ^R | rilegge entrambi i dischi |
 | ^G | l'unità seguente per il pannello attivo: A:, B:, DISK (anche con un clic sul suo titolo) |
 | ^F | cerca file: un nome con `*` e `?` (`*.TXT`, `README.*`, `NOTE?AD.BIN`; senza punto, qualsiasi estensione), cercato su A:, B: e DISK (la cartella in cui è). Il pannello attivo elenca ciò che è stato trovato, fino a 64 file, ognuno con la sua unità (`B:README.TXT`). RETURN va al file sulla sua unità; ^C, ^D, ^N e ^V agiscono sui file trovati così come sono; ^R o ^G chiude l'elenco |
-| ^V | mostra il testo: le prime righe del file scelto nell'altro pannello, finché non viene ridisegnato |
+| ^V | mostra il testo: le prime righe del file scelto nell'altro pannello, finché non viene ridisegnato. Un'immagine (`.SCR`, come la salvano PAINT e il CHART di SHEET) appare su tutto lo schermo in modo 0 con i suoi inchiostri; un tasto o un clic riporta il Commander |
 | ^E | copia il disco: tutto il disco del pannello attivo su quello dell'altro pannello (A: e B:), traccia per traccia, ogni traccia prima formattata come quella di origine (DATA o SYSTEM). Chiede prima: i file dell'altro disco si perdono |
 | mouse | clic: selezione, di nuovo: apertura |
 
@@ -82,6 +83,7 @@ Con una scheda M4, la Scrivania ha una terza icona di unità, DISK, sotto A: e B
 - **Le cartelle** appaiono come cartelle (un'icona con linguetta, o DIR nel Commander). RETURN su una ci entra, e `..`, la prima voce, risale. Nel Launcher ci sono anche loro, per arrivare ai programmi che contengono.
 - **Tutto come su un dischetto:** i programmi si avviano da lì, i file si aprono nei loro programmi, e ^C, ^D e ^N copiano, eliminano e rinominano. Le copie tra DISK e un dischetto arrivano fino a 16K. Cartelle e file hanno nomi come sul CPC (8.3: `NOME.EXT`); i nomi più lunghi non appaiono.
 - **M4.SYS** (su `vos.dsk`) viene caricato da A: la prima volta che si usa DISK.
+- **L'ora e le date:** la barra dei menu mostra l'ora della M4 («09:25», a sinistra della lingua della tastiera) in ogni vista e programma dove c'è spazio, e INFO SUL FILE (^I) dà la data e l'ora di un file della scheda sotto la sua dimensione. L'ora viene dal server dell'ora della M4 (impostato con `NETSET` sul CPC).
 - **Nei programmi:** OTHER DRIVE (^W in SHEET) passa da A: a B: e a DISK, e la riga in basso dice `DISK:NOME.TXT`. La lista di OPEN mostra anche le cartelle: RETURN su una (o su `..`) mostra quella cartella, e SAVE scrive nella cartella da cui hai aperto. READER scrive la scheda come `C:` nei suoi indirizzi.
 - **I database** vanno anche su DISK: il ^W di DATABASE ci arriva, e STREETS avviato dalla scheda tiene lì il suo STREETS.VDB.
 - **Non ancora:** la scheda SD non si formatta da V-OS. V-OS stesso parte ancora da un dischetto in A: (scrivi `|DISC` prima di `RUN"VOS"`: con una scheda M4, il CPC parte sulla scheda SD).

@@ -105,7 +105,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 30              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 32              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -122,7 +122,8 @@ VOS_API_VERSION equ 30              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 26: VX_LANG, 27: VX_IRQ,
                                     ; 28: drive 2, the M4's SD card,
                                     ; 29: VX_DRIVE, folders in the file
-                                    ; list, 30: VX_PRINT
+                                    ; list, 30: VX_PRINT, 31: its pages,
+                                    ; 32: VX_M4 HL = 0
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -244,7 +245,15 @@ VX_M4           equ 4                   ; (17) HL -> a command for the M4
                                         ; board (db size, dw command, data),
                                         ; DE -> its response (db size, dw
                                         ; command, data), BC = its bytes;
-                                        ; carry: no M4 board
+                                        ; carry: no M4 board. HL = 0 (32):
+                                        ; BC bytes of the ROM's sock_info
+                                        ; to DE, 16 a socket: db status
+                                        ; (0 idle, 1 connecting, 2 sending,
+                                        ; 3 closed by the other end, 5 a
+                                        ; name looked up, 240+ an error),
+                                        ; last command, dw bytes received,
+                                        ; ip (4), port; socket 0 is
+                                        ; C_NETHOSTIP's: its ip there
 VX_MEM          equ 5                   ; (18) -> HL = the RAM in K, DE =
                                         ; K free for programs
 VX_BEHIND       equ 6                   ; (19) DE -> db drive, 11-byte name
@@ -284,7 +293,13 @@ VX_PRINT        equ 14                  ; (30) HL -> text, BC = bytes, E =
                                         ; page), the letters over 127 as
                                         ; plain ASCII (Greek as Greeklish).
                                         ; Carry, A = 41: the printer is not
-                                        ; ready (none, off line, no paper)
+                                        ; ready (none, off line, no paper).
+                                        ; After 60 lines a new page. BC = 0
+                                        ; (version 31): HL -> a file's name,
+                                        ; 11 bytes as VOS_CATALOG's: a
+                                        ; heading on every page from now
+                                        ; ("NOTES.TXT  PAGE 2"); HL = 0:
+                                        ; none
 VX_COUNT        equ 15
 
 ; Databases (version 22): VOS_EXT with A = VX_DB, C = one of these. One
@@ -320,7 +335,9 @@ DB_DEL          equ 9                   ; DE = rid: deleted
 DB_FIND         equ 10                  ; HL -> a key (as in a record), E =
                                         ; its bytes that count (0: all) ->
                                         ; DE = the first record with that
-                                        ; key or after it, by key
+                                        ; key or after it, by key; the
+                                        ; record itself goes to HL too:
+                                        ; room for it there
 DB_FIRST        equ 11                  ; -> DE = rid: by key (no key: in
 DB_LAST         equ 12                  ; the order they were added, more
 DB_NEXT         equ 13                  ; or less); NEXT and PREV from the

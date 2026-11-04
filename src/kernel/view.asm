@@ -53,6 +53,7 @@ CMD_SETUP       equ 19
 CMD_FIND        equ 20              ; Commander: FIND, SHOW THE TEXT
 CMD_PEEK        equ 21              ; (handled before view_command)
 CMD_DCOPY       equ 22
+CMD_KEEP        equ 23              ; Desktop: KEEP THE DESKTOP
 
 ; A = view to switch to once the current event is handled
 view_request:

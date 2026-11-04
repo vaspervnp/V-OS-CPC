@@ -65,7 +65,9 @@ Ogni riga: cosa fare, e cosa dovresti vedere.
 **La scheda M4** (se ne hai una)
 - [ ] TAB sulla Scrivania passa da B: a DISK, la scheda SD, con le sue cartelle.
 - [ ] NOTEPAD salva un file su DISK, e lo riapre.
+- [ ] La barra dei menu mostra l'ora della M4; INFO SUL FILE di un file su DISK dà la sua data.
 - [ ] WEBGET scarica un file; READER apre una pagina dal web.
+- [ ] TELNET si collega a un server (una BBS) e mostra ciò che invia.
 
 **La velocità** (quanto tempo, con un orologio)
 - [ ] Da `RUN"VOS` alla Scrivania.

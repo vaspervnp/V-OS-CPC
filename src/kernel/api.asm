@@ -180,7 +180,8 @@ clip_len:       dw 0
 ; DE -> where its response goes, BC = how many bytes of it (db size,
 ; dw command, then the data) -> carry if there is no M4 board. The M4
 ; ROM is mapped at #C000 only while the response is copied, with the
-; interrupts off (the screen is there).
+; interrupts off (the screen is there). HL = 0: BC bytes of the ROM's
+; sock_info (the sockets' state, 16 bytes each) to DE.
 xa_m4:
         push bc
         push de
@@ -189,6 +190,9 @@ xa_m4:
         call ext_call
         pop hl
         jr c,.none
+        ld a,h
+        or l
+        jr z,.socks
         ld bc,#FE00                 ; the command, its size byte first
         ld d,(hl)
         inc d
@@ -204,8 +208,16 @@ xa_m4:
         di
         call m4_rom
         ld hl,(#FF02)               ; the ROM's response buffer
+.copy:
         ldir
         jr m4_done
+.socks:
+        pop de
+        pop bc
+        di
+        call m4_rom
+        ld hl,(#FF06)
+        jr .copy
 .none:
         pop de
         pop bc

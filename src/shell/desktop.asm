@@ -75,6 +75,9 @@ dt_init:
         ld (dt_cols),hl
         xor a                       ; at boot: closed
         ld (dt_shown),a
+        ld a,(cfg_data + CFG_WIN_Y) ; or as SETUP.CFG keeps it
+        or a
+        call nz,dt_kept
 .placed:
         ld a,1                      ; EV_FRAME: the screen saver
         ld (view_ticks),a
@@ -108,6 +111,13 @@ dt_init:
         ld a,(sys_drive)
 .drive:
         ld (dt_drive),a
+        ld a,(dt_kd)                ; the kept window's drive, once
+        cp DT_CLOSED
+        jr z,.not_kept
+        ld (dt_drive),a
+        ld a,DT_CLOSED
+        ld (dt_kd),a
+.not_kept:
         xor a
         ld (dt_count),a
         call dt_draw_screen
@@ -1424,6 +1434,8 @@ dt_open_drive_a:
 dt_command:
         cp CMD_REFRESH
         jp z,dt_load
+        cp CMD_KEEP
+        jp z,dt_keep
         cp CMD_INFO
         jr z,dt_info
         cp CMD_COPY
@@ -1510,12 +1522,49 @@ dt_rename:
         ret c
         jp dt_load
 
+; KEEP THE DESKTOP: the window (where, its size, its drive or closed)
+; into SETUP.CFG, for the next start
+dt_keep:
+        ld hl,(dt_wx)
+        srl h
+        rr l
+        ld a,l
+        ld (cfg_data + CFG_WIN_X),a
+        ld a,(dt_wy)
+        ld (cfg_data + CFG_WIN_Y),a
+        ld hl,(dt_cols)
+        ld (cfg_data + CFG_WIN_COLS),hl
+        ld a,(dt_drive)
+        ld (cfg_data + CFG_WIN_DRIVE),a
+        call cfg_save
+        jp c,sys_error
+        ret
+
+; A = the window's y from SETUP.CFG: the window as it was kept there
+dt_kept:
+        ld l,a
+        ld h,0
+        ld (dt_wy),hl
+        ld a,(cfg_data + CFG_WIN_X)
+        ld l,a
+        add hl,hl
+        ld (dt_wx),hl
+        ld hl,(cfg_data + CFG_WIN_COLS)
+        ld (dt_cols),hl
+        ld a,(cfg_data + CFG_WIN_DRIVE)
+        cp DT_CLOSED
+        ret z
+        ld (dt_kd),a
+        ld a,1
+        ld (dt_shown),a
+        ret
+
 ; ---- menus ----------------------------------------------------------
 dt_bar:
         db 3
         dw dt_menu_file, menu_view, menu_help
 dt_menu_file:
-        db MSG_MENU_FILE, 9
+        db MSG_MENU_FILE, 10
         db MSG_ITEM_OPEN, CMD_RUN, 0, 0
         db MSG_ITEM_INFO, CMD_INFO, "I", 0
         db MSG_ITEM_COPY_DRIVE, CMD_COPY, "C", 0
@@ -1523,11 +1572,13 @@ dt_menu_file:
         db MSG_ITEM_RENAME, CMD_RENAME, "N", 0
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_REFRESH, CMD_REFRESH, "R", 0
+        db MSG_ITEM_KEEP, CMD_KEEP, "S", 0
         db UI_SEPARATOR, 0, 0, 0
         db MSG_ITEM_QUIT, CMD_QUIT, "Q", 0
 
 ; ---- state ----------------------------------------------------------
 dt_drive:       db 0                ; the open drive
+dt_kd:          db DT_CLOSED        ; SETUP.CFG's drive, at the start
 dt_m4:          db 0                ; 1: an M4 board, DISK its card
 dt_path:        ds 21               ; the card's folder, for the title
 dt_ent_sel:     dw 0

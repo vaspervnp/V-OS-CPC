@@ -65,7 +65,9 @@ Jede Zeile: was du tun sollst, und was du sehen solltest.
 **Die M4-Karte** (wenn du eine hast)
 - [ ] TAB auf dem Schreibtisch geht von B: weiter zu DISK, der SD-Karte, mit ihren Ordnern.
 - [ ] NOTEPAD speichert eine Datei auf DISK und öffnet sie wieder.
+- [ ] Die Menüleiste zeigt die Uhrzeit der M4; DATEI-INFO einer Datei auf DISK nennt ihr Datum.
 - [ ] WEBGET lädt eine Datei herunter; READER öffnet eine Seite aus dem Web.
+- [ ] TELNET verbindet sich mit einem Server (einer BBS) und zeigt, was er schickt.
 
 **Geschwindigkeit** (wie lange, mit einer Uhr)
 - [ ] Von `RUN"VOS` bis zum Schreibtisch.

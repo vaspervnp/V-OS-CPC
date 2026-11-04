@@ -15,7 +15,11 @@
 ;   DATABASE menu: NEW DATABASE ^N, OPEN A DATABASE ^O, NEW TABLE ^T,
 ;   ADD A RECORD ^A, DELETE THE RECORD ^D, SAVE THE RECORD ^S, BACK TO
 ;   THE LIST ^B, OTHER DRIVE ^W, PRINT ^P (VX_PRINT, API 30: the table
-;   as the list shows it, every record), IMPORT CSV, ABOUT, BACK ^Q
+;   as the list shows it, every record), PRINT LETTERS ^L, IMPORT CSV,
+;   ABOUT, BACK ^Q
+; PRINT LETTERS prints a .TXT of the drive (a letter written in NOTEPAD)
+; once a record of the table in use, a page each: a field's name in
+; braces, {NAME}, becomes what the record has in it.
 ; IMPORT CSV adds a record for each line of a .CSV (from a PC, or SHEET's
 ; drive), into the table in use: its fields in order, by commas or
 ; semicolons (the first line says which), "quoted" fields may hold them,
@@ -64,6 +68,7 @@ CMD_ABOUT       equ VC_APP + 9
 CMD_BACK        equ VC_APP + 10
 CMD_PRINT       equ VC_APP + 11
 CMD_CSV         equ VC_APP + 12
+CMD_LETTERS     equ VC_APP + 13
 CSV_DATA        equ #4000           ; IMPORT CSV: the file, in the data bank
 CSV_MAX         equ #4000
 
@@ -1319,6 +1324,8 @@ command:
         jp z,save_rec
         cp CMD_PRINT
         jp z,print_table
+        cp CMD_LETTERS
+        jp z,letters
         cp CMD_CSV
         jp z,import_csv
         cp CMD_LIST
@@ -1355,6 +1362,11 @@ command:
 print_table:
         call have_table
         ret c
+        ld hl,db_file + 1
+        ld bc,0                     ; a printout of this file: a heading
+        ld e,c                      ; on each page (API 31)
+        ld a,VX_PRINT
+        call VOS_EXT
         call head_line
         call pr_line
         ret c
@@ -1419,43 +1431,11 @@ pr_send:
 import_csv:
         call have_table
         ret c
-        ld a,(db_file)
-        or VOS_CAT_EXT
         ld hl,ext_csv
-        call VOS_CATALOG
-        jp c,VOS_ERROR
-        or a
-        jr nz,.pick
-        ld hl,dlg_no_files
-        jp VOS_DIALOG
-.pick:
-        ld (cat),hl
+        ld de,dlg_no_files
         ld a,T_PICK_CSV
-        call VOS_FILE_PICK
+        call pick_load
         ret c
-        ld l,a
-        ld h,0
-        add hl,hl
-        add hl,hl
-        add hl,hl
-        add hl,hl
-        ld de,(cat)
-        add hl,de
-        ld de,name_csv
-        ld bc,11
-        ldir
-        ld a,(db_file)
-        or VOS_DATA
-        ld hl,name_csv
-        ld de,CSV_DATA
-        call VOS_LOAD
-        jp c,VOS_ERROR
-        ld (cv_len),bc
-        ld hl,CSV_DATA              ; UTF-8 into the V-OS set
-        ld e,VOS_DATA
-        ld a,VX_UTF8
-        call VOS_EXT
-        ld (cv_len),bc
         ld hl,0
         ld (cv_at),hl
         ld (cv_n),hl
@@ -1477,6 +1457,294 @@ import_csv:
         pop af
         ret nc
         jp VOS_ERROR
+
+; HL -> an extension, DE -> the dialog when the drive has none, A = the
+; list's title: a file of db_file's drive with it, chosen, into the data
+; bank (CSV_DATA, cv_len bytes, in the V-OS set) -> carry: not
+pick_load:
+        push af
+        push de
+        ld a,(db_file)
+        or VOS_CAT_EXT
+        call VOS_CATALOG
+        pop de
+        jr c,.error
+        or a
+        jr nz,.pick
+        pop af
+        ex de,hl
+        call VOS_DIALOG
+        scf
+        ret
+.error:
+        pop de
+        call VOS_ERROR
+        scf
+        ret
+.pick:
+        ld (cat),hl
+        pop af
+        call VOS_FILE_PICK
+        ret c
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,(cat)
+        add hl,de
+        ld de,name_csv
+        ld bc,11
+        ldir
+        ld a,(db_file)
+        or VOS_DATA
+        ld hl,name_csv
+        ld de,CSV_DATA
+        call VOS_LOAD
+        jr c,.load_error
+        ld (cv_len),bc
+        ld hl,CSV_DATA              ; UTF-8 into the V-OS set
+        ld e,VOS_DATA
+        ld a,VX_UTF8
+        call VOS_EXT
+        ld (cv_len),bc
+        or a
+        ret
+.load_error:
+        call VOS_ERROR
+        scf
+        ret
+
+; ---------------------------------------------------------------------
+; PRINT LETTERS
+; ---------------------------------------------------------------------
+letters:
+        call have_table
+        ret c
+        ld hl,ext_txt
+        ld de,dlg_no_txt
+        ld a,T_PICK_TXT
+        call pick_load
+        ret c
+        ld hl,0                     ; no headings on letters
+        ld bc,0
+        ld e,c
+        ld a,VX_PRINT
+        call VOS_EXT
+        ld c,DB_FIRST
+        ld hl,rbuf
+        call vdb
+.rec:
+        jr c,.end                   ; no more
+        call letter
+        jr c,.back
+        ld hl,form_feed             ; a page each
+        ld bc,1
+        call pr_send
+        jr c,.back
+        ld c,DB_NEXT
+        ld hl,rbuf
+        call vdb
+        jr .rec
+.end:
+        ld a,T_PRINTED
+        ld (said),a
+.back:
+        call fill_find_or_first
+        xor a
+        ld (sel),a
+        jp redraw
+
+; the letter (in the data bank) with rbuf's fields -> the printer, a
+; piece of COLS at a time through line; carry: not ready
+letter:
+        ld hl,0
+        ld (cv_at),hl
+        xor a
+        ld (lt_n),a
+.byte:
+        call csv_byte
+        jp c,lt_flush
+        cp 26                       ; the end of a text
+        jp z,lt_flush
+        cp "{"
+        jr z,.field
+        call lt_put
+        jr nc,.byte
+        ret
+.field:
+        ld de,lt_name               ; its name, up to "}"
+        ld b,0
+.name:
+        call csv_byte
+        jp c,lt_flush
+        cp "}"
+        jr z,.named
+        ld c,a
+        ld a,b
+        cp FIELD_LEN
+        jr nc,.name                 ; longer: the rest left out
+        ld a,c
+        ld (de),a
+        inc de
+        inc b
+        jr .name
+.named:
+        ld a,b
+        ld (lt_len),a
+        call lt_field
+        jr c,.literal
+        call value                  ; HL -> it, C long: without the
+.lead:                              ; spaces around it
+        ld a,c
+        or a
+        jr z,.byte
+        ld a,(hl)
+        cp " "
+        jr nz,.trail
+        inc hl
+        dec c
+        jr .lead
+.trail:
+        ld a,c
+        or a
+        jr z,.byte
+        push hl
+        ld e,c
+        ld d,0
+        add hl,de
+        dec hl
+        ld a,(hl)
+        pop hl
+        cp " " + 1
+        jr nc,.copy
+        dec c
+        jr .trail
+.copy:
+        ld a,(hl)
+        call lt_put
+        ret c
+        inc hl
+        dec c
+        jr nz,.copy
+        jr .byte
+.literal:                           ; no such field: as it is
+        ld a,"{"
+        call lt_put
+        ret c
+        ld hl,lt_name
+        ld a,(lt_len)
+        ld c,a
+        or a
+        jr z,.close
+.lit:
+        ld a,(hl)
+        call lt_put
+        ret c
+        inc hl
+        dec c
+        jr nz,.lit
+.close:
+        ld a,"}"
+        call lt_put
+        ret c
+        jp .byte
+
+; A -> line; full: to the printer. Carry: not ready. HL, BC, DE kept
+lt_put:
+        push hl
+        push de
+        ld hl,lt_n
+        ld e,(hl)
+        ld d,0
+        inc (hl)
+        ld hl,line
+        add hl,de
+        ld (hl),a
+        pop de
+        pop hl
+        ld a,(lt_n)
+        cp COLS
+        ccf
+        ret nc
+        ; fall through
+; what is in line -> the printer. Carry: not ready
+lt_flush:
+        push hl
+        push de
+        push bc
+        ld a,(lt_n)
+        ld c,a
+        ld b,0
+        or a
+        ld hl,line
+        call nz,pr_send
+        ld a,0
+        ld (lt_n),a
+        pop bc
+        pop de
+        pop hl
+        ret
+
+; lt_name (lt_len letters) -> fld, the field of that name (without
+; case); carry: none
+lt_field:
+        ld a,(info + DB_T_FIELDS)
+        ld b,a
+        xor a
+.field:
+        ld (fld),a
+        push bc
+        call fld_desc               ; HL -> its type, after its name
+        ld de,-FIELD_LEN
+        add hl,de
+        ld de,lt_name
+        ld a,(lt_len)
+        ld c,a                      ; its letters left
+        ld b,FIELD_LEN
+.char:
+        ld a," "                    ; past them: spaces (or 0s) there
+        inc c
+        dec c
+        jr z,.have
+        ld a,(de)
+        inc de
+        dec c
+.have:
+        call lt_upper
+        ld (lt_ch),a
+        ld a,(hl)
+        or a
+        jr nz,.not0
+        ld a," "
+.not0:
+        call lt_upper
+        push hl
+        ld hl,lt_ch
+        cp (hl)
+        pop hl
+        jr nz,.no
+        inc hl
+        djnz .char
+        pop bc
+        or a
+        ret
+.no:
+        pop bc
+        ld a,(fld)
+        inc a
+        djnz .field
+        scf
+        ret
+
+lt_upper:
+        cp "a"
+        ret c
+        cp "z" + 1
+        ret nc
+        sub " "
+        ret
 
 ; the fields of the file, a record a line (DB_ADD) -> carry, A = error
 csv_records:
@@ -2126,7 +2394,7 @@ palette:        db 0, 26, 1, 24, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16
                 db 1
 bar:            db 3
                 dw menu, 0, 0
-menu:           db T_MENU, 15
+menu:           db T_MENU, 16
                 db T_NEW_DB, CMD_NEW_DB, "N", 0
                 db T_OPEN_DB, CMD_OPEN_DB, "O", 0
                 db T_NEW_TABLE, CMD_NEW_TABLE, "T", 0
@@ -2138,11 +2406,13 @@ menu:           db T_MENU, 15
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_DRIVE, CMD_DRIVE, "W", 0
                 db T_PRINT, CMD_PRINT, "P", 0
+                db T_LETTERS, CMD_LETTERS, "L", 0
                 db T_CSV, CMD_CSV, 0, 0
                 db T_ABOUT, CMD_ABOUT, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
 dlg_about:      db T_MENU, T_ABOUT_TEXT, 1, VM_OK
+dlg_no_txt:     db T_MENU, T_NO_TXT, 1, VM_OK
 dlg_type:       db T_TYPE_T, T_TYPE_TEXT, 3, T_TEXT, T_NUMBER, T_CANCEL
 dlg_key:        db T_TABLE_T, T_KEY_TEXT, 2, VM_YES, VM_NO
 dlg_del:        db T_MENU, T_DEL_Q, 2, VM_YES, VM_NO
@@ -2151,6 +2421,11 @@ dlg_len:        db T_MENU, T_LEN_T, 1, VM_OK
 dlg_no_files:   db T_MENU, T_NO_FILES, 1, VM_OK
 ext_vdb:        db "VDB"
 ext_csv:        db "CSV"
+ext_txt:        db "TXT"
+lt_name:        ds FIELD_LEN        ; PRINT LETTERS: {NAME}
+lt_len:         db 0
+lt_ch:          db 0
+lt_n:           db 0                ; the bytes in line
 name_csv:       ds 11
 cv_len:         dw 0                ; IMPORT CSV: its bytes, the next one,
 cv_at:          dw 0

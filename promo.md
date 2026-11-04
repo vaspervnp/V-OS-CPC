@@ -20,8 +20,9 @@ assembly, and it runs from a standard 3" disc. On the CPC: `RUN"VOS"`.
 - **Its own disc driver and file system**, compatible with AMSDOS: BASIC reads V-OS files and V-OS reads BASIC's. DATA and SYSTEM formats are both supported.
 - **Drives A:, B: and the SD card of an M4 board** (DISK), with folders. Copy, delete, rename and open files on any of them, and programs can open and save files there too.
 - **Files open by type:** a click on a `.TXT` opens NOTEPAD, a `.SCR` opens PAINT, a `.VDB` opens DATABASE.
-- **Find files** on all the drives with `*` and `?`, look into a text without opening it, and copy a whole disc.
-- **A printer** on the CPC's port: NOTEPAD, SHEET and DATABASE print.
+- **Find files** on all the drives with `*` and `?`, look into a text or a picture without opening it, and copy a whole disc.
+- **A printer** on the CPC's port: NOTEPAD, SHEET and DATABASE print, page by page with a heading.
+- **With an M4 board,** the time on the menu bar and the dates of the SD card's files.
 
 ## Many programs at once
 
@@ -32,13 +33,15 @@ assembly, and it runs from a standard 3" disc. On the CPC: `RUN"VOS"`.
 
 ## Programs included
 
-- **NOTEPAD:** texts up to 16K, a clipboard shared by all programs, UNDO, and UTF-8 files from a PC.
+- **NOTEPAD:** texts up to 16K, a clipboard shared by all programs, UNDO, FIND and REPLACE, and UTF-8 files from a PC.
 - **MARKDOWN and READER:** Markdown pages from the disc or from the web, through the M4 board.
-- **PAINT:** pictures with layers and the whole CPC screen, with UNDO, saved as `.SCR` files that BASIC loads too; SHOW plays them one after the other.
+- **PAINT:** pictures with layers and the whole CPC screen, with lines, boxes, circles and UNDO, saved as `.SCR` files that BASIC loads too; SHOW plays them one after the other.
 - **SHEET:** a spreadsheet with formulas (SUM, AVG, MIN, MAX, ROUND…), bar charts, and `.CSV` files from a PC.
-- **DATABASE:** "a small Access" with tables, fields, indexes, forms and search, on discs or on the SD card; it imports `.CSV` files.
+- **DATABASE:** "a small Access" with tables, fields, indexes, forms and search, on discs or on the SD card; it imports `.CSV` files and prints letters from a NOTEPAD text, one for each record.
+- **DIARY:** a month at a time, the days with notes marked, the notes of each day.
 - **MUSIC:** songs played from the interrupt, without a break while other programs load.
 - **WEBGET:** downloads files from the internet with the M4 board.
+- **TELNET:** text over the network with the M4 board, to a BBS or any server that talks in lines.
 - **SYSINFO, and games:** VROUVES (7 stages), MINES, BRICKS, PONG and more.
 
 ## Making programs

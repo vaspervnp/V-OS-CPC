@@ -1171,6 +1171,11 @@ command:
 ; columns' letters, then the rows up to the last one with something in
 ; those columns (none: that part is left out); then a new page
 print_sheet:
+        ld hl,fname
+        ld bc,0                     ; a printout of this file: a heading
+        ld e,c                      ; on each page (API 31)
+        ld a,VX_PRINT
+        call VOS_EXT
         xor a
 .part:
         ld (pr_left),a

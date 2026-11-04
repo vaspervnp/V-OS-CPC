@@ -65,7 +65,9 @@ Each line: what to do, and what you should see.
 **The M4 board** (if you have one)
 - [ ] TAB on the Desktop goes on from B: to DISK, the SD card, with its folders.
 - [ ] NOTEPAD saves a file on DISK, and opens it again.
+- [ ] The menu bar shows the M4's time; FILE INFO on a file on DISK gives its date.
 - [ ] WEBGET downloads a file; READER opens a page from the web.
+- [ ] TELNET connects to a server (a BBS) and shows what it sends.
 
 **Speed** (how long, with a watch)
 - [ ] From `RUN"VOS` to the desk.

@@ -32,7 +32,8 @@ Modo 1. Una ventana ARCHIVOS muestra los archivos de una unidad como iconos, cua
 | ^R | releer los discos |
 | ratón | clic en un archivo: lo selecciona, otra vez: lo abre. Clic en una unidad: la abre |
 
-- **Menú ARCHIVO:** ABRIR, INFO DEL ARCHIVO (^I), COPIAR A LA SIGUIENTE, BORRAR, RENOMBRAR, RELEER LOS DISCOS, SALIR AL BASIC.
+- **Menú ARCHIVO:** ABRIR, INFO DEL ARCHIVO (^I), COPIAR A LA SIGUIENTE, BORRAR, RENOMBRAR, RELEER LOS DISCOS, GUARDAR EL ESCRITORIO (^S), SALIR AL BASIC.
+- **GUARDAR EL ESCRITORIO** (^S) escribe la ventana de archivos tal como está (dónde, su tamaño, su unidad, o cerrada) en `A:SETUP.CFG`: en el siguiente arranque el Escritorio la abre así enseguida. El ^S de Setup también la guarda.
 - **La ventana ARCHIVOS** se puede arrastrar por su título y se queda ahí, incluso al cambiar de vista.
 - **Al principio no hay ventana ni unidad elegida:** se ve el fondo (y su imagen). Una unidad (un clic en su icono, o TAB) abre su ventana; la X de su título la cierra, igual que un clic en la unidad abierta. El cuadradito de la esquina inferior derecha agranda o reduce la ventana en iconos enteros (2 a 5 por fila, 1 a 5 filas; cuatro por cinco al principio), y la barra de la derecha muestra qué parte de la lista se ve: un clic encima o debajo de su parte oscura desplaza una ventana. El tamaño se guarda, como el sitio.
 - **Abrir según el tipo** (también en el Commander): los `.TXT` se abren en NOTEPAD, los `.MD` en MARKDOWN, los `.PIC` y `.LYR` en PAINT, los `.VDB` en DATABASE, los `.VSH` en SHEET, los `.MUS` en MUSIC, que empieza a tocarlos. El programa se busca en la unidad del archivo, luego en A: y luego en B:. Si no se encuentra, aparece "NINGÚN PROGRAMA PARA ESTE ARCHIVO". Si el programa tiene cambios sin guardar, pregunta primero.
@@ -67,7 +68,7 @@ Modo 1, dos paneles con listas de archivos: A: a la izquierda, B: a la derecha. 
 | ^R | releer los dos discos |
 | ^G | la siguiente unidad para el panel activo: A:, B:, DISK (también con un clic en su título) |
 | ^F | buscar archivos: un nombre con `*` y `?` (`*.TXT`, `README.*`, `NOTE?AD.BIN`; sin punto, cualquier extensión), que se busca en A:, B: y DISK (la carpeta donde está). El panel activo lista lo encontrado, hasta 64 archivos, cada uno con su unidad (`B:README.TXT`). RETURN va al archivo en su unidad; ^C, ^D, ^N y ^V funcionan sobre los archivos encontrados tal como están; ^R o ^G termina la lista |
-| ^V | ver el texto: las primeras líneas del archivo elegido en el otro panel, hasta que se vuelva a dibujar |
+| ^V | ver el texto: las primeras líneas del archivo elegido en el otro panel, hasta que se vuelva a dibujar. Una imagen (`.SCR`, como las guardan PAINT y el CHART de SHEET) se ve en toda la pantalla en modo 0 con sus propias tintas; una tecla o un clic vuelve al Commander |
 | ^E | copiar el disco: todo el disco del panel activo en el del otro panel (A: y B:), pista por pista, cada pista formateada antes como la del origen (DATA o SYSTEM). Pregunta antes: los archivos del otro disco se pierden |
 | ratón | clic: selecciona, otra vez: abre |
 
@@ -82,6 +83,7 @@ Con una tarjeta M4, el Escritorio tiene un tercer icono de unidad, DISK, debajo 
 - **Las carpetas** se ven como carpetas (un icono con pestaña, o DIR en el Commander). RETURN sobre una entra en ella, y `..`, la primera entrada, sube. En Programas también aparecen, para llegar a los programas que contienen.
 - **Todo como en un disquete:** los programas se ejecutan desde ella, los archivos se abren en sus programas, y ^C, ^D y ^N copian, borran y renombran. Las copias entre DISK y un disquete llegan hasta 16K. Carpetas y archivos tienen nombres como en el CPC (8.3: `NOMBRE.EXT`); los nombres más largos no aparecen.
 - **M4.SYS** (en `vos.dsk`) se carga desde A: la primera vez que se usa DISK.
+- **La hora y las fechas:** la barra de menús muestra la hora de la M4 («09:25», a la izquierda del idioma del teclado) en cada vista y programa donde cabe, e INFO DEL ARCHIVO (^I) da la fecha y la hora de un archivo de la tarjeta bajo su tamaño. La hora viene del servidor de hora de la M4 (puesto con `NETSET` en el CPC).
 - **En los programas:** OTHER DRIVE (^W en SHEET) pasa de A: a B: y a DISK, y la línea de abajo dice `DISK:NOMBRE.TXT`. La lista de OPEN muestra también las carpetas: RETURN en una (o en `..`) muestra esa carpeta, y SAVE escribe en la carpeta desde donde abrió. READER escribe la tarjeta como `C:` en sus direcciones.
 - **Las bases de datos** van también en DISK: el ^W de DATABASE llega allí, y STREETS ejecutado desde la tarjeta guarda allí su STREETS.VDB.
 - **Aún no:** la tarjeta SD no se formatea desde V-OS. V-OS sigue arrancando desde un disquete en A: (escriba `|DISC` antes de `RUN"VOS"`: con una tarjeta M4, el CPC arranca en la tarjeta SD).

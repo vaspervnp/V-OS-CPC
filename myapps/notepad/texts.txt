@@ -25,3 +25,9 @@ COPY        | COPY                  | ΑΝΤΙΓΡΑΦΗ
 CUT         | CUT                   | ΑΠΟΚΟΠΗ
 PASTE       | PASTE                 | ΕΠΙΚΟΛΛΗΣΗ
 ALL         | SELECT ALL            | ΕΠΙΛΟΓΗ ΟΛΩΝ
+FIND        | FIND...               | ΑΝΑΖΗΤΗΣΗ...
+AGAIN       | FIND AGAIN            | ΞΑΝΑ ΑΝΑΖΗΤΗΣΗ
+REPLACE     | REPLACE...            | ΑΝΤΙΚΑΤΑΣΤΑΣΗ...
+FIND_T      | FIND                  | ΑΝΑΖΗΤΗΣΗ
+REPL_T      | REPLACE WITH          | ΑΝΤΙΚΑΤΑΣΤΑΣΗ ΜΕ
+NOT_FOUND   | NOT FOUND             | ΔΕΝ ΒΡΕΘΗΚΕ

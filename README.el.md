@@ -42,7 +42,12 @@ make test-print  # το NOTEPAD και το SHEET τυπώνουν στο αρχ
 make test-find   # ΑΝΑΖΗΤΗΣΗ και ΠΡΟΒΟΛΗ ΚΕΙΜΕΝΟΥ στον Commander
 make test-dcopy  # ΑΝΤΙΓΡΑΦΗ ΔΙΣΚΕΤΑΣ στον Commander: το B: όπως το A: μετά
 make test-saver  # η προφύλαξη οθόνης του Desktop (576K)
-make test-show test-clock test-paint-undo  # SHOW, η ώρα του M4 στο CLOCK, η ΑΝΑΙΡΕΣΗ του PAINT (Z80)
+make test-show test-clock test-paint-undo  # SHOW, η ώρα του M4 στο CLOCK, η ΑΝΑΙΡΕΣΗ και ο ΚΥΚΛΟΣ του PAINT (Z80)
+make test-pic    # μια .SCR στην ΠΡΟΒΟΛΗ ΚΕΙΜΕΝΟΥ του Commander
+make test-keep   # ΚΡΑΤΗΣΗ ΤΗΣ ΕΠΙΦΑΝΕΙΑΣ: το παράθυρο όπως ήταν μετά από νέο RUN"VOS
+make test-diary test-telnet  # DIARY και TELNET (Z80· το TELNET με κάρτα M4 σε Python)
+make test-diary-cap  # το DIARY από το A: στον Caprice32, με το DB.SYS: μια σημείωση γράφεται και ξαναδιαβάζεται
+make test-telnet-m4  # το TELNET στον εξομοιωτή 1984, σε διακομιστή αυτού του PC
 make release     # build/V-OS-<έκδοση>.zip: οι δισκέτες, τα PDF, οι εικόνες και τα βίντεο, για ένα GitHub Release
 make docs        # τα PDF του manual: docs/V-OS.pdf (ελληνικά) και docs/V-OS-en/fr/es/de/it.pdf
 ```
@@ -88,7 +93,7 @@ myapps/              τα δικά σου προγράμματα (make new-app),
 
 ## Κατάσταση
 
-Το V-OS είναι στο **M64** (έκδοση 0.35 beta· κάθε milestone προσθέτει 0.01). Τι πρόσθεσε κάθε milestone και πώς ελέγχθηκε: [MILESTONES.el.md](MILESTONES.el.md).
+Το V-OS είναι στο **M72** (έκδοση 0.43 beta· κάθε milestone προσθέτει 0.01). Τι πρόσθεσε κάθε milestone και πώς ελέγχθηκε: [MILESTONES.el.md](MILESTONES.el.md).
 
 ## Άδεια
 

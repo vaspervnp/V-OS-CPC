@@ -17,8 +17,10 @@ loaded, edited and saved. Files in UTF-8 (12K, and 3K on a 6128), in
 many languages, must come into the V-OS character set (VX_UTF8, as
 tools/voscs.py; the kernel's own code is checked by make test-utf8),
 and be saved so. UNDO must take back a run typed, DEL and CLR, and
-typing over a selection, and do each again. Exits 1 on the first
-difference.
+typing over a selection, and do each again. FIND (without case) must
+choose the text, the cursor after it, far into the file; FIND AGAIN
+say NOT FOUND past the last; REPLACE change it in all of the text.
+Exits 1 on the first difference.
 """
 import os
 import sys
@@ -29,6 +31,7 @@ import voscs  # noqa: E402,F401  (the codec "vos")
 API = 0x0108
 CALLS = 43
 LOAD, SAVE, BANK_GET, BANK_PUT, EXT = 25, 26, 37, 38, 42
+DIALOG, INPUT = 18, 19
 VX_DATA, VX_UTF8 = 7, 9
 VE_KEY_DOWN = 1
 VK_UP, VK_DOWN, VK_RETURN = 0, 2, 18
@@ -36,6 +39,7 @@ VK_RIGHT, VK_DEL, KEY_CLR = 1, 79, 16
 VMOD_SHIFT = 1
 CMD_SAVE = 32 + 3
 CMD_UNDO = 32 + 14
+CMD_FIND, CMD_AGAIN, CMD_REPLACE = 32 + 15, 32 + 16, 32 + 17
 KEY_X = 63                      # a letter's key (not an arrow, DEL, RETURN)
 
 
@@ -58,6 +62,8 @@ class Notepad:
         self.bank = bytearray(0x4000)
         self.disc = {}
         self.saved = None
+        self.inputs = []                         # VOS_INPUT's answers
+        self.dialogs = 0
 
     def w(self, name):
         a = self.sym[name]
@@ -109,6 +115,12 @@ class Notepad:
             elif n == EXT:
                 m.a = self.big if m.a == VX_DATA else 0
                 m.f &= ~1
+            elif n == INPUT:
+                m.set_memory_block(m.hl, self.inputs.pop(0) + b'\0')
+                m.f &= ~1
+            elif n == DIALOG:
+                self.dialogs += 1
+                m.a = 0
             else:
                 m.a = 0
                 m.f = (m.f | 0x40) & ~1           # Z, no carry
@@ -304,6 +316,41 @@ def undo(prog, sym, big):
           'and each done again: all right' % ('own data bank' if big else '6128'))
 
 
+def find_replace(prog, sym, big):
+    """FIND far into the file, FIND AGAIN past the last, REPLACE in all."""
+    np = Notepad(prog, sym, big)
+    np.call('INIT', a=0)
+    n = 300 if big else 60
+    lines = [b'LINE %04d: SOME TEXT TO EDIT' % i for i in range(n)]
+    np.disc[b'F       TXT'] = b'\r\n'.join(lines) + b'\r\n'
+    np.m.set_memory_block(np.sym['NAME_TMP'], b'F       TXT')
+    np.call('LOAD_FILE')
+    text = b'\n'.join(lines) + b'\n'
+    word = b'LINE %04d' % (n - 10)
+    np.inputs = [word.lower()]
+    np.call('COMMAND', a=CMD_FIND)
+    at = text.index(word)
+    check(np, text, at + len(word), 'FIND')
+    sel = np.w('PLEN') + np.w('SEL') - np.sym['TEXT']
+    if np.m.memory[np.sym['SEL_ON']] != 1 or sel != at or np.dialogs:
+        sys.exit('notepad_check: FIND: not chosen (from %d, not %d)' % (sel, at))
+    np.call('COMMAND', a=CMD_AGAIN)
+    check(np, text, at + len(word), 'FIND AGAIN past it')
+    if np.dialogs != 1:
+        sys.exit('notepad_check: FIND AGAIN: no NOT FOUND')
+    np.inputs = [b'some', b'ANY OLD']
+    np.call('COMMAND', a=CMD_REPLACE)
+    text = text.replace(b'SOME', b'ANY OLD')
+    check(np, text, text.rindex(b'ANY OLD') + 7, 'REPLACE')
+    np.inputs = [b'NOWHERE', b'X']
+    np.call('COMMAND', a=CMD_REPLACE)
+    if np.dialogs != 2:
+        sys.exit('notepad_check: REPLACE of nothing: no NOT FOUND')
+    check(np, text, 0, 'REPLACE of nothing')
+    print('notepad_check: %s: FIND without case, FIND AGAIN past the last, '
+          'REPLACE in %d lines: all right' % ('own data bank' if big else '6128', n))
+
+
 def main():
     if len(sys.argv) != 3:
         sys.exit(__doc__)
@@ -321,6 +368,8 @@ def main():
     typing(prog, sym)
     undo(prog, sym, 1)
     undo(prog, sym, 0)
+    find_replace(prog, sym, 1)
+    find_replace(prog, sym, 0)
 
 
 if __name__ == '__main__':

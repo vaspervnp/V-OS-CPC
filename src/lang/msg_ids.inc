@@ -147,4 +147,5 @@ MSG_ITEM_OPEN        equ 143
 MSG_ITEM_PROGRAMS    equ 144
 MSG_SW_T             equ 145
 MSG_SW_NONE          equ 146
-MSG_COUNT             equ 147
+MSG_ITEM_KEEP        equ 147
+MSG_COUNT             equ 148

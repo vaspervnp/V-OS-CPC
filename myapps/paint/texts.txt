@@ -27,5 +27,6 @@ BRUSH       | BRUSH                 | ΠΙΝΕΛΟ
 LINE        | LINE                  | ΓΡΑΜΜΗ
 BOX         | BOX                   | ΚΟΥΤΙ
 FILL        | FILL                  | ΓΕΜΙΣΜΑ
+CIRCLE      | CIRCLE                | ΚΥΚΛΟΣ
 HINT1       | ARROWS+COPY: DRAW     | ΒΕΛΗ+COPY: ΖΩΓΡΑΦΙΚΗ
-HINT2       | P B L X F  TAB: COLOUR | P B L X F  TAB: ΧΡΩΜΑ
+HINT2       | P B L X F C  TAB: COLOUR | P B L X F C  TAB: ΧΡΩΜΑ

@@ -32,7 +32,8 @@ Mode 1. Une fenêtre FICHIERS montre les fichiers d'un lecteur sous forme d'icô
 | ^R | relire les disques |
 | souris | clic sur un fichier : sélection, encore : ouverture. Clic sur un lecteur : l'ouvre |
 
-- **Menu FICHIER :** OUVRIR, INFOS DU FICHIER (^I), COPIER AU LECTEUR SUIVANT, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, QUITTER VERS LE BASIC.
+- **Menu FICHIER :** OUVRIR, INFOS DU FICHIER (^I), COPIER AU LECTEUR SUIVANT, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, GARDER LE BUREAU (^S), QUITTER VERS LE BASIC.
+- **GARDER LE BUREAU** (^S) écrit la fenêtre des fichiers telle qu'elle est (où, sa taille, son lecteur, ou fermée) dans `A:SETUP.CFG` : au prochain démarrage le Bureau l'ouvre ainsi tout de suite. Le ^S de Setup la garde aussi.
 - **La fenêtre FICHIERS** se déplace par son titre et reste là où vous la mettez, même quand vous changez de vue.
 - **Au début, pas de fenêtre ni de lecteur choisi :** on voit le fond (et son image). Un lecteur (un clic sur son icône, ou TAB) ouvre sa fenêtre ; le X de son titre la ferme, comme un clic sur le lecteur ouvert. Le petit carré dans le coin en bas à droite agrandit ou réduit la fenêtre par icônes entières (2 à 5 par ligne, 1 à 5 lignes ; quatre sur cinq au début), et la barre de droite montre quelle partie de la liste est visible : un clic au-dessus ou au-dessous de sa partie foncée fait défiler d'une fenêtre. La taille est gardée, comme la place.
 - **Ouverture selon le type** (aussi dans le Commander) : les `.TXT` s'ouvrent dans NOTEPAD, les `.MD` dans MARKDOWN, les `.PIC` et `.LYR` dans PAINT, les `.VDB` dans DATABASE, les `.VSH` dans SHEET, les `.MUS` dans MUSIC, qui commence à les jouer. Le programme est cherché sur le lecteur du fichier, puis sur A:, puis sur B:. S'il n'est pas trouvé, « AUCUN PROGRAMME POUR CE FICHIER » s'affiche. Si le programme a des modifications non enregistrées, il demande d'abord.
@@ -67,7 +68,7 @@ Mode 1, deux panneaux avec des listes de fichiers : A: à gauche, B: à droite. 
 | ^R | relire les deux disquettes |
 | ^G | le lecteur suivant pour le panneau actif : A:, B:, DISK (aussi un clic sur son titre) |
 | ^F | chercher des fichiers : un nom avec `*` et `?` (`*.TXT`, `README.*`, `NOTE?AD.BIN` ; sans point, n'importe quelle extension), cherché sur A:, B: et DISK (le dossier où vous êtes). Le panneau actif liste ce qui a été trouvé, jusqu'à 64 fichiers, chacun avec son lecteur (`B:README.TXT`). RETURN va au fichier sur son lecteur ; ^C, ^D, ^N et ^V agissent sur les fichiers trouvés tels quels ; ^R ou ^G termine la liste |
-| ^V | voir le texte : les premières lignes du fichier choisi dans l'autre panneau, jusqu'à ce qu'il soit redessiné |
+| ^V | voir le texte : les premières lignes du fichier choisi dans l'autre panneau, jusqu'à ce qu'il soit redessiné. Une image (`.SCR`, comme PAINT et le CHART de SHEET les enregistrent) s'affiche sur tout l'écran en mode 0 avec ses propres encres ; une touche ou un clic ramène le Commander |
 | ^E | copier la disquette : toute la disquette du panneau actif sur celle de l'autre panneau (A: et B:), piste par piste, chaque piste d'abord formatée comme celle de la source (DATA ou SYSTEM). Une confirmation est demandée : les fichiers de l'autre disquette sont perdus |
 | souris | clic : sélection, encore : ouverture |
 
@@ -82,6 +83,7 @@ Avec une carte M4, le Bureau a une troisième icône de lecteur, DISK, sous A: e
 - **Les dossiers** apparaissent comme des dossiers (une icône avec un onglet, ou DIR dans le Commander). RETURN sur l'un d'eux y entre, et `..`, la première entrée, remonte. Dans le Lanceur, ils sont là aussi, pour atteindre les programmes qu'ils contiennent.
 - **Tout comme sur une disquette :** les programmes s'y lancent, les fichiers s'ouvrent dans leurs programmes, et ^C, ^D et ^N copient, suppriment et renomment. Les copies entre DISK et une disquette vont jusqu'à 16K. Dossiers et fichiers ont des noms comme sur le CPC (8.3 : `NOM.EXT`) ; les noms plus longs n'apparaissent pas.
 - **M4.SYS** (sur `vos.dsk`) est chargé depuis A: la première fois que DISK sert.
+- **L'heure et les dates :** la barre de menus montre l'heure de la M4 (« 09:25 », à gauche de la langue du clavier) dans chaque vue et chaque programme où il y a la place, et INFOS DU FICHIER (^I) donne la date et l'heure d'un fichier de la carte sous sa taille. L'heure vient du serveur de temps de la M4 (réglé avec `NETSET` sur le CPC).
 - **Dans les programmes :** OTHER DRIVE (^W dans SHEET) passe de A: à B: puis à DISK, et la ligne du bas indique `DISK:NOM.TXT`. La liste d'OPEN montre aussi les dossiers : RETURN sur l'un d'eux (ou sur `..`) liste ce dossier, et SAVE écrit dans le dossier d'où vous avez ouvert. READER écrit la carte `C:` dans ses adresses.
 - **Les bases de données** vont aussi sur DISK : le ^W de DATABASE y arrive, et STREETS lancé depuis la carte y garde son STREETS.VDB.
 - **Pas encore :** la carte SD ne se formate pas depuis V-OS. V-OS démarre toujours depuis une disquette en A: (tapez `|DISC` avant `RUN"VOS"` : avec une carte M4, le CPC démarre sur la carte SD).

@@ -13,8 +13,15 @@ Done in M58–M64 (see MILESTONES.md):
 Still open:
 
 - **A real CPC:** everything above was tested in emulators only; chapter 9 of the manual is the list to try.
-- **A GitHub Release:** `make release` builds the archive; publishing it needs a push and a tag.
-- **A clock on the menu bar, and dates on DISK's files:** the kernel has no room (4 bytes left); they need code moved out of it first.
-- **A preview of a `.SCR`** in the Commander (SHOW THE TEXT shows text only).
 - **PAINT's UNDO for FILL on the whole screen** (it may go past the window kept).
-- **Page breaks** when a printout is longer than a page.
+
+Done in M65–M72 (asked 2026-11-04, see MILESTONES.md):
+
+1. **Room in the kernel** (M65): SETUP.CFG's code out of it; the M4's time on the menu bar, the dates of DISK's files in FILE INFO.
+2. **A preview of a `.SCR`** in the Commander (M66).
+3. **Pages** in printouts, with a heading and the page's number (M67).
+4. **FIND and REPLACE in NOTEPAD; CIRCLE in PAINT** (M68).
+5. **Letters from a database** (M69): PRINT LETTERS in DATABASE.
+6. **DIARY** (M70).
+7. **TELNET** (M71), through the M4.
+8. **KEEP THE DESKTOP** (M72).
