@@ -23,6 +23,7 @@ Este manual también está en griego: [00-index.md](../00-index.md), en inglés:
 | [6. Bloques en el ordenador](06-blocks-web.md): el editor web y `vbc.py` | quien hace programas |
 | [7. SDK](../../../sdk/README.es.md): programas en ensamblador con la API | programadores |
 | [8. Desarrollo de V-OS](08-development.md): compilación, estructura, pruebas, memoria | quien trabaja en el propio V-OS |
+| [9. En un CPC real](09-real-cpc.md): qué probar, y cómo decírnoslo | quien tiene un CPC real |
 
 El mismo material está también en PDF, en [`docs/V-OS-es.pdf`](../../V-OS-es.pdf). Lo genera `make docs`.
 
@@ -32,4 +33,4 @@ El mismo material está también en PDF, en [`docs/V-OS-es.pdf`](../../V-OS-es.p
 - [`docs/REQUIREMENTS.md`](../../REQUIREMENTS.md): los requisitos y el diseño, con los detalles de implementación de cada hito.
 - [`src/api/vos_api.inc`](../../../src/api/vos_api.inc): la API, con todas sus reglas en los comentarios.
 
-> Esta documentación cubre V-OS hasta M44 incluido. Se actualiza con cada hito.
+> Esta documentación cubre V-OS hasta M64 incluido. Se actualiza con cada hito.

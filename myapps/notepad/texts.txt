@@ -8,6 +8,7 @@ SAVE_AS     | SAVE AS...            | ΑΠΟΘΗΚΕΥΣΗ ΩΣ...
 DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
 PAGE        | PAGE (MODE 2)         | ΣΕΛΙΔΑ (MODE 2)
 PAGE_NO     | PAGE                  | ΣΕΛΙΔΑ
+PRINT       | PRINT                 | ΕΚΤΥΠΩΣΗ
 ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
 ABOUT_TEXT  | NOTEPAD|TEXT FILES UP TO 4K,|16K WITH MORE RAM|FOR V-OS, MADE|WITH THE SDK | ΣΗΜΕΙΩΜΑΤΑΡΙΟ|ΚΕΙΜΕΝΑ ΩΣ 4K,|16K ΜΕ ΕΠΕΚΤΑΣΗ|ΓΙΑ ΤΟ V-OS, ΑΠΟ|ΤΟ SDK
 BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
@@ -19,6 +20,7 @@ LINE        | LINE                  | ΓΡΑΜΜΗ
 COL         | COL                   | ΣΤΗΛΗ
 HINT        | ^N NEW  ^O OPEN  ^S SAVE  ESC MENU  ^Q BACK | ^N ΝΕΟ  ^O ΑΝΟΙΓΜΑ  ^S ΣΩΣΙΜΟ  ESC ΜΕΝΟΥ
 EDIT        | EDIT                  | ΕΠΕΞΕΡΓΑΣΙΑ
+UNDO        | UNDO                  | ΑΝΑΙΡΕΣΗ
 COPY        | COPY                  | ΑΝΤΙΓΡΑΦΗ
 CUT         | CUT                   | ΑΠΟΚΟΠΗ
 PASTE       | PASTE                 | ΕΠΙΚΟΛΛΗΣΗ

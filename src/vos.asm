@@ -185,8 +185,8 @@ setup_end:
         org CALC_ADDR
         include "calc/calc.asm"
         assert calc_stop <= DB_ADDR
-        IFDEF TEST_SCRIPT                     ; on SHEET's test disc only: the
-        IF TEST_SCRIPT == 32                  ; others have no room for it
+        IFDEF TEST_SCRIPT                     ; on SHEET's test discs only: the
+        IF TEST_SCRIPT == 32 || TEST_SCRIPT == 42 ; others have no room
         save "CALC.SYS", CALC_ADDR, calc_stop - CALC_ADDR, DSK, "build/vos_test.dsk"
         ENDIF
         ELSE

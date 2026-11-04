@@ -4,6 +4,53 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**M64 (smaller ones: SHOW, COPY THE DISC, CSV, the screen saver; version 0.35):**
+- **SHOW** (`myapps/show`, on `apps.dsk`): the `.SCR` pictures of a drive one after the other, in mode 0 with their inks (PAINT's at #07D0, else PAINT's palette): the next every 5 seconds, RIGHT and LEFT by hand, SPACE stops and goes on, ^W the other drive. Each is loaded into the data bank and drawn with `VOS_BLIT` a row at a time.
+- **COPY THE DISC** (Commander, ^E): the active panel's disc onto the other's, A: and B:, a track at a time: its nine sectors into bank 4, then the target's track formatted as the source's (DATA or SYSTEM, from track 0's first sector) and written. Asked first.
+- **CSV:** SHEET's OPEN CSV reads a `.CSV` into cells, DATABASE's IMPORT CSV adds its lines as records to the table in use. Both: commas or semicolons (the first line says which), quotes and `""`, UTF-8; SHEET makes `1,5` a number with semicolons, DATABASE leaves out a first line of heads, cuts texts to their fields and takes a number's digits.
+- **The screen saver:** with a picture on the desk, after 3 minutes with nothing done on the Desktop the picture shows alone; anything brings the Desktop back (that key does nothing else). The Desktop asks for frame events (`view_ticks`) to count.
+- **Fixed on the way:** a `jr` of the Desktop out of reach.
+- **Tested:** `make test-show` (new, Z80: two pictures row by row, their inks, the keys, the frames), `make test-dcopy` (new, Caprice32: B: lists A:'s files after it), `make test-saver` (new, Caprice32, 576K: the picture alone, then the Desktop), `test-sheet-z80` (OPEN CSV by semicolons and by commas), `test-database-z80` (IMPORT CSV).
+- **Not tested:** on a real CPC: COPY THE DISC's time with two real drives; SHOW on DISK.
+
+**M63 (the M4's time in CLOCK; version 0.34):**
+- **CLOCK** asks the M4 board for the time (`C_TIME`, #4324, through `VX_M4`: "hh:mm:ss yyyy-mm-dd", from its NTP server set with NETSET) and counts on from it with the frames; at midnight it asks again. The program shows the date under the time. Without an M4 board, the time since V-OS started, as before.
+- **Not done:** a clock on the menu bar and the dates of DISK's files: the kernel has no room left (4 bytes).
+- **Tested:** `make test-clock` (new, Z80: the M4's time and date, 65 seconds on, past midnight the next day, an hour on; without an M4 the time since V-OS started).
+- **Not tested:** with a real M4 board and its NTP server, nor in the 1984 emulator.
+
+**M62 (UNDO in NOTEPAD and PAINT; version 0.33):**
+- **NOTEPAD, UNDO ^Z** (EDIT menu): the last change taken back: a run typed or pasted, or what DEL, CLR, CUT or typing over a selection took out (up to 256 characters kept). It keeps its place in all of the text, so the window may have moved. UNDO again does it again.
+- **PAINT, UNDO ^Z:** the picture is kept before each tool (the 8K of a picture or layers in the data bank; of the whole screen, the window's 128 × 128 in PAINT's own 8K, which it does not use then) and UNDO swaps it with the picture, so UNDO again does it again. FILL on the whole screen may go past the window: no UNDO for it. After PAINT has been away there is nothing to undo (a 6128 shares the data bank).
+- **Tested:** `make test-notepad-big` (UNDO of typing, DEL, CLR and a selection typed over, and each again, with a data bank and on a 6128), `make test-paint-undo` (new, Z80: BOX, LINE, PENCIL, FILL, UNDO and UNDO again, a picture and the whole screen, scrolled away).
+
+**M61 (CHART in SHEET; version 0.32):**
+- **CHART ^G:** a range of a column or a row (at first the cursor's column down to its last number; up to 16 cells) as bars in mode 0, each as high as CALC.SYS works out `ROUND(cell*160/MAX(range),0)`, the texts of column A (or row 1) under them. It is drawn on the screen and as a `.SCR` in the data bank (PAINT's inks at #07D0), which ^S saves; any other key goes back, and the values are worked out again (the `.SCR` was where they are).
+- **Tested:** `make test-sheet-z80` (BUDGET.VSH's costs: the range asked, the bars, the labels, the `.SCR`'s first bar and inks, ^S, ESC and the values again; the `.SCR` looked at as a picture), `make test-print` (the chart of A2:A4 in Caprice32).
+
+**M60 (FIND and SHOW THE TEXT in the Commander; version 0.31):**
+- **FIND ^F:** a name with `*` and `?` (with no dot any extension), looked for on A:, B: and DISK (its folder now); the active panel lists what was found (FOUND), up to 64, each with its drive. RETURN goes to the file on its drive; the file commands work on the found files; reading the panel again ends the list.
+- **SHOW THE TEXT ^V:** the chosen file's first lines in the other panel (CR, LF or CR LF end a line, ^Z the text), loaded into bank 4.
+- **Fixed on the way:** the found list did not end when RETURN went to a file (an `inc (hl)` after the comparison changed the flag).
+- **Tested:** `make test-find` (new, Caprice32: *.TXT found on A: and B:, README.TXT's lines, RETURN to it on B:).
+
+**M59 (printing: `VX_PRINT`, PRINT in NOTEPAD, SHEET and DATABASE; version 0.30):**
+- **API 30, `VX_PRINT`:** `VOS_EXT` with HL → text, BC = bytes, E = 0 or `VOS_DATA`: to the CPC's printer port (Centronics, `#EFxx`, BUSY on PPI port B bit 6), a byte and STROBE on and off, as the firmware does. The port has 7 bits, so the codes over 127 go out as plain ASCII from a table made by `tools/voscs.py ascii` (`src/kernel/ascii.inc`): accents left out, Greek as Greeklish (Θ 8, Ξ 3, Ψ 4, Ω W). If the printer stays busy for two seconds: carry, A = 41, THE PRINTER IS NOT READY (a new message in the six packs).
+- **PRINT ^P:** NOTEPAD prints its text (through the data bank in pieces, as SAVE writes it, LF as CR LF); SHEET the sheet as its page shows it, columns A–H, then I–P if they have something, up to the last row used, with the columns' letters; DATABASE the table in use as the list shows it, the fields' names and every record. Each ends with a new page.
+- **Memory:** `VX_PRINT` is in the second extension (`ext2.asm`); to make room, CALC.SYS and DB.SYS moved up by 256 bytes (`CALC_ADDR` #4E80, `DB_ADDR` #5780; DB.SYS ends at #6F7B, below its cache). The test builds have no room for it (their scripts are in `ext2` too) but `make test-print`'s: in the others `VX_PRINT` says the printer is not ready.
+- **Found on the way:** `make test-database`'s scenario had stopped fitting in `ext2` after M56–M57; it fits again.
+- **Tested:** `make test-print` (new, Caprice32 with its printer file): NOTEPAD prints B:PRINT.TXT, with Greek and accented letters, and SHEET B:T.VSH (a formula, column J) at 576K, the file checked byte by byte (`tools/print_check.py`); without a printer (128K), THE PRINTER IS NOT READY. `make test-database-z80`: PRINT of five records, and its error without a printer. `test-sheet-z80`, `test-db`, `test-calc-sys`, `test-sheet`, `test-database`, `test-streets`, `test-notepad`, `test-db-disc`.
+- **Not tested:** on a real CPC and printer (the STROBE's timing, a DMP2000's BUSY); a printout longer than a page (no page breaks are sent but the last).
+
+**M58 (a release to hand out: MIT licence, `make release`, a test list for a real CPC; version 0.29):**
+- **LICENSE:** V-OS is under the MIT licence. The README says so, with where the fonts (font8x8, public domain) and Blockly (Apache 2.0) come from; promo.md and the videos' last caption say "open source" and now it is so.
+- **`make release`** (`tools/mkrelease.sh`): `build/V-OS-<version>.zip` with `vos.dsk`, `apps.dsk` and the programs' own discs, the manual's six PDFs, the promo's pictures, the demo videos that were made, `LICENSE.txt` and a `README.txt` (`tools/release/README.txt`, CRLF). The Linux and Windows bundles (`make linux`, `make windows`) go beside it.
+- **Chapter 9 of the manual, "On a real CPC"**, in the six languages: how to get the discs onto a CPC (Gotek/HxC, a 3.5" drive, an M4 board), what to write down (model, CRTC, memory, monitor), a list to tick (starting, the drive, the keyboard, the AMX mouse, memory, the screen modes, sound, the M4, speed) with what each should do, and how to report (an issue on GitHub).
+- **The promo:** `make promo` and nine screenshots in the dark theme (`docs/promo`), and the videos in six languages for 0.28 (in DEMO builds only, the drive icons lower, so that the 1984 emulator does not take A:'s icon for the 464's inks).
+- **TODO.md:** what may come next.
+- **Tested:** `make release` (the archive's contents), `make docs`.
+- **Not tested:** on a real CPC: that is what the list is for.
+
 **M57 (the Desktop's window: closed at first, resized, scrolled; version 0.28):**
 - **No window at first:** the Desktop starts with the desk alone, its picture whole and no drive chosen. A drive (a click on its icon, or TAB) opens its window; the X on the title closes it, and so does a click on the open drive. Whether it is open, its size and its place are kept when you go to another view and back.
 - **Resize:** the small square in the corner below on the right takes the window's size: a dashed outline follows the pointer in whole icons (2–5 in a row, 1–5 rows) and stays on the screen; the icons flow into the new rows.

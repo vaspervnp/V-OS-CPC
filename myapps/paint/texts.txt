@@ -10,6 +10,7 @@ SAVE_AS     | SAVE AS...            | ΑΠΟΘΗΚΕΥΣΗ ΩΣ...
 EXPORT      | EXPORT .SCR           | ΕΞΑΓΩΓΗ .SCR
 EXPORTED    | SAVED AS .SCR         | ΣΩΘΗΚΕ ΩΣ .SCR
 DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+UNDO        | UNDO                  | ΑΝΑΙΡΕΣΗ
 ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
 ABOUT_TEXT  | PAINT|THE WHOLE SCREEN, 160 X 200|(128 X 128 WITHOUT A|MEMORY EXPANSION), OR|64 X 64 IN 3 LAYERS|16 COLOURS, FOR V-OS | ΖΩΓΡΑΦΙΚΗ|ΟΛΗ Η ΟΘΟΝΗ, 160 X 200|(128 X 128 ΧΩΡΙΣ|ΕΠΕΚΤΑΣΗ ΜΝΗΜΗΣ), Ή|64 X 64 ΣΕ 3 ΕΠΙΠΕΔΑ|16 ΧΡΩΜΑΤΑ, ΓΙΑ ΤΟ V-OS
 BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ

@@ -50,6 +50,9 @@ CMD_DESKTOP     equ 16              ; CMD_DESKTOP + view number
 CMD_LAUNCHER    equ 17
 CMD_COMMANDER   equ 18
 CMD_SETUP       equ 19
+CMD_FIND        equ 20              ; Commander: FIND, SHOW THE TEXT
+CMD_PEEK        equ 21              ; (handled before view_command)
+CMD_DCOPY       equ 22
 
 ; A = view to switch to once the current event is handled
 view_request:

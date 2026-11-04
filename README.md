@@ -9,6 +9,8 @@ A graphical operating system for the Amstrad CPC 6128, written in Z80 assembly.
 - **Milestones**, with what was tested in each: [MILESTONES.md](MILESTONES.md)
 - What is required and what has been decided: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)
 - Interface templates: [docs/interface-templates.html](docs/interface-templates.html)
+- **On a real CPC:** what to try and how to report it, chapter 9 of the manual ([docs/manual/en/09-real-cpc.md](docs/manual/en/09-real-cpc.md))
+- What may come next: [TODO.md](TODO.md)
 
 ## Build
 
@@ -36,6 +38,12 @@ make test-amsdos # the same script, then AMSDOS in BASIC reads the V-OS files
 make test-reboot # the same, then RUN"VOS" again with the SETUP.CFG that was saved
 make test-system # the script with A: in SYSTEM format
 make test-sdk    # the SDK template as TEMPLATE: opens from the Launcher, box, menu, ABOUT, BACK
+make test-print  # NOTEPAD and SHEET print to Caprice32's printer file, checked; no printer: the error
+make test-find   # FIND and SHOW THE TEXT in the Commander
+make test-dcopy  # COPY THE DISC in the Commander: B: as A: after it
+make test-saver  # the Desktop's screen saver (576K)
+make test-show test-clock test-paint-undo  # SHOW, CLOCK's M4 time, PAINT's UNDO (Z80)
+make release     # build/V-OS-<version>.zip: the discs, the PDFs, the pictures and the videos, for a GitHub Release
 make docs        # the PDFs of the manual: docs/V-OS.pdf (Greek) and docs/V-OS-en/fr/es/de/it.pdf
 ```
 
@@ -80,4 +88,8 @@ Hex numbers in the code are written with `#` (e.g. `#C000`), because RASM reads 
 
 ## Status
 
-V-OS is at **M57** (version 0.28 beta; each milestone adds 0.01). What each milestone added and how it was tested: [MILESTONES.md](MILESTONES.md).
+V-OS is at **M64** (version 0.35 beta; each milestone adds 0.01). What each milestone added and how it was tested: [MILESTONES.md](MILESTONES.md).
+
+## Licence
+
+V-OS is free software under the [MIT licence](LICENSE), (C) 2026 Vassilis Perantzakis (Revive8bit). The 8×8 fonts come from Daniel Hepper's font8x8 (public domain); the blocks editor in the browser loads Blockly (Apache 2.0).

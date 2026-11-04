@@ -31,7 +31,14 @@
 ; down, E the eraser (the colour after the 16: the pixels let the
 ; layers below show).
 ;   PAINT menu: NEW, NEW LAYERS, OPEN ^O, OPEN LAYERS, SAVE ^S, SAVE
-;   AS, OTHER DRIVE (A: or B:), ABOUT, BACK ^Q
+;   AS, OTHER DRIVE (A: or B:), UNDO ^Z, ABOUT, BACK ^Q
+; UNDO takes back the last tool: before each, the picture is kept (the
+; 8K of a picture or of layers in the data bank; of the whole screen,
+; the window's 128 x 128 here, in canvas, which it does not use), and
+; UNDO swaps it with the picture, so UNDO again does it again. FILL on
+; the whole screen may go past the window: no UNDO for it. The data
+; bank may have been another program's meanwhile (a 6128 shares it):
+; nothing to undo after PAINT is back.
 ;   make app NAME=paint       build/PAINT.BIN, and build/vos.dsk
 ; =====================================================================
 
@@ -84,6 +91,7 @@ CMD_DRIVE       equ VC_APP + 7
 CMD_ABOUT       equ VC_APP + 8
 CMD_BACK        equ VC_APP + 9
 CMD_EXPORT      equ VC_APP + 10
+CMD_UNDO        equ VC_APP + 11
 SCR_DATA        equ #4000           ; the screen, in the data bank (EXPORT,
                                     ; or the picture itself)
 SCR_SIZE        equ #4000
@@ -135,6 +143,8 @@ init:
 .small:
         call new_pic
 .back:
+        xor a                       ; nothing to undo (see above)
+        ld (u_ok),a
         call redraw
         ; fall through
 
@@ -239,6 +249,8 @@ new_pic:
 ; A = 0 a picture, 1 layers: NONAME, as new
 set_mode:
         ld (lmode),a
+        ld hl,u_ok
+        ld (hl),0
         or a
         ld hl,64 * 256 + 64         ; layers
         jr nz,.size
@@ -526,6 +538,9 @@ ptr_down:
         ld a,(tool)
         cp T_FILL_
         jp z,fill
+        push bc
+        call u_keep
+        pop bc
         ld a,1
         ld (down),a
         call changed
@@ -1053,6 +1068,8 @@ command:
         jp z,save_as
         cp CMD_EXPORT
         jp z,export
+        cp CMD_UNDO
+        jp z,undo
         cp CMD_DRIVE
         jr nz,.not_drive
         ld hl,fdrive
@@ -1069,6 +1086,137 @@ command:
         call discard_ok
         ret nz
         jp VOS_EXIT
+
+; ---------------------------------------------------------------------
+; UNDO
+; ---------------------------------------------------------------------
+; the picture kept, before a tool
+u_keep:
+        call rc_flush
+        ld a,1
+        ld (u_ok),a
+        ld a,(big)
+        or a
+        jr nz,.screen
+        ld hl,canvas                ; the 8K into the data bank
+        ld de,SCR_DATA
+        ld bc,PIC_SIZE
+        jp VOS_BANK_PUT
+.screen:
+        ld hl,(vx)                  ; the window's 128 rows of 64 bytes
+        ld (u_vx),hl                ; into canvas
+        ld hl,canvas
+        ld (u_at),hl
+        ld b,0
+.row:
+        call u_row                  ; -> HL in the data bank, B kept
+        ret c
+        push bc
+        ld de,(u_at)
+        ld bc,64
+        call VOS_BANK_GET
+        pop bc
+        call u_next
+        jr nz,.row
+        ret
+
+; B = a row of the window kept -> HL = its bytes in the data bank, at
+; u_vx, u_vy; carry past the picture's end
+u_row:
+        ld a,(u_vy)
+        add a,b
+        cp 200
+        ccf
+        ret c
+        push bc
+        ld b,a
+        call row_addr
+        ld a,(u_vx)
+        srl a
+        ld e,a
+        ld d,0
+        add hl,de
+        pop bc
+        or a
+        ret
+; the next row: u_at on, B on -> NZ while there are more
+u_next:
+        ld hl,(u_at)
+        ld de,64
+        add hl,de
+        ld (u_at),hl
+        inc b
+        ld a,b
+        sub 128
+        ret
+
+; ^Z: the picture kept and the picture swapped
+undo:
+        ld a,(u_ok)
+        or a
+        ret z
+        call rc_flush
+        call rc_none
+        ld a,(big)
+        or a
+        jr nz,.screen
+        ld hl,canvas                ; 8K, 128 bytes at a time
+        ld (u_at),hl
+        ld de,SCR_DATA
+.chunk:
+        push de
+        ex de,hl
+        ld de,row_pairs
+        ld bc,128
+        call VOS_BANK_GET           ; what was kept, aside
+        pop de
+        push de
+        ld hl,(u_at)
+        ld bc,128
+        call VOS_BANK_PUT           ; the picture there
+        ld hl,row_pairs
+        ld de,(u_at)
+        ld bc,128
+        ldir                        ; and what was kept here
+        ld (u_at),de
+        pop hl
+        ld de,128
+        add hl,de
+        ex de,hl
+        ld hl,(u_at)
+        ld bc,canvas + PIC_SIZE
+        or a
+        sbc hl,bc
+        jr c,.chunk
+        jr .done
+.screen:
+        ld hl,canvas
+        ld (u_at),hl
+        ld b,0
+.row:
+        call u_row
+        jr c,.done
+        push bc
+        push hl
+        ld de,row_pairs             ; the row there, aside
+        ld bc,64
+        call VOS_BANK_GET
+        pop de
+        push de
+        ld hl,(u_at)                ; the kept one there
+        ld bc,64
+        call VOS_BANK_PUT
+        pop hl
+        ld hl,row_pairs             ; and the other kept
+        ld de,(u_at)
+        ld bc,64
+        ldir
+        pop bc
+        call u_next
+        jr nz,.row
+.done:
+        call changed
+        jp draw_canvas
 
 discard_ok:
         ld a,(modified)
@@ -1620,6 +1768,15 @@ fill:
         call cur_code
         cp e
         ret z
+        push bc
+        call u_keep                 ; the whole screen: no UNDO
+        pop bc
+        ld a,(big)
+        or a
+        jr z,.kept
+        xor a
+        ld (u_ok),a
+.kept:
         call changed
         ld hl,fstack
         ld (fsp),hl
@@ -2166,6 +2323,8 @@ open:
 ; white; .PIC and .LYR are kept here (canvas). The name keeps the type
 ; the picture is saved as.
 load_file:                          ; name_tmp on fdrive, open_mode
+        xor a
+        ld (u_ok),a
         ld a,(fdrive)
         or VOS_DATA
         ld hl,name_tmp
@@ -2362,6 +2521,8 @@ write:
 ; #C7D0; NAME.SCR on fdrive. Built in the data bank by draw_canvas,
 ; whose rows go there instead of to the screen meanwhile (scr_at).
 export:
+        xor a                       ; (the data bank: kept no more)
+        ld (u_ok),a
         ld a,(lmode)                ; the whole screen: a .SCR already
         or a
         jr nz,.build
@@ -2431,7 +2592,7 @@ tool_keys:      db "pblxf"
 
 bar:            db 3
                 dw menu, 0, 0
-menu:           db T_MENU, 11
+menu:           db T_MENU, 12
                 db T_NEW, CMD_NEW, 0, 0
                 db T_NEW_L, CMD_NEW_L, 0, 0
                 db T_OPEN, CMD_OPEN, "O", 0
@@ -2440,6 +2601,7 @@ menu:           db T_MENU, 11
                 db T_SAVE_AS, CMD_SAVE_AS, 0, 0
                 db T_EXPORT, CMD_EXPORT, 0, 0
                 db T_DRIVE, CMD_DRIVE, 0, 0
+                db T_UNDO, CMD_UNDO, "Z", 0
                 db T_ABOUT, CMD_ABOUT, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
@@ -2470,6 +2632,10 @@ dot_pairs:      db #FF, 0, #FF, 0
         include "app_texts.asm"     ; texts, from texts.txt
 
 lmode:          db 0                ; 0 a picture, 1 layers
+u_ok:           db 0                ; UNDO: 1 when a picture is kept
+u_vx:           db 0                ; the window's place then (vx, vy)
+u_vy:           db 0
+u_at:           dw 0
 big:            db 0                ; 1: the whole screen (data bank)
 pw:             db 128              ; its width and height
 ph:             db 128

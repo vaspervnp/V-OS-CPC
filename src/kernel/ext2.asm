@@ -553,6 +553,107 @@ u8_cfg:         db 0
 u8_buf:         ds U8_PIECE
 
 ; ---------------------------------------------------------------------
+; VX_PRINT (kernel/api.asm: xa_print): HL (xa_hl) -> text, C and D =
+; bytes, E = 0 in the program's memory, VOS_DATA in its data bank: to
+; the printer port, a piece at a time through u8_buf (u8_in), the codes
+; over 127 as ASCII (prt_ascii: the port has 7 bits). Carry, A =
+; PRT_ERR: the printer stayed busy for two seconds (there is none, it
+; is off line or out of paper).
+; ---------------------------------------------------------------------
+PRT_ERR         equ 41              ; THE PRINTER IS NOT READY
+
+        IFDEF TEST_SCRIPT           ; the test builds have no room for it
+        IF TEST_SCRIPT != 42        ; (the scripts are here), but make
+PRT_NONE        equ 1               ; test-print's
+        ENDIF
+        ENDIF
+        IFDEF PRT_NONE
+prt_entry:
+        ld a,PRT_ERR
+        scf
+        ret
+        ELSE
+prt_entry:
+        ld b,d
+        ld hl,(xa_hl)
+        ld (u8_at),hl
+        ld (u8_len),bc
+        ld a,(vw_cfg)
+        bit 7,e
+        call nz,data_get
+        ld (u8_cfg),a
+        call u8_begin
+.piece:
+        call u8_in                  ; Z (no carry): all sent
+        ret z
+        push bc
+        ld hl,u8_buf
+.char:
+        ld a,(hl)
+        inc hl
+        push bc
+        call prt_char
+        pop bc
+        jr c,.busy
+        dec bc
+        ld a,b
+        or c
+        jr nz,.char
+        pop bc
+        call u8_on
+        jr .piece
+.busy:
+        pop bc
+        ld a,PRT_ERR
+        ret
+
+; A -> the printer, when its BUSY (PPI port B, bit 6) is off: the byte
+; on #EFxx, then STROBE (bit 7) on and off. Carry: busy for 2 s.
+prt_char:
+        or a
+        jp p,.ascii
+        push hl
+        and #7F
+        ld l,a
+        ld h,0
+        ld de,prt_ascii
+        add hl,de
+        ld a,(hl)
+        pop hl
+.ascii:
+        ld e,a
+        ld d,2                      ; 2 x 65536 x 59 T: 2 s
+        push hl
+        ld hl,0
+.wait:
+        ld b,PPI_B >> 8
+        in a,(c)
+        and #40
+        jr z,.ready
+        dec hl
+        ld a,h
+        or l
+        jr nz,.wait
+        dec d
+        jr nz,.wait
+        pop hl
+        scf
+        ret
+.ready:
+        pop hl
+        ld b,PRINTER_PORT >> 8
+        out (c),e
+        set 7,e
+        out (c),e
+        res 7,e
+        out (c),e
+        or a
+        ret
+
+        include "ascii.inc"
+        ENDIF
+
+; ---------------------------------------------------------------------
 ; fs_rename (kernel/files_ext.asm: fx_rename): file_name to fi_new on
 ; the disc in the drive selected, in kernel/fs.asm's directory cache
 ; (the M4's card: m4_rename, kernel/m4.asm)

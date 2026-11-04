@@ -66,9 +66,12 @@ Modo 1, due pannelli con elenchi di file: A: a sinistra, B: a destra. Ogni panne
 | ^N | rinomina |
 | ^R | rilegge entrambi i dischi |
 | ^G | l'unità seguente per il pannello attivo: A:, B:, DISK (anche con un clic sul suo titolo) |
+| ^F | cerca file: un nome con `*` e `?` (`*.TXT`, `README.*`, `NOTE?AD.BIN`; senza punto, qualsiasi estensione), cercato su A:, B: e DISK (la cartella in cui è). Il pannello attivo elenca ciò che è stato trovato, fino a 64 file, ognuno con la sua unità (`B:README.TXT`). RETURN va al file sulla sua unità; ^C, ^D, ^N e ^V agiscono sui file trovati così come sono; ^R o ^G chiude l'elenco |
+| ^V | mostra il testo: le prime righe del file scelto nell'altro pannello, finché non viene ridisegnato |
+| ^E | copia il disco: tutto il disco del pannello attivo su quello dell'altro pannello (A: e B:), traccia per traccia, ogni traccia prima formattata come quella di origine (DATA o SYSTEM). Chiede prima: i file dell'altro disco si perdono |
 | mouse | clic: selezione, di nuovo: apertura |
 
-**Menu FILE:** APRI, INFO SUL FILE (^I), COPIA DI FRONTE, ELIMINA, RINOMINA, RILEGGI I DISCHI, UNITÀ SEGUENTE (^G), FORMATTA IL DISCO (DATA), ESCI IN BASIC.
+**Menu FILE:** APRI, INFO SUL FILE (^I), MOSTRA IL TESTO (^V), CERCA (^F), COPIA IL DISCO (^E), COPIA DI FRONTE, ELIMINA, RINOMINA, RILEGGI I DISCHI, UNITÀ SEGUENTE (^G), FORMATTA IL DISCO (DATA), ESCI IN BASIC.
 
 > FORMATTA IL DISCO cancella tutti i file sul dischetto del pannello attivo. Chiede prima.
 
@@ -98,7 +101,7 @@ Modo 1. Una riga per ogni impostazione. Le modifiche hanno effetto subito. Quand
 | COLORE SFONDO | BLU, NERO, VERDE, ROSSO |
 | TASTIERE | EN + LINGUA, TUTTE SEI (quelle che CONTROL+SHIFT percorre) |
 | TEMA | CHIARO, SCURO (barre, menu, dialoghi, finestre e liste in nero con testo bianco; nei programmi, i loro menu e dialoghi) |
-| SFONDO | NESSUNO, o un'immagine `.SCR`: SINISTRA/DESTRA passano per NESSUNO, A:, B: e DISK, e su un'unità si elencano i suoi `.SCR` per sceglierne uno. La Scrivania la mostra al centro dello sfondo, col colore dello sfondo intorno; un'immagine di PAINT (modo 0, 16 colori) nei quattro colori della Scrivania. Serve un'espansione di memoria (il suo ultimo banco da 16K tiene l'immagine); senza: SERVE UN'ESPANSIONE DI MEMORIA |
+| SFONDO | NESSUNO, o un'immagine `.SCR`: SINISTRA/DESTRA passano per NESSUNO, A:, B: e DISK, e su un'unità si elencano i suoi `.SCR` per sceglierne uno. La Scrivania la mostra al centro dello sfondo, col colore dello sfondo intorno; un'immagine di PAINT (modo 0, 16 colori) nei quattro colori della Scrivania. Serve un'espansione di memoria (il suo ultimo banco da 16K tiene l'immagine); senza: SERVE UN'ESPANSIONE DI MEMORIA. Dopo tre minuti senza far nulla sulla Scrivania, l'immagine si mostra da sola (un salvaschermo); un tasto qualsiasi o il mouse riportano la Scrivania |
 
 | Tasto | Cosa fa |
 |---|---|

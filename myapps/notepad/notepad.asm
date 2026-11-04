@@ -15,7 +15,13 @@
 ; deletes before it, CLR at it, RETURN starts a line. A line wider than
 ; the screen moves the view sideways, 16 columns at a time.
 ;   NOTEPAD menu: NEW ^N, OPEN ^O, SAVE ^S, SAVE AS, OTHER DRIVE (the
-;   drive OPEN and SAVE use, A:, B: or DISK), PAGE ^M, ABOUT, BACK ^Q
+;   drive OPEN and SAVE use, A:, B: or DISK), PAGE ^M, PRINT ^P (VX_PRINT,
+;   API 30: the lines with CR LF, then a new page), ABOUT, BACK ^Q
+;   EDIT menu: UNDO ^Z, COPY ^C, CUT ^X, PASTE ^V, SELECT ALL ^A
+; UNDO takes back the last change: a run typed or pasted, or what DEL,
+; CLR, CUT or typing over a selection took out (up to U_MAX bytes);
+; UNDO again does it again. Its place is kept in all of the text (whole),
+; so the window may have moved meanwhile, but not past it.
 ; The last line shows the drive and file ("*": not saved), the line
 ; and the column.
 ;   make app NAME=notepad     build/NOTEPAD.BIN, and build/vos.dsk
@@ -51,11 +57,16 @@ CMD_SAVE_AS     equ VC_APP + 4
 CMD_DRIVE       equ VC_APP + 5
 CMD_ABOUT       equ VC_APP + 6
 CMD_PAGE        equ VC_APP + 12
+CMD_PRINT       equ VC_APP + 13
 CMD_BACK        equ VC_APP + 7
 CMD_COPY        equ VC_APP + 8       ; the EDIT menu
 CMD_CUT         equ VC_APP + 9
 CMD_PASTE       equ VC_APP + 10
 CMD_ALL         equ VC_APP + 11
+CMD_UNDO        equ VC_APP + 14
+U_MAX           equ 256             ; UNDO: the bytes taken out it keeps
+U_IN            equ 1               ; u_kind: a run put in,
+U_OUT           equ 2               ; or taken out
 
         org VOS_APP_ADDR
         jp init
@@ -138,6 +149,7 @@ new_doc:
         ld (left),a
         ld (modified),a
         ld (sel_on),a
+        ld (u_kind),a
         ld hl,noname
         ld de,fname
         ld bc,11
@@ -369,6 +381,10 @@ insert:
         pop af
         ld hl,(cur)
         ld (hl),a
+        push hl
+        call whole
+        call u_typed
+        pop hl
         inc hl
         ld (cur),hl
         ld a,1
@@ -400,6 +416,11 @@ delete:
         ld de,(tend)
         call same
         ret z
+        push hl
+        call whole
+        call u_deleted
+        pop hl
+        ld de,(tend)
         ld a,(hl)
         push af
         ex de,hl                    ; the rest one place back
@@ -515,6 +536,9 @@ command:
         cp CMD_ALL
         ld hl,do_all
         jp z,edit
+        cp CMD_UNDO
+        ld hl,do_undo
+        jp z,edit
         cp CMD_NEW
         jr nz,.not_new
         call discard_ok
@@ -528,6 +552,8 @@ command:
         jp z,save_file
         cp CMD_SAVE_AS
         jp z,save_as
+        cp CMD_PRINT
+        jp z,print_doc
         cp CMD_DRIVE
         jr nz,.not_drive
         ld hl,fdrive
@@ -608,6 +634,7 @@ sel_off:
 sel_delete:
         call sel_range
         ret z
+        call u_cut
         ld (cur),hl
         push hl
         push de
@@ -676,6 +703,12 @@ do_paste:
         or c
         ret z
         ld (paste_n),bc
+        ld (u_len),bc               ; UNDO: a run put in
+        ld hl,(cur)
+        call whole
+        ld (u_pos),hl
+        ld a,U_IN
+        ld (u_kind),a
         ld hl,(tend)                ; the rest that many places on
         ld de,(cur)
         or a
@@ -709,6 +742,205 @@ do_paste:
         ld a,1
         ld (modified),a
         jp redo_all
+
+; ---------------------------------------------------------------------
+; UNDO
+; ---------------------------------------------------------------------
+; HL = where a character was typed (whole): the run typed goes on, or
+; a new one
+u_typed:
+        ld a,(u_kind)
+        cp U_IN
+        jr nz,.new
+        push hl
+        ld hl,(u_pos)
+        ld de,(u_len)
+        add hl,de
+        pop de
+        or a
+        sbc hl,de
+        ex de,hl
+        jr nz,.new
+        ld hl,(u_len)
+        inc hl
+        ld (u_len),hl
+        ret
+.new:
+        ld (u_pos),hl
+        ld hl,1
+        ld (u_len),hl
+        ld a,U_IN
+        ld (u_kind),a
+        ret
+
+; HL = where (whole), (cur) the character DEL or CLR takes out: after
+; the run taken out (CLR), before it (DEL), or a new one
+u_deleted:
+        ex de,hl
+        ld hl,(cur)
+        ld c,(hl)                   ; C = the character
+        ld a,(u_kind)
+        cp U_OUT
+        jr nz,.new
+        ld hl,(u_len)
+        ld a,h
+        or a
+        jr nz,.new                  ; U_MAX of them already
+        ld hl,(u_pos)
+        or a
+        sbc hl,de
+        jr z,.after                 ; CLR at the same place
+        dec hl
+        ld a,h
+        or l
+        jr nz,.new
+        ld (u_pos),de               ; DEL: one before it
+        push bc
+        ld hl,u_buf + U_MAX - 2     ; the run one place on
+        ld de,u_buf + U_MAX - 1
+        ld bc,U_MAX - 1
+        lddr
+        pop bc
+        ld a,c
+        jr .first
+.after:
+        ld hl,(u_len)
+        ld de,u_buf
+        add hl,de
+        ld (hl),c
+        jr .one
+.new:
+        ld (u_pos),de
+        ld hl,0
+        ld (u_len),hl
+        ld a,U_OUT
+        ld (u_kind),a
+        ld a,c
+.first:
+        ld (u_buf),a
+.one:
+        ld hl,(u_len)
+        inc hl
+        ld (u_len),hl
+        ret
+
+; HL..DE: the selection taken out: kept, if not over U_MAX (else no
+; UNDO). Keeps HL, DE
+u_cut:
+        push hl
+        push de
+        ex de,hl
+        or a
+        sbc hl,de                   ; HL = how many
+        ld a,U_OUT
+        ld b,h
+        ld c,l
+        ld hl,U_MAX
+        or a
+        sbc hl,bc
+        jr nc,.keep
+        xor a                       ; too many
+        jr .kind
+.keep:
+        ld (u_len),bc
+        pop de
+        pop hl
+        push hl
+        push de
+        push hl
+        call whole
+        ld (u_pos),hl
+        pop hl
+        ld de,u_buf
+        ldir
+        ld a,U_OUT
+.kind:
+        ld (u_kind),a
+        pop de
+        pop hl
+        ret
+
+; u_pos (whole) -> HL in the window; carry if it is not there now
+u_ptr:
+        ld hl,(u_pos)
+        ld de,(plen)
+        or a
+        sbc hl,de
+        ret c
+        ld de,text
+        add hl,de
+        push hl
+        ld de,(tend)
+        ex de,hl
+        or a
+        sbc hl,de                   ; carry: after the text's end
+        pop hl
+        ret
+
+; ^Z: the last change taken back; it can be done again the same way
+do_undo:
+        ld a,(u_kind)
+        or a
+        ret z
+        call u_ptr
+        jr c,.far
+        ld a,(u_kind)
+        cp U_IN
+        jr nz,.put_back
+        ld (sel),hl                 ; a run put in: out again, as a
+        ld de,(u_len)               ; selection (kept for ^Z again)
+        add hl,de
+        ld (cur),hl
+        ld a,1
+        ld (sel_on),a
+        jp sel_delete
+.put_back:
+        ld (cur),hl                 ; a run taken out: in again
+        call room
+        ld bc,(u_len)
+        or a
+        sbc hl,bc
+        jr c,.far
+        ld hl,(tend)                ; the rest that many places on
+        ld de,(cur)
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        ld hl,(tend)
+        dec hl
+        push hl
+        ld de,(u_len)
+        add hl,de
+        ex de,hl
+        pop hl
+        ld a,b
+        or c
+        jr z,.gap
+        lddr
+.gap:
+        ld hl,(tend)
+        ld de,(u_len)
+        add hl,de
+        ld (tend),hl
+        ld de,(cur)
+        ld hl,u_buf
+        ld bc,(u_len)
+        ldir
+        ld (cur),de
+        xor a
+        ld (sel_on),a
+        ld a,U_IN                   ; ^Z again: out again
+        ld (u_kind),a
+        ld a,1
+        ld (modified),a
+        jp redo_all
+.far:
+        xor a                       ; a short low note: not here
+        ld hl,600
+        ld c,10
+        ld b,6
+        jp VOS_SOUND
 
 ; ^A: all of the text
 do_all:
@@ -781,6 +1013,7 @@ load_file:                          ; name_tmp on fdrive
         ld (left),a
         ld (modified),a
         ld (sel_on),a
+        ld (u_kind),a
         ld hl,name_tmp
         ld de,fname
         ld bc,11
@@ -862,6 +1095,17 @@ save_as:
         ld bc,3
         ldir
         ; fall through
+
+; PRINT: as write, each piece to the printer instead
+print_doc:
+        ld a,1
+        ld (to_prt),a
+        call win_flush
+        ld hl,0                     ; all of it after the window
+        call bound
+        call s_start
+        ld hl,(slen)
+        jr write.piece
 
 ; the text into the data bank, LF as CR LF, then to the disc; then the
 ; text in the data bank and the window again
@@ -957,6 +1201,9 @@ write:
         sbc hl,de
         ld b,h
         ld c,l
+        ld a,(to_prt)
+        or a
+        jr nz,.prt
         ld hl,(outp)
         push hl
         add hl,bc
@@ -966,7 +1213,33 @@ write:
         pop de
         pop hl
         jr .piece
+.prt:
+        ld hl,text
+        ld e,0
+        ld a,VX_PRINT
+        call VOS_EXT
+        pop de
+        pop hl
+        jr nc,.piece
+        jr .printed
 .save:
+        ld a,(to_prt)
+        or a
+        jr z,.disc
+        ld hl,form_feed             ; the end: a new page
+        ld bc,1
+        ld e,0
+        ld a,VX_PRINT
+        call VOS_EXT
+.printed:
+        push af
+        xor a
+        ld (to_prt),a
+        call win_go
+        pop af
+        jp c,VOS_ERROR
+        ret
+.disc:
         ld hl,(outp)
         ld de,DATA
         or a
@@ -1998,17 +2271,20 @@ rest_rect:      dw 0, 0, 0, 8
 
 bar:            db 4
                 dw menu, edit_menu, 0, 0
-menu:           db T_MENU, 9
+menu:           db T_MENU, 10
                 db T_NEW, CMD_NEW, "N", 0
                 db T_OPEN, CMD_OPEN, "O", 0
                 db T_SAVE, CMD_SAVE, "S", 0
                 db T_SAVE_AS, CMD_SAVE_AS, 0, 0
                 db T_DRIVE, CMD_DRIVE, 0, 0
                 db T_PAGE, CMD_PAGE, "M", 0
+                db T_PRINT, CMD_PRINT, "P", 0
                 db T_ABOUT, CMD_ABOUT, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
-edit_menu:      db T_EDIT, 5
+edit_menu:      db T_EDIT, 7
+                db T_UNDO, CMD_UNDO, "Z", 0
+                db VOS_SEPARATOR, 0, 0, 0
                 db T_COPY, CMD_COPY, "C", 0
                 db T_CUT, CMD_CUT, "X", 0
                 db T_PASTE, CMD_PASTE, "V", 0
@@ -2019,6 +2295,7 @@ dlg_discard:    db T_MENU, T_DISCARD, 2, VM_YES, VM_NO
 dlg_big:        db T_MENU, T_TOO_BIG, 1, VM_OK
 noname:         db "NONAME  TXT"
 ext_txt:        db "TXT"
+form_feed:      db 12
 
         include "app_texts.asm"     ; texts, from texts.txt
         include "api/vos_drive.inc"
@@ -2028,6 +2305,10 @@ fname:          ds 11
 name_tmp:       ds 11
 name_in:        ds 10               ; VOS_INPUT: 8 + 2
 modified:       db 0
+to_prt:         db 0                ; 1: write goes to the printer
+u_kind:         db 0                ; UNDO: 0 nothing, U_IN, U_OUT
+u_pos:          dw 0                ; where (whole)
+u_len:          dw 0                ; how many
 redo:           db 0                ; after an edit: 1 its line, 2 all
 cur:            dw 0                ; -> the cursor, in text
 sel:            dw 0                ; -> the other end of the selection
@@ -2065,4 +2346,5 @@ inp:            dw 0
 bend:           dw 0
 nlf:            dw 0
 line:           ds COLS2 + 1
+u_buf:          ds U_MAX            ; what UNDO puts back
 text:           ds TEXT_MAX

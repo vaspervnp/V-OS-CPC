@@ -66,9 +66,12 @@ Mode 1, deux panneaux avec des listes de fichiers : A: à gauche, B: à droite. 
 | ^N | renommer |
 | ^R | relire les deux disquettes |
 | ^G | le lecteur suivant pour le panneau actif : A:, B:, DISK (aussi un clic sur son titre) |
+| ^F | chercher des fichiers : un nom avec `*` et `?` (`*.TXT`, `README.*`, `NOTE?AD.BIN` ; sans point, n'importe quelle extension), cherché sur A:, B: et DISK (le dossier où vous êtes). Le panneau actif liste ce qui a été trouvé, jusqu'à 64 fichiers, chacun avec son lecteur (`B:README.TXT`). RETURN va au fichier sur son lecteur ; ^C, ^D, ^N et ^V agissent sur les fichiers trouvés tels quels ; ^R ou ^G termine la liste |
+| ^V | voir le texte : les premières lignes du fichier choisi dans l'autre panneau, jusqu'à ce qu'il soit redessiné |
+| ^E | copier la disquette : toute la disquette du panneau actif sur celle de l'autre panneau (A: et B:), piste par piste, chaque piste d'abord formatée comme celle de la source (DATA ou SYSTEM). Une confirmation est demandée : les fichiers de l'autre disquette sont perdus |
 | souris | clic : sélection, encore : ouverture |
 
-**Menu FICHIER :** OUVRIR, INFOS DU FICHIER (^I), COPIER EN FACE, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, LECTEUR SUIVANT (^G), FORMATER LE DISQUE (DATA), QUITTER VERS LE BASIC.
+**Menu FICHIER :** OUVRIR, INFOS DU FICHIER (^I), VOIR LE TEXTE (^V), CHERCHER (^F), COPIER LA DISQUETTE (^E), COPIER EN FACE, SUPPRIMER, RENOMMER, RELIRE LES DISQUES, LECTEUR SUIVANT (^G), FORMATER LE DISQUE (DATA), QUITTER VERS LE BASIC.
 
 > FORMATER efface tous les fichiers de la disquette du panneau actif. Une confirmation est demandée.
 
@@ -98,7 +101,7 @@ Mode 1. Une ligne par réglage. Les changements prennent effet tout de suite. Un
 | COULEUR DU BUREAU | BLEU, NOIR, VERT, ROUGE |
 | CLAVIERS | EN + LANGUE, LES SIX (ceux que CONTROL+SHIFT parcourt) |
 | THÈME | CLAIR, SOMBRE (barres, menus, dialogues, fenêtres et listes en noir avec un texte blanc ; dans les programmes, leurs menus et dialogues) |
-| IMAGE DE FOND | AUCUNE, ou une image `.SCR` : GAUCHE/DROITE passent par AUCUNE, A:, B: et DISK, et sur un lecteur ses fichiers `.SCR` sont listés pour en choisir un. Le Bureau la montre au milieu du fond, la couleur du fond autour ; une image de PAINT (mode 0, 16 couleurs) dans les quatre couleurs du Bureau. Il faut une extension mémoire (sa dernière banque de 16K garde l'image) ; sans elle : IL FAUT UNE EXTENSION MÉMOIRE |
+| IMAGE DE FOND | AUCUNE, ou une image `.SCR` : GAUCHE/DROITE passent par AUCUNE, A:, B: et DISK, et sur un lecteur ses fichiers `.SCR` sont listés pour en choisir un. Le Bureau la montre au milieu du fond, la couleur du fond autour ; une image de PAINT (mode 0, 16 couleurs) dans les quatre couleurs du Bureau. Il faut une extension mémoire (sa dernière banque de 16K garde l'image) ; sans elle : IL FAUT UNE EXTENSION MÉMOIRE. Après trois minutes sans rien faire sur le Bureau, l'image s'affiche seule (un économiseur d'écran) ; une touche ou la souris ramène le Bureau |
 
 | Touche | Ce qu'elle fait |
 |---|---|

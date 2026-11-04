@@ -364,6 +364,83 @@ test_keys:
         dw 2250 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 45
+; make test-saver (-DTEST_SCRIPT=45, 576K): the desk's picture B:NIGHT.SCR
+; (A:SETUP.CFG), the screen saver after 500 frames here. Expected:
+;   frame  250  TAB          -> the Desktop: the window on A:
+;   from about 750           -> the picture alone
+;   frame 1200  DOWN         -> the Desktop again, the window as it
+;                               was (the key only wakes it)
+test_keys:
+        dw  250 : db   4, 8, %00010000   ; TAB: A:
+        dw 1200 : db   4, 0, %00000100   ; DOWN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 44
+; make test-dcopy (-DTEST_SCRIPT=44): COPY THE DISC, A: onto B: (the
+; test disc of programs). Expected:
+;   frame  300  F3           -> the Commander, A: and B:
+;   frame  500  CONTROL+E    -> COPY THE DISC|A: > B:?|...
+;   frame  650  RETURN       -> YES: COPYING, then B: as A:
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  495 : db  15, 2, %10000000   ; CONTROL
+        dw  500 : db   4, 7, %00000100   ; E: COPY THE DISC
+        dw  650 : db   4, 2, %00000100   ; RETURN: YES
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 43
+; make test-find (-DTEST_SCRIPT=43): A: has NOTES.TXT, B: the release's
+; programs and README.TXT. Expected:
+;   frame  300  F3           -> the Commander
+;   frame  500  CONTROL+F    -> FIND (* AND ?) with *.TXT
+;   frame  650  RETURN       -> the left panel: FOUND 2 FILES,
+;                               A:NOTES.TXT and B:README.TXT
+;   frame  900  DOWN, 1000 CONTROL+V -> README.TXT's first lines in
+;                               the right panel
+;   frame 1300  RETURN       -> the left panel on B:, README.TXT chosen
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  495 : db  15, 2, %10000000   ; CONTROL
+        dw  500 : db   4, 6, %00100000   ; F: FIND
+        dw  650 : db   4, 2, %00000100   ; RETURN: *.TXT
+        dw  900 : db   4, 0, %00000100   ; DOWN
+        dw  995 : db  15, 2, %10000000   ; CONTROL
+        dw 1000 : db   4, 6, %10000000   ; V: SHOW THE TEXT
+        dw 1300 : db   4, 2, %00000100   ; RETURN: to it
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 42
+; make test-print (-DTEST_SCRIPT=42, 576K): B: has PRINT.TXT, with Greek
+; and accented Latin letters, and T.VSH; A: NOTEPAD, SHEET and CALC.SYS.
+; Expected (the Makefile checks Caprice32's printer file):
+;   frame  250, 300 TAB x2   -> the Desktop: the window on B:, PRINT.TXT
+;   frame  450  RETURN       -> NOTEPAD with PRINT.TXT
+;   frame  900  CONTROL+P    -> printed, or, with no printer, THE
+;                               PRINTER IS NOT READY after 2 s (RETURN,
+;                               1300)
+;   frame 1400  F1, 1500 RIGHT, 1600 RETURN -> SHEET with T.VSH
+;   frame 2100  CONTROL+P    -> printed: A-H, then I-P
+;   frame 2300  DOWN, 2400 CONTROL+G, 2550 RETURN -> SHEET's CHART of
+;                               A2:A4: bars of 12, 30, 42
+test_keys:
+        dw  250 : db   4, 8, %00010000   ; TAB: A:
+        dw  300 : db   4, 8, %00010000   ; TAB: B:
+        dw  450 : db   4, 2, %00000100   ; RETURN: NOTEPAD
+        dw  895 : db  15, 2, %10000000   ; CONTROL
+        dw  900 : db   4, 3, %00001000   ; P
+        dw 1300 : db   4, 2, %00000100   ; RETURN: OK, if it said so
+        dw 1400 : db   4, 1, %00100000   ; F1
+        dw 1500 : db   4, 0, %00000010   ; RIGHT: T.VSH
+        dw 1600 : db   4, 2, %00000100   ; RETURN: SHEET
+        dw 2095 : db  15, 2, %10000000   ; CONTROL
+        dw 2100 : db   4, 3, %00001000   ; P
+        dw 2300 : db   4, 0, %00000100   ; DOWN: A2
+        dw 2395 : db  15, 2, %10000000   ; CONTROL
+        dw 2400 : db   4, 6, %00010000   ; G: CHART
+        dw 2550 : db   4, 2, %00000100   ; RETURN: A2:A4
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 41
 ; make promo (-DTEST_SCRIPT=41, 576K): screenshots for promo.md, in the
 ; dark theme and in English (A:SETUP.CFG, the desk's picture
@@ -1979,6 +2056,10 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
+        ENDIF
+        ENDIF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

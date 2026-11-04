@@ -23,6 +23,7 @@ Dieses Handbuch gibt es auch auf [Griechisch](../00-index.md), [Englisch](../en/
 | [6. Blöcke auf dem Computer](06-blocks-web.md): der Web-Editor und `vbc.py` | alle, die Programme erstellen |
 | [7. SDK](../../../sdk/README.de.md): Programme in Assembler mit der API | Programmierer |
 | [8. V-OS entwickeln](08-development.md): Build, Aufbau, Tests, Speicher | alle, die an V-OS selbst arbeiten |
+| [9. Auf einem echten CPC](09-real-cpc.md): was du ausprobieren kannst, und wie du es meldest | alle mit einem echten CPC |
 
 Derselbe Inhalt steht auch als PDF zur Verfügung, in [`docs/V-OS-de.pdf`](../../V-OS-de.pdf). Es wird mit `make docs` erzeugt.
 
@@ -32,4 +33,4 @@ Derselbe Inhalt steht auch als PDF zur Verfügung, in [`docs/V-OS-de.pdf`](../..
 - [`docs/REQUIREMENTS.md`](../../REQUIREMENTS.md): die Anforderungen und der Entwurf, mit den Umsetzungsdetails jedes Meilensteins.
 - [`src/api/vos_api.inc`](../../../src/api/vos_api.inc): die API, mit allen Regeln in Kommentaren.
 
-> Diese Dokumentation beschreibt V-OS bis einschließlich M44. Sie wird mit jedem Meilenstein aktualisiert.
+> Diese Dokumentation beschreibt V-OS bis einschließlich M64. Sie wird mit jedem Meilenstein aktualisiert.

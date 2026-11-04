@@ -12,7 +12,21 @@
 ;   ARROWS move, RETURN changes the cell, typing starts a new text,
 ;   DEL or CLR empties it. After each change every formula is worked out again.
 ;   SHEET menu: NEW SHEET ^N, OPEN ^O, SAVE ^S, SAVE AS ^A, OTHER DRIVE
-;   ^W, PAGE ^M, ABOUT, BACK ^Q
+;   ^W, PAGE ^M, PRINT ^P (VX_PRINT, API 30: the cells as on the page,
+;   PR_COLS columns at a time), CHART ^G, OPEN CSV, ABOUT, BACK ^Q
+; OPEN CSV reads a .CSV (from a PC, a database): a line a row, its
+; fields, by commas or semicolons (the first line says which), the
+; columns from A; "quoted" fields may hold them, "" is a quote. With
+; semicolons a field of digits with a comma is a number (1,5 -> 1.5).
+; Saved, it is a .VSH of the same name.
+; CHART asks for a range of a column or a row (B2:B9, up to CH_MAX
+; cells; the cursor's column down to its last number at first): a bar
+; for each, as high as the cell is to the range's MAX (CALC.SYS works
+; ROUND(cell*CH_H/MAX(range)) out), in mode 0, with the texts in column
+; A (or row 1) as labels. It is drawn on the screen and, without
+; the labels, as a .SCR in the data bank (PAINT's inks at #07D0), which
+; ^S saves; ESC goes back (the values worked out again: the .SCR was
+; where they are)
 ; The cells' texts are kept here; their values (CALC_NONE for text or
 ; nothing) in the data bank, from GRID, as CALC.SYS reads them: they
 ; are worked out again whenever the data bank may have been lost (a 6128
@@ -60,6 +74,23 @@ CMD_DRIVE       equ VC_APP + 5
 CMD_ABOUT       equ VC_APP + 6
 CMD_BACK        equ VC_APP + 7
 CMD_PAGE        equ VC_APP + 8
+CMD_PRINT       equ VC_APP + 9
+CMD_CHART       equ VC_APP + 10
+CMD_CSV         equ VC_APP + 11
+CH_MAX          equ 16              ; CHART: bars at most
+CH_H            equ 160             ; the highest (pixels of the .SCR)
+CH_BASE         equ 180             ; its axis
+CH_LEFT         equ 12              ; the first bar
+CH_W            equ 144             ; the bars' room
+CH_X0           equ 16              ; the .SCR on the screen (192 x 259)
+CH_Y0           equ 30
+CH_BG           equ 1               ; PAINT's pens: bright white,
+CH_AXIS         equ 0               ; black
+KN_SHIFT        equ 21              ; key numbers (the CPC's)
+KN_CONTROL      equ 23
+KN_S            equ 60
+PR_COLS         equ 8               ; the sheet's columns on paper (80)
+        assert NUM_W + PR_COLS * CELL_W + 2 <= COLS2
 
         org VOS_APP_ADDR
         jp init
@@ -506,6 +537,9 @@ next_entry:
 ; the screen
 ; ---------------------------------------------------------------------
 redraw:
+        ld a,(ch_on)
+        or a
+        jp nz,chart_draw
         ld a,BG
         call VOS_CLS
         call VOS_DRAW_BAR
@@ -895,6 +929,9 @@ put_num:
 ; events
 ; ---------------------------------------------------------------------
 event:
+        ld a,(ch_on)
+        or a
+        jp nz,chart_event
         push hl
         call VOS_UI_EVENT           ; menus and CONTROL+letter first
         pop hl
@@ -1097,6 +1134,12 @@ command:
         jp z,save_it
         cp CMD_SAVE_AS
         jp z,save_as
+        cp CMD_PRINT
+        jp z,print_sheet
+        cp CMD_CHART
+        jp z,chart
+        cp CMD_CSV
+        jp z,open_csv
         cp CMD_DRIVE
         jr nz,.not_drive
         ld hl,fdrive                ; A: -> B: -> DISK
@@ -1124,6 +1167,694 @@ command:
         ret nz
         jp VOS_EXIT
 
+; PRINT: columns A-H, then I-P, each as the page shows them: the
+; columns' letters, then the rows up to the last one with something in
+; those columns (none: that part is left out); then a new page
+print_sheet:
+        xor a
+.part:
+        ld (pr_left),a
+        ld a,N_ROWS                 ; the last row with something
+.last:
+        dec a
+        jp m,.next
+        ld (row),a
+        call pr_row
+        ld a,(row)
+        jr z,.last
+        inc a
+        ld (pr_rows),a
+        call pr_blank             ; the letters
+        ld b,PR_COLS
+        ld hl,line + NUM_W + 4
+        ld a,(pr_left)
+        add a,"A"
+.letter:
+        ld (hl),a
+        inc a
+        ld de,CELL_W
+        add hl,de
+        djnz .letter
+        call pr_line
+        ret c
+        xor a
+.rows:
+        ld (row),a
+        call pr_row
+        call pr_line
+        ret c
+        ld a,(row)
+        inc a
+        ld hl,pr_rows
+        cp (hl)
+        jr c,.rows
+.next:
+        ld a,(pr_left)
+        add a,PR_COLS
+        cp N_COLS
+        jr c,.part
+        ld hl,form_feed
+        ld bc,1
+        jr pr_send
+
+; the row row's number and cells, from the column pr_left, in line ->
+; NZ: one of them has something
+pr_row:
+        call pr_blank
+        ld a,(row)
+        inc a
+        ld de,line
+        cp 10
+        jr nc,.two
+        inc de
+.two:
+        call put_num
+        ld a,(pr_left)
+        ld (col),a
+        ld de,line + NUM_W
+.cell:
+        push de
+        call cell_show
+        pop de
+        ld hl,CELL_W
+        add hl,de
+        ex de,hl
+        ld a,(col)
+        inc a
+        ld (col),a
+        ld hl,pr_left
+        sub (hl)
+        cp PR_COLS
+        jr c,.cell
+        ld hl,line + NUM_W
+        ld b,PR_COLS * CELL_W
+.look:
+        ld a,(hl)
+        cp " "
+        ret nz
+        inc hl
+        djnz .look
+        ret
+
+; line: spaces as wide as the paper (blank_line is as the screen)
+pr_blank:
+        ld hl,line
+        ld b,NUM_W + PR_COLS * CELL_W
+.space:
+        ld (hl)," "
+        inc hl
+        djnz .space
+        ret
+
+; line (never all spaces), without the spaces at its end, and CR LF
+; -> the printer; carry: it is not ready (said)
+pr_line:
+        ld hl,line + NUM_W + PR_COLS * CELL_W
+.trim:
+        dec hl
+        ld a,(hl)
+        cp " "
+        jr z,.trim
+        inc hl
+        ld (hl),13
+        inc hl
+        ld (hl),10
+        inc hl
+        ld de,line
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        ld hl,line
+pr_send:
+        ld e,0
+        ld a,VX_PRINT
+        call VOS_EXT
+        ret nc
+        call VOS_ERROR
+        scf
+        ret
+
+; ---------------------------------------------------------------------
+; CHART
+; ---------------------------------------------------------------------
+chart:
+        ld de,ch_in                 ; the cursor's column, from it down
+        ld a,(cur_c)                ; to its last number
+        ld (col),a
+        add a,"A"
+        ld (de),a
+        inc de
+        ld a,(cur_r)
+        ld (row),a
+        inc a
+        call put_num
+        ld a,":"
+        ld (de),a
+        inc de
+        ld a,(cur_c)
+        add a,"A"
+        ld (de),a
+        inc de
+        ld b,CH_MAX - 1
+.down:
+        ld a,(row)
+        inc a
+        cp N_ROWS
+        jr nc,.last
+        ld (row),a
+        push bc
+        push de
+        call is_number
+        pop de
+        pop bc
+        jr nz,.back
+        djnz .down
+        jr .last
+.back:
+        ld hl,row
+        dec (hl)
+.last:
+        ld a,(row)
+        inc a
+        call put_num
+        xor a
+        ld (de),a
+        ld a,T_RANGE_T
+        ld hl,ch_in
+        ld c,7
+        call VOS_INPUT
+        ret c
+        ld hl,ch_in                 ; the range: two cells
+        ld c,CALC_CELL
+        call calc
+        jr c,.wrong
+        ld (ch_from),de
+        ld hl,ch_in
+        call add_a_hl
+        ld a,(hl)
+        cp ":"
+        jr nz,.wrong
+        inc hl
+        ld (ch_to_txt),hl
+        ld c,CALC_CELL
+        call calc
+        jr c,.wrong
+        ld (ch_to),de
+        ld hl,(ch_from)             ; a column (H the same) or a row
+        ld a,h
+        cp d
+        jr z,.column
+        ld a,l
+        cp e
+        jr nz,.wrong
+        ld a,d                      ; a row: columns H..D
+        sub h
+        jr c,.wrong
+        ld c,1                      ; the step: a column
+        jr .count
+.column:
+        ld a,e                      ; rows L..E
+        sub l
+        jr c,.wrong
+        ld c,N_COLS
+.count:
+        inc a
+        cp CH_MAX + 1
+        jr c,.n
+        ld a,CH_MAX
+.n:
+        ld (ch_n),a
+        ld a,c
+        ld (ch_step),a
+        call chart_values
+        ld a,1
+        ld (ch_on),a
+        call chart_scr
+        jp chart_draw
+.wrong:
+        ld a,CALC_ERR_REF
+        jp VOS_ERROR
+
+; HL += A
+add_a_hl:
+        add a,l
+        ld l,a
+        ret nc
+        inc h
+        ret
+
+; the cell col, row -> Z if its value is a number (not CALC_NONE, text
+; or nothing, nor CALC_BAD)
+is_number:
+        ld a,(col)
+        ld c,a
+        ld a,(row)
+        call index
+        call get_val
+        ld hl,(val + 2)
+        ld bc,CALC_NONE_HI
+        or a
+        sbc hl,bc
+        jr z,.not
+        xor a
+        ret
+.not:
+        or 1
+        ret
+
+; each cell of the range: its bar's height (ch_hts) and its label
+; (ch_lab: the text in column A of its row, or in row 1 of its column
+; for a row, 3 characters at most)
+chart_values:
+        ld hl,(ch_from)
+        ld a,l
+        ld (row),a
+        ld a,h
+        ld (col),a
+        xor a
+.cell:
+        ld (ch_i),a
+        ld de,ch_f                  ; "=ROUND(B2*160/MAX(B2:B9),0)"
+        ld hl,ch_f1
+        call ch_copy
+        ld a,(col)
+        add a,"A"
+        ld (de),a
+        inc de
+        ld a,(row)
+        inc a
+        call put_num
+        ld hl,ch_f2
+        call ch_copy
+        ld hl,ch_in
+        call ch_copy
+        ld hl,ch_f3
+        call ch_copy
+        xor a
+        ld (de),a
+        ld hl,ch_f
+        ld c,CALC_EVAL
+        call calc
+        ld hl,ntext
+        ld c,CALC_TEXT
+        call calc
+        ld hl,ntext                 ; its digits (none, "-", "#ERR": 0)
+        ld c,0
+.digit:
+        ld a,(hl)
+        inc hl
+        sub "0"
+        jr c,.height
+        cp 10
+        jr nc,.height
+        ld b,a
+        ld a,c
+        add a,a
+        add a,a
+        add a,c
+        add a,a
+        add a,b
+        ld c,a
+        jr .digit
+.height:
+        ld hl,ch_hts
+        ld a,(ch_i)
+        call add_a_hl
+        ld (hl),c
+        ld hl,ch_lab                ; its label
+        ld a,(ch_i)
+        ld c,a
+        add a,a
+        add a,a
+        call add_a_hl
+        ld (hl),0
+        push hl
+        ld a,(ch_step)
+        cp 1
+        ld a,(col)
+        ld c,a
+        ld a,(row)
+        jr z,.above
+        ld c,0                      ; a column: column A of its row
+        jr .label
+.above:
+        xor a                       ; a row: row 1 of its column
+.label:
+        ld (row_l),a
+        ld a,c
+        ld (col_l),a
+        call index_l
+        ld hl,(ch_from)             ; not the range itself
+        ld a,(ch_step)
+        cp 1
+        ld a,h
+        jr nz,.first
+        ld a,l
+.first:
+        or a
+        jr z,.no_label
+        push de
+        call get_val                ; text, not a number
+        pop de
+        ld hl,(val + 2)
+        ld bc,CALC_NONE_HI
+        or a
+        sbc hl,bc
+        jr nz,.no_label
+        call find
+        jr nz,.no_label
+        call entry_text             ; -> ctext
+        pop de
+        push de
+        ld hl,ctext
+        ld bc,3
+        ldir
+        xor a
+        ld (de),a
+.no_label:
+        pop hl
+        ld a,(ch_step)              ; the next cell
+        cp 1
+        ld hl,col
+        jr z,.step
+        ld hl,row
+.step:
+        inc (hl)
+        ld a,(ch_i)
+        inc a
+        ld hl,ch_n
+        cp (hl)
+        jp c,.cell
+        ret
+
+; DE = the index of col_l, row_l
+index_l:
+        ld a,(col_l)
+        ld c,a
+        ld a,(row_l)
+        jp index
+
+; HL -> text, 0 -> at DE, DE after it
+ch_copy:
+        ld a,(hl)
+        or a
+        ret z
+        ld (de),a
+        inc hl
+        inc de
+        jr ch_copy
+
+; the bars: each slot CH_W / n wide (even), its bar 2/3 of it
+ch_geometry:
+        ld a,(ch_n)
+        ld c,a
+        ld a,CH_W
+        ld b,0
+.div:
+        inc b
+        sub c
+        jr nc,.div
+        dec b                       ; B = CH_W / n
+        res 0,b
+        ld a,b
+        ld (ch_slot),a
+        ld c,0                      ; the bar: slot - slot / 3, even
+.third:
+        inc c
+        sub 3
+        jr nc,.third
+        dec c
+        ld a,b
+        sub c
+        and #FE
+        jr nz,.w
+        ld a,2
+.w:
+        ld (ch_bw),a
+        ret
+
+; ch_i -> ch_rect: the bar's x, y, w, h and pen
+ch_bar:
+        ld a,(ch_slot)              ; x = CH_LEFT + i * slot
+        ld c,a
+        ld a,(ch_i)
+        ld b,a
+        ld a,CH_LEFT
+        inc b
+.x:
+        dec b
+        jr z,.at
+        add a,c
+        jr .x
+.at:
+        ld l,a
+        ld h,0
+        ld (ch_rect),hl
+        ld hl,ch_hts
+        ld a,(ch_i)
+        call add_a_hl
+        ld a,(hl)
+        ld l,a
+        ld h,0
+        ld (ch_rect + 6),hl
+        ld a,CH_BASE
+        sub l
+        ld l,a
+        ld (ch_rect + 2),hl
+        ld a,(ch_bw)
+        ld l,a
+        ld (ch_rect + 4),hl
+        ld a,(ch_i)
+        and 7
+        ld hl,ch_pens
+        call add_a_hl
+        ld a,(hl)
+        ld (ch_rect + 8),a
+        ret
+
+; ch_rect into the .SCR in the data bank (x and w even), or on the
+; screen at CH_X0, CH_Y0 (ch_rect_screen)
+ch_rect_scr:
+        ld a,(ch_rect + 8)
+        ld hl,ch_bytes
+        call add_a_hl
+        ld a,(hl)
+        ld hl,ch_row
+        ld b,80
+.fill:
+        ld (hl),a
+        inc hl
+        djnz .fill
+        ld a,(ch_rect + 6)
+        or a
+        ret z
+        ld b,a
+        ld a,(ch_rect + 2)
+.line:
+        push bc
+        push af
+        ld e,a                      ; #4000 + (y & 7) * #800 + (y / 8)
+        and 7                       ; * 80 + x / 2
+        add a,a
+        add a,a
+        add a,a
+        add a,#40
+        ld d,a
+        ld a,e
+        and #F8                     ; (y / 8) * 80 = (y & #F8) * 10
+        ld l,a
+        ld h,0
+        add hl,hl
+        ld c,l
+        ld b,h
+        add hl,hl
+        add hl,hl
+        add hl,bc
+        ld e,0
+        add hl,de
+        ld a,(ch_rect)
+        srl a
+        call add_a_hl
+        ex de,hl
+        ld a,(ch_rect + 4)
+        srl a
+        ld c,a
+        ld b,0
+        ld hl,ch_row
+        call VOS_BANK_PUT
+        pop af
+        inc a
+        pop bc
+        djnz .line
+        ret
+ch_rect_screen:
+        ld hl,(ch_rect)
+        ld de,CH_X0
+        add hl,de
+        ld (ch_srect),hl
+        ld hl,(ch_rect + 2)
+        ld de,CH_Y0
+        add hl,de
+        ld (ch_srect + 2),hl
+        ld hl,(ch_rect + 4)
+        ld (ch_srect + 4),hl
+        ld hl,(ch_rect + 6)
+        ld (ch_srect + 6),hl
+        ld a,(ch_rect + 8)
+        ld (ch_srect + 8),a
+        ld ix,ch_srect
+        jp VOS_RECT
+
+; HL -> a routine for ch_rect: the paper, the axes, the bars
+ch_each:
+        ld (.go + 1),hl
+        ld hl,ch_paper
+        call .one
+        ld hl,ch_axis_y
+        call .one
+        ld hl,ch_axis_x
+        call .one
+        call ch_geometry
+        xor a
+.bar:
+        ld (ch_i),a
+        call ch_bar
+        call .go
+        ld a,(ch_i)
+        inc a
+        ld hl,ch_n
+        cp (hl)
+        jr c,.bar
+        ret
+.one:
+        ld de,ch_rect
+        ld bc,9
+        ldir
+.go:
+        jp 0
+
+; the .SCR in the data bank, PAINT's inks in its unused bytes
+chart_scr:
+        ld hl,ch_rect_scr
+        call ch_each
+        ld hl,ch_palette
+        ld de,#4000 + #07D0
+        ld bc,17
+        jp VOS_BANK_PUT
+
+; on the screen: mode 0, the bars, the range above, the labels below
+chart_draw:
+        xor a
+        call VOS_MODE
+        ld hl,ch_palette
+        call VOS_PALETTE
+        ld a,CH_BG
+        call VOS_CLS
+        ld hl,ch_rect_screen
+        call ch_each
+        ld a,CH_AXIS
+        ld c,CH_BG
+        call VOS_COLOURS
+        ld hl,CH_X0
+        ld de,8
+        ld bc,ch_in
+        call VOS_PRINT
+        xor a
+.label:
+        ld (ch_i),a
+        call ch_bar
+        ld hl,ch_lab
+        ld a,(ch_i)
+        add a,a
+        add a,a
+        call add_a_hl
+        push hl
+        ld a,(ch_slot)              ; as many characters as the slot
+        srl a                       ; has room for, 8 pixels each
+        srl a
+        srl a
+        jr nz,.some
+        inc a
+.some:
+        cp 4                        ; (a label has 3 at most)
+        jr c,.room
+        ld a,3
+.room:
+        call add_a_hl
+        ld (hl),0
+        ld hl,(ch_rect)
+        ld de,CH_X0
+        add hl,de
+        ld a,l                      ; at a character's column
+        and #F8
+        ld l,a
+        ld de,CH_Y0 + CH_BASE + 4
+        pop bc
+        call VOS_PRINT
+        ld a,(ch_i)
+        inc a
+        ld hl,ch_n
+        cp (hl)
+        jr c,.label
+        ld a,T_CHART_KEYS
+        call VOS_MSG
+        ld b,h
+        ld c,l
+        ld hl,0
+        ld de,HINT_Y
+        jp VOS_PRINT
+
+; the chart's keys: ^S saves the .SCR, any other key goes back
+chart_event:
+        ld a,(hl)
+        cp VE_KEY_DOWN
+        ret nz
+        inc hl
+        inc hl
+        inc hl
+        ld a,(hl)                   ; CONTROL+S?
+        and VMOD_CONTROL
+        jr z,.back
+        dec hl
+        dec hl
+        ld a,(hl)
+        cp KN_CONTROL
+        ret z                       ; CONTROL alone
+        cp KN_SHIFT
+        ret z
+        cp KN_S
+        jr nz,.back
+        ld a,T_NAME_T
+        ld c,8
+        call ask_name               ; -> name_buf
+        jp c,chart_draw
+        ld hl,name_buf
+        ld de,ch_name
+        ld bc,8
+        ldir
+        ld a,(fdrive)
+        or VOS_DATA + VOS_LOAD_IX
+        ld hl,ch_name
+        ld de,#4000
+        ld bc,#4000
+        ld ix,#C000
+        call VOS_SAVE
+        call c,VOS_ERROR
+        jp chart_draw
+.back:
+        dec hl
+        dec hl
+        ld a,(hl)
+        cp KN_CONTROL
+        ret z
+        cp KN_SHIFT
+        ret z
+        xor a
+        ld (ch_on),a
+        call recalc                 ; the values: the .SCR was there
+        jp redraw
+
 ; -> Z: nothing changed, or the changes may go
 discard_ok:
         ld a,(modified)
@@ -1139,11 +1870,22 @@ discard_ok:
 ; ---------------------------------------------------------------------
 ; OPEN: a .VSH file of fdrive
 open:
+        xor a
+        jr open_ext
+open_csv:
+        ld a,1
+open_ext:
+        ld (csv),a
         call discard_ok
         ret nz
+        ld hl,ext_vsh
+        ld a,(csv)
+        or a
+        jr z,.ext
+        ld hl,ext_csv
+.ext:
         ld a,(fdrive)
         or VOS_CAT_EXT
-        ld hl,ext_vsh
         call VOS_CATALOG
         jp c,VOS_ERROR
         or a
@@ -1203,6 +1945,18 @@ load_file:
         xor a
         ld (fb_n),a
         ld (fb_i),a
+        ld a,(csv)
+        or a
+        jr z,.line
+        ld hl,ext_vsh               ; a .CSV is saved as a .VSH
+        ld de,fname + 8
+        ld bc,3
+        ldir
+        call csv_read
+        jr nc,.read
+        ld hl,dlg_full
+        call VOS_DIALOG
+        jr .read
 .line:
         call read_line
         jr c,.read
@@ -1212,6 +1966,172 @@ load_file:
         call VOS_DIALOG
 .read:
         jp recalc
+
+; the .CSV's fields into cells -> carry: no room for one
+csv_read:
+        call csv_sep                ; ";" or ",", from the first line
+        xor a
+        ld (cv_col),a
+        ld (cv_row),a
+.field:
+        ld de,lbuf
+        ld b,0                      ; its characters
+        ld c,0                      ; 1: inside quotes
+.byte:
+        push bc
+        push de
+        call get_byte
+        pop de
+        pop bc
+        jr c,.last
+        cp 26
+        jr z,.last
+        cp 13
+        jr z,.byte
+        cp 34                       ; a quote
+        jr nz,.not_quote
+        ld a,c
+        or a
+        jr nz,.quoted
+        ld a,b                      ; at its start: quotes begin
+        or a
+        jr nz,.char_q
+        inc c
+        jr .byte
+.quoted:
+        push bc                     ; "" a quote, else they end
+        push de
+        call get_byte
+        pop de
+        pop bc
+        jr c,.last
+        cp 34
+        jr z,.char_q
+        ld c,0
+        jr .plain
+.char_q:
+        ld a,34
+        jr .char
+.not_quote:
+        bit 0,c
+        jr nz,.char                 ; inside quotes: as it is
+.plain:
+        cp 10
+        jr z,.row_end
+        ld hl,cv_sep
+        cp (hl)
+        jr z,.field_end
+.char:
+        ld l,a
+        ld a,b
+        cp CELL_MAX
+        jr nc,.byte                 ; too long: the rest left out
+        ld a,l
+        ld (de),a
+        inc de
+        inc b
+        jr .byte
+.field_end:
+        call .store
+        ret c
+        ld hl,cv_col
+        inc (hl)
+        jr .field
+.row_end:
+        call .store
+        ret c
+        xor a
+        ld (cv_col),a
+        ld hl,cv_row
+        inc (hl)
+        jr .field
+.last:
+        ld a,b                      ; a last field without LF
+        or a
+        ret z
+.store:
+        xor a
+        ld (de),a
+        ld a,b
+        or a
+        ret z                       ; empty: nothing
+        ld a,(cv_col)
+        cp N_COLS
+        ret nc                      ; past P: left out (no carry)
+        ld a,(cv_row)
+        cp N_ROWS
+        ret nc
+        call csv_number
+        ld a,(cv_col)
+        ld c,a
+        ld a,(cv_row)
+        call index
+        ld hl,lbuf
+        jp set_cell
+
+; cv_sep: ";" if the first line has one before any ",", else ","
+csv_sep:
+        ld a,","
+        ld (cv_sep),a
+        ld hl,0
+        ld (cv_at),hl
+.byte:
+        ld hl,(cv_at)
+        ld de,(flen)
+        or a
+        sbc hl,de
+        ret nc
+        ld hl,(cv_at)
+        ld de,FILE
+        add hl,de
+        ld de,cv_one
+        ld bc,1
+        call VOS_BANK_GET
+        ld hl,(cv_at)
+        inc hl
+        ld (cv_at),hl
+        ld a,(cv_one)
+        cp 10
+        ret z
+        cp ","
+        ret z
+        cp ";"
+        jr nz,.byte
+        ld (cv_sep),a
+        ret
+
+; with ";": lbuf of digits, a sign and one comma -> the comma a point
+csv_number:
+        ld a,(cv_sep)
+        cp ";"
+        ret nz
+        ld hl,lbuf
+        ld d,0                      ; D: commas, cv_at: where
+.look:
+        ld a,(hl)
+        or a
+        jr z,.looked
+        cp ","
+        jr nz,.not_comma
+        inc d
+        ld (cv_at),hl
+        jr .next
+.not_comma:
+        cp "-"
+        jr z,.next
+        cp "0"
+        ret c
+        cp "9" + 1
+        ret nc
+.next:
+        inc hl
+        jr .look
+.looked:
+        dec d
+        ret nz                      ; not one comma
+        ld hl,(cv_at)
+        ld (hl),"."
+        ret
 
 ; lbuf: "B3 text" -> that cell; carry: no room
 line_cell:
@@ -1591,7 +2511,7 @@ grid_rect:      dw 0, 0, 1, 10
                 db INK
 bar:            db 3
                 dw menu, 0, 0
-menu:           db T_MENU, 10
+menu:           db T_MENU, 12
                 db T_NEW, CMD_NEW, "N", 0
                 db T_OPEN, CMD_OPEN, "O", 0
                 db T_SAVE, CMD_SAVE, "S", 0
@@ -1599,6 +2519,9 @@ menu:           db T_MENU, 10
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_DRIVE, CMD_DRIVE, "W", 0
                 db T_PAGE, CMD_PAGE, "M", 0
+                db T_PRINT, CMD_PRINT, "P", 0
+                db T_CHART, CMD_CHART, "G", 0
+                db T_CSV, CMD_CSV, 0, 0
                 db T_ABOUT, CMD_ABOUT, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
@@ -1608,6 +2531,55 @@ dlg_no_files:   db T_MENU, T_NO_FILES, 1, VM_OK
 dlg_full:       db T_MENU, T_FULL, 1, VM_OK
 dlg_big:        db T_MENU, T_BIG, 1, VM_OK
 ext_vsh:        db "VSH"
+ext_csv:        db "CSV"
+csv:            db 0                ; OPEN: 1 a .CSV
+cv_sep:         db ","
+cv_col:         db 0
+cv_row:         db 0
+cv_at:          dw 0
+cv_one:         db 0
+form_feed:      db 12
+; CHART
+ch_on:          db 0                ; 1: the chart is on the screen
+ch_in:          ds 8 + 2            ; the range typed ("B2:B9")
+ch_to_txt:      dw 0
+ch_from:        dw 0                ; its cells: H column, L row
+ch_to:          dw 0                ; (CALC_CELL gives D, E)
+ch_n:           db 0                ; cells
+ch_step:        db 0                ; 1: along a row, N_COLS: a column
+ch_i:           db 0
+ch_hts:           ds CH_MAX           ; the bars' heights
+ch_lab:         ds CH_MAX * 4       ; their labels
+ch_slot:        db 0
+ch_bw:          db 0
+col_l:          db 0
+row_l:          db 0
+ch_f:           ds 32               ; the formula of a height
+ch_f1:          db "=ROUND(", 0
+ch_f2:          db "*160/MAX(", 0
+ch_f3:          db "),0)", 0
+ch_name:        ds 8
+                db "SCR"
+ch_rect:        dw 0, 0, 0, 0
+                db 0
+ch_srect:       dw 0, 0, 0, 0
+                db 0
+ch_paper:       dw 0, 0, 160, 200
+                db CH_BG
+ch_axis_y:      dw CH_LEFT - 4, CH_BASE - CH_H - 4, 2, CH_H + 5
+                db CH_AXIS
+ch_axis_x:      dw CH_LEFT - 4, CH_BASE, CH_W + 4, 1
+                db CH_AXIS
+ch_pens:        db 2, 3, 4, 8, 6, 7, 10, 11
+; a byte of two pixels of each pen (mode 0)
+ch_bytes:       db #00, #C0, #0C, #CC, #30, #F0, #3C, #FC
+                db #03, #C3, #0F, #CF, #33, #F3, #3F, #FF
+; PAINT's inks, and the border
+ch_palette:     db 0, 26, 2, 6, 18, 24, 20, 8, 15, 13, 3, 9, 1, 12, 17, 11
+                db 13
+ch_row:         ds 80
+pr_left:        db 0                ; PRINT: the first column, and
+pr_rows:        db 0                ; the rows printed
 noname:         db "NONAME  VSH"
 empty:          db 0
         include "api/vos_drive.inc"

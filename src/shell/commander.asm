@@ -12,6 +12,16 @@
 ;   RETURN/ENTER     file info: size, type, load address, first bytes
 ;   ^C copy to the other panel, ^D delete, ^N rename, ^R read both
 ;   discs again, ^L language, ^K keys, ^Q exit; ESC opens the menus
+;   ^F FIND: a name with * and ? (README.*, *.TXT, NOTE?AD), looked
+;                    for on A:, B: and DISK (its folder now); the
+;                    active panel lists what was found, each with its
+;                    drive, and RETURN goes to it on its drive (reading
+;                    the panel again ends the list)
+;   ^V SHOW THE TEXT: the selected file's first lines in the other panel
+;   ^E COPY THE DISC: the active panel's disc onto the other's (A: and
+;                    B:), track by track through bank 4, each track of
+;                    the target formatted first as the source's (DATA
+;                    or SYSTEM)
 ;   mouse            click a file to select it, click it again for info
 ; An overlay (kernel/view.asm). The panel lists are kept in bank 7
 ; after the language pack, so switching panels needs no disc access;
@@ -27,6 +37,9 @@ CM_FREE_Y       equ CM_Y + CM_H - 12
 CM_KEYS_Y       equ GFX_H - 10
 CM_CAT_CFG      equ LISTS_CFG       ; #400 bytes per panel
 CM_CAT_ADDR     equ LISTS_ADDR
+CM_FOUND_MAX    equ 64              ; #400 / 16
+CM_ENT_DRIVE    equ 14              ; FIND: the drive, in an entry
+CM_COLS         equ (CM_W - 8) / 8  ; characters on a row
 
         jp cm_init
         jp cm_event
@@ -238,6 +251,12 @@ cm_command:
         jp z,cm_next_drive
         cp CMD_RUN
         jp z,cm_run
+        cp CMD_FIND
+        jp z,cm_find
+        cp CMD_PEEK
+        jp z,cm_peek
+        cp CMD_DCOPY
+        jp z,cm_dcopy
         jp view_command
 
 ; ---------------------------------------------------------------------
@@ -334,6 +353,11 @@ cm_path:
 ; A = panel: read its drive's catalog into bank 5, then draw it
 cm_load:
         call cm_set_p
+        call cm_is_found            ; the found list ends
+        jr nz,.not_found
+        xor a
+        ld (cm_found),a
+.not_found:
         call cm_drive
         cp 2                        ; the card: its folder for the title
         call nc,cm_path
@@ -420,20 +444,7 @@ cm_load:
 ; A = panel: frame, title, rows, free space
 cm_draw_panel:
         call cm_set_p
-        ld a,UIP_BAR
-        ld (ui_fill_pen),a
-        ld hl,(cm_px)
-        ld de,CM_Y
-        ld bc,CM_W
-        ld a,CM_H
-        call ui_rect
-        ld a,UIP_FRAME
-        ld (ui_fill_pen),a
-        ld hl,(cm_px)
-        ld de,CM_Y
-        ld bc,CM_W
-        ld a,CM_H
-        call ui_frame
+        call cm_draw_frame
         call cm_draw_title
         call cm_draw_rows
         ; free space on the last line
@@ -443,6 +454,8 @@ cm_draw_panel:
         or a
         ret nz
         ld de,cm_line
+        call cm_is_found
+        jr z,.end_line
         ld hl,cm_drv                ; (the card's free room is more than
         call cm_at                  ; one byte of K says)
         ld a,(hl)
@@ -468,10 +481,41 @@ cm_draw_panel:
         ld de,CM_FREE_Y
         jp cm_print_line
 
+; the current panel's frame, empty
+cm_draw_frame:
+        ld a,UIP_BAR
+        ld (ui_fill_pen),a
+        ld hl,(cm_px)
+        ld de,CM_Y
+        ld bc,CM_W
+        ld a,CM_H
+        call ui_rect
+        ld a,UIP_FRAME
+        ld (ui_fill_pen),a
+        ld hl,(cm_px)
+        ld de,CM_Y
+        ld bc,CM_W
+        ld a,CM_H
+        jp ui_frame
+
+; -> Z: the current panel lists what FIND found
+cm_is_found:
+        ld a,(cm_found)
+        dec a
+        ld hl,cm_p
+        cp (hl)
+        ret
+
 ; "A: DATA  2 FILES", "DISK:/APPS/  2 FILES", dark when the panel is
 ; active
 cm_draw_title:
         ld de,cm_line
+        call cm_is_found
+        jr nz,.drive
+        ld a,MSG_FOUND              ; "FOUND  3 FILES"
+        call util_msg
+        jr .count
+.drive:
         ld hl,cm_drv
         call cm_at
         ld a,(hl)
@@ -527,9 +571,9 @@ cm_draw_title:
         ld a,(cm_active)
         ld hl,cm_p
         cp (hl)
-        jr nz,.colours
+        jr nz,cm_title_line
         ld bc,UIP_SELTEXT * 256 + UIP_SEL
-.colours:
+cm_title_line:                      ; B, C = its pens
         push bc
         ld a,c
         ld (ui_fill_pen),a
@@ -639,8 +683,11 @@ cm_draw_row:
         jr .print
 .file:
         call cm_entry
-        ld hl,cm_ent
         ld de,cm_line
+        call cm_is_found
+        ld a,(cm_ent + CM_ENT_DRIVE)
+        call z,file_drive_text      ; found: its drive first
+        ld hl,cm_ent
         call util_cat_row
 .print:
         ld de,(cm_ry)
@@ -773,6 +820,9 @@ cm_selected:
         ld de,file_name
         ld bc,11
         ldir
+        call cm_is_found
+        ld a,(cm_ent + CM_ENT_DRIVE)
+        ret z                       ; (no carry)
         ld hl,cm_drv
         call cm_at
         ld a,(hl)
@@ -804,6 +854,17 @@ cm_run:
         call cm_selected
         ret c
         ld b,a
+        call cm_is_found
+        jr nz,.not_found
+        ld hl,cm_drv                ; found: the panel on its drive, the
+        call cm_at                  ; file selected (cm_load: file_find)
+        ld (hl),b
+        ld a,b
+        cp 2
+        call nc,cm_path
+        ld a,(cm_p)
+        jp cm_load
+.not_found:
         ld a,(cm_ent + M4_FOLDER)
         or a
         ld a,b
@@ -863,14 +924,496 @@ cm_format:
         ld a,(cm_active)
         jp cm_load
 
+; FIND: a name with * and ? -> cm_pat; the files that match on A:,
+; B: and DISK (with an M4 board, the folder it is in), up to
+; CM_FOUND_MAX, into the active panel's list, each with its drive
+cm_find:
+        ld a,MSG_FIND_T
+        ld hl,cm_pat_in
+        ld c,12
+        call input_run
+        ret c
+        call cm_pattern
+        ld a,(cm_active)
+        call cm_set_p
+        xor a
+        ld (cm_n),a
+        ld (cm_fd),a
+.drive:
+        ld a,(cm_fd)
+        cp 2
+        jr c,.read
+        jr nz,.done
+        ld a,(cm_m4)
+        or a
+        jr z,.done
+        ld a,2
+.read:
+        call fdc_select
+        call fs_catalog
+        jr c,.next                  ; no disc there: none from it
+        or a
+        jr z,.next
+        ld b,a
+        ld hl,FS_CAT
+.entry:
+        push bc
+        push hl
+        call cm_match
+        jr nz,.skip
+        ld a,(cm_n)
+        cp CM_FOUND_MAX
+        jr nc,.skip
+        ld de,bank_buf              ; to the list, with its drive
+        ld bc,16
+        ldir
+        ld a,(cm_fd)
+        ld (bank_buf + CM_ENT_DRIVE),a
+        ld a,(cm_n)
+        inc a
+        ld (cm_n),a
+        dec a
+        ld l,a                      ; its place: n * 16
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld a,(cm_p)
+        add a,a
+        add a,a
+        add a,CM_CAT_ADDR >> 8
+        add a,h
+        ld d,a
+        ld e,l
+        ld hl,bank_buf
+        ld bc,16
+        ld a,CM_CAT_CFG
+        call bank_put
+.skip:
+        pop hl
+        ld de,16
+        add hl,de
+        pop bc
+        djnz .entry
+.next:
+        ld hl,cm_fd
+        inc (hl)
+        jr .drive
+.done:
+        ld a,(cm_p)
+        inc a
+        ld (cm_found),a
+        ld hl,cm_count
+        call cm_at
+        ld a,(cm_n)
+        ld (hl),a
+        xor a
+        ld hl,cm_sel
+        call cm_at
+        ld (hl),a
+        ld hl,cm_top
+        call cm_at
+        ld (hl),a
+        ld hl,cm_err
+        call cm_at
+        ld (hl),a
+        call cm_remember
+        ld a,(cm_p)
+        jp cm_draw_panel
+
+; cm_pat_in ("NOTE*.T?T") -> cm_pat, 11 bytes as the catalog's names,
+; ? for any character: * fills the rest of its part; with no "." any
+; extension
+cm_pattern:
+        ld hl,cm_pat
+        ld b,11
+.space:
+        ld (hl)," "
+        inc hl
+        djnz .space
+        ld hl,cm_pat_in
+        ld de,cm_pat
+        ld b,8
+        call .part
+        ld a,(hl)
+        or a
+        ld b,3
+        jr nz,.ext
+.any:
+        ld a,"?"
+        ld (de),a
+        inc de
+        djnz .any
+        ret
+.ext:
+        inc hl                      ; after the "."
+        ld de,cm_pat + 8
+        ; fall through
+; HL -> the text, DE -> the part, B = its length: up to "." or the end
+.part:
+        ld a,(hl)
+        or a
+        ret z
+        cp "."
+        ret z
+        inc hl
+        cp "*"
+        jr z,.star
+        cp "a"                      ; capitals, as AMSDOS names are
+        jr c,.put
+        cp "z" + 1
+        jr nc,.put
+        sub 32
+.put:
+        dec b
+        inc b
+        jr z,.part                  ; too long: the rest left out
+        ld (de),a
+        inc de
+        dec b
+        jr .part
+.star:
+        ld a,b
+        or a
+        jr z,.part
+        ld a,"?"
+.fill:
+        ld (de),a
+        inc de
+        djnz .fill
+        jr .part
+
+; HL -> a catalog entry -> Z if it is a file that matches cm_pat
+cm_match:
+        push hl
+        ld bc,M4_FOLDER
+        add hl,bc
+        ld a,(hl)
+        pop hl
+        or a
+        ret nz                      ; a folder
+        push hl
+        ld de,cm_pat
+        ld b,11
+.char:
+        ld a,(de)
+        cp "?"
+        jr z,.ok
+        cp (hl)
+        jr nz,.no
+.ok:
+        inc hl
+        inc de
+        djnz .char
+.no:
+        pop hl
+        ret
+
+; SHOW THE TEXT: the selected file, loaded into bank 4, its first lines
+; in the other panel (CR, LF or CR LF end a line, ^Z the text; what
+; does not fit is left out), until it is drawn again
+cm_peek:
+        call cm_selected
+        ret c
+        ld b,a
+        ld a,(cm_ent + M4_FOLDER)
+        or a
+        ret nz
+        ld a,b
+        call fdc_select
+        ld hl,file_name
+        ld de,BUF_ADDR
+        ld c,BUF_CFG
+        call fs_load
+        jp c,sys_error
+        ld (cm_rd_left),bc
+        ld hl,BUF_ADDR
+        ld (cm_rd_at),hl
+        xor a
+        ld (cm_rd_n),a
+        ld a,(cm_active)
+        xor 1
+        call cm_set_p
+        call cm_draw_frame
+        ld de,cm_line               ; its name for a title
+        ld hl,file_name
+        call util_fcb_text
+        xor a
+        ld (de),a
+        ld bc,UIP_DESKTEXT * 256 + UIP_DESK
+        call cm_title_line
+        ld a,UIP_TEXT
+        ld c,UIP_BAR
+        call ui_colours
+        ld hl,CM_ROWS_Y + 1
+        ld b,CM_ROWS + 1
+.line:
+        push bc
+        push hl
+        ld de,cm_line
+        ld c,CM_COLS
+.char:
+        call cm_getc
+        jr c,.end
+        cp 26                       ; ^Z: the end of a text
+        jr z,.over
+        cp 10
+        jr z,.end
+        cp 13
+        jr z,.cr
+        cp 9
+        jr nz,.not_tab
+        ld a," "
+.not_tab:
+        cp " "
+        jr nc,.shown
+        ld a,"."
+.shown:
+        dec c
+        inc c
+        jr z,.char                  ; past the panel's width
+        ld (de),a
+        inc de
+        dec c
+        jr .char
+.over:
+        ld hl,0                     ; nothing after it
+        ld (cm_rd_left),hl
+        jr .end
+.cr:
+        call cm_getc                ; CR LF: one end
+        jr c,.end
+        cp 10
+        jr z,.end
+        ld hl,cm_rd_n               ; not LF: it is the next line's
+        inc (hl)
+        ld hl,(cm_rd_at)
+        dec hl
+        ld (cm_rd_at),hl
+        ld hl,(cm_rd_left)
+        inc hl
+        ld (cm_rd_left),hl
+.end:
+        xor a
+        ld (de),a
+        pop de
+        push de
+        call cm_print_line
+        pop hl
+        ld bc,10
+        add hl,bc
+        pop bc
+        djnz .line
+        ret
+
+; -> A = the next byte of the file in bank 4, 32 at a time through
+; bank_buf; carry at its end
+cm_getc:
+        ld hl,(cm_rd_left)
+        ld a,h
+        or l
+        scf
+        ret z
+        dec hl
+        ld (cm_rd_left),hl
+        ld hl,cm_rd_n
+        ld a,(hl)
+        or a
+        jr nz,.have
+        push bc
+        push de
+        ld hl,(cm_rd_at)
+        ld de,32
+        or a
+        sbc hl,de
+        add hl,de
+        ld de,bank_buf
+        ld bc,32
+        ld a,BUF_CFG
+        call bank_get
+        pop de
+        pop bc
+        ld hl,cm_rd_n
+        ld (hl),32
+.have:
+        dec (hl)
+        ld a,32 - 1
+        sub (hl)
+        ld hl,bank_buf
+        add a,l
+        ld l,a
+        adc a,h
+        sub l
+        ld h,a
+        ld a,(hl)
+        ld hl,(cm_rd_at)
+        inc hl
+        ld (cm_rd_at),hl
+        or a
+        ret
+
+; COPY THE DISC: asked first ("A: > B:?"); a track at a time, its 9
+; sectors into bank 4 from the source, then the target's track
+; formatted and written
+cm_dcopy:
+        ld a,(cm_active)
+        call cm_set_p
+        ld hl,cm_drv
+        call cm_at
+        ld a,(hl)
+        ld (cm_src),a
+        ld a,(cm_active)            ; the other panel's
+        xor 1
+        ld e,a
+        ld d,0
+        ld hl,cm_drv
+        add hl,de
+        ld a,(hl)
+        ld (cm_tgt),a
+        ld a,(cm_src)               ; A: and B: only, not the same
+        ld b,a
+        ld a,(cm_tgt)
+        cp b
+        ld a,37                     ; IT IS ON THAT DRIVE ALREADY
+        jp z,sys_error
+        ld a,(cm_tgt)
+        or b
+        cp 2
+        ld a,38                     ; not the SD card
+        jp nc,sys_error
+        ld de,dlg_custom            ; COPY THE DISC|A: > B:?|...
+        ld a,MSG_ITEM_DCOPY
+        call util_msg
+        call file_newline
+        ld a,(cm_src)
+        call file_drive_text
+        ld a," "
+        call util_char
+        ld a,">"
+        call util_char
+        ld a," "
+        call util_char
+        ld a,(cm_tgt)
+        call file_drive_text
+        ld a,"?"
+        call util_char
+        call file_newline
+        ld a,MSG_DCOPY_LOST
+        call file_ask
+        ret c
+        ld a,MSG_COPYING
+        call ui_busy
+        call .copy
+        push af
+        call ui_restore
+        pop af
+        call c,sys_error
+        jp cm_refresh
+.copy:
+        ld a,(cm_src)               ; its format: track 0's first sector
+        call fdc_select
+        ld de,#00C1                 ; DATA
+        ld hl,fs_buf
+        call fdc_read
+        ld a,#C1
+        jr nc,.base
+        ld de,#0041                 ; SYSTEM
+        ld hl,fs_buf
+        call fdc_read
+        ld a,#41
+        jr nc,.base
+        ld a,6                      ; UNKNOWN FORMAT
+        scf
+        ret
+.base:
+        ld (cm_base),a
+        xor a
+.track:
+        ld (cm_trk),a
+        ld a,(cm_src)
+        call fdc_select
+        ld hl,BUF_ADDR
+        ld (cm_at_buf),hl
+        ld b,9
+.read:
+        push bc
+        call cm_sector              ; -> D, E
+        ld hl,fs_buf
+        call fdc_read
+        jr c,.failed
+        ld hl,fs_buf
+        ld de,(cm_at_buf)
+        ld bc,512
+        ld a,BUF_CFG
+        call bank_put
+        call cm_next_buf
+        pop bc
+        djnz .read
+        ld a,(cm_tgt)
+        call fdc_select
+        ld a,(cm_trk)
+        ld d,a
+        ld a,(cm_base)
+        ld e,a
+        call fdc_format
+        ret c
+        ld hl,BUF_ADDR
+        ld (cm_at_buf),hl
+        ld b,9
+.write:
+        push bc
+        ld hl,(cm_at_buf)
+        ld de,fs_buf
+        ld bc,512
+        ld a,BUF_CFG
+        call bank_get
+        pop bc
+        push bc
+        call cm_sector
+        ld hl,fs_buf
+        call fdc_write
+        jr c,.failed
+        call cm_next_buf
+        pop bc
+        djnz .write
+        ld a,(cm_trk)
+        inc a
+        cp 40
+        jr c,.track
+        or a
+        ret
+.failed:
+        pop bc
+        ret
+
+; B = 9..1 -> D = cm_trk, E = its sector's ID
+cm_sector:
+        ld a,(cm_trk)
+        ld d,a
+        ld a,(cm_base)
+        add a,9
+        sub b
+        ld e,a
+        ret
+cm_next_buf:
+        ld hl,(cm_at_buf)
+        ld de,512
+        add hl,de
+        ld (cm_at_buf),hl
+        ret
+
 ; ---- menus ----------------------------------------------------------
 cm_bar:
         db 3
         dw cm_menu_file, menu_view, menu_help
 cm_menu_file:
-        db MSG_MENU_FILE, 11
+        db MSG_MENU_FILE, 14
         db MSG_ITEM_OPEN, CMD_RUN, 0, 0
         db MSG_ITEM_INFO, CMD_INFO, "I", 0
+        db MSG_ITEM_PEEK, CMD_PEEK, "V", 0
+        db MSG_ITEM_FIND, CMD_FIND, "F", 0
+        db MSG_ITEM_DCOPY, CMD_DCOPY, "E", 0
         db MSG_ITEM_COPY, CMD_COPY, "C", 0
         db MSG_ITEM_DELETE, CMD_DELETE, "D", 0
         db MSG_ITEM_RENAME, CMD_RENAME, "N", 0
@@ -900,3 +1443,16 @@ cm_i:           db 0
 cm_ry:          dw 0
 cm_ent:         ds 16
 cm_line:        ds 50
+cm_found:       db 0                ; 1 + the panel FIND filled, or 0
+cm_src:         db 0                ; COPY THE DISC: the drives,
+cm_tgt:         db 0
+cm_base:        db 0                ; the first sector's ID,
+cm_trk:         db 0                ; the track,
+cm_at_buf:      dw 0                ; where in bank 4
+cm_fd:          db 0                ; FIND: the drive it reads
+cm_pat_in:      db "*.TXT", 0       ; what was typed (12 + 2)
+                ds 8
+cm_pat:         ds 11
+cm_rd_at:       dw 0                ; SHOW THE TEXT: the next byte in
+cm_rd_left:     dw 0                ; bank 4, how many are left, and
+cm_rd_n:        db 0                ; how many in bank_buf

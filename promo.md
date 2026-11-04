@@ -12,7 +12,7 @@ assembly, and it runs from a standard 3" disc. On the CPC: `RUN"VOS"`.
   - F3 the **Commander**: two file panels side by side;
   - F4 **Setup**.
 - **Menus, dialogs, buttons and file lists**, with the keyboard or with an AMX mouse.
-- **A light or dark theme**, and a `.SCR` picture as the desk's background (with a memory expansion).
+- **A light or dark theme**, and a `.SCR` picture as the desk's background (with a memory expansion), which is also the screen saver.
 - **An overscan screen** of 384×272 in mode 1, mode 0 for colour and mode 2 for pages of text, and a mixed screen that shows two modes at once.
 
 ## Files and discs
@@ -20,6 +20,8 @@ assembly, and it runs from a standard 3" disc. On the CPC: `RUN"VOS"`.
 - **Its own disc driver and file system**, compatible with AMSDOS: BASIC reads V-OS files and V-OS reads BASIC's. DATA and SYSTEM formats are both supported.
 - **Drives A:, B: and the SD card of an M4 board** (DISK), with folders. Copy, delete, rename and open files on any of them, and programs can open and save files there too.
 - **Files open by type:** a click on a `.TXT` opens NOTEPAD, a `.SCR` opens PAINT, a `.VDB` opens DATABASE.
+- **Find files** on all the drives with `*` and `?`, look into a text without opening it, and copy a whole disc.
+- **A printer** on the CPC's port: NOTEPAD, SHEET and DATABASE print.
 
 ## Many programs at once
 
@@ -30,11 +32,11 @@ assembly, and it runs from a standard 3" disc. On the CPC: `RUN"VOS"`.
 
 ## Programs included
 
-- **NOTEPAD:** texts up to 16K, a clipboard shared by all programs, and UTF-8 files from a PC.
+- **NOTEPAD:** texts up to 16K, a clipboard shared by all programs, UNDO, and UTF-8 files from a PC.
 - **MARKDOWN and READER:** Markdown pages from the disc or from the web, through the M4 board.
-- **PAINT:** pictures with layers and the whole CPC screen, saved as `.SCR` files that BASIC loads too.
-- **SHEET:** a spreadsheet with formulas (SUM, AVG, MIN, MAX, ROUND…).
-- **DATABASE:** "a small Access" with tables, fields, indexes, forms and search, on discs or on the SD card.
+- **PAINT:** pictures with layers and the whole CPC screen, with UNDO, saved as `.SCR` files that BASIC loads too; SHOW plays them one after the other.
+- **SHEET:** a spreadsheet with formulas (SUM, AVG, MIN, MAX, ROUND…), bar charts, and `.CSV` files from a PC.
+- **DATABASE:** "a small Access" with tables, fields, indexes, forms and search, on discs or on the SD card; it imports `.CSV` files.
 - **MUSIC:** songs played from the interrupt, without a break while other programs load.
 - **WEBGET:** downloads files from the internet with the M4 board.
 - **SYSINFO, and games:** VROUVES (7 stages), MINES, BRICKS, PONG and more.
@@ -67,4 +69,4 @@ In the dark theme, in English:
 
 ---
 
-*V-OS, by Revive8bit, 2026.*
+*V-OS, by Revive8bit, 2026. Open source, under the MIT licence: [github.com/vaspervnp/V-OS-CPC](https://github.com/vaspervnp/V-OS-CPC).*

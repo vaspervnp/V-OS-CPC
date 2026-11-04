@@ -9,6 +9,8 @@
 - **Milestones**, με ό,τι ελέγχθηκε σε καθένα: [MILESTONES.el.md](MILESTONES.el.md)
 - Τι απαιτείται και τι έχει αποφασιστεί: [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)
 - Πρότυπα interface: [docs/interface-templates.html](docs/interface-templates.html)
+- **Σε πραγματικό CPC:** τι να δοκιμάσετε και πώς να το αναφέρετε, κεφάλαιο 9 του manual ([docs/manual/09-pragmatikos-cpc.md](docs/manual/09-pragmatikos-cpc.md))
+- Τι μπορεί να έρθει: [TODO.md](TODO.md)
 
 ## Build
 
@@ -36,6 +38,12 @@ make test-amsdos # το ίδιο σενάριο, μετά η AMSDOS στη BASIC
 make test-reboot # το ίδιο, μετά RUN"VOS" ξανά με το SETUP.CFG που αποθηκεύτηκε
 make test-system # το σενάριο με το A: σε μορφή SYSTEM
 make test-sdk    # το πρότυπο του SDK ως TEMPLATE: ανοίγει από τον Launcher, κουτί, μενού, ABOUT, BACK
+make test-print  # το NOTEPAD και το SHEET τυπώνουν στο αρχείο εκτυπωτή του Caprice32, που ελέγχεται· χωρίς εκτυπωτή: το λάθος
+make test-find   # ΑΝΑΖΗΤΗΣΗ και ΠΡΟΒΟΛΗ ΚΕΙΜΕΝΟΥ στον Commander
+make test-dcopy  # ΑΝΤΙΓΡΑΦΗ ΔΙΣΚΕΤΑΣ στον Commander: το B: όπως το A: μετά
+make test-saver  # η προφύλαξη οθόνης του Desktop (576K)
+make test-show test-clock test-paint-undo  # SHOW, η ώρα του M4 στο CLOCK, η ΑΝΑΙΡΕΣΗ του PAINT (Z80)
+make release     # build/V-OS-<έκδοση>.zip: οι δισκέτες, τα PDF, οι εικόνες και τα βίντεο, για ένα GitHub Release
 make docs        # τα PDF του manual: docs/V-OS.pdf (ελληνικά) και docs/V-OS-en/fr/es/de/it.pdf
 ```
 
@@ -80,4 +88,8 @@ myapps/              τα δικά σου προγράμματα (make new-app),
 
 ## Κατάσταση
 
-Το V-OS είναι στο **M57** (έκδοση 0.28 beta· κάθε milestone προσθέτει 0.01). Τι πρόσθεσε κάθε milestone και πώς ελέγχθηκε: [MILESTONES.el.md](MILESTONES.el.md).
+Το V-OS είναι στο **M64** (έκδοση 0.35 beta· κάθε milestone προσθέτει 0.01). Τι πρόσθεσε κάθε milestone και πώς ελέγχθηκε: [MILESTONES.el.md](MILESTONES.el.md).
+
+## Άδεια
+
+Το V-OS είναι ελεύθερο λογισμικό με την [άδεια MIT](LICENSE), (C) 2026 Vassilis Perantzakis (Revive8bit). Οι γραμματοσειρές 8×8 προέρχονται από το font8x8 του Daniel Hepper (public domain)· ο editor των blocks στον browser φορτώνει το Blockly (Apache 2.0).

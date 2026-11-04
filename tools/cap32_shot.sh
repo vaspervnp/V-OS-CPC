@@ -15,6 +15,7 @@
 # an answer about the changed disc), so such runs end here; the
 # screenshot is taken before.
 # VOS_RAM sets the memory in K (default 128; 576 = a 512K expansion).
+# VOS_OPTS: more Caprice32 options (e.g. -O system.printer=1).
 # VOS_DSK overrides the disk image (default build/vos.dsk); VOS_DSK_B,
 # if set, goes in drive B.
 # The screenshot lands in build/shots (VOS_SHOTS overrides it), not in the
@@ -32,6 +33,6 @@ SHOTS="${VOS_SHOTS:-$ROOT/build/shots}"
 mkdir -p "$SHOTS"
 export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
 exec timeout "${VOS_TIMEOUT:-40}" "$SNAP/usr/bin/cap32" --cfg_file="$SNAP_USER_DATA/etc/cap32.cfg" \
-  -O system.limit_speed=0 -O system.model=2 -O system.ram_size=${VOS_RAM:-128} -O video.scr_fps=0 -O "file.sdump_dir=$SHOTS" \
+  -O system.limit_speed=0 -O system.model=2 -O system.ram_size=${VOS_RAM:-128} -O video.scr_fps=0 -O "file.sdump_dir=$SHOTS" ${VOS_OPTS:-} \
   -a "run\"vos
 ${DELAY}${KEYS}\(CAP32_SCRNSHOT)\(CAP32_EXIT)" "${VOS_DSK:-$ROOT/build/vos.dsk}" ${VOS_DSK_B:+"$VOS_DSK_B"}

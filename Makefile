@@ -67,6 +67,14 @@
 #   make test-sdk    the template built as HELLO, run from the Launcher:
 #                 the box moved, BEEP, its menu and ABOUT dialog
 #   make linux     build/V-OS-linux.tar.gz: V-OS with CPCEMU 2.5 for Linux
+#   make test-print NOTEPAD and SHEET print (VX_PRINT) to Caprice32's
+#                 printer file, checked; with no printer, the error
+#   make test-find / test-dcopy / test-saver  the Commander's FIND and
+#                 COPY THE DISC, the Desktop's screen saver (Caprice32)
+#   make test-show / test-clock / test-paint-undo  SHOW, CLOCK's M4 time,
+#                 PAINT's UNDO (Z80 emulator)
+#   make release   build/V-OS-<version>.zip: the discs, the manual's PDFs,
+#                 the promo's pictures, the demo videos made, LICENSE
 #   make docs      the manual as PDFs: docs/V-OS.pdf (Greek, from
 #                 docs/manual/*.md and sdk/README.md) and docs/V-OS-<code>.pdf
 #                 for en fr es de it (docs/manual/<code>/, sdk/README.<code>.md)
@@ -88,7 +96,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -111,6 +119,9 @@ src/db/fold.inc: tools/voscs.py
 # and the Unicode of the V-OS codes, for VX_UTF8 (kernel/utf8.asm)
 src/kernel/utf8.inc: tools/voscs.py
 	$(PYTHON) -I tools/voscs.py utf8 > $@
+# and as ASCII, for a printer (VX_PRINT, kernel/ext2.asm)
+src/kernel/ascii.inc: tools/voscs.py
+	$(PYTHON) -I tools/voscs.py ascii > $@
 
 # every pack has the keyboards of all the packs (CONTROL+SHIFT, Setup's
 # KEYBOARDS)
@@ -313,6 +324,11 @@ songs:
 # apps.dsk in B: and the programs' own discs beside them.
 # CPCEMU_ZIP is its portable zip, from cpc-emu.org/download.html.
 CPCEMU_ZIP ?= $(BUILD)/dl/cpcemu/cpcemu_portable-win32-x86-3.0.2.zip
+# V-OS to hand out (tools/mkrelease.sh): build/V-OS-<version>.zip for a
+# GitHub Release, with the videos of tools/video if they were made
+release: $(DSK) $(APPS_DSK) $(OWN_DSKS) docs LICENSE tools/mkrelease.sh tools/release/README.txt
+	bash tools/mkrelease.sh $(OWN_DSKS)
+
 windows: $(DSK) $(APPS_DSK) $(OWN_DSKS) tools/mkwindows.sh tools/windows/launcher.cs tools/windows/README.txt
 	bash tools/mkwindows.sh $(CPCEMU_ZIP)
 
@@ -816,7 +832,7 @@ $(CLIP_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_clip -DTEST_SCRIPT=24
 	mv $(TEST_DSK) $@
 	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS))
+	$(call add_apps,$@,$(TEST_APPS))
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-clip: $(CLIP_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN
@@ -1140,6 +1156,103 @@ promo: $(PROMO_DSK) $(PROMO_DSK_B)
 	done
 	ls $(BUILD)/promo/*/*.png
 
+# The Desktop's screen saver (TEST_SCRIPT=45, 576K): the picture alone
+# after a while (500 frames here), the Desktop again with a key
+SAVER_DSK := $(BUILD)/vos_saver.dsk
+SAVER_SHOTS ?= 180 300 450
+$(SAVER_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_saver -DTEST_SCRIPT=45
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	printf 'VCFG\004\000\000\031\003\001\001\001\000\000\000\001NIGHT   SCR' > $(BUILD)/SETUP.CFG
+	$(IDSK) $@ -i $(BUILD)/SETUP.CFG -t 1 > /dev/null
+	$(PYTHON) -I tools/dsk_ext.py $@
+test-saver: $(SAVER_DSK) $(PROMO_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(SAVER_SHOTS); do \
+	  cp $(SAVER_DSK) $(BUILD)/vos_run.dsk; cp $(PROMO_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# COPY THE DISC in the Commander (TEST_SCRIPT=44): A: onto B:, then B:
+# lists A:'s files
+DCOPY_DSK := $(BUILD)/vos_dcopy.dsk
+DCOPY_SHOTS ?= 230 600 1200
+$(DCOPY_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS)
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_dcopy -DTEST_SCRIPT=44
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(PYTHON) -I tools/dsk_ext.py $@
+test-dcopy: $(DCOPY_DSK) $(TEST_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(DCOPY_SHOTS); do \
+	  cp $(DCOPY_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  VOS_TIMEOUT=90 snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done; true
+	ls $(BUILD)/shots/*/*.png
+
+# FIND and SHOW THE TEXT in the Commander (TEST_SCRIPT=43): *.TXT found
+# on A: and B:, README.TXT's lines, RETURN to it on B:
+FIND_DSK := $(BUILD)/vos_find.dsk
+FIND_SHOTS ?= 230 330 450
+$(FIND_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) tools/promo.txt
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_find -DTEST_SCRIPT=43
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(PYTHON) -I -c "open('$(BUILD)/NOTES.TXT','wb').write(b'Notes for V-OS\r\nFIND looks on A:, B: and DISK.\r\n\x1a')"
+	$(IDSK) $@ -i $(BUILD)/NOTES.TXT -t 0 > /dev/null
+	$(PYTHON) -I tools/dsk_ext.py $@
+test-find: $(FIND_DSK) $(PROMO_DSK_B)
+	rm -rf $(BUILD)/shots
+	for d in $(FIND_SHOTS); do \
+	  cp $(FIND_DSK) $(BUILD)/vos_run.dsk; cp $(PROMO_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+
+# The printer (TEST_SCRIPT=42, 576K): NOTEPAD prints B:PRINT.TXT, with
+# Greek and accented letters, and SHEET B:T.VSH, to Caprice32's printer
+# file, which is checked (tools/print_check.py); with no printer, a
+# screenshot of the error, and one of SHEET
+PRINT_DSK := $(BUILD)/vos_print.dsk
+PRINT_DSK_B := $(BUILD)/vos_print_b.dsk
+# printer:RAM:delay, one shot a run (a second one put a "9" in
+# Caprice32's printer file): with a printer at the end, SHEET; without
+# (at 128K: at 576K its BUSY is off then), NOTEPAD's error; then SHEET's
+# CHART of A2:A4
+PRINT_SHOTS ?= 1:576:720 0:128:345 1:576:850
+$(PRINT_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(BUILD)/NOTEPAD.BIN $(BUILD)/SHEET.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_print -DTEST_SCRIPT=42
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(BUILD)/NOTEPAD.BIN $(BUILD)/SHEET.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+$(PRINT_DSK_B): tools/print_check.py
+	@mkdir -p $(BUILD)
+	@rm -f $@
+	$(IDSK) $@ -n > /dev/null
+	$(PYTHON) -I tools/print_check.py text $(BUILD)/PRINT.TXT $(BUILD)/T.VSH
+	$(IDSK) $@ -i $(BUILD)/PRINT.TXT -t 0 > /dev/null
+	$(IDSK) $@ -i $(BUILD)/T.VSH -t 0 > /dev/null
+	$(PYTHON) -I tools/dsk_ext.py $@
+test-print: $(PRINT_DSK) $(PRINT_DSK_B)
+	rm -rf $(BUILD)/shots $(BUILD)/printer?.txt
+	for s in $(PRINT_SHOTS); do p=$${s%%:*}; r=$${s#*:}; r=$${r%:*}; \
+	  cp $(PRINT_DSK) $(BUILD)/vos_run.dsk; cp $(PRINT_DSK_B) $(BUILD)/vos_run_b.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=$$r VOS_TIMEOUT=60 VOS_OPTS='-O system.printer=$$p -O file.printer_file=$(abspath $(BUILD))/printer$$p.txt' VOS_SHOTS=$(abspath $(BUILD))/shots/printer$$p VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $${s##*:}"; \
+	done
+	ls $(BUILD)/shots/*/*.png
+	$(PYTHON) -I tools/print_check.py check $(BUILD)/printer1.txt
+
 # The Desktop's window (TEST_SCRIPT=40): closed at first, TAB, its X,
 # a drive icon, the corner that sizes it, its scroll bar
 WINDOW_DSK := $(BUILD)/vos_window.dsk
@@ -1184,9 +1297,30 @@ test-wall: $(WALL_DSK) $(TEST_DSK_B)
 	done
 	ls $(BUILD)/shots/*/*.png
 
+# SHOW, the .SCR pictures one after the other (tools/show_check.py, a
+# Z80 emulator)
+test-show: $(BUILD)/SHOW.BIN
+	@mkdir -p $(SCR_TEST)
+	$(RASM) myapps/show/show.asm -I src -I $(BUILD)/myapp_show -I myapps/show -o $(SCR_TEST)/show -s > $(SCR_TEST)/rasm_show.log
+	$(PYTHON) tools/show_check.py $(SCR_TEST)/show.bin $(SCR_TEST)/show.sym
+
+# CLOCK's time from the M4 board (tools/clock_check.py, a Z80 emulator):
+# C_TIME's time and date, counted on, the next day; without an M4
+test-clock: $(BUILD)/CLOCK.BIN
+	$(RASM) apps/clock/clock.asm -I src -I $(BUILD) -o $(BUILD)/clock_t -s > /dev/null
+	$(PYTHON) tools/clock_check.py $(BUILD)/clock_lo.bin $(BUILD)/clock_t.sym
+
+# PAINT's UNDO (tools/paint_check.py, a Z80 emulator): BOX, LINE,
+# PENCIL and FILL taken back and done again, a picture and the whole
+# screen
+test-paint-undo: $(BUILD)/PAINT.BIN
+	@mkdir -p $(SCR_TEST)
+	$(RASM) myapps/paint/paint.asm -I src -I $(BUILD)/myapp_paint -I myapps/paint -o $(SCR_TEST)/paint -s > $(SCR_TEST)/rasm_paint.log
+	$(PYTHON) tools/paint_check.py $(SCR_TEST)/paint.bin $(SCR_TEST)/paint.sym
+
 # NOTEPAD's text window (tools/notepad_check.py, a Z80 emulator): a 12K
 # file moved through and edited, with a data bank of its own and on a
-# 6128, a 16K text typed, and SAVE
+# 6128, a 16K text typed, SAVE, and UNDO
 test-notepad-big: $(BUILD)/NOTEPAD.BIN
 	@mkdir -p $(SCR_TEST)
 	$(RASM) myapps/notepad/notepad.asm -I src -I $(BUILD)/myapp_notepad -I myapps/notepad -o $(SCR_TEST)/notepad -s > $(SCR_TEST)/rasm.log

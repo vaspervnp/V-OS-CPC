@@ -82,7 +82,7 @@ api_ext:
 
 xa_table:       dw xa_version, xa_free, xa_clip_put, xa_clip_get, xa_m4
                 dw xa_mem, xa_behind, xa_data, xa_db, xa_utf8, xa_calc
-                dw xa_lang, xa_irq, xa_drive
+                dw xa_lang, xa_irq, xa_drive, xa_print
         assert $ - xa_table == VX_COUNT * 2
 xa_hl:          dw 0
 
@@ -107,6 +107,13 @@ xa_utf8:
         ld b,h
         ld c,l
         ret
+
+; VX_PRINT: HL (xa_hl) -> text, BC, E (kernel/ext2.asm: prt_entry); B
+; goes as D, as for VX_UTF8
+xa_print:
+        ld d,b
+        ld hl,prt_entry
+        jp ext2_call
 
 ; VX_BEHIND: DE -> db drive, name: the file in app_open, and the main
 ; loop starts its program behind this one (kernel/ext2.asm, behind_run)

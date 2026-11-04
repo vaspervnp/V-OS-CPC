@@ -105,7 +105,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 29              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 30              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -122,7 +122,7 @@ VOS_API_VERSION equ 29              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 26: VX_LANG, 27: VX_IRQ,
                                     ; 28: drive 2, the M4's SD card,
                                     ; 29: VX_DRIVE, folders in the file
-                                    ; list
+                                    ; list, 30: VX_PRINT
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -277,7 +277,15 @@ VX_DRIVE        equ 13                  ; (29) C = drive -> A = the next
                                         ; one: 0 A: -> 1 B: -> 2 DISK
                                         ; (with an M4 board) -> 0. Older
                                         ; V-OS: carry (then A: <-> B:)
-VX_COUNT        equ 14
+VX_PRINT        equ 14                  ; (30) HL -> text, BC = bytes, E =
+                                        ; 0 in the program, VOS_DATA in its
+                                        ; data bank: to the printer, as it
+                                        ; is (13, 10 end a line; 12 a new
+                                        ; page), the letters over 127 as
+                                        ; plain ASCII (Greek as Greeklish).
+                                        ; Carry, A = 41: the printer is not
+                                        ; ready (none, off line, no paper)
+VX_COUNT        equ 15
 
 ; Databases (version 22): VOS_EXT with A = VX_DB, C = one of these. One
 ; database is open at a time, for the program that opened it (another

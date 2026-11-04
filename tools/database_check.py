@@ -11,7 +11,9 @@ Python (the same order as DB.SYS: keys high byte first, DB_ALPHA keys
 without case or accents, ties by rid; the cursor at the last record
 returned). A database is made, a table with a DB_ALPHA key and a
 number, records added in the form; then the list must show them in the
-key's order without case, FIND must go to them, a change saved must be
+key's order without case, PRINT must print them (VX_PRINT, and
+without a printer its error), IMPORT CSV must add a .CSV's lines,
+FIND must go to them, a change saved must be
 there, a deletion gone, and the list must scroll over 40 records. A
 second table without a key, TAB between them. Exits 1 on the first
 difference.
@@ -30,12 +32,16 @@ CALLS = 43
  SET_WIDGETS, DRAW_WIDGETS, MENU_VIEW, MENU_HELP, CATALOG, LOAD, SAVE, DELETE,
  FILE_PICK, TEXTS, MENU_OPEN) = range(31)
 EXT = 42
+BANK_GET = 37
+VX_UTF8 = 9
+CAT = 0x9100
 VX_DB = 8
+VX_PRINT = 14
 VE_KEY_DOWN = 1
 VK = dict(UP=0, RIGHT=1, DOWN=2, LEFT=8, RETURN=18, TAB=68, DEL=79)
 VC_APP = 32
 CMD = dict(NEW_DB=1, OPEN_DB=2, NEW_TABLE=3, ADD=4, DELETE=5, SAVE=6, LIST=7,
-           DRIVE=8, ABOUT=9, BACK=10)
+           DRIVE=8, ABOUT=9, BACK=10, PRINT=11, CSV=12)
 DB = dict(CREATE=0, OPEN=1, CLOSE=2, TABLE=3, USE=4, INFO=5, ADD=6, GET=7,
           PUT=8, DEL=9, FIND=10, FIRST=11, LAST=12, NEXT=13, PREV=14, COUNT=15)
 ERR_NO_FILE, ERR_EXISTS, ERR_TABLE, ERR_RID, ERR_END = 7, 10, 17, 20, 21
@@ -190,6 +196,9 @@ class App:
         self.inputs, self.buttons = [], []
         self.errors = []
         self.exited = False
+        self.printed = b''
+        self.printer = True                 # ready
+        self.files, self.bank, self.picks = {}, bytearray(0x4000), []
 
     def text(self, n):
         if n < 0xC0:
@@ -239,8 +248,34 @@ class App:
                 m.a = self.buttons.pop(0)
             elif n == ERROR:
                 self.errors.append(m.a)
+            elif n == CATALOG:
+                ext = bytes(m.memory[m.hl:m.hl + 3])
+                names = sorted(k[1] for k in self.files if k[0] == m.a & 3 and k[1][8:] == ext)
+                m.set_memory_block(CAT, b''.join(nm + bytes(5) for nm in names) or b'\0')
+                m.a, m.hl = len(names), CAT
+            elif n == FILE_PICK:
+                m.a = self.picks.pop(0)
+            elif n == LOAD:
+                data = self.files[(m.a & 3, bytes(m.memory[m.hl:m.hl + 11]))]
+                self.bank[:len(data)] = data
+                m.bc = len(data)
+            elif n == BANK_GET:
+                m.set_memory_block(m.de, bytes(self.bank[m.hl - 0x4000:m.hl - 0x4000 + m.bc]))
+            elif n == EXT and m.a == VX_UTF8:
+                data = bytes(self.bank[:m.bc])
+                m.a = 0
+                if max(data, default=0) > 127:
+                    out = data.decode('utf-8').encode('vos')
+                    self.bank[:len(out)] = out
+                    m.bc, m.a = len(out), 1
             elif n == EXIT:
                 self.exited = True
+            elif n == EXT and m.a == VX_PRINT:
+                if self.printer:
+                    self.printed += bytes(m.memory[m.hl:m.hl + m.bc])
+                else:
+                    m.a = 41
+                    m.f |= 1
             elif n == EXT and m.a == VX_DB:
                 mem = bytearray(m.memory)
                 carry, a, de, hl = self.db.call(m.c, m.de, m.hl, mem)
@@ -290,6 +325,36 @@ def check(what, got, want):
         sys.exit('database_check: %s:\n  got  %r\n  want %r' % (what, got, want))
 
 
+def import_csv(prog, sym):
+    """IMPORT CSV into a new table: the heads left out, quotes, a text
+    cut to its length, a number too big 65535, Greek from UTF-8."""
+    app = App(prog, sym)
+    app.call('INIT', a=0)
+    app.inputs = ['club', 'pals', 'name', '12', 'age', '']
+    app.buttons = [0, 1, 0]
+    app.command('NEW_DB')
+    app.files[(1, b'PEOPLE  CSV')] = ('Name;Age\r\nkostas;55\r\n"Mary; Jo";7\r\n'
+                                      'a very long name;70000\r\nΕλένη;"1,2"').encode('utf-8')
+    app.picks = [0]
+    app.command('CSV')
+    rows = [r for r, _ in app.rows() if r]
+    want = [row(n, a) for n, a in (('a very long ', 65535), ('kostas', 55), ('Mary; Jo', 7),
+                                   ('Ελένη', 12))]
+    check('IMPORT CSV', rows, want)
+    check('IMPORTED said', app.line(238), 'IMPORTED')
+    app.files[(1, b'PEOPLE  CSV')] = b'zoe,31,extra\nbob,"4"\n'
+    app.picks = [0]
+    app.command('CSV')
+    rows = [r for r, _ in app.rows() if r]
+    check('IMPORT CSV by commas', rows[:3], [row('a very long ', 65535), row('bob', 4),
+                                              row('kostas', 55)])
+    check('and zoe', row('zoe', 31) in rows, True)
+    if app.errors:
+        sys.exit('database_check: IMPORT CSV: errors %r' % app.errors)
+    print('database_check: IMPORT CSV by semicolons and commas, heads, quotes, long texts, '
+          'a big number, UTF-8: all right')
+
+
 def main():
     prog = open(sys.argv[1], 'rb').read()
     sym = {}
@@ -327,6 +392,16 @@ def main():
     check('the list, without case and accents', rows, want)
     app.call('REDRAW')
     check('the count', app.line(238), 'RECORDS:      5')
+    # PRINT: the heads, every record as in the list, a new page; then
+    # the list from its start; with no printer, its error, once
+    app.command('PRINT')
+    want = b''.join(r.encode('vos') + b'\r\n' for r in ['NAME         AGE'] + want) + b'\x0c'
+    check('PRINT', app.printed, want)
+    check('the list after PRINT', app.rows()[0], (row('anna', 28), True))
+    app.printer = False
+    app.command('PRINT')
+    check('no printer', app.errors, [41])
+    app.errors = []
     # FIND: typing goes there, in any case
     app.type('EL')
     check('FIND EL', [r for r, _ in app.rows() if r][0], row('Élodie', 33))
@@ -414,8 +489,10 @@ def main():
     if app.errors:
         sys.exit('database_check: errors %r' % app.errors)
     print('database_check: a database, two tables, %d records added in the form, the list in '
-          'key order without case or accents, FIND, a change, a deletion, scrolling: all right'
+          'key order without case or accents, PRINT, FIND, a change, a deletion, scrolling: '
+          'all right'
           % (5 + 40 + 2))
+    import_csv(prog, sym)
 
 
 if __name__ == '__main__':

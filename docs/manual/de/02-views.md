@@ -66,9 +66,12 @@ Modus 1, zwei Felder mit Dateilisten: A: links, B: rechts. Jedes Feld zeigt in s
 | ^N | umbenennen |
 | ^R | beide Disketten neu lesen |
 | ^G | das nächste Laufwerk für das aktive Feld: A:, B:, DISK (auch ein Klick auf seinen Titel) |
+| ^F | Dateien suchen: ein Name mit `*` und `?` (`*.TXT`, `README.*`, `NOTE?AD.BIN`; ohne Punkt jede Endung), gesucht auf A:, B: und DISK (in dem Ordner, in dem du bist). Das aktive Feld listet, was gefunden wurde, bis zu 64 Dateien, jede mit ihrem Laufwerk (`B:README.TXT`). RETURN geht zur Datei auf ihrem Laufwerk; ^C, ^D, ^N und ^V wirken auf die gefundenen Dateien, so wie sie sind; ^R oder ^G beendet die Liste |
+| ^V | Text zeigen: die ersten Zeilen der gewählten Datei im anderen Feld, bis es neu gezeichnet wird |
+| ^E | Diskette kopieren: die ganze Diskette des aktiven Feldes auf die des anderen Feldes (A: und B:), Spur für Spur, jede Spur zuerst wie die der Quelle formatiert (DATA oder SYSTEM). Es fragt vorher: die Dateien der anderen Diskette gehen verloren |
 | Maus | Klick: auswählen, noch einmal: öffnen |
 
-**Menü DATEI:** ÖFFNEN, DATEI-INFO (^I), INS ANDERE FELD KOPIEREN, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, NÄCHSTES LAUFWERK (^G), FORMATIEREN (DATA), ZURÜCK ZU BASIC.
+**Menü DATEI:** ÖFFNEN, DATEI-INFO (^I), TEXT ZEIGEN (^V), SUCHEN (^F), DISKETTE KOPIEREN (^E), INS ANDERE FELD KOPIEREN, LÖSCHEN, UMBENENNEN, DISKETTEN NEU LESEN, NÄCHSTES LAUFWERK (^G), FORMATIEREN (DATA), ZURÜCK ZU BASIC.
 
 > FORMATIEREN löscht alle Dateien auf der Diskette des aktiven Feldes. Es fragt vorher.
 
@@ -98,7 +101,7 @@ Modus 1. Eine Zeile für jede Einstellung. Änderungen wirken sofort. Beim Speic
 | HINTERGRUND | BLAU, SCHWARZ, GRÜN, ROT |
 | TASTATUREN | EN + SPRACHE, ALLE SECHS (die CONTROL+SHIFT durchgeht) |
 | DESIGN | HELL, DUNKEL (Leisten, Menüs, Dialoge, Fenster und Listen schwarz mit weißer Schrift; in Programmen ihre Menüs und Dialoge) |
-| HINTERGRUNDBILD | KEINS, oder ein `.SCR`-Bild: LINKS/RECHTS gehen durch KEINS, A:, B: und DISK, und auf einem Laufwerk werden seine `.SCR`-Dateien zur Wahl gelistet. Der Schreibtisch zeigt es in der Mitte, die Hintergrundfarbe darum; ein PAINT-Bild (Modus 0, 16 Farben) in den vier Farben des Schreibtischs. Es braucht eine Speichererweiterung (ihre letzte 16K-Bank hält das Bild); ohne: BRAUCHT EINE SPEICHERERWEITERUNG |
+| HINTERGRUNDBILD | KEINS, oder ein `.SCR`-Bild: LINKS/RECHTS gehen durch KEINS, A:, B: und DISK, und auf einem Laufwerk werden seine `.SCR`-Dateien zur Wahl gelistet. Der Schreibtisch zeigt es in der Mitte, die Hintergrundfarbe darum; ein PAINT-Bild (Modus 0, 16 Farben) in den vier Farben des Schreibtischs. Es braucht eine Speichererweiterung (ihre letzte 16K-Bank hält das Bild); ohne: BRAUCHT EINE SPEICHERERWEITERUNG. Nach drei Minuten ohne Eingabe auf dem Schreibtisch zeigt sich das Bild allein (ein Bildschirmschoner); jede Taste oder die Maus bringt den Schreibtisch zurück |
 
 | Taste | Was sie tut |
 |---|---|

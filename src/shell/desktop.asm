@@ -45,6 +45,15 @@ DT_DRIVE_Y      equ 28              ; for the 464 firmware's inks
 DT_DRIVE_W      equ 48
 DT_DRIVE_H      equ 36
 DT_DRIVE_STEP   equ 52
+        IFDEF TEST_SCRIPT
+        IF TEST_SCRIPT == 45
+DT_SAVER_FRAMES equ 500             ; (make test-saver)
+        ELSE
+DT_SAVER_FRAMES equ 3 * 60 * 50
+        ENDIF
+        ELSE
+DT_SAVER_FRAMES equ 3 * 60 * 50     ; the screen saver: 3 minutes
+        ENDIF
 DT_KEYS_Y       equ GFX_H - 10
 
         jp dt_init
@@ -67,6 +76,12 @@ dt_init:
         xor a                       ; at boot: closed
         ld (dt_shown),a
 .placed:
+        ld a,1                      ; EV_FRAME: the screen saver
+        ld (view_ticks),a
+        ld hl,0
+        ld (dt_idle),hl
+        xor a
+        ld (dt_saver),a
         call dt_size
         ld hl,dt_bar
         call ui_set_bar
@@ -1115,6 +1130,42 @@ dt_next:
 
 ; ---------------------------------------------------------------------
 dt_event:
+        ld a,(ev_cur)               ; the screen saver: with a picture on
+        cp EV_FRAME                 ; the desk, after DT_SAVER_FRAMES
+        jr nz,.input                ; with nothing done, the picture
+        ld a,(dt_saver)             ; alone; anything brings the
+        or a                        ; Desktop back
+        ret nz
+        ld hl,(dt_idle)
+        inc hl
+        ld (dt_idle),hl
+        ld de,DT_SAVER_FRAMES
+        or a
+        sbc hl,de
+        ret c
+        ld a,(cfg_data + CFG_WALL)
+        inc a
+        ret z
+        ld a,(ui_open)
+        cp UI_NONE
+        ret nz
+        ld a,1
+        ld (dt_saver),a
+        call ptr_hide
+        ld a,UIP_DESK
+        call ui_pen
+        call gfx_cls
+        jp wall_draw
+.input:
+        ld hl,0
+        ld (dt_idle),hl
+        ld a,(dt_saver)
+        or a
+        jr z,.awake
+        xor a
+        ld (dt_saver),a
+        jp dt_redraw
+.awake:
         ld a,(ui_open)
         cp UI_NONE
         jr nz,.ui
@@ -1153,7 +1204,7 @@ dt_event:
         cp KEY_TAB
         jr nz,.not_tab
         call dt_next
-        jr dt_open_drive
+        jp dt_open_drive
 .not_tab:
         cp KEY_RETURN
         jp z,dt_run
@@ -1487,6 +1538,8 @@ dt_err:         db 0
 dt_free:        db 0
 dt_fmt:         db 0
 dt_d:           db 0
+dt_idle:        dw 0                ; frames with nothing done
+dt_saver:       db 0                ; 1: the screen saver is on
 dt_k:           db 0
 dt_i:           db 0
 dt_cx:          dw 0

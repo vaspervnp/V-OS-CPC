@@ -957,6 +957,10 @@ Header με:
 - **Εικόνες δισκέτας:** `iDSK` ή RASM για δημιουργία και επεξεργασία `.DSK`.
 - **Build:** Makefile που μεταγλωττίζει kernel, εφαρμογές και δημιουργεί `VOS.DSK`.
 - **Δοκιμές:** σε όλους τους τύπους CRTC (0, 1, 2) στον emulator, σε πραγματικό 6128 με 3" και με Gotek/HxC, και ειδικά για το AMX Mouse.
+- **Δοκιμή σε πραγματικό CPC (M58):** μια λίστα ελέγχου στο κεφάλαιο 9 του manual (σε έξι γλώσσες) για όσους έχουν CPC, με τις αναφορές ως issues στο GitHub.
+- **Διανομή (M58):** `make release` (`tools/mkrelease.sh`) φτιάχνει το `build/V-OS-<έκδοση>.zip`: `vos.dsk`, `apps.dsk` και οι δισκέτες των προγραμμάτων, τα PDF του manual, οι εικόνες του promo, τα βίντεο του `tools/video` όσα έχουν γίνει, `LICENSE.txt` και ένα `README.txt` (CRLF). Δίπλα του στο GitHub Release μπαίνουν τα `V-OS-linux.tar.gz` και `V-OS-windows.zip`. Άδεια: MIT (`LICENSE`).
+- **Εκτύπωση (M59):** `VX_PRINT` (API 30) στη δεύτερη επέκταση: η θύρα Centronics του CPC (`#EFxx`, 7 bits, STROBE στο bit 7, BUSY στο bit 6 της θύρας B του PPI), οι κωδικοί πάνω από 127 ως ASCII (`src/kernel/ascii.inc`, από το `tools/voscs.py ascii`: χωρίς τόνους, ελληνικά σε greeklish), λάθος 41 αν ο εκτυπωτής μείνει απασχολημένος 2 δευτερόλεπτα. PRINT ^P στο NOTEPAD, το SHEET και το DATABASE. Για τον χώρο: `CALC_ADDR` #4E80, `DB_ADDR` #5780. Στις εκδόσεις δοκιμών μόνο του `make test-print`.
+- **M60–M64:** ΑΝΑΖΗΤΗΣΗ (^F) και ΠΡΟΒΟΛΗ ΚΕΙΜΕΝΟΥ (^V) στον Commander (η λίστα όσων βρέθηκαν στη θέση της λίστας του πάνελ, με τη μονάδα στο byte 14 κάθε εγγραφής)· ΓΡΑΦΗΜΑ στο SHEET (ύψη από το CALC.SYS, `.SCR` στο data bank)· ΑΝΑΙΡΕΣΗ στο NOTEPAD (μία αλλαγή, ως 256 χαρακτήρες) και στο PAINT (αντίγραφο της εικόνας πριν από κάθε εργαλείο)· η ώρα του M4 (`C_TIME`) στο CLOCK· SHOW· ΑΝΤΙΓΡΑΦΗ ΔΙΣΚΕΤΑΣ (^E, track-track μέσω του bank 4)· CSV στο SHEET και στο DATABASE· προφύλαξη οθόνης στο Desktop (`view_ticks`). Ρολόι στη γραμμή μενού και ημερομηνίες αρχείων: όχι, ο kernel είναι γεμάτος.
 - **Repo:** `src/kernel`, `src/drivers` (fdc, kbd, mouse, crtc), `src/gfx`, `src/ui`, `src/apps`, `compiler/`, `docs/`, `tools/`.
 
 ---

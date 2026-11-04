@@ -1,0 +1,12 @@
+# SHOW's texts: NAME | English | Greek (tools/mktexts.py). "|" with
+# no spaces around it starts a new line in a dialog.
+MENU        | SHOW                  | ΠΡΟΒΟΛΗ
+NEXT        | NEXT PICTURE          | ΕΠΟΜΕΝΗ ΕΙΚΟΝΑ
+PREV        | PREVIOUS PICTURE      | ΠΡΟΗΓΟΥΜΕΝΗ ΕΙΚΟΝΑ
+PAUSE       | STOP / GO ON          | ΣΤΑΣΗ / ΣΥΝΕΧΕΙΑ
+DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+ABOUT_TEXT  | SHOW|THE .SCR PICTURES OF|A DRIVE, ONE AFTER|THE OTHER, FROM THE SDK | ΠΡΟΒΟΛΗ|ΟΙ ΕΙΚΟΝΕΣ .SCR ΜΙΑΣ|ΜΟΝΑΔΑΣ, Η ΜΙΑ ΜΕΤΑ|ΤΗΝ ΑΛΛΗ, ΑΠΟ ΤΟ SDK
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+NONE        | NO .SCR HERE          | ΚΑΜΙΑ .SCR ΕΔΩ
+HINT        | <- -> SPACE ^W ^Q     | <- -> SPACE ^W ^Q

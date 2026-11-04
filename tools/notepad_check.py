@@ -16,7 +16,8 @@ text of 6K is typed, which makes the window move as it fills. On a
 loaded, edited and saved. Files in UTF-8 (12K, and 3K on a 6128), in
 many languages, must come into the V-OS character set (VX_UTF8, as
 tools/voscs.py; the kernel's own code is checked by make test-utf8),
-and be saved so. Exits 1 on the first
+and be saved so. UNDO must take back a run typed, DEL and CLR, and
+typing over a selection, and do each again. Exits 1 on the first
 difference.
 """
 import os
@@ -31,7 +32,10 @@ LOAD, SAVE, BANK_GET, BANK_PUT, EXT = 25, 26, 37, 38, 42
 VX_DATA, VX_UTF8 = 7, 9
 VE_KEY_DOWN = 1
 VK_UP, VK_DOWN, VK_RETURN = 0, 2, 18
+VK_RIGHT, VK_DEL, KEY_CLR = 1, 79, 16
+VMOD_SHIFT = 1
 CMD_SAVE = 32 + 3
+CMD_UNDO = 32 + 14
 KEY_X = 63                      # a letter's key (not an arrow, DEL, RETURN)
 
 
@@ -112,8 +116,8 @@ class Notepad:
             m.sp += 2
         sys.exit('notepad_check: %s did not return' % name)
 
-    def key(self, code, char=0):
-        self.m.set_memory_block(0xBF00, bytes([VE_KEY_DOWN, code, char, 0]))
+    def key(self, code, char=0, mods=0):
+        self.m.set_memory_block(0xBF00, bytes([VE_KEY_DOWN, code, char, mods]))
         self.call('EVENT', hl=0xBF00)
 
     def text(self):
@@ -247,6 +251,59 @@ def typing(prog, sym):
           'the text stops at 16K, too big to save with CRs' % 6000)
 
 
+def undo(prog, sym, big):
+    """UNDO (^Z): a run typed, DEL and CLR, typing over a selection, each
+    taken back and done again, far into a file where the window moved."""
+    np = Notepad(prog, sym, big)
+    np.call('INIT', a=0)
+    lines = [b'LINE %04d: SOME TEXT TO EDIT' % i for i in range(300 if big else 60)]
+    np.disc[b'U       TXT'] = b'\r\n'.join(lines) + b'\r\n'
+    np.m.set_memory_block(np.sym['NAME_TMP'], b'U       TXT')
+    np.call('LOAD_FILE')
+    text = b'\n'.join(lines) + b'\n'
+    row = 200 if big else 40
+    for _ in range(row):
+        np.key(VK_DOWN)
+    pos = line_starts(text)[row]
+    check(np, text, pos, 'UNDO: there')
+    first = text
+    for c in b'HELLO':
+        np.key(KEY_X, c)
+    text = text[:pos] + b'HELLO' + text[pos:]
+    check(np, text, pos + 5, 'UNDO: typed')
+    np.call('COMMAND', a=CMD_UNDO)
+    check(np, first, pos, 'UNDO: the typing taken back')
+    np.call('COMMAND', a=CMD_UNDO)
+    check(np, text, pos + 5, 'UNDO: done again')
+    for _ in range(3):                           # DEL: LLO out
+        np.key(VK_DEL)
+    del3 = text[:pos + 2] + text[pos + 5:]
+    check(np, del3, pos + 2, 'UNDO: DEL x3')
+    np.call('COMMAND', a=CMD_UNDO)
+    check(np, text, pos + 5, 'UNDO: DEL taken back')
+    np.call('COMMAND', a=CMD_UNDO)
+    check(np, del3, pos + 2, 'UNDO: DEL done again')
+    np.key(KEY_X, ord('L'))                     # HEL, then CLR x2: "LI"
+    text = del3[:pos + 2] + b'L' + del3[pos + 2:]
+    np.key(KEY_CLR)
+    np.key(KEY_CLR)
+    clr = text[:pos + 3] + text[pos + 5:]
+    check(np, clr, pos + 3, 'UNDO: CLR x2')
+    np.call('COMMAND', a=CMD_UNDO)
+    check(np, text, pos + 5, 'UNDO: CLR taken back')
+    np.call('COMMAND', a=CMD_UNDO)
+    text = clr
+    for _ in range(4):                           # a selection typed over
+        np.key(VK_RIGHT, 0, VMOD_SHIFT)
+    np.key(KEY_X, ord('Q'))
+    over = text[:pos + 3] + b'Q' + text[pos + 7:]
+    check(np, over, pos + 4, 'UNDO: a selection typed over')
+    np.call('COMMAND', a=CMD_UNDO)
+    check(np, text[:pos + 3] + text[pos + 7:], pos + 3, 'UNDO: the Q taken back')
+    print('notepad_check: %s: UNDO of typing, DEL, CLR and a selection typed over, '
+          'and each done again: all right' % ('own data bank' if big else '6128'))
+
+
 def main():
     if len(sys.argv) != 3:
         sys.exit(__doc__)
@@ -262,6 +319,8 @@ def main():
     utf8(prog, sym, 1, 240)         # 12K of UTF-8: pieces of 4K
     utf8(prog, sym, 0, 60)          # 3K on a 6128
     typing(prog, sym)
+    undo(prog, sym, 1)
+    undo(prog, sym, 0)
 
 
 if __name__ == '__main__':

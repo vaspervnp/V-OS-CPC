@@ -75,10 +75,10 @@ BUF_CFG         equ #C4
 bh_save         equ #B800           ; 30 bytes: VX_BEHIND's (see above)
 EXT2_CFG        equ RAM_BASE_CFG    ; the second extension (kernel/ext2.asm):
 EXT2_ADDR       equ #4100           ; base RAM bank 1, after the loader
-CALC_ADDR       equ #4D80           ; the formula engine (CALC.SYS, loaded
+CALC_ADDR       equ #4E80           ; the formula engine (CALC.SYS, loaded
                                     ; by ext2.asm: calc_entry) after it
                                     ; (and the test script, in tests)
-DB_ADDR         equ #5680           ; the database engine (DB.SYS, loaded by
+DB_ADDR         equ #5780           ; the database engine (DB.SYS, loaded by
 DB_CACHE        equ #7000           ; ext2.asm: db_entry) after it, then its
 DB_SLOTS        equ 4               ; cache: 4 pages of 1K, up to #8000
 BUF_ADDR        equ #4000

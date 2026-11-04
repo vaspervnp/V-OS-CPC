@@ -16,7 +16,10 @@ be asked again, formulas that use later cells and each other must be
 worked out, DEL must empty a cell, the columns and rows must scroll, a
 page (^M, mode 2) must show 10 columns and scroll to P, then 5 again, a
 sheet saved must be its lines, opened again the same, a UTF-8 file
-must be read, the sample BUDGET.VSH must open with its values, and a
+must be read, the sample BUDGET.VSH must open with its values, CHART
+must draw its costs (the bars on the screen and in the .SCR, the
+labels, ^S, ESC), OPEN CSV must read a .CSV by semicolons or commas,
+with quotes, and a
 full sheet must say so. Exits 1 on the first
 difference.
 """
@@ -36,9 +39,10 @@ CALLS = 43
 BANK_GET, BANK_PUT, EXT = 37, 38, 42
 VX_UTF8, VX_DATA, VX_CALC = 9, 7, 10
 VE_KEY_DOWN = 1
-VK = dict(UP=0, RIGHT=1, DOWN=2, LEFT=8, RETURN=18, DEL=79)
+VK = dict(UP=0, RIGHT=1, DOWN=2, LEFT=8, RETURN=18, DEL=79, ESC=66)
 VC_APP = 32
-CMD = dict(NEW=1, OPEN=2, SAVE=3, SAVE_AS=4, DRIVE=5, ABOUT=6, BACK=7, PAGE=8)
+CMD = dict(NEW=1, OPEN=2, SAVE=3, SAVE_AS=4, DRIVE=5, ABOUT=6, BACK=7, PAGE=8, PRINT=9, CHART=10,
+           CSV=11)
 CALC_TEXT = 2
 CAT = 0xB800                     # where VOS_CATALOG's list is
 SYNTAX = 30
@@ -70,6 +74,7 @@ class App:
         self.colours = (1, 2)
         self.width = 48                       # 96 in mode 2
         self.rects = []
+        self.asked = []
         self.inputs, self.buttons, self.picks = [], [], []
         self.errors, self.dialogs = [], []
         self.calc_calls = 0
@@ -147,10 +152,12 @@ class App:
             elif n == MSG:
                 m.hl = self.text(m.a)
             elif n == INPUT:
+                shown = bytes(m.memory[m.hl:m.hl + 40]).split(b'\0')[0]
+                self.asked.append(shown.decode('vos'))
                 ans = self.inputs.pop(0)
                 if ans is None:
                     m.f |= 1
-                else:
+                elif ans != '':             # '': as it was shown
                     m.set_memory_block(m.hl, ans.encode('vos') + b'\0')
             elif n == DIALOG:
                 d = m.hl
@@ -164,6 +171,9 @@ class App:
                 self.bank[m.de - 0x4000:m.de - 0x4000 + m.bc] = m.memory[m.hl:m.hl + m.bc]
             elif n == CATALOG:
                 names = sorted(k for k in self.files if k[0] == m.a & 3)
+                if m.a & 0x40:                  # VOS_CAT_EXT: one extension
+                    ext = bytes(m.memory[m.hl:m.hl + 3])
+                    names = [k for k in names if k[1][8:] == ext]
                 lst = b''.join(k[1] + bytes(5) for k in names)
                 m.set_memory_block(CAT, lst or b'\0')
                 self.cat = names
@@ -431,6 +441,57 @@ def main():
            [txt('Ink'), num('7.99'), num('2'), num('15.98'), txt('')],
            [txt('TOTAL'), txt(''), num('16'), num('37.98'), txt('')],
            [txt('AVERAGE'), txt(''), txt(''), num('12.7'), txt('')]])
+    # CHART: D2 down to its last number, the bars as high as the costs
+    # are to their MAX, Paper, Pens, Ink under them; the .SCR in the
+    # data bank, saved with ^S; ESC back, the values worked out again
+    app.go('D2')
+    app.asked, app.rects = [], []
+    app.inputs = ['']
+    app.command('CHART')
+    check('CHART: the range asked', app.asked, ['D2:D4'])
+    bars = [r for r in app.rects if r[2] == 32]
+    check('CHART: the bars', bars, [(28 + 48 * i, 30 + 180 - h, 32, h, (2, 3, 4)[i])
+                                    for i, h in enumerate((100, 120, 160))])
+    check('CHART: the labels', [app.line(214)[3:6], app.line(214)[9:12], app.line(214)[15:18]],
+          ['Pap', 'Pen', 'Ink'])
+    y = 180 - 100
+    at = (y & 7) * 0x800 + (y >> 3) * 80 + (12 + 0) // 2
+    check('CHART: the .SCR, the first bar', bytes(app.bank[at:at + 16]), bytes([0x0C] * 16))
+    check('CHART: the .SCR, its inks', bytes(app.bank[0x7D0:0x7D0 + 17]),
+          bytes([0, 26, 2, 6, 18, 24, 20, 8, 15, 13, 3, 9, 1, 12, 17, 11, 13]))
+    app.inputs = ['costs']
+    app.m.set_memory_block(0xBF00, bytes([VE_KEY_DOWN, 60, 19, 2]))   # CONTROL+S
+    app.call('EVENT', hl=0xBF00)
+    saved = [k for k in app.files if k[1] == b'COSTS   SCR']
+    check('CHART: ^S, COSTS.SCR', [len(app.files[k]) for k in saved], [0x4000])
+    if os.environ.get('SHEET_CHART_SCR'):        # to look at it
+        open(os.environ['SHEET_CHART_SCR'], 'wb').write(app.files[saved[0]])
+    app.key('ESC')
+    check('BUDGET.VSH', [app.row(r)[1] for r in (1, 2, 3, 5, 6)],
+          [[txt('Paper'), num('2.5'), num('4'), num('10'), txt('')],
+           [txt('Pens'), num('1.2'), num('10'), num('12'), txt('')],
+           [txt('Ink'), num('7.99'), num('2'), num('15.98'), txt('')],
+           [txt('TOTAL'), txt(''), num('16'), num('37.98'), txt('')],
+           [txt('AVERAGE'), txt(''), txt(''), num('12.7'), txt('')]])
+    # OPEN CSV: by semicolons (the first line), quotes, "" a quote, 1,5
+    # a number; saved as a .VSH
+    app.files[(1, b'PRICES  CSV')] = ('Name;Price;Count\r\n"Pens; blue";1,5;10\r\n'
+                                      'Ink;"7,99";2\r\n"Say ""hi""";;3\r\nΕλιά;0,5').encode('utf-8')
+    app.picks = [0]
+    app.command('CSV')
+    check('CSV: its name', app.line(14)[35:], 'B:PRICES.VSH')
+    check('CSV: the cells', [app.row(r)[1][:3] for r in range(5)],
+          [[txt('Name'), txt('Price'), txt('Count')],
+           [txt('Pens; bl'), num('1.5'), num('10')],
+           [txt('Ink'), num('7.99'), num('2')],
+           [txt('Say "hi"'), txt(''), num('3')],
+           [txt('Ελιά'), num('0.5'), txt('')]])
+    # by commas
+    app.files[(1, b'PRICES  CSV')] = b'a,1.25,"x,y"\nb,2,\n'
+    app.picks = [0]
+    app.command('CSV')
+    check('CSV with commas', [app.row(r)[1][:3] for r in range(2)],
+          [[txt('a'), num('1.25'), txt('x,y')], [txt('b'), num('2'), txt('')]])
     # full: long texts until there is no room
     app.command('NEW')
     app.go('A1')
@@ -449,7 +510,8 @@ def main():
     if app.errors:
         sys.exit('sheet_check: errors %r' % app.errors)
     print('sheet_check: numbers, text, formulas (%d CALC.SYS calls), errors, scrolling, '
-          'the page (^M), SAVE, OPEN, a UTF-8 file and a full sheet (%d cells): all right'
+          'the page (^M), SAVE, OPEN, a UTF-8 file, CHART, OPEN CSV and a full sheet (%d cells): '
+          'all right'
           % (app.calc_calls, n - 1))
 
 

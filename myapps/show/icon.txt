@@ -1,0 +1,19 @@
+# SHOW's icon: 16 x 16 pixels, a pen in hex (mode 0, the Launcher's
+# palette), "." transparent (tools/mkicon.py): a framed picture, a hill
+# and the sun
+................
+.00000000000000.
+.0bbbbbbbbbbbb0.
+.0bbbbbbbbb55b0.
+.0bbbbbbbbb55b0.
+.0bbbbbbbbbbbb0.
+.0bbbbbb44bbbb0.
+.0bbbbb4444bbb0.
+.0bbb44444444b0.
+.04444444444440.
+.04444444444440.
+.00000000000000.
+................
+................
+................
+................

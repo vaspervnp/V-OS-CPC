@@ -23,6 +23,10 @@ PPI_B           equ #F500           ; bit 0 = VSYNC
 PPI_C           equ #F600
 PPI_CONTROL     equ #F700
 
+; ---- printer (Centronics, 7 bits) ------------------------------------
+PRINTER_PORT    equ #EF00           ; bits 0-6 the byte, bit 7 STROBE;
+                                    ; BUSY is PPI port B, bit 6
+
 ; ---- FDC uPD765 -----------------------------------------------------
 FDC_MOTOR       equ #FA7E
 FDC_STATUS      equ #FB7E

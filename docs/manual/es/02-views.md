@@ -66,9 +66,12 @@ Modo 1, dos paneles con listas de archivos: A: a la izquierda, B: a la derecha. 
 | ^N | renombrar |
 | ^R | releer los dos discos |
 | ^G | la siguiente unidad para el panel activo: A:, B:, DISK (también con un clic en su título) |
+| ^F | buscar archivos: un nombre con `*` y `?` (`*.TXT`, `README.*`, `NOTE?AD.BIN`; sin punto, cualquier extensión), que se busca en A:, B: y DISK (la carpeta donde está). El panel activo lista lo encontrado, hasta 64 archivos, cada uno con su unidad (`B:README.TXT`). RETURN va al archivo en su unidad; ^C, ^D, ^N y ^V funcionan sobre los archivos encontrados tal como están; ^R o ^G termina la lista |
+| ^V | ver el texto: las primeras líneas del archivo elegido en el otro panel, hasta que se vuelva a dibujar |
+| ^E | copiar el disco: todo el disco del panel activo en el del otro panel (A: y B:), pista por pista, cada pista formateada antes como la del origen (DATA o SYSTEM). Pregunta antes: los archivos del otro disco se pierden |
 | ratón | clic: selecciona, otra vez: abre |
 
-**Menú ARCHIVO:** ABRIR, INFO DEL ARCHIVO (^I), COPIAR AL OTRO PANEL, BORRAR, RENOMBRAR, RELEER LOS DISCOS, UNIDAD SIGUIENTE (^G), FORMATEAR DISCO (DATA), SALIR AL BASIC.
+**Menú ARCHIVO:** ABRIR, INFO DEL ARCHIVO (^I), VER EL TEXTO (^V), BUSCAR (^F), COPIAR EL DISCO (^E), COPIAR AL OTRO PANEL, BORRAR, RENOMBRAR, RELEER LOS DISCOS, UNIDAD SIGUIENTE (^G), FORMATEAR DISCO (DATA), SALIR AL BASIC.
 
 > FORMATEAR borra todos los archivos del disquete del panel activo. Pregunta antes.
 
@@ -98,7 +101,7 @@ Modo 1. Una línea para cada ajuste. Los cambios se aplican al momento. Al guard
 | COLOR DEL FONDO | AZUL, NEGRO, VERDE, ROJO |
 | TECLADOS | EN + IDIOMA, LOS SEIS (los que recorre CONTROL+SHIFT) |
 | TEMA | CLARO, OSCURO (barras, menús, diálogos, ventanas y listas en negro con texto blanco; en los programas, sus menús y diálogos) |
-| IMAGEN DE FONDO | NINGUNA, o una imagen `.SCR`: IZQ./DER. pasan por NINGUNA, A:, B: y DISK, y en una unidad se listan sus `.SCR` para elegir uno. El Escritorio la muestra en el centro del fondo, con el color del fondo alrededor; una imagen de PAINT (modo 0, 16 colores) en los cuatro colores del Escritorio. Necesita una ampliación de memoria (su último banco de 16K guarda la imagen); sin ella: NECESITA UNA AMPLIACIÓN DE MEMORIA |
+| IMAGEN DE FONDO | NINGUNA, o una imagen `.SCR`: IZQ./DER. pasan por NINGUNA, A:, B: y DISK, y en una unidad se listan sus `.SCR` para elegir uno. El Escritorio la muestra en el centro del fondo, con el color del fondo alrededor; una imagen de PAINT (modo 0, 16 colores) en los cuatro colores del Escritorio. Necesita una ampliación de memoria (su último banco de 16K guarda la imagen); sin ella: NECESITA UNA AMPLIACIÓN DE MEMORIA. Tras tres minutos sin hacer nada en el Escritorio, la imagen se muestra sola (un salvapantallas); cualquier tecla o el ratón devuelven el Escritorio |
 
 | Tecla | Qué hace |
 |---|---|

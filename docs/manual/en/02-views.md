@@ -66,9 +66,12 @@ Mode 1, two panels with file lists: A: on the left, B: on the right. Each panel 
 | ^N | rename |
 | ^R | read both discs again |
 | ^G | the next drive for the active panel: A:, B:, DISK (also a click on its title) |
+| ^F | find files: a name with `*` and `?` (`*.TXT`, `README.*`, `NOTE?AD.BIN`; without a dot, any extension), looked for on A:, B: and DISK (the folder it is in). The active panel lists what was found, up to 64 files, each with its drive (`B:README.TXT`). RETURN goes to the file on its drive; ^C, ^D, ^N and ^V work on the found files as they are; ^R or ^G ends the list |
+| ^V | show the text: the chosen file's first lines in the other panel, until it is drawn again |
+| ^E | copy the disc: the whole disc of the active panel onto the other panel's (A: and B:), track by track, each track formatted first as the source's (DATA or SYSTEM). It asks first: the other disc's files are lost |
 | mouse | click: select, again: open |
 
-**FILE menu:** OPEN, FILE INFO (^I), COPY TO OTHER PANEL, DELETE, RENAME, READ DISCS AGAIN, NEXT DRIVE (^G), FORMAT DISC (DATA), EXIT TO BASIC.
+**FILE menu:** OPEN, FILE INFO (^I), SHOW THE TEXT (^V), FIND FILES (^F), COPY THE DISC (^E), COPY TO OTHER PANEL, DELETE, RENAME, READ DISCS AGAIN, NEXT DRIVE (^G), FORMAT DISC (DATA), EXIT TO BASIC.
 
 > FORMAT erases all the files on the disc of the active panel. It asks first.
 
@@ -98,7 +101,7 @@ Mode 1. One line for each setting. Changes take effect at once. When saved (RETU
 | DESK COLOUR | BLUE, BLACK, GREEN, RED |
 | KEYBOARDS | EN + PACK, ALL SIX (the ones CONTROL+SHIFT goes through) |
 | THEME | LIGHT, DARK (bars, menus, dialogs, windows and lists in black with white text; in programs, their menus and dialogs) |
-| BACKGROUND | NONE, or a `.SCR` picture: LEFT/RIGHT go through NONE, A:, B: and DISK, and on a drive its `.SCR` files are listed to choose one. The Desktop shows it in the middle of the desk, the desk colour around it; a PAINT picture (mode 0, 16 colours) in the desk's four colours. It needs a memory expansion (the last 16K bank of it keeps the picture); without one: NEEDS A MEMORY EXPANSION |
+| BACKGROUND | NONE, or a `.SCR` picture: LEFT/RIGHT go through NONE, A:, B: and DISK, and on a drive its `.SCR` files are listed to choose one. The Desktop shows it in the middle of the desk, the desk colour around it; a PAINT picture (mode 0, 16 colours) in the desk's four colours. It needs a memory expansion (the last 16K bank of it keeps the picture); without one: NEEDS A MEMORY EXPANSION. After three minutes with nothing done on the Desktop, the picture shows alone (a screen saver); any key or the mouse brings the Desktop back |
 
 | Key | What it does |
 |---|---|

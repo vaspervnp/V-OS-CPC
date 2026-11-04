@@ -14,7 +14,14 @@
 ;               to the list without saving
 ;   DATABASE menu: NEW DATABASE ^N, OPEN A DATABASE ^O, NEW TABLE ^T,
 ;   ADD A RECORD ^A, DELETE THE RECORD ^D, SAVE THE RECORD ^S, BACK TO
-;   THE LIST ^B, OTHER DRIVE ^W, ABOUT, BACK ^Q
+;   THE LIST ^B, OTHER DRIVE ^W, PRINT ^P (VX_PRINT, API 30: the table
+;   as the list shows it, every record), IMPORT CSV, ABOUT, BACK ^Q
+; IMPORT CSV adds a record for each line of a .CSV (from a PC, or SHEET's
+; drive), into the table in use: its fields in order, by commas or
+; semicolons (the first line says which), "quoted" fields may hold them,
+; "" is a quote; a text cut to its field's length, a number its digits
+; (0..65535). A first line that starts with the first field's name is
+; the heads: left out. The file comes through the data bank.
 ; A new table asks its name, then its fields: a name, TEXT or NUMBER
 ; (0..65535), a text's length (1..40); then whether the first field is
 ; its key. Text is DB_ALPHA: sorted and found without case or accents.
@@ -55,6 +62,10 @@ CMD_LIST        equ VC_APP + 7
 CMD_DRIVE       equ VC_APP + 8
 CMD_ABOUT       equ VC_APP + 9
 CMD_BACK        equ VC_APP + 10
+CMD_PRINT       equ VC_APP + 11
+CMD_CSV         equ VC_APP + 12
+CSV_DATA        equ #4000           ; IMPORT CSV: the file, in the data bank
+CSV_MAX         equ #4000
 
         org VOS_APP_ADDR
         jp init
@@ -521,6 +532,17 @@ put_place:
 
 ; the columns' heads: each field's name, as much as its column has
 draw_head:
+        call head_line
+        ld a,HEAD + VOS_UNDERLINE
+        ld c,BG
+        call VOS_COLOURS
+        ld hl,0
+        ld de,HEAD_Y
+        ld bc,line
+        jp VOS_PRINT
+
+; the fields' names over their columns, in line
+head_line:
         call blank_line
         xor a
         ld (fld),a
@@ -560,13 +582,7 @@ draw_head:
         ld hl,info + DB_T_FIELDS
         cp (hl)
         jr c,.field
-        ld a,HEAD + VOS_UNDERLINE
-        ld c,BG
-        call VOS_COLOURS
-        ld hl,0
-        ld de,HEAD_Y
-        ld bc,line
-        jp VOS_PRINT
+        ret
 
 ; every row
 draw_rows:
@@ -621,6 +637,26 @@ draw_row:
         ld hl,rbuf
         call vdb
         jp c,VOS_ERROR
+        call row_line
+        ld a,(row)                  ; chosen: inverted
+        ld hl,sel
+        cp (hl)
+        jr nz,.plain
+        ld a,BG
+        ld c,INK
+        call VOS_COLOURS
+        jr .print
+.plain:
+        call colours
+.print:
+        ld a,(row)
+        call row_y
+        ld hl,0
+        ld bc,line
+        jp VOS_PRINT
+
+; the record in rbuf in line, its fields in their columns
+row_line:
         call blank_line
         xor a
         ld (fld),a
@@ -660,22 +696,7 @@ draw_row:
         ld hl,info + DB_T_FIELDS
         cp (hl)
         jr c,.field
-        ld a,(row)                  ; chosen: inverted
-        ld hl,sel
-        cp (hl)
-        jr nz,.plain
-        ld a,BG
-        ld c,INK
-        call VOS_COLOURS
-        jr .print
-.plain:
-        call colours
-.print:
-        ld a,(row)
-        call row_y
-        ld hl,0
-        ld bc,line
-        jp VOS_PRINT
+        ret
 
 ; A = row -> DE = its y
 row_y:
@@ -1137,6 +1158,13 @@ form_show:
 add_rec:
         call have_table
         ret c
+        call rec_clear
+        ld a,1
+        ld (fnew),a
+        jr form_show
+
+; frec: its texts spaces, its numbers 0
+rec_clear:
         ld hl,frec
         ld b,REC_MAX
 .space:
@@ -1165,9 +1193,7 @@ add_rec:
         ld hl,info + DB_T_FIELDS
         cp (hl)
         jr c,.field
-        ld a,1
-        ld (fnew),a
-        jr form_show
+        ret
 
 ; SAVE THE RECORD: DB_ADD or DB_PUT, then the list there
 save_rec:
@@ -1291,6 +1317,10 @@ command:
         jp z,del_rec
         cp CMD_SAVE
         jp z,save_rec
+        cp CMD_PRINT
+        jp z,print_table
+        cp CMD_CSV
+        jp z,import_csv
         cp CMD_LIST
         jr nz,.not_list
         ld a,(mode)
@@ -1318,6 +1348,395 @@ command:
         ld c,DB_CLOSE
         call vdb
         jp VOS_EXIT
+
+; PRINT: the table in use, the fields' names and then every record, as
+; the list shows them; then a new page, and the list from its start
+; again (the table's cursor moved)
+print_table:
+        call have_table
+        ret c
+        call head_line
+        call pr_line
+        ret c
+        ld c,DB_FIRST
+        ld hl,rbuf
+        call vdb
+.rec:
+        jr c,.end                   ; no more
+        call row_line
+        call pr_line
+        jr c,.back
+        ld c,DB_NEXT
+        ld hl,rbuf
+        call vdb
+        jr .rec
+.end:
+        ld hl,form_feed
+        ld bc,1
+        call pr_send
+.back:
+        call fill_find_or_first
+        xor a
+        ld (sel),a
+        jp redraw
+
+; line, without the spaces at its end, and CR LF -> the printer; carry:
+; it is not ready (said)
+pr_line:
+        ld hl,line + COLS
+        ld b,COLS
+.trim:
+        dec hl
+        ld a,(hl)
+        cp " "
+        jr nz,.end
+        djnz .trim
+        dec hl                      ; all spaces: an empty line
+.end:
+        inc hl
+        ld (hl),13
+        inc hl
+        ld (hl),10
+        inc hl
+        ld de,line
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        ld hl,line
+pr_send:
+        ld e,0
+        ld a,VX_PRINT
+        call VOS_EXT
+        ret nc
+        call VOS_ERROR
+        scf
+        ret
+
+; ---------------------------------------------------------------------
+; IMPORT CSV
+; ---------------------------------------------------------------------
+import_csv:
+        call have_table
+        ret c
+        ld a,(db_file)
+        or VOS_CAT_EXT
+        ld hl,ext_csv
+        call VOS_CATALOG
+        jp c,VOS_ERROR
+        or a
+        jr nz,.pick
+        ld hl,dlg_no_files
+        jp VOS_DIALOG
+.pick:
+        ld (cat),hl
+        ld a,T_PICK_CSV
+        call VOS_FILE_PICK
+        ret c
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld de,(cat)
+        add hl,de
+        ld de,name_csv
+        ld bc,11
+        ldir
+        ld a,(db_file)
+        or VOS_DATA
+        ld hl,name_csv
+        ld de,CSV_DATA
+        call VOS_LOAD
+        jp c,VOS_ERROR
+        ld (cv_len),bc
+        ld hl,CSV_DATA              ; UTF-8 into the V-OS set
+        ld e,VOS_DATA
+        ld a,VX_UTF8
+        call VOS_EXT
+        ld (cv_len),bc
+        ld hl,0
+        ld (cv_at),hl
+        ld (cv_n),hl
+        call csv_sep
+        ld hl,0
+        ld (cv_at),hl
+        xor a
+        ld (cv_col),a
+        ld (cv_row),a
+        call rec_clear
+        call csv_records
+        push af
+        call fill_find_or_first     ; the list again, from its start
+        xor a
+        ld (sel),a
+        ld a,T_IMPORTED
+        ld (said),a
+        call redraw
+        pop af
+        ret nc
+        jp VOS_ERROR
+
+; the fields of the file, a record a line (DB_ADD) -> carry, A = error
+csv_records:
+.field:
+        ld de,input
+        ld b,0                      ; its characters
+        ld c,0                      ; 1: inside quotes
+.byte:
+        call csv_byte
+        jr c,.last
+        cp 26
+        jr z,.last
+        cp 13
+        jr z,.byte
+        cp 34
+        jr nz,.not_quote
+        ld a,c
+        or a
+        jr nz,.quoted
+        ld a,b
+        or a
+        jr nz,.char_q
+        inc c
+        jr .byte
+.quoted:
+        call csv_byte               ; "" a quote, else they end
+        jr c,.last
+        cp 34
+        jr z,.char_q
+        ld c,0
+        jr .plain
+.char_q:
+        ld a,34
+        jr .char
+.not_quote:
+        bit 0,c
+        jr nz,.char
+.plain:
+        cp 10
+        jr z,.row_end
+        ld hl,cv_sep
+        cp (hl)
+        jr z,.field_end
+.char:
+        ld l,a
+        ld a,b
+        cp TEXT_MAX
+        jr nc,.byte
+        ld a,l
+        ld (de),a
+        inc de
+        inc b
+        jr .byte
+.field_end:
+        call csv_field
+        ld hl,cv_col
+        inc (hl)
+        jr .field
+.row_end:
+        call csv_field
+        call csv_add
+        ret c
+        jr .field
+.last:
+        ld a,b
+        or a
+        jr nz,.one
+        ld a,(cv_col)               ; nothing on the last line
+        or a
+        ret z
+.one:
+        call csv_field
+        ; fall through
+; the record of the line, unless it is the heads -> carry, A = error
+csv_add:
+        xor a
+        ld (cv_col),a
+        ld hl,cv_row
+        ld a,(hl)
+        inc (hl)
+        or a
+        jr nz,.add
+        ld a,(cv_head)
+        or a
+        jr nz,.next
+.add:
+        ld c,DB_ADD
+        ld hl,frec
+        call vdb
+        ret c
+.next:
+        call rec_clear
+        or a
+        ret
+
+; input (B characters): the field cv_col of frec; on the first line,
+; the first field says whether it is the heads (cv_head)
+csv_field:
+        xor a
+        ld (de),a
+        ld a,(cv_col)
+        or a
+        jr nz,.not_first
+        ld a,(cv_row)
+        or a
+        jr nz,.not_first
+        call csv_heads
+.not_first:
+        ld a,(cv_col)
+        ld hl,info + DB_T_FIELDS
+        cp (hl)
+        ret nc                      ; more than the fields: left out
+        ld (fld),a
+        ld hl,f_off
+        call at_fld
+        ld e,(hl)
+        ld d,0
+        ld hl,frec
+        add hl,de
+        push hl
+        call fld_type
+        pop de
+        cp DB_NUMBER
+        jr z,.number
+        push de
+        call fld_len
+        pop de
+        ld c,a                      ; up to its length (spaces after)
+        ld hl,input
+.text:
+        ld a,(hl)
+        or a
+        ret z
+        ld (de),a
+        inc hl
+        inc de
+        dec c
+        jr nz,.text
+        ret
+.number:
+        push de
+        ld hl,input                 ; its digits only
+        ld de,num_buf
+        ld b,0
+.digit:
+        ld a,(hl)
+        inc hl
+        or a
+        jr z,.digits
+        cp "0"
+        jr c,.digit
+        cp "9" + 1
+        jr nc,.digit
+        ld c,a
+        ld a,b
+        cp 5
+        jr nc,.digit
+        ld a,c
+        ld (de),a
+        inc de
+        inc b
+        jr .digit
+.digits:
+        ld hl,num_buf
+        ld a,b
+        call parse                  ; -> DE (65535 if too big)
+        jr nc,.got
+        ld a,b                      ; none: 0
+        or a
+        jr nz,.got
+        ld de,0
+.got:
+        pop hl
+        ld (hl),e
+        inc hl
+        ld (hl),d
+        ret
+
+; input: the first field's name? -> cv_head
+csv_heads:
+        xor a
+        ld (cv_head),a
+        ld (fld),a
+        call fld_desc               ; -> HL -> its type, its name before
+        ld de,-FIELD_LEN
+        add hl,de
+        ld de,input
+        ld b,FIELD_LEN
+.char:
+        ld a,(hl)
+        cp " "
+        jr z,.end
+        ld c,a
+        ld a,(de)
+        or a
+        ret z
+        call upper
+        cp c
+        ret nz
+        inc hl
+        inc de
+        djnz .char
+.end:
+        ld a,1
+        ld (cv_head),a
+        ret
+
+; A -> a capital, if a small Latin letter
+upper:
+        cp "a"
+        ret c
+        cp "z" + 1
+        ret nc
+        sub 32
+        ret
+
+; -> A = the next byte of the file (data bank); carry at its end.
+; Keeps BC, DE
+csv_byte:
+        push bc
+        push de
+        ld hl,(cv_at)
+        ld de,(cv_len)
+        or a
+        sbc hl,de
+        jr nc,.end
+        ld hl,(cv_at)
+        ld de,CSV_DATA
+        add hl,de
+        ld de,cv_one
+        ld bc,1
+        call VOS_BANK_GET
+        ld hl,(cv_at)
+        inc hl
+        ld (cv_at),hl
+        ld a,(cv_one)
+        or a
+        jr .back
+.end:
+        scf
+.back:
+        pop de
+        pop bc
+        ret
+
+; cv_sep: ";" if the first line has one before any ",", else ","
+csv_sep:
+        ld a,","
+        ld (cv_sep),a
+.byte:
+        call csv_byte
+        ret c
+        cp 10
+        ret z
+        cp ","
+        ret z
+        cp ";"
+        jr nz,.byte
+        ld (cv_sep),a
+        ret
 
 ; NEW DATABASE: its name, DB_CREATE, then its first table
 new_db:
@@ -1707,7 +2126,7 @@ palette:        db 0, 26, 1, 24, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16
                 db 1
 bar:            db 3
                 dw menu, 0, 0
-menu:           db T_MENU, 13
+menu:           db T_MENU, 15
                 db T_NEW_DB, CMD_NEW_DB, "N", 0
                 db T_OPEN_DB, CMD_OPEN_DB, "O", 0
                 db T_NEW_TABLE, CMD_NEW_TABLE, "T", 0
@@ -1718,6 +2137,8 @@ menu:           db T_MENU, 13
                 db T_LIST, CMD_LIST, "B", 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_DRIVE, CMD_DRIVE, "W", 0
+                db T_PRINT, CMD_PRINT, "P", 0
+                db T_CSV, CMD_CSV, 0, 0
                 db T_ABOUT, CMD_ABOUT, 0, 0
                 db VOS_SEPARATOR, 0, 0, 0
                 db T_BACK, CMD_BACK, "Q", 0
@@ -1729,6 +2150,17 @@ dlg_not_num:    db T_MENU, T_NOT_NUM, 1, VM_OK
 dlg_len:        db T_MENU, T_LEN_T, 1, VM_OK
 dlg_no_files:   db T_MENU, T_NO_FILES, 1, VM_OK
 ext_vdb:        db "VDB"
+ext_csv:        db "CSV"
+name_csv:       ds 11
+cv_len:         dw 0                ; IMPORT CSV: its bytes, the next one,
+cv_at:          dw 0
+cv_n:           dw 0
+cv_one:         db 0
+cv_sep:         db ","              ; the separator,
+cv_col:         db 0                ; the field and the line,
+cv_row:         db 0
+cv_head:        db 0                ; 1: the first line is the heads
+form_feed:      db 12
 
         include "api/vos_drive.inc"
         include "app_texts.asm"     ; texts, from texts.txt
@@ -1760,7 +2192,7 @@ rlen:           db 0
 name_buf:       ds 8
 num_buf:        ds 6
 input:          ds TEXT_MAX + 2
-line:           ds COLS + 1
+line:           ds COLS + 2         ; (and CR LF to print)
 lbuf:           ds COLS + 1
 tdef:           ds 10 + 10 * 10
 frec:           ds REC_MAX

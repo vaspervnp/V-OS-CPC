@@ -7,6 +7,11 @@ SAVE        | SAVE                  | ΑΠΟΘΗΚΕΥΣΗ
 SAVE_AS     | SAVE AS...            | ΑΠΟΘΗΚΕΥΣΗ ΩΣ...
 DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
 PAGE        | PAGE (MODE 2)         | ΣΕΛΙΔΑ (MODE 2)
+PRINT       | PRINT                 | ΕΚΤΥΠΩΣΗ
+CHART       | CHART...              | ΓΡΑΦΗΜΑ...
+RANGE_T     | CHART OF (B2:B9)      | ΓΡΑΦΗΜΑ ΤΟΥ (B2:B9)
+CSV         | OPEN CSV...           | ΑΝΟΙΓΜΑ CSV...
+CHART_KEYS  | ^S .SCR  ESC BACK     | ^S .SCR  ESC ΠΙΣΩ
 ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
 ABOUT_TEXT  | SHEET|NUMBERS, TEXT, FORMULAS|WITH CALC.SYS|(VX_CALC), FROM THE SDK | ΦΥΛΛΟ|ΑΡΙΘΜΟΙ, ΚΕΙΜΕΝΟ, ΤΥΠΟΙ|ΜΕ ΤΟ CALC.SYS|(VX_CALC), ΑΠΟ ΤΟ SDK
 BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
