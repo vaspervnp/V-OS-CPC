@@ -562,7 +562,7 @@ bg_find:
         ld l,0
         ld (cur_base),hl
         or a
-        ret
+        jr .windows
 .skip:
         ld a,(bg_id)
         jr .next
@@ -576,6 +576,13 @@ bg_find:
         ldir
 .none:
         scf
+.windows:
+        push af                     ; one in an uncovered window draws
+        ld a,(wm_on)                ; there (wm/wm.asm: wm_bg)
+        dec a
+        ld hl,wm_bg
+        call z,wm_call
+        pop af
         ret
 
 ; the API table kept in bg_api, then quiet but for bg_open (keeps DE)

@@ -39,6 +39,18 @@ C_TIME          equ #4324           ; the M4 board (spinpoint.org/cpc/
 init:
         and 1
         ld (accessory),a
+        ld hl,win
+        ld (hl),0
+        jr nz,.texts
+        ld a,VX_WINDOW              ; the program: in a window, if there
+        ld hl,wsize                 ; are windows (first, each time)
+        call VOS_EXT
+        ld a,0
+        jr c,.window
+        inc a
+.window:
+        ld (win),a
+.texts:
         ld hl,texts
         call VOS_TEXTS
         ld a,1
@@ -47,10 +59,16 @@ init:
         ld a,(accessory)
         or a
         jr nz,redraw
+        ld a,(win)                  ; in a window: it ticks behind the
+        call VOS_BACKGROUND         ; others too
+        ld a,(win)
+        or a
+        jr nz,.bar
         ld a,1
         call VOS_MODE
         ld hl,palette
         call VOS_PALETTE
+.bar:
         call VOS_MENU_VIEW          ; the bar: ours, then the shared ones
         ld (bar + 3),hl
         call VOS_MENU_HELP
@@ -103,6 +121,30 @@ redraw:
         ld a,1
         ld c,0
         call VOS_COLOURS
+        ld a,(win)
+        or a
+        jr z,.screen
+        call middle                 ; a window: the date (or "since")
+        sub 20                      ; above the time, in its middle
+        ld e,a
+        ld d,0
+        ld a,(m4_on)
+        or a
+        jr z,.win_since
+        ld bc,date_text
+        ld hl,80
+        call centre
+        call VOS_PRINT
+        jr time
+.win_since:
+        ld a,T_SINCE
+        call VOS_MSG
+        ld b,h
+        ld c,l
+        ld hl,0
+        call VOS_PRINT
+        jr time
+.screen:
         ld a,T_CLOCK
         ld hl,168
         ld de,TIME_Y - 40
@@ -194,9 +236,42 @@ time:
         call add_de
         jp VOS_PRINT
 .program:
+        ld a,(win)
+        or a
+        jr nz,.window
         ld hl,160
         ld de,TIME_Y
         jp VOS_PRINT
+.window:
+        push bc
+        call middle
+        ld e,a
+        ld d,0
+        ld hl,64
+        call centre
+        pop bc
+        jp VOS_PRINT
+
+; -> A = the middle of the window's height
+middle:
+        ld a,(wsize + 2)
+        srl a
+        ret
+
+; HL = a width -> HL = x that centres it in the window (keeps DE, BC)
+centre:
+        push de
+        ex de,hl
+        ld hl,(wsize)
+        or a
+        sbc hl,de
+        jr nc,.half
+        ld hl,0
+.half:
+        srl h
+        rr l
+        pop de
+        ret
 
 ; C_TIME -> m4_on, base (the seconds of the day), f0 (the frames then)
 ; and date_text; no M4 board, or not its answer: m4_on 0
@@ -424,6 +499,9 @@ menu:           db T_CLOCK, 1
         include "clock_texts.asm"   ; T_*, texts, from apps/clock/texts.txt
 
 accessory:      db 0
+win:            db 0                ; 1: in a window (VX_WINDOW)
+wsize:          dw 176, 56          ; its inside (VX_WINDOW writes its
+                                    ; size now, after a resize too)
 last:           db 0                ; the seconds drawn (low byte)
 wx:             dw 8                ; the accessory's window
 wy:             dw 16

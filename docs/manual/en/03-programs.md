@@ -36,6 +36,15 @@ In Studio you choose this for your program with STUDIO > IN BACKGROUND.
 
 MUSIC is the exception: its song plays from the interrupt, 50 times a second, so it goes on evenly behind everything. It stops only for a moment while the disc is read.
 
+## Windows
+
+With a **memory expansion**, CLOCK and SYSINFO open in a **window** on the desk, over the windows of the other programs that are running. V-OS's other programs still open full screen.
+
+- The menu bar stays at the top and is the bar of the window **in front**. A click on another window brings it to the front, with its bar.
+- Drag a window's **title** to move it, and its **bottom right corner** to change its size. The program lays out what it shows for the new size.
+- The **+** in the title, or **F7**, gives the program the whole screen (under the bar), and back to a window. **X** closes the program.
+- The clock **keeps ticking** while another window is in front, as long as none covers it.
+
 ## The desk accessory (ACCESSORY)
 
 A small program, such as CLOCK, can open in a window **on top of anything**: a view or a program.

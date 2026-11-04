@@ -34,6 +34,8 @@ R_W             equ 8               ; the inside
 R_H             equ 10
 R_NAME          equ 12              ; 12: drive, name (as app_self)
 F_FULL          equ 1
+WM_MIN_W        equ 64              ; the smallest inside
+WM_MIN_H        equ 24
 
 ; ---------------------------------------------------------------------
 ; VX_WINDOW: vw_buf = dw w, h. The program that called (app_slot,
@@ -46,6 +48,8 @@ wm_window:
         pop ix
         ret
 .go:
+        ld hl,(vw_x)                ; its w, h (kernel/api.asm: xa_window)
+        ld (wm_ret),hl
         ld a,(wm_painting)          ; drawn again from behind: its view
         or a
         jr z,.front
@@ -59,16 +63,19 @@ wm_window:
         ret c
         jr .top
 .found:
+        call wm_is_top              ; another was in front (F6): what it
+        jr z,.raise                 ; covered is drawn again too
+        ld a,1
+        ld (wm_need),a
+.raise:
         call wm_raise
 .top:
         call wm_top
         bit 0,(ix + R_FLAGS)
         jr z,.window
-        ld a,2                      ; full screen: no view, no frame
-        ld (wm_on),a
-        xor a
-        ld (vw_on),a
-        ret
+        ld a,2                      ; full screen: under the bar, no
+        ld (wm_on),a                ; frame
+        jp wm_view
 .window:
         ld a,1
         ld (wm_on),a
@@ -78,7 +85,8 @@ wm_window:
         or (hl)
         ld (hl),0
         jr z,.frames
-        call wm_save                ; no: the desk and those behind
+        call wm_mode                ; no: mode 1, the desk and those
+        call wm_save                ; behind
         call wm_desk
         call wm_behind
         call wm_restore
@@ -97,8 +105,22 @@ wm_window:
         ld a,1
         call wm_frame
         ; fall through
-; IX = a record: the view on its inside -> carry clear
+; IX = a record: the view on its inside, and its w, h written back to
+; the program (at wm_ret in its bank, vw_cfg) -> carry clear. Full
+; screen (F_FULL): the screen under the bar
 wm_view:
+        bit 0,(ix + R_FLAGS)
+        jr z,.window
+        ld hl,0
+        ld (vw_buf),hl
+        ld l,UI_BAR_H
+        ld (vw_buf + 2),hl
+        ld hl,(gfx_width)
+        ld (vw_buf + 4),hl
+        ld hl,GFX_H - UI_BAR_H
+        ld (vw_buf + 6),hl
+        jr .set
+.window:
         ld l,(ix + R_Y)
         ld h,(ix + R_Y + 1)
         ld de,WT
@@ -115,9 +137,22 @@ wm_view:
         ld de,WB
         add hl,de
         ld (vw_buf),hl
+.set:
+        ld hl,(vw_buf + 4)          ; w, h for the program (vw_buf: not
+        ld (vw_buf + 8),hl          ; in the bank window, for bank_put)
+        ld hl,(vw_buf + 6)
+        ld (vw_buf + 10),hl
         ld a,1
         ld (vw_a),a
         call vw_set
+        ld a,(wm_quiet)
+        or a
+        ret nz
+        ld hl,vw_buf + 8
+        ld de,(wm_ret)
+        ld bc,4
+        ld a,(vw_cfg)
+        call bank_put
         or a
         ret
 
@@ -144,9 +179,6 @@ wm_event:
         or a
         ret
 .pointer:
-        ld a,(wm_on)
-        dec a
-        jr nz,.no                   ; full screen: as it is
         ld a,(ev_cur)
         cp EV_PTR_MOVE
         jr c,.no
@@ -160,6 +192,12 @@ wm_event:
         or a
         sbc hl,de
         jr c,.no
+        ld a,(wm_on)                ; full screen: y from under the bar
+        dec a
+        jr z,.window
+        ld (ev_cur + 6),hl
+        ret
+.window:
         call wm_top                 ; in the window in front: from it
         call wm_inside
         jr c,.outside
@@ -175,6 +213,17 @@ wm_event:
         jr c,.taken
         call wm_is_top
         jr nz,.other
+        call wm_right               ; its corner, 8 x 8 at the bottom
+        ld de,8                     ; right: resized
+        add hl,de
+        jr nc,.title
+        call wm_below
+        ld de,8
+        add hl,de
+        jr nc,.title
+        call wm_resize
+        jr .taken
+.title:
         ld hl,(ev_cur + 6)          ; its title line?
         ld e,(ix + R_Y)
         ld d,(ix + R_Y + 1)
@@ -216,6 +265,22 @@ wm_right:
         add hl,de
         ex de,hl
         ld hl,(ev_cur + 4)
+        or a
+        sbc hl,de
+        ret
+
+; IX = a record -> HL = ev_cur's y - the bottom of its frame (+1),
+; negative inside it
+wm_below:
+        ld l,(ix + R_Y)
+        ld h,(ix + R_Y + 1)
+        ld e,(ix + R_H)
+        ld d,0
+        add hl,de
+        ld de,WT + WB
+        add hl,de
+        ex de,hl
+        ld hl,(ev_cur + 6)
         or a
         sbc hl,de
         ret
@@ -324,7 +389,119 @@ wm_drag:
         ld (ix + R_X + 1),h
         ld (ix + R_Y),e
         ld (ix + R_Y + 1),d
-        ; fall through
+        jp wm_redraw_all
+
+; IX = the window in front: its corner dragged (an outline, as
+; VOS_DRAG's) -> its new size, all drawn again; its program gets it
+; from VX_WINDOW (init with A = 2). The inside: w a multiple of 8, at
+; least WM_MIN_W x WM_MIN_H, on the screen
+wm_resize:
+        ld l,(ix + R_X)
+        ld h,(ix + R_X + 1)
+        ld (dr_nx),hl
+        ld l,(ix + R_Y)
+        ld h,(ix + R_Y + 1)
+        ld (dr_ny),hl
+        call wm_dims
+        ld (dr_w),bc
+        ld (dr_h),a
+        call wm_outline
+.frame:
+        call ptr_update
+        call wait_frame
+.event:
+        call ev_get
+        jr z,.frame
+        cp EV_PTR_UP
+        jr z,.to
+        cp EV_PTR_MOVE
+        jr nz,.event
+.to:
+        push af
+        call wm_outline             ; away
+        ld hl,(ev_cur + 4)          ; w = x - the inside's left, in 8s
+        ld e,(ix + R_X)
+        ld d,(ix + R_X + 1)
+        or a
+        sbc hl,de
+        jr nc,.w
+        ld hl,0
+.w:
+        ld a,l
+        and %11111000
+        ld l,a
+        ld de,WM_MIN_W
+        call wm_larger
+        push hl                     ; at most to the screen's right
+        ld hl,(gfx_width)
+        ld e,(ix + R_X)
+        ld d,(ix + R_X + 1)
+        or a
+        sbc hl,de
+        ld de,2 * WB
+        sbc hl,de
+        ld a,l
+        and %11111000
+        ld l,a
+        ex de,hl
+        pop hl
+        call wm_min
+        ld (wm_nw),hl
+        ld de,2 * WB
+        add hl,de
+        ld (dr_w),hl
+        ld hl,(ev_cur + 6)          ; h = y - the inside's top
+        ld e,(ix + R_Y)
+        ld d,(ix + R_Y + 1)
+        or a
+        sbc hl,de
+        ld de,WT
+        sbc hl,de
+        jr nc,.h
+        ld hl,0
+.h:
+        ld de,WM_MIN_H
+        call wm_larger
+        push hl                     ; at most to the screen's bottom
+        ld hl,GFX_H - WT - WB
+        ld e,(ix + R_Y)
+        ld d,(ix + R_Y + 1)
+        or a
+        sbc hl,de
+        ex de,hl
+        pop hl
+        call wm_min
+        ld (wm_nh),hl
+        ld a,l
+        add a,WT + WB
+        ld (dr_h),a
+        call wm_outline
+        pop af
+        cp EV_PTR_UP
+        jp nz,.event
+        call wm_outline             ; away, and the new size
+        ld hl,(wm_nw)
+        ld (ix + R_W),l
+        ld (ix + R_W + 1),h
+        ld a,(wm_nh)
+        ld (ix + R_H),a
+        jr wm_redraw_all
+
+; the outline at dr_nx, dr_ny, dr_w, dr_h (XOR: again takes it away)
+wm_outline:
+        ld hl,drag_outline
+        jp ext2_call
+
+; HL = the larger of HL and DE
+wm_larger:
+        push hl
+        or a
+        sbc hl,de
+        pop hl
+        ret nc
+        ex de,hl
+        ret
+
 ; the desk and every window again, the one in front last: its init
 ; draws its bar too (the state of the one in front kept and put back)
 wm_redraw_all:
@@ -348,7 +525,17 @@ wm_redraw_all:
         ld hl,wm_n
         cp (hl)
         jr c,.rec
-        jp wm_restore
+        call wm_restore
+        call wm_top                 ; its view where it is now (moved,
+        ; fall through              ; resized)
+; IX = a record: its view, its w, h not written back
+wm_view_quiet:
+        ld a,1
+        ld (wm_quiet),a
+        call wm_view
+        xor a
+        ld (wm_quiet),a
+        ret
 
 ; IX = the window in front: full screen, or a window again; its program
 ; goes on so (VX_WINDOW sees F_FULL)
@@ -393,6 +580,17 @@ wm_wake:
 ; Drawing
 ; ---------------------------------------------------------------------
 
+; mode 1 and the Desktop's colours (a program may have come from the
+; Launcher's mode 0, or set a palette of its own full screen)
+wm_mode:
+        ld a,1
+        call ui_set_mode
+        ld hl,palette_mode1
+        call ga_set_palette
+        ld a,2                      ; the pointer's outline pen
+        ld (ptr_pen_out),a
+        jp ptr_clamp
+
 ; the desk under the menu bar
 wm_desk:
         ld a,UIP_DESK
@@ -432,10 +630,14 @@ wm_one:
         ld (wm_cur),ix
         ld a,1
         ld (wm_painting),a
+        ld hl,(wm_ret)              ; (its VX_WINDOW sets its own)
+        push hl
         ld a,2
         push ix
         call prog_call
         pop ix
+        pop hl
+        ld (wm_ret),hl
         xor a
         ld (wm_painting),a
         ret
@@ -872,6 +1074,185 @@ wm_restore:
         ldir
         ret
 
+; ---------------------------------------------------------------------
+; wm_bg: kernel/ext.asm (bg_find) chose the next program that goes on
+; in the background (bg_id), or found no more (the API as it was), the
+; program in front in a window (wm_on 1). If that one has a window that
+; no window in front of it covers, it draws there: its view, and its
+; drawing calls (VOS_CLS ... VOS_CHAR, VOS_BLIT) not quiet; the view
+; and the text colours of the one in front put back after it.
+; ---------------------------------------------------------------------
+BG_OPEN         equ 8               ; VOS_CLS, VOS_PLOT, VOS_RECT,
+BG_OPEN_N       equ 6               ; VOS_COLOURS, VOS_PRINT, VOS_CHAR
+BG_BLIT         equ 32              ; and VOS_BLIT
+WM_BG_VW        equ vw_y1 + 2 - vw_on
+        assert (VOS_CLS - VOS_API) / 3 == BG_OPEN
+        assert (VOS_CHAR - VOS_API) / 3 == BG_OPEN + BG_OPEN_N - 1
+        assert (VOS_BLIT - VOS_API) / 3 == BG_BLIT
+wm_bg:
+        push ix
+        call .go
+        pop ix
+        ret
+.go:
+        ld a,(wm_bg_on)             ; the last one's: shut
+        or a
+        call nz,wm_bg_shut
+        call wm_hushed              ; none left: the API is as it was
+        ret nz
+        ld a,(ui_open)              ; a menu or the accessory over them
+        cp UI_NONE
+        ret nz
+        ld a,(acc_open)
+        or a
+        ret nz
+        ld a,(wm_n)                 ; its window, behind the one in front
+        dec a
+        ret z
+.rec:
+        dec a
+        ld (wm_i),a
+        call wm_ptr
+        ld a,(bg_id)
+        cp (ix + R_SLOT)
+        jr z,.found
+        ld a,(wm_i)
+        or a
+        ret z
+        jr .rec
+.found:
+        call wm_rect                ; covered by one in front of it?
+        ld hl,wm_r
+        ld de,wm_r2
+        ld bc,8
+        ldir
+        ld a,(wm_i)
+.over:
+        inc a
+        ld hl,wm_n
+        cp (hl)
+        jr nc,.open
+        push af
+        call wm_ptr
+        call wm_rect
+        call wm_overlap
+        pop bc
+        ret c
+        ld a,b
+        jr .over
+.open:
+        ld a,(wm_i)                 ; open: its view, its calls
+        call wm_ptr
+        ld hl,vw_on                 ; the front one's view and colours
+        ld de,wm_bg_view
+        ld bc,WM_BG_VW
+        ldir
+        ld hl,txt_fg
+        ld de,wm_bg_txt
+        ld bc,9
+        ldir
+        call wm_view_quiet
+        ld hl,bg_api + 3 * BG_OPEN
+        ld de,VOS_API + 3 * BG_OPEN
+        ld bc,3 * BG_OPEN_N
+        ldir
+        ld hl,bg_api + 3 * BG_BLIT
+        ld de,VOS_API + 3 * BG_BLIT
+        ld bc,3
+        ldir
+        ld a,1
+        ld (wm_bg_on),a
+        ret
+
+; the one in front's view and colours back; the calls quiet again
+; (unless the API is all back)
+wm_bg_shut:
+        xor a
+        ld (wm_bg_on),a
+        ld hl,wm_bg_view
+        ld de,vw_on
+        ld bc,WM_BG_VW
+        ldir
+        ld hl,wm_bg_txt
+        ld de,txt_fg
+        ld bc,9
+        ldir
+        call wm_hushed
+        ret nz
+        ld hl,VOS_API + 3 * BG_OPEN + 1
+        ld b,BG_OPEN_N
+.call:
+        ld (hl),api_quiet & #FF
+        inc hl
+        ld (hl),api_quiet >> 8
+        inc hl
+        inc hl
+        djnz .call
+        ld hl,VOS_API + 3 * BG_BLIT + 1
+        ld (hl),api_quiet & #FF
+        inc hl
+        ld (hl),api_quiet >> 8
+        ret
+
+; -> Z: the API is quiet (a program behind is the kernel's); NZ: it is
+; as it was (bg_find found no more and put it back)
+wm_hushed:
+        ld hl,(VOS_API + 1)         ; VOS_EXIT: always quiet there
+        ld de,api_quiet
+        or a
+        sbc hl,de
+        ret
+
+; IX = a record -> wm_r: its frame's x0, y0, x1, y1 (x1, y1 past it)
+wm_rect:
+        ld l,(ix + R_X)
+        ld h,(ix + R_X + 1)
+        ld (wm_r),hl
+        call wm_dims                ; BC = w, A = h of the frame
+        ld l,(ix + R_X)
+        ld h,(ix + R_X + 1)
+        add hl,bc
+        ld (wm_r + 4),hl
+        ld l,(ix + R_Y)
+        ld h,(ix + R_Y + 1)
+        ld (wm_r + 2),hl
+        ld e,a
+        ld d,0
+        add hl,de
+        ld (wm_r + 6),hl
+        ret
+
+; wm_r and wm_r2 -> carry: they overlap (each starts before the other
+; ends, across and down)
+wm_overlap:
+        push iy
+        ld ix,wm_r
+        ld iy,wm_r2
+        call .axis
+        call c,.down
+        pop iy
+        ret
+.down:
+        inc ix
+        inc ix
+        inc iy
+        inc iy
+.axis:
+        ld l,(ix + 0)               ; r.x0 < r2.x1
+        ld h,(ix + 1)
+        ld e,(iy + 4)
+        ld d,(iy + 5)
+        or a
+        sbc hl,de
+        ret nc
+        ld l,(iy + 0)               ; r2.x0 < r.x1
+        ld h,(iy + 1)
+        ld e,(ix + 4)
+        ld d,(ix + 5)
+        or a
+        sbc hl,de
+        ret
+
 ; ---- data ------------------------------------------------------------
 wm_plus:        db "+", 0
 wm_x:           db "X", 0
@@ -883,6 +1264,15 @@ wm_act:         db 0
 wm_i:           db 0
 wm_wh:          ds 4
 wm_cur:         dw 0
+wm_nw:          dw 0                ; a new size (wm_resize)
+wm_nh:          dw 0
+wm_ret:         dw 0
+wm_bg_on:       db 0                ; 1: one behind draws (wm_bg)
+wm_bg_view:       ds WM_BG_VW         ; the front one's vw_on ... vw_y1
+wm_quiet:       db 0                ; 1: wm_view writes no w, h back
+wm_bg_txt:      ds 9                ; its txt_fg ... txt_style
+wm_r:           ds 8
+wm_r2:          ds 8                ; where the program wants its w, h
 wm_text:        ds 9
 wm_ctx:         ds 25
 wm_tmp:         ds WM_REC

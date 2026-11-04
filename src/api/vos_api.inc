@@ -105,7 +105,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 34              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 35              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -124,7 +124,8 @@ VOS_API_VERSION equ 34              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 29: VX_DRIVE, folders in the file
                                     ; list, 30: VX_PRINT, 31: its pages,
                                     ; 32: VX_M4 HL = 0, 33: VX_VIEW,
-                                    ; 34: VX_WINDOW
+                                    ; 34: VX_WINDOW, 35: VX_WINDOW
+                                    ; writes the size back
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -333,10 +334,17 @@ VX_WINDOW       equ 16                  ; (34) HL -> dw w, h: the program
                                         ; it full screen and back; a click
                                         ; on another brings that one to the
                                         ; front, and the menu bar is the
-                                        ; front one's. Mode 1, the theme's
-                                        ; colours: no VOS_PALETTE, no
-                                        ; widgets yet. Carry: no RAM
-                                        ; expansion or no WM.SYS on A:
+                                        ; front one's; its corner resizes
+                                        ; it. (35) The size it has now is
+                                        ; written back at HL (full screen:
+                                        ; the screen under the bar), so
+                                        ; init lays it out for that. With
+                                        ; VOS_BACKGROUND it draws behind
+                                        ; the others while none covers it.
+                                        ; Mode 1, the theme's colours: no
+                                        ; VOS_PALETTE, no widgets yet.
+                                        ; Carry: no RAM expansion or no
+                                        ; WM.SYS on A:
 VX_COUNT        equ 17
 
 ; Databases (version 22): VOS_EXT with A = VX_DB, C = one of these. One

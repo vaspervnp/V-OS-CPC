@@ -17,6 +17,7 @@ API = 0x0108
 CALLS = 43
 FRAMES, PRINT, MSG, EXT = 2, 12, 14, 42
 VX_M4 = 4
+VX_WINDOW = 16                                  # no windows here: carry
 C_TIME = 0x4324
 VE_FRAME = 8
 
@@ -64,6 +65,8 @@ class Clock:
                 self.screen[m.de] = s.decode('latin-1')
             elif n == MSG:
                 m.hl = 0x9000
+            elif n == EXT and m.a == VX_WINDOW:
+                m.f |= 1
             elif n == EXT and m.a == VX_M4:
                 cmd = m.memory[m.hl + 1] | m.memory[m.hl + 2] << 8
                 assert cmd == C_TIME, hex(cmd)

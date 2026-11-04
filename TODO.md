@@ -33,7 +33,7 @@ front window's.
 
 1. **Origin and clip** for programs' drawing, `VX_VIEW` (M73, done: version 0.44).
 2. **Windows** in `WM.SYS`: frames, moving, the front one and its bar, full screen, `VX_WINDOW` (M74, done: version 0.45).
-3. **Programs in windows**: resizing, their size, what is uncovered drawn again; CLOCK, CALC, SYSINFO (M75).
-4. **DIARY, TELNET, WEBGET, DATABASE** in windows (M76).
+3. **Programs in windows**: resizing, their size, drawing behind while uncovered; CLOCK, SYSINFO (M75, done: version 0.46).
+4. **Widgets in windows** and CALC; **DIARY, TELNET, WEBGET, DATABASE** in windows (M76).
 5. **NOTEPAD, SHEET, READER, MARKDOWN** in windows, resized (M77).
 6. **Copies in banks**: windows moved without drawing again; the Desktop's files window as a window (M78).

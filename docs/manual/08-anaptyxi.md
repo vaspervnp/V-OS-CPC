@@ -123,6 +123,7 @@
 | `test-utf8` | ο κώδικας του `VX_UTF8` σε εξομοιωτή Z80, απέναντι στο `tools/voscs.py` |
 | `test-view` | `VX_VIEW`: το VIEWT (`apps/viewt`) σχεδιάζει μέσα από μια όψη 160 × 96, ελεγμένη pixel προς pixel (`tools/view_check.py`): η όψη γεμάτη, ένα ορθογώνιο κομμένο, 19 από τους 20 χαρακτήρες, το τελευταίο pixel, μια εικόνα μέσα και μία έξω· με 128K: NO EXPANSION |
 | `test-wm` | `VX_WINDOW` και `WM.SYS` (576K): το WINA και το WINB (`apps/wint`) σε παράθυρα· επτά στιγμιότυπα ελεγμένα (`tools/wm_check.py`): το ένα μπροστά από το άλλο, μπροστά με κλικ και η μπάρα του, ένα κλικ μέσα του από τη γωνία του, μετακινημένο από τον τίτλο, πλήρης οθόνη με F7 και πίσω, κλεισμένο με το X ως τη Commander |
+| `test-wm-apps` | το ΡΟΛΟΙ, το SYSINFO και το WINA σε παράθυρα μαζί (576K)· πέντε στιγμιότυπα ελεγμένα (`tools/wm_apps_check.py`): τα τρία το ένα πάνω στο άλλο, το ΡΟΛΟΙ μπροστά με κλικ και μετακινημένο, το SYSINFO μπροστά και το ΡΟΛΟΙ να χτυπά από πίσω, ακάλυπτο, το SYSINFO μικρότερο από τη γωνία του |
 | `test-styles` | το STYLES.VBN (`blocks/examples/styles.vbt`) από τον Commander: απλά, έντονα, πλάγια, υπογραμμισμένα και όλα μαζί, με το block ΣΤΥΛ |
 | `test-music-block` | με 576K: το TUNE.VBN (`blocks/examples/tune.vbt`) ξεκινά το MUSIC (από το B:) πίσω του με το AGANAMEM.MUS· το F6 δείχνει «> TUNE» και MUSIC, και το RETURN φέρνει μπροστά το MUSIC: A:AGANAMEM, ΠΑΙΖΕΙ. Με `MBLOCK_RAM=128`: «ΚΛΕΙΣΤΕ ΠΡΩΤΑ ΑΛΛΟ ΠΡΟΓΡΑΜΜΑ» |
 | `test-amsdos`, `test-reboot`, `test-system` | τα αρχεία του V-OS στη BASIC, επανεκκίνηση, δισκέτα SYSTEM |

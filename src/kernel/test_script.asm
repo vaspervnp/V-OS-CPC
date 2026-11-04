@@ -322,6 +322,58 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 53
+; make test-wm-apps (-DTEST_SCRIPT=53, 576K): WM.SYS; CLOCK.BIN,
+; SYSINFO.BIN and WINA.BIN last on A:. Expected:
+;   frame  300  F3, DOWN held, 900 and 950 UP, 1000 RETURN -> CLOCK in a
+;               window at (16, 20), 176 x 56
+;   frame 1400  F3, DOWN held, 2000 UP, 2050 RETURN -> SYSINFO in a
+;               window at (40, 36), 248 x 104, over CLOCK
+;   frame 2500  F3, DOWN held, 3100 RETURN -> WINA at (64, 52), over both
+;   frame 3620  a click at (24, 60), on CLOCK -> CLOCK in front
+;   frame 4520  COPY held on CLOCK's title (60, 24), DOWN held -> CLOCK
+;               moved down, where no window covers it
+;   frame 5520  a click at (50, 120), on SYSINFO -> SYSINFO in front;
+;               CLOCK behind it, uncovered, ticks on (VOS_BACKGROUND)
+;   frame 7520  COPY held on SYSINFO's corner (292, 150), UP and LEFT
+;               held -> SYSINFO smaller, its facts laid out again
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db 255, 0, %00000100   ; DOWN, held
+        dw  655 : db 195, 0, %00000100
+        dw  900 : db   4, 0, %00000001   ; UP
+        dw  950 : db   4, 0, %00000001   ; UP: CLOCK
+        dw 1000 : db   4, 2, %00000100   ; RETURN
+        dw 1400 : db   4, 0, %00100000   ; F3
+        dw 1500 : db 255, 0, %00000100   ; DOWN, held
+        dw 1755 : db 195, 0, %00000100
+        dw 2000 : db   4, 0, %00000001   ; UP: SYSINFO
+        dw 2050 : db   4, 2, %00000100   ; RETURN
+        dw 2500 : db   4, 0, %00100000   ; F3
+        dw 2600 : db 255, 0, %00000100   ; DOWN, held
+        dw 2855 : db 195, 0, %00000100
+        dw 3100 : db   4, 2, %00000100   ; RETURN: WINA
+        dw 3590 : db   1, #80, 1         ; COPY is the left button
+        dw 3600 : db   5, #81, 12        ; (24, 60)
+        dw 3600 : db   5, #82, 60
+        dw 3620 : db   4, 1, %00000010   ; COPY
+        dw 4490 : db 150, #80, 1         ; held while it drags
+        dw 4500 : db   5, #81, 30        ; (60, 24)
+        dw 4500 : db   5, #82, 24
+        dw 4520 : db 100, 1, %00000010   ; COPY held
+        dw 4530 : db  50, 0, %00000100   ; DOWN
+        dw 5490 : db   1, #80, 1
+        dw 5500 : db   5, #81, 25        ; (50, 120)
+        dw 5500 : db   5, #82, 120
+        dw 5520 : db   4, 1, %00000010   ; COPY
+        dw 7490 : db 150, #80, 1
+        dw 7500 : db   5, #81, 146       ; (292, 150)
+        dw 7500 : db   5, #82, 150
+        dw 7520 : db 100, 1, %00000010   ; COPY held
+        dw 7530 : db  30, 0, %00000001   ; UP
+        dw 7530 : db  40, 1, %00000001   ; LEFT
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 52
 ; make test-wm (-DTEST_SCRIPT=52, 576K): WM.SYS, and WINA.BIN, WINB.BIN
 ; (apps/wint) last on A:. COPY is the left button again after each
@@ -357,7 +409,7 @@ test_keys:
         dw 2700 : db   5, #81, 50        ; (100, 70)
         dw 2700 : db   5, #82, 70
         dw 2710 : db   4, 1, %00000010   ; COPY
-        dw 3590 : db   1, #80, 1
+        dw 3590 : db 120, #80, 1         ; held while it drags
         dw 3600 : db   5, #81, 30        ; (60, 24)
         dw 3600 : db   5, #82, 24
         dw 3610 : db  80, 1, %00000010   ; COPY held
@@ -2347,6 +2399,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

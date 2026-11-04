@@ -99,7 +99,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-wm test-view test-diary-cap test-keep test-telnet-m4 test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-wm test-wm-apps test-view test-diary-cap test-keep test-telnet-m4 test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -1313,6 +1313,28 @@ test-wm: $(WM_DSK)
 	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_TIMEOUT=120 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
 	done
 	$(PYTHON) tools/wm_check.py $(foreach d,$(WM_SHOTS),$(BUILD)/shots/$(d)/*.png)
+
+# Programs of V-OS in windows (TEST_SCRIPT=53, 576K): CLOCK, SYSINFO and
+# WINA on the desk at once; CLOCK ticks behind, uncovered; SYSINFO
+# resized. tools/wm_apps_check.py checks the shots
+WM_APPS_DSK := $(BUILD)/vos_wm_apps.dsk
+WM_APPS_SHOTS ?= 900 1100 1500 1900 2500
+$(WM_APPS_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(BUILD)/CLOCK.BIN $(BUILD)/SYSINFO.BIN $(BUILD)/WINA.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_wm_apps -DTEST_SCRIPT=53
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(BUILD)/CLOCK.BIN $(BUILD)/SYSINFO.BIN $(BUILD)/WINA.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-wm-apps: $(WM_APPS_DSK)
+	rm -rf $(BUILD)/shots
+	for d in $(WM_APPS_SHOTS); do \
+	  cp $(WM_APPS_DSK) $(BUILD)/vos_run.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_TIMEOUT=150 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	$(PYTHON) tools/wm_apps_check.py $(foreach d,$(WM_APPS_SHOTS),$(BUILD)/shots/$(d)/*.png)
 
 # SHOW THE TEXT on a .SCR (TEST_SCRIPT=47): the picture in the
 # Commander, then the Commander again

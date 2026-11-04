@@ -36,6 +36,15 @@ Dans Studio, vous choisissez cela pour votre programme avec STUDIO > IN BACKGROU
 
 MUSIC fait exception : sa chanson est jouée depuis l'interruption, 50 fois par seconde, et continue donc sans à-coups derrière tout. Elle ne s'arrête qu'un instant pendant la lecture de la disquette.
 
+## Fenêtres
+
+Avec une **extension mémoire**, CLOCK et SYSINFO s'ouvrent dans une **fenêtre** sur le bureau, par-dessus les fenêtres des autres programmes en cours. Les autres programmes de V-OS s'ouvrent encore en plein écran.
+
+- La barre de menus reste en haut et c'est celle de la fenêtre **de devant**. Un clic sur une autre fenêtre la fait passer devant, avec sa barre.
+- Faites glisser le **titre** d'une fenêtre pour la déplacer, et son **coin inférieur droit** pour changer sa taille. Le programme dispose ce qu'il montre pour la nouvelle taille.
+- Le **+** du titre, ou **F7**, donne au programme tout l'écran (sous la barre), et revient à une fenêtre. **X** ferme le programme.
+- L'horloge **continue de tourner** quand une autre fenêtre est devant, tant qu'aucune ne la couvre.
+
 ## L'accessoire de bureau (ACCESSOIRE)
 
 Un petit programme, comme CLOCK, peut s'ouvrir dans une fenêtre **par-dessus tout le reste** : une vue ou un programme.

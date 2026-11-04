@@ -213,7 +213,7 @@ setup_end:
 wm_sys_end:
         assert wm_sys_end <= #8000
         IFDEF TEST_SCRIPT                     ; on the windows' test disc only:
-        IF TEST_SCRIPT == 52                  ; the others have no room
+        IF TEST_SCRIPT == 52 || TEST_SCRIPT == 53 ; the others: no room
         save "WM.SYS", WM_SYS_ADDR, wm_sys_end - WM_SYS_ADDR, DSK, "build/vos_test.dsk"
         ENDIF
         ELSE

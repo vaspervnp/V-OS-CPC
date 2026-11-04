@@ -67,9 +67,9 @@ def main():
         check(shot, 'the bar: WINA', bar(im), bar(shots['front_a']))
 
     im = shots['full']                      # F7: WINA full screen
-    check('full', 'no bar', pixel(im, 2, 2), BLACK)
+    check('full', 'the bar: WINA', bar(im), bar(shots['front_a']))
     check('full', 'no desk', pixel(im, 300, 200), BLACK)
-    check('full', 'the mark, from the corner', pixel(im, 83, 43), WHITE)
+    check('full', 'the mark, from under the bar', pixel(im, 83, 40 + 12 + 3), WHITE)
 
     im = shots['closed_a']                  # WINA's X: WINB alone
     check('closed_a', "WINB's title, in front", pixel(im, 42, 37), BLACK)

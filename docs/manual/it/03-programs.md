@@ -36,6 +36,15 @@ In Studio lo scegli per il tuo programma con STUDIO > IN BACKGROUND.
 
 MUSIC è l'eccezione: la sua canzone suona dall'interrupt, 50 volte al secondo, e quindi continua senza interruzioni dietro a tutto. Si ferma solo un attimo mentre si legge il dischetto.
 
+## Finestre
+
+Con un'**espansione di memoria**, CLOCK e SYSINFO si aprono in una **finestra** sulla scrivania, sopra le finestre degli altri programmi in esecuzione. Gli altri programmi di V-OS si aprono ancora a schermo intero.
+
+- La barra dei menu resta in alto ed è quella della finestra **davanti**. Un clic su un'altra finestra la porta davanti, con la sua barra.
+- Trascina il **titolo** di una finestra per spostarla, e il suo **angolo in basso a destra** per cambiarne la dimensione. Il programma dispone ciò che mostra per la nuova dimensione.
+- Il **+** nel titolo, o **F7**, dà al programma tutto lo schermo (sotto la barra), e di nuovo una finestra. **X** chiude il programma.
+- L'orologio **continua a scorrere** mentre un'altra finestra è davanti, purché nessuna lo copra.
+
 ## L'accessorio di scrivania (ACCESSORIO)
 
 Un programma piccolo, come CLOCK, può aprirsi in una finestra **sopra qualsiasi cosa**: una vista o un programma.

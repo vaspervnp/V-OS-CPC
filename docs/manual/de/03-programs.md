@@ -36,6 +36,15 @@ In Studio wählst du das für dein Programm mit STUDIO > IN BACKGROUND.
 
 MUSIC ist die Ausnahme: Sein Lied spielt aus dem Interrupt, 50-mal pro Sekunde, und läuft deshalb gleichmäßig hinter allem weiter. Es hält nur kurz an, während die Diskette gelesen wird.
 
+## Fenster
+
+Mit einer **Speichererweiterung** öffnen CLOCK und SYSINFO in einem **Fenster** auf dem Schreibtisch, über den Fenstern der anderen laufenden Programme. Die übrigen Programme von V-OS öffnen noch im Vollbild.
+
+- Die Menüleiste bleibt oben und gehört dem Fenster **vorn**. Ein Klick auf ein anderes Fenster holt es mit seiner Leiste nach vorn.
+- Den **Titel** eines Fensters ziehen verschiebt es, seine **rechte untere Ecke** ändert seine Größe. Das Programm ordnet seinen Inhalt für die neue Größe an.
+- Das **+** im Titel oder **F7** gibt dem Programm den ganzen Bildschirm (unter der Leiste) und wieder ein Fenster. **X** schließt das Programm.
+- Die Uhr **läuft weiter**, während ein anderes Fenster vorn ist, solange keines sie verdeckt.
+
 ## Das Zubehörprogramm (ZUBEHÖR)
 
 Ein kleines Programm wie CLOCK kann sich in einem Fenster **über allem** öffnen: über einer Ansicht oder einem Programm.

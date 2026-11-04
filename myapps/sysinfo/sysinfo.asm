@@ -14,10 +14,7 @@
 BG              equ 2               ; pens (palette below)
 INK             equ 1
 HEAD            equ 3
-LABEL_X         equ 32
-VALUE_X         equ 224
-TOP_Y           equ 40
-HINT_Y          equ 249
+HINT_Y          equ 249             ; full screen
 
 CMD_REFRESH     equ VC_APP + 1      ; menu items: commands
 CMD_ABOUT       equ VC_APP + 2
@@ -31,12 +28,26 @@ CMD_BACK        equ VC_APP + 3
         include "app_icon.asm"      ; VOS_ICON, from icon.txt
 
 init:
+        ld a,VX_WINDOW              ; in a window, if there are windows
+        ld hl,wsize                 ; (first, each time); the pens are
+        call VOS_EXT                ; the same with the Desktop's colours
+        ld hl,place_win
+        jr nc,.place
+        ld hl,place_full
+.place:
+        ld de,place
+        ld bc,5
+        ldir
         ld hl,texts
         call VOS_TEXTS
+        ld a,(place + 4)
+        or a
+        jr z,.bar
         ld a,1
         call VOS_MODE
         ld hl,palette
         call VOS_PALETTE
+.bar:
         call VOS_MENU_VIEW
         ld (bar + 3),hl
         call VOS_MENU_HELP
@@ -57,13 +68,18 @@ redraw:
         call VOS_MSG
         ld b,h
         ld c,l
-        ld hl,LABEL_X
-        ld de,TOP_Y - 20
+        ld hl,(place)
+        ld e,0
+        call row
         call VOS_PRINT
+        ld a,(place + 4)            ; full screen: the keys at the bottom
+        or a
+        jr z,.versions
         ld a,T_HINT
         ld hl,0
         ld de,HINT_Y
         call print_lab
+.versions:
         ld a,VX_VERSION             ; the versions
         call VOS_EXT
         push af
@@ -86,14 +102,16 @@ redraw:
         xor a
         ld (de),a
         ld a,T_VERSION
-        ld de,TOP_Y
+        ld e,20
+        call row
         call fact
         pop af
         ld l,a
         ld h,0
         call decimal
         ld a,T_API
-        ld de,TOP_Y + 14
+        ld e,34
+        call row
         call fact
         ld a,VX_MEM                 ; the memory (API 18)
         call VOS_EXT
@@ -101,22 +119,36 @@ redraw:
         push de
         call kilo
         ld a,T_MEMORY
-        ld de,TOP_Y + 28
+        ld e,48
+        call row
         call fact
         pop hl
         call kilo
         ld a,T_MEM_FREE
-        ld de,TOP_Y + 42
+        ld e,62
+        call row
         call fact
 .drives:
         ld c,0                      ; the drives
         ld a,T_FREE_A
-        ld de,TOP_Y + 56
+        ld e,76
+        call row
         call free
         ld c,1
         ld a,T_FREE_B
-        ld de,TOP_Y + 70
+        ld e,90
+        call row
         ; fall through
+
+; E = pixels below the title -> DE = y (keeps AF, HL, BC)
+row:
+        push af
+        ld a,(place + 4)
+        add a,e
+        ld e,a
+        ld d,0
+        pop af
+        ret
 
 ; C = drive, A = its label, DE = y: "nK", or NO DISC
 free:
@@ -140,16 +172,16 @@ free:
         pop af
         ; fall through
 
-; A = label, DE = y: the label, then value at VALUE_X
+; A = label, DE = y: the label, then value at the value's x
 fact:
         push de
-        ld hl,LABEL_X
+        ld hl,(place)
         call print_lab
         ld a,HEAD + VOS_BOLD
         ld c,BG
         call VOS_COLOURS
         pop de
-        ld hl,VALUE_X
+        ld hl,(place + 2)
         ld bc,value
         jp VOS_PRINT
 
@@ -271,6 +303,13 @@ menu:           db T_MENU, 4
                 db T_BACK, CMD_BACK, "Q", 0
 dlg_about:      db T_MENU, T_ABOUT_TEXT, 1, VM_OK
 tens:           dw 10000, 1000, 100, 10, 1, 0
+wsize:          dw 248, 104         ; its window's inside (VX_WINDOW)
+place:          dw 0, 0             ; the labels' x, the values' x,
+                db 0                ; the title's y (0: in a window)
+place_win:      dw 8, 136
+                db 0
+place_full:     dw 32, 224
+                db 20
 
         include "app_texts.asm"     ; texts, from texts.txt
 

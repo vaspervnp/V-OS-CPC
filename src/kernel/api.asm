@@ -232,6 +232,7 @@ xa_window:
         or a
         scf
         ret z
+        ld (vw_x),hl                ; (its size is written back there)
         ld de,vw_buf
         ld bc,4
         ldir
