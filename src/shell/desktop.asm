@@ -44,7 +44,11 @@ DT_DRIVE_Y      equ 28              ; for the 464 firmware's inks
         ENDIF
 DT_DRIVE_W      equ 48
 DT_DRIVE_H      equ 36
+        IFDEF DEMO                  ; and the M4 card's icon (the third)
+DT_DRIVE_STEP   equ 64              ; none at #B7F7 (x 348, y 166), where
+        ELSE                        ; 1984 looks for the 6128's
 DT_DRIVE_STEP   equ 52
+        ENDIF
         IFDEF TEST_SCRIPT
         IF TEST_SCRIPT == 45
 DT_SAVER_FRAMES equ 500             ; (make test-saver)

@@ -50,7 +50,8 @@ APPS = [                    # part 1, then part 2: a disc each (180K)
      ("READER", ["READER.BIN", "reader/INDEX.MD", "reader/ABOUT.MD"]),
      ("WEBGET", ["WEBGET.BIN"]), ("SYSINFO", ["SYSINFO.BIN"]),
      ("STREETS", ["STREETS.BIN"]), ("DATABASE", ["DATABASE.BIN"]),
-     ("SHEET", ["SHEET.BIN", "sheet/BUDGET.VSH"])]]
+     ("SHEET", ["SHEET.BIN", "sheet/BUDGET.VSH"]),
+     ("DIARY", ["DIARY.BIN"]), ("TELNET", ["TELNET.BIN"])]]
 
 LANGS = ["en", "el", "fr", "es", "de", "it"]
 
@@ -301,7 +302,24 @@ def part1():
     d.hold("RETURN", 4.0, 1.0)
     d.type("A new page starts after line sixty.\n", 0.12)
     d.wait(2.0)
-    d.ctrl("m", 2.0)                    # NOTEPAD goes on behind
+    d.ctrl("m", 2.0)
+    C({"en": "^F FIND and ^R REPLACE, in all of the text",
+       "el": "^F ΑΝΑΖΗΤΗΣΗ και ^R ΑΝΤΙΚΑΤΑΣΤΑΣΗ, σε όλο το κείμενο",
+       "fr": "^F CHERCHER et ^R REMPLACER, dans tout le texte",
+       "es": "^F BUSCAR y ^R REEMPLAZAR, en todo el texto",
+       "de": "^F SUCHEN und ^R ERSETZEN, im ganzen Text",
+       "it": "^F CERCA e ^R SOSTITUISCI, in tutto il testo"}, sync=False)
+    d.hold("UP", 1.5, 0.5)              # to the top
+    d.ctrl("f", 1.5)
+    d.type("menus\n", 0.2)
+    d.wait(2.0)
+    d.ctrl("r", 1.0)
+    for _ in range(5):                  # "menus", the last FIND, cleared
+        d.key("DEL", 0.15)
+    d.type("CPC\n", 0.2)
+    d.wait(1.0)
+    d.type("Amstrad CPC\n", 0.15)
+    d.wait(3.0)                         # NOTEPAD goes on behind
 
     # ---- PAINT
     C({"en": "PAINT: the whole CPC screen, 160 x 200, 16 colours, tools and layers",
@@ -344,7 +362,12 @@ def part1():
     d.raw(d.t, 2, 0x81, 30)             # the pointer back on the picture
     d.raw(d.t, 2, 0x82, 80)
     d.wait(0.3)
-    d.hold("RIGHT", 0.4, 2.5)
+    d.hold("RIGHT", 0.4, 1.0)
+    d.key("c", 0.3)                     # CIRCLE, from its centre
+    d.key("TAB", 0.3)
+    line, bits = MATRIX["COPY"]
+    d.raw(d.t, 50, line, bits)
+    d.hold("DOWN", 0.4, 2.5)
 
     # ---- music and a game
     C({"en": "MUSIC: Arkos Tracker songs, which go on behind other programs",
@@ -453,14 +476,51 @@ def part2():
     d.wait(2.5)
     d.ctrl("m", 2.0)
 
-    # ---- the M4 board: its network (a download did not finish in CPCEMU)
+    # ---- DIARY
+    C({"en": "DIARY: the month, the days with notes marked; its notes in a database",
+       "el": "DIARY: ο μήνας, οι μέρες με σημειώσεις σημαδεμένες· οι σημειώσεις σε βάση",
+       "fr": "DIARY : le mois, les jours avec des notes marqués ; les notes dans une base",
+       "es": "DIARY: el mes, los días con notas marcados; las notas en una base de datos",
+       "de": "DIARY: der Monat, die Tage mit Notizen markiert; die Notizen in einer Datenbank",
+       "it": "DIARY: il mese, i giorni con note segnati; le note in un database"})
+    d.launch("DIARY", 5.0)
+    d.key("RIGHT", 0.6)
+    d.key("RIGHT", 1.0)
+    d.ctrl("a", 1.5)
+    d.type("V-OS 0.43 is out\n", 0.15)
+    d.wait(3.0)
+    d.key("DOWN", 1.0)
+    d.ctrl("a", 1.5)
+    d.type("Retro meeting\n", 0.15)
+    d.wait(3.0)
+    d.type(">", 2.0)
+    d.type("<", 3.0)
+    d.ctrl("q", 1.0)
+
+    # ---- the M4 board: its network (1984's M4 board, tools/video/record.py)
     C({"en": "WEBGET: the M4 board's network; it downloads files from the web",
        "el": "WEBGET: το δίκτυο της κάρτας M4· κατεβάζει αρχεία από το web",
        "fr": "WEBGET : le réseau de la carte M4 ; il télécharge des fichiers du web",
        "es": "WEBGET: la red de la tarjeta M4; descarga archivos de la web",
        "de": "WEBGET: das Netz der M4-Karte; es lädt Dateien aus dem Web",
        "it": "WEBGET: la rete della scheda M4; scarica file dal web"})
-    d.launch("WEBGET", 7.0)
+    d.launch("WEBGET", 5.0)             # (1984's M4 board does not
+    d.ctrl("q", 1.0)                    # download: TELNET instead)
+    C({"en": "TELNET: text over the network with the M4 board (here to a server on the PC)",
+       "el": "TELNET: κείμενο μέσα από το δίκτυο με την κάρτα M4 (εδώ σε έναν server στο PC)",
+       "fr": "TELNET : du texte par le réseau avec la carte M4 (ici vers un serveur sur le PC)",
+       "es": "TELNET: texto por la red con la tarjeta M4 (aquí a un servidor en el PC)",
+       "de": "TELNET: Text über das Netz mit der M4-Karte (hier zu einem Server auf dem PC)",
+       "it": "TELNET: testo in rete con la scheda M4 (qui verso un server sul PC)"})
+    d.launch("TELNET", 5.0)
+    d.ctrl("o", 1.5)
+    d.type("127.0.0.1:2323\n", 0.15)   # tools/tcp_server.py (record.py)
+    d.wait(4.0)
+    d.type("Hello from a CPC\n", 0.15)
+    d.wait(3.0)
+    d.type("BYE\n", 0.15)
+    d.wait(3.0)
+    d.ctrl("q", 1.0)
     C({"en": "V-OS: open source, with an SDK for your own programs (github.com/vaspervnp/V-OS-CPC)",
        "el": "V-OS: ανοιχτός κώδικας, με SDK για τα δικά σας προγράμματα (github.com/vaspervnp/V-OS-CPC)",
        "fr": "V-OS : open source, avec un SDK pour vos programmes (github.com/vaspervnp/V-OS-CPC)",

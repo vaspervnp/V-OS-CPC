@@ -241,7 +241,16 @@ get:
         ld a,VX_M4
         call VOS_EXT
         jp c,redraw
-        ld hl,(resp + 3)            ; bytes downloaded
+        ld a,(resp)                 ; an answer without its size (an
+        cp 4                        ; error): nothing came
+        ld hl,0
+        jr c,.no_size
+        ld hl,(resp + 3)            ; bytes downloaded, up to FILE_MAX
+        ld a,h
+        cp FILE_MAX / 256
+        jr c,.no_size
+        ld hl,FILE_MAX
+.no_size:
         ld (flen),hl
         ld a,h
         or l
@@ -275,6 +284,10 @@ get:
         ld a,VX_M4
         call VOS_EXT
         jp c,redraw
+        ld a,(resp)                 ; no data in the answer: an error
+        cp 3
+        ld a,T_NOTHING
+        jp c,state
         ld hl,(done)                ; into the data bank
         ld de,DATA
         add hl,de

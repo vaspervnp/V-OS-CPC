@@ -147,16 +147,23 @@ def record(raw, seconds):
 
 
 def record_1984(raw, seconds):
-    """The 1984 emulator, no window: its own .gif and .wav -> raw (H.264
-    and AAC)."""
+    """The 1984 emulator, no window, 576K and the M4 board (its network:
+    WEBGET): its own .gif and .wav -> raw (H.264 and AAC)."""
     work = os.path.join(WORK, "w")
     os.makedirs(work, exist_ok=True)
     shutil.copy(os.path.join(EMU, "DISC", "DEMO_A.DSK"), os.path.join(work, "A.DSK"))
     gif, wav = (os.path.join(work, f) for f in ("rec.gif", "rec.wav"))
     win = subprocess.run(["wslpath", "-w", work], capture_output=True, text=True,
                          check=True).stdout.strip()
-    subprocess.run([E1984, "--headless", "--6128", "--memory=576",
-                    f"--disk-a={win}\\A.DSK", "--autostart=VOS",
+    card = os.path.join(work, "card")       # the M4 board's SD card
+    shutil.rmtree(card, ignore_errors=True)
+    os.makedirs(card)
+    with open(os.path.join(work, "m4.conf"), "w", newline="") as f:
+        f.write("[machine]\r\nmodel=6128\r\nmemory=576\r\n[hardware]\r\n"
+                f"m4=true\r\nm4_path={win}\\card\r\n")
+    # with the M4 AMSDOS starts on its card: |DISC first (tools/m4_shot.sh)
+    subprocess.run([E1984, "--headless", f"--config={win}\\m4.conf",
+                    f"--disk-a={win}\\A.DSK", '--paste=|disc\nrun"vos\n',
                     f"--gif-out={win}\\rec.gif", f"--audio-out={win}\\rec.wav",
                     f"--exit-after={int(seconds * 50)}"],
                    cwd=os.path.dirname(E1984), stdout=subprocess.DEVNULL,
@@ -286,7 +293,15 @@ def part_video(lang, part, out):
     raw = os.path.join(WORK, f"raw-{lang}-{part}.mp4")
     if not (os.environ.get("VOS_REUSE") and os.path.exists(raw)):
         discs(lang, part)                 # VOS_REUSE=1: the recording there
-        record(raw, length + 120 + TAIL)  # CPCEMU's start (M4), the boot
+        # TELNET's server (part 2), reached from 1984's M4 as 127.0.0.1
+        srv = subprocess.Popen([sys.executable, os.path.join(HERE, "..", "tcp_server.py")],
+                               cwd=os.path.join(HERE, "..", ".."),
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            record(raw, length + 130 + TAIL)  # the start (M4), the boot; 1984's .gif ends short
+        finally:
+            srv.kill()
+            srv.wait()
     boot = boot_time(raw)
     start = boot - 1.0                    # V-OS's frame 0, before its desk
     ass = os.path.join(WORK, f"captions-{lang}-{part}.ass")
