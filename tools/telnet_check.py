@@ -57,6 +57,7 @@ class Telnet(dc.App):
         self.socks = {}
         self.lookup = 0
         self.log = []
+        self.quiet = False                  # behind, covered: VOS_EXT quiet
 
     def info(self):
         """the ROM's sock_info: socket 0 the name looked up, 1-4"""
@@ -71,6 +72,9 @@ class Telnet(dc.App):
         return out
 
     def m4_call(self, m):
+        if self.quiet:                      # WM.SYS's api_quiet: xor a, ret
+            m.a, m.f = 0, 0x44
+            return
         if not self.board:
             m.f |= 1
             return
@@ -196,6 +200,15 @@ def main():
     check('the line typed empty again', app.line(IN_Y), '> _')
     app.frames(2)
     check('the answer', app.window()[-2:], ['> HELLO THERE', ''])
+    typed(app, 'behind')                    # received, then behind and
+    app.frames(1)                           # covered (VOS_EXT quiet): the
+    app.quiet = True                        # old socks and answer are not
+    app.frames(4)                           # taken again
+    want = ['> HELLO THERE', '> BEHIND', '']
+    check('behind, covered: nothing more', app.window()[-3:], want)
+    app.quiet = False
+    app.frames(2)
+    check('uncovered again', app.window()[-3:], want)
     # BYE: closed by the other end, after its last words
     typed(app, 'BYE')
     app.frames(4)

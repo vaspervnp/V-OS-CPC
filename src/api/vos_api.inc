@@ -356,6 +356,10 @@ VX_WINDOW       equ 16                  ; (34) HL -> dw w, h: the program
                                         ; window goes; carry): full
                                         ; screen as before, for a mode 2
                                         ; page, say; ask again after
+                                        ; (V-OS 0.51: in a window
+                                        ; VOS_PALETTE does nothing, X
+                                        ; sends CONTROL+Q, and behind,
+                                        ; uncovered, VOS_EXT works)
 VX_COUNT        equ 17
 
 ; Databases (version 22): VOS_EXT with A = VX_DB, C = one of these. One

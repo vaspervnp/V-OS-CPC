@@ -90,6 +90,8 @@ init:
         call VOS_SET_BAR
         ld a,1                      ; VE_FRAME events
         call VOS_TICKS
+        ld a,(win)                  ; in a window: on behind the others,
+        call VOS_BACKGROUND         ; receiving while nothing covers it
         pop af
         cp 2
         jr z,redraw
@@ -756,8 +758,13 @@ frame:
         ld a,(state)
         or a
         ret z
-        call sock_state
+        ld a,#FF                    ; behind and covered, VOS_EXT does
+        ld (socks),a                ; nothing (WM.SYS): socks as they
+        call sock_state             ; were, nothing to do now
         jp c,no_m4
+        ld a,(socks)
+        inc a
+        ret z
         ld a,(state)
         cp ST_CONNECTED
         jr z,.receive

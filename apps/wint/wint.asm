@@ -5,7 +5,8 @@
 ; init (each time: A = 2 too), fills it with its pen and writes its name;
 ; a click in it marks the place and writes it, from the window's corner.
 ; Under its name, how many times it has drawn its inside (make
-; test-wm-copies: windows copied back are not drawn again).
+; test-wm-copies: windows copied back are not drawn again). P asks for a
+; palette of reds (VOS_PALETTE): quiet in a window (make test-wm-keys).
 ; Its menu bar: WINA (or WINB) > BACK ^Q, VIEW, HELP. Without windows
 ; (128K) it says NO WINDOWS, full screen.
 ;   rasm apps/wint/wint.asm -I src -I build -DSIDE=1 -o build/wina
@@ -87,10 +88,21 @@ event:
         call VOS_UI_EVENT           ; menus and shortcuts first
         pop hl
         or a
-        jr nz,command
+        jp nz,command
         call VOS_MENU_OPEN
         ret nz
         ld a,(hl)
+        cp VE_KEY_DOWN
+        jr nz,.ptr
+        inc hl
+        inc hl
+        ld a,(hl)                   ; P (or p): the reds
+        and %11011111
+        cp "P"
+        ret nz
+        ld hl,reds
+        jp VOS_PALETTE
+.ptr:
         cp VE_PTR_DOWN
         ret nz
         ld de,4                     ; x, y in the window
@@ -165,6 +177,7 @@ name:           db "WINA", 0
 name:           db "WINB", 0
         ENDIF
 no_windows:     db "NO WINDOWS", 0
+reds:           db 6, 3, 15, 24, 6, 3, 15, 24, 6, 3, 15, 24, 6, 3, 15, 24, 6
 bar:            db 3
                 dw menu, 0, 0
 menu:           db T_MENU, 1

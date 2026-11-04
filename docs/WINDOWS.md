@@ -98,7 +98,7 @@ in [TODO.md](../TODO.md) and, as each is done, in
    the background; its files window is one window among the others
    (M78, M79).
 
-## As M79 left it
+## As M80 left it
 
 - `WM.SYS` keeps up to eight windows (the Desktop's two among them). A click on one that is behind, or F6,
   brings its program to the front: it starts again (init with A = 2)
@@ -147,10 +147,16 @@ in [TODO.md](../TODO.md) and, as each is done, in
   front. On the Desktop the programs' windows are drawn on its desk,
   under its files window. A click on a program's window brings it to the
   front; a click on the Desktop's window or icons brings the Desktop.
-- Not yet: `VOS_PALETTE` in a window, asking the program before X ends
-  it, TELNET receiving while behind (`VOS_EXT` is quiet there). The
-  accessory (F5, CLOCK) over windows, and F6 among windows, have not
-  been tried in a test yet.
+- **M80:** `VOS_PALETTE` is quiet while a program is in front in a
+  window (the windows keep the Desktop's colours); full screen it works
+  as before. X asks the program: it gets CONTROL+Q, BACK in every V-OS
+  program, so NOTEPAD asks about unsaved changes first; if it ends, the
+  next program's window comes to the front. A program behind in a window
+  that nothing covers has `VOS_EXT` too, so TELNET (now going on in the
+  background in a window) receives there; covered, it waits. The
+  accessory (F5) and the switcher (F6) open over the windows, which are
+  copied first and drawn again when they close.
+- Not yet: windows in mode 0 or 2, a program's own palette in a window.
 
 ## Milestones
 
@@ -162,6 +168,7 @@ in [TODO.md](../TODO.md) and, as each is done, in
 | **M76** ✓ | **Widgets in windows**, so **CALC** (a Studio program, VBRUN) is windowed; **DIARY, TELNET, WEBGET, DATABASE** in windows, each showing the part of its screen it asks for (`VX_WINDOW`'s x0, y0, API 36). | `make test-wm-apps2`: DIARY, TELNET over it, CALC in a window, and its buttons clicked there: 1 + 2 = 3 (`tools/wm_apps2_check.py`). TELNET's receiving is tested as before (`make test-telnet`, off the emulator): Caprice32 has no network. |
 | **M77** ✓ | **NOTEPAD, SHEET, READER, MARKDOWN** in windows, laid out for the size they are given; their mode 2 pages full screen (`VX_WINDOW` with w = 0 leaves the windows). | `make test-wm-notepad`: NOTEPAD resized, its columns and rows cut to the window, the status under them; its page full screen and the window back (`tools/wm_notepad_check.py`). `make test-wm-pages`: MARKDOWN, its preview, READER (wrapped at the window's width) and SHEET (4 columns, 18 rows); SHEET's page and back (`tools/wm_pages_check.py`). |
 | **M78** ✓ | **Copies in banks** (576K): a window keeps a copy of itself, so moving it or drawing it again from behind only copies; the desk under the windows shows the Desktop's picture. | `make test-wm-copies`: WINB moved away from SYSINFO and WINA, over them and away again; WINA and WINB, which write how many times they have drawn, still say 001 (`tools/wm_copies_check.py`). |
+| **M80** ✓ | `VOS_PALETTE` in a window; X asking the program; TELNET receiving behind; F5 and F6 among windows. | `make test-wm-keys`: the switcher and the accessory over WINA and WINB, closed: drawn again; WINA's reds quiet; its X ends it (^Q), WINB in front. `make test-wm-notepad`: X on a changed text: NOTEPAD asks. `make test-telnet`: frames with `VOS_EXT` quiet take nothing. |
 | **M79** ✓ | **The Desktop's files window** as a window among the others, the desk's drive icons under them. The Desktop stays a view (the kernel has no byte left): WM.SYS keeps its window and icons as records drawn from their copies, and the Desktop asks WM.SYS to draw the programs' windows on its desk. | `make test-wm-desktop`: WINA with the Desktop's window and icons behind it; the Desktop (F1) with WINA's window on its desk; each brought to the front with a click (`tools/wm_desktop_check.py`). |
 
 Each milestone adds 0.01 to the version and updates the manual in its

@@ -2,7 +2,7 @@
 """Check make test-wm-notepad's screenshots (NOTEPAD in a window;
 src/kernel/test_script.asm, 55).
 
-usage: wm_notepad_check.py full resized page back
+usage: wm_notepad_check.py full resized page back ask
 
 Caprice32's screenshot is 768 x 540: screen pixel (x, y) of mode 1 is
 at (2x, 2y + 14). NOTES.TXT's lines are 66 characters long. Its window
@@ -11,6 +11,8 @@ them; then its corner dragged: about 256 x 170, fewer columns and rows,
 the status under the rows still, its numbers at the window's right.
 Then CONTROL+M: the page (mode 2) full screen, out of the windows, no
 desk; CONTROL+M again: the window back, where and as large as it was.
+Then a letter typed and a click on its X: NOTEPAD gets ^Q (BACK) and
+asks about the change, in its dialog, before it ends.
 Exits 1 on the first difference.
 """
 import sys
@@ -37,10 +39,10 @@ def check(shot, what, got, want):
 
 
 def main():
-    names = ('full', 'resized', 'page', 'back')
+    names = ('full', 'resized', 'page', 'back', 'ask')
     if len(sys.argv) != len(names) + 1:
         sys.exit(__doc__)
-    full, resized, page, back = map(load, sys.argv[1:])
+    full, resized, page, back, ask = map(load, sys.argv[1:])
 
     check('full', "NOTEPAD's title, in front", pixel(full, 200, 15), BLACK)
     check('full', 'the 47th column', WHITE in area(full, 360, 25, 376, 35), True)
@@ -61,8 +63,11 @@ def main():
 
     check('back', 'the window again, where and as large as it was',
           area(back, 0, 12, 384, 200), area(resized, 0, 12, 384, 200))
+    check('ask', "NOTEPAD's title, still in front", pixel(ask, 100, 15), BLACK)
+    check('ask', 'its dialog over it', area(ask, 104, 104, 260, 165) != area(back, 104, 104, 260, 165), True)
+    check('ask', 'the dialog white', WHITE in area(ask, 110, 110, 250, 125), True)
     print('wm_notepad_check: NOTEPAD in a window, 47 columns and 21 rows; made smaller: '
-          'fewer columns and rows, the status under them; the page full screen, then the window back: all right')
+          'fewer columns and rows, the status under them; the page full screen, then the window back; X: NOTEPAD asks first: all right')
 
 
 if __name__ == '__main__':

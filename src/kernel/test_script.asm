@@ -322,6 +322,52 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 59
+; make test-wm-keys (-DTEST_SCRIPT=59, 576K): WM.SYS; WINA.BIN,
+; WINB.BIN, CLOCK.BIN last on A:. Expected:
+;   frame  300  F2, RIGHT x2, CONTROL+A -> the Launcher, CLOCK as the
+;               accessory; 900 F5: closed
+;   frame 1200  F3, DOWN held, UP x2, 1850 RETURN -> WINA in a window
+;   frame 2200  F3, DOWN held, UP, 2850 RETURN -> WINB over it
+;   frame 3300  F6, 3500 RETURN -> the switcher, WINA chosen: in front
+;   frame 4300  F6, 4500 ESC -> the switcher closed: the windows as they
+;               were
+;   frame 5300  F5 -> the clock over the windows; 5800 F5: closed, the
+;               windows as they were
+;   frame 6300  P -> WINA asks for reds (VOS_PALETTE): quiet in a window
+;   frame 6810  a click on WINA's X (178, 24) -> its ^Q: WINA ends, WINB
+;               in front
+test_keys:
+        dw  300 : db   4, 1, %01000000   ; F2: the Launcher
+        dw  450 : db   4, 0, %00000010   ; RIGHT
+        dw  500 : db   4, 0, %00000010   ; RIGHT: CLOCK
+        dw  595 : db  15, 2, %10000000   ; CONTROL
+        dw  600 : db   4, 8, %00100000   ; A: as the accessory
+        dw  900 : db   4, 1, %00010000   ; F5: closed
+        dw 1200 : db   4, 0, %00100000   ; F3
+        dw 1300 : db 255, 0, %00000100   ; DOWN, held
+        dw 1555 : db 195, 0, %00000100
+        dw 1775 : db   4, 0, %00000001   ; UP
+        dw 1800 : db   4, 0, %00000001   ; UP: WINA
+        dw 1850 : db   4, 2, %00000100   ; RETURN
+        dw 2200 : db   4, 0, %00100000   ; F3
+        dw 2300 : db 255, 0, %00000100   ; DOWN, held
+        dw 2555 : db 195, 0, %00000100
+        dw 2800 : db   4, 0, %00000001   ; UP: WINB
+        dw 2850 : db   4, 2, %00000100   ; RETURN
+        dw 3300 : db   4, 0, %00010000   ; F6: the switcher
+        dw 3500 : db   4, 2, %00000100   ; RETURN: the next one, WINA
+        dw 4300 : db   4, 0, %00010000   ; F6
+        dw 4500 : db   4, 8, %00000100   ; ESC
+        dw 5300 : db   4, 1, %00010000   ; F5: the clock
+        dw 5800 : db   4, 1, %00010000   ; F5: closed
+        dw 6300 : db   4, 3, %00001000   ; P
+        dw 6790 : db   1, #80, 1         ; COPY is the left button
+        dw 6800 : db   5, #81, 89        ; (178, 24): WINA's X
+        dw 6800 : db   5, #82, 24
+        dw 6810 : db   4, 1, %00000010   ; COPY
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 58
 ; make test-wm-desktop (-DTEST_SCRIPT=58, 576K): WM.SYS and WINA.BIN on
 ; A:, SETUP.CFG with the Desktop's window of A: at (100, 130), 2 x 2.
@@ -442,6 +488,11 @@ test_keys:
 ;   frame 1820  COPY held on its corner (380, 255), LEFT and UP held ->
 ;               a smaller window: fewer columns and rows, the status
 ;               under the rows still
+;   frame 2900  CONTROL+M    -> the page (mode 2), full screen, out of
+;               the windows; 3900 CONTROL+M: its window again, where and
+;               as large as it was
+;   frame 5600  Z, 6610 a click on its X (250, 16) -> X sends NOTEPAD
+;               ^Q (BACK): it asks about the change first
 test_keys:
         dw  300 : db   4, 0, %00100000   ; F3
         dw  400 : db 255, 0, %00000100   ; DOWN, held
@@ -457,6 +508,11 @@ test_keys:
         dw 2900 : db   4, 4, %01000000   ; M: the page
         dw 3895 : db  15, 2, %10000000   ; CONTROL
         dw 3900 : db   4, 4, %01000000   ; M: the window again
+        dw 5600 : db   4, 8, %10000000   ; Z: the text changed
+        dw 6590 : db   1, #80, 1         ; COPY is the left button
+        dw 6600 : db   5, #81, 125       ; (250, 16): its X
+        dw 6600 : db   5, #82, 16
+        dw 6610 : db   4, 1, %00000010   ; COPY
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 54
@@ -2580,6 +2636,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

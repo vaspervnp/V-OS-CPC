@@ -94,9 +94,11 @@ wm_window:
         ld (wm_on),a
         ld (vw_a),a
         call vw_set
+        call wm_pal_on
         scf
         ret
 .ask:
+        call wm_unask
         call wm_offsets
         call wm_prune
         call wm_find
@@ -122,11 +124,13 @@ wm_window:
         bit 0,(ix + R_FLAGS)
         jr z,.window
         ld a,2                      ; full screen: under the bar, no
-        ld (wm_on),a                ; frame
+        ld (wm_on),a                ; frame (its palette its own)
+        call wm_pal_on
         jp wm_view
 .window:
         ld a,1
         ld (wm_on),a
+        call wm_pal_off             ; in a window: the windows' colours
         ld a,(wm_was)               ; the windows were on the screen?
         dec a
         ld hl,wm_need
@@ -227,6 +231,30 @@ wm_event:
         pop ix
         ret
 .go:
+        call wm_unask               ; (X's ^Q did not end it)
+        ld a,(acc_open)             ; the accessory open: its events,
+        or a                        ; and all drawn again after it
+        jr z,.free
+        ld (wm_redo),a
+        jr .no
+.free:
+        ld a,(wm_redo)              ; the accessory or the switcher
+        or a                        ; closed: what they covered
+        call nz,wm_redo_all
+        ld a,(ev_cur)               ; F5 (the accessory), F6 (the
+        cp EV_KEY_DOWN              ; switcher): the windows copied as
+        jr nz,.top                  ; they are first
+        ld a,(ev_cur + 1)
+        cp KEY_F5
+        jr z,.over
+        cp KEY_F6
+        jr nz,.top
+.over:
+        call wm_snap
+        ld a,1
+        ld (wm_redo),a
+        jr .no
+.top:
         call wm_top                 ; the Desktop in front: only a click
         bit 2,(ix + R_FLAGS)        ; on a program's window, here
         jr nz,.desk
@@ -316,8 +344,7 @@ wm_event:
         call wm_drag
         jr .taken
 .close:
-        call wm_close
-        jr .taken
+        jp wm_ask
 .full:
         call wm_full
         jr .taken
@@ -656,26 +683,6 @@ wm_full:
         ld (ix + R_FLAGS),a
         jr wm_wake
 
-; IX = the window in front: its program ends, as with VOS_EXIT; the
-; next one comes to the front, or the view that started it
-wm_close:
-        call api_end
-        call wm_top
-        call wm_drop
-        ld a,(wm_n)                 ; the next program's window, from the
-        ld (wm_i),a                 ; front; none (the Desktop's alone):
-.prog:                              ; the view that started it
-        ld a,(wm_i)
-        or a
-        ld a,(app_return)
-        jp z,view_request
-        ld hl,wm_i
-        dec (hl)
-        ld a,(hl)
-        call wm_ptr
-        bit 2,(ix + R_FLAGS)
-        jr nz,.prog
-        ; fall through
 ; IX = a window: its program to the front (as F6 does: kernel/view.asm,
 ; app_run), once this event is handled
 wm_wake:
@@ -1314,16 +1321,18 @@ wm_restore:
 ; in the background (bg_id), or found no more (the API as it was), the
 ; program in front in a window (wm_on 1). If that one has a window that
 ; no window in front of it covers, it draws there: its view, and its
-; drawing calls (VOS_CLS ... VOS_CHAR, VOS_BLIT) not quiet; the view
-; and the text colours of the one in front put back after it.
+; drawing calls (VOS_CLS ... VOS_CHAR, VOS_BLIT) and VOS_EXT not quiet;
+; the view and the text colours of the one in front put back after it.
 ; ---------------------------------------------------------------------
 BG_OPEN         equ 8               ; VOS_CLS, VOS_PLOT, VOS_RECT,
 BG_OPEN_N       equ 6               ; VOS_COLOURS, VOS_PRINT, VOS_CHAR
 BG_BLIT         equ 32              ; and VOS_BLIT
+BG_EXT          equ 42              ; and VOS_EXT (M80)
 WM_BG_VW        equ vw_y1 + 2 - vw_on
         assert (VOS_CLS - VOS_API) / 3 == BG_OPEN
         assert (VOS_CHAR - VOS_API) / 3 == BG_OPEN + BG_OPEN_N - 1
         assert (VOS_BLIT - VOS_API) / 3 == BG_BLIT
+        assert (VOS_EXT - VOS_API) / 3 == BG_EXT
 wm_bg:
         push ix
         call .go
@@ -1377,6 +1386,10 @@ wm_bg:
         ld de,VOS_API + 3 * BG_BLIT
         ld bc,3
         ldir
+        ld hl,bg_api + 3 * BG_EXT   ; and VOS_EXT (TELNET receives)
+        ld de,VOS_API + 3 * BG_EXT
+        ld bc,3
+        ldir
         ld a,1
         ld (wm_bg_on),a
         ret
@@ -1406,6 +1419,9 @@ wm_bg_shut:
         inc hl
         djnz .call
         ld hl,VOS_API + 3 * BG_BLIT + 1
+        call .quiet
+        ld hl,VOS_API + 3 * BG_EXT + 1
+.quiet:
         ld (hl),api_quiet & #FF
         inc hl
         ld (hl),api_quiet >> 8
@@ -1448,6 +1464,109 @@ wm_covered:
         ld a,(wm_ci)
         call wm_ptr
         pop af
+        ret
+
+; ---------------------------------------------------------------------
+; M80: VOS_PALETTE while a program is in front in a window (the
+; windows keep the Desktop's colours), and X asking the program
+; ---------------------------------------------------------------------
+
+; VOS_PALETTE quiet (api_quiet), its routine kept
+wm_pal_off:
+        ld hl,(wm_pal)
+        ld a,h
+        or l
+        ret nz
+        ld hl,(VOS_PALETTE + 1)
+        ld (wm_pal),hl
+        ld hl,api_quiet
+        ld (VOS_PALETTE + 1),hl
+        ret
+
+; VOS_PALETTE as it was
+wm_pal_on:
+        ld hl,(wm_pal)
+        ld a,h
+        or l
+        ret z
+        ld (VOS_PALETTE + 1),hl
+        ld hl,0
+        ld (wm_pal),hl
+        ret
+
+; IX = the window in front: its X. Its program gets CONTROL+Q (BACK in
+; every program of V-OS: it may ask first, as NOTEPAD does about
+; changes) in place of the click -> carry clear, ev_cur its now. If it
+; ends, the window of the next program behind it comes to the front
+; (app_return and app_wake for that time: wm_unask puts them back)
+wm_ask:
+        ld a,(wm_n)
+        dec a
+        ld (wm_i),a
+.prog:
+        ld a,(wm_i)                 ; the next program's window
+        or a
+        jr z,.key
+        dec a
+        ld (wm_i),a
+        call wm_ptr
+        bit 2,(ix + R_FLAGS)
+        jr nz,.prog
+        ld a,(app_return)
+        ld (wm_ret_view),a
+        ld a,VIEW_APP
+        ld (app_return),a
+        ld a,1
+        ld (wm_asked),a
+        ld (wm_need),a
+        ld a,(ix + R_SLOT)
+        ld (app_wake),a
+        ld a,(ix + R_NAME)
+        ld (app_drive),a
+        push ix
+        pop hl
+        ld de,R_NAME + 1
+        add hl,de
+        ld de,file_name
+        ld bc,11
+        ldir
+.key:
+        ld hl,ev_cur
+        ld (hl),EV_KEY_DOWN
+        inc hl
+        ld (hl),KEY_Q
+        inc hl
+        ld (hl),"Q" - "@"
+        inc hl
+        ld (hl),MOD_CONTROL
+        or a
+        ret
+KEY_Q           equ 67              ; (drivers/kbd.asm: line 8, bit 3)
+
+; the accessory or the switcher closed over the windows: all drawn
+; again, the one in front by its program (its copy is old); the Desktop
+; or a full screen draws itself
+wm_redo_all:
+        xor a
+        ld (wm_redo),a
+        call wm_top
+        ld a,(ix + R_FLAGS)
+        and F_DESK + F_FULL
+        ret nz
+        res 1,(ix + R_FLAGS)
+        jp wm_redraw_all
+
+; X's ^Q handled: app_return as it was (and app_wake, unless the next
+; program has started with it)
+wm_unask:
+        ld a,(wm_asked)
+        or a
+        ret z
+        xor a
+        ld (wm_asked),a
+        ld (app_wake),a
+        ld a,(wm_ret_view)
+        ld (app_return),a
         ret
 
 ; ---------------------------------------------------------------------
@@ -1632,7 +1751,17 @@ wm_lower:
 
 ; every window that nothing covers (and not full screen) into its copy:
 ; from kernel/view.asm (another view starts), and before one moves
+; another view starts (kernel/view.asm: view_start): VOS_PALETTE as it
+; was, and the windows copied
+wm_snap_view:
+        call wm_pal_on
+        ; fall through
 wm_snap:
+        ld hl,wm_redo               ; the switcher over them (F6): not as
+        ld a,(hl)                   ; they are
+        ld (hl),0
+        or a
+        ret nz
         ld a,(acc_open)             ; the accessory or a menu over them:
         or a                        ; not as they are
         ret nz
@@ -1919,6 +2048,10 @@ wm_n:           db 0                ; windows
 wm_painting:    db 0                ; 1: one drawn again from behind
 wm_need:        db 0                ; 1: all to be drawn again
 wm_place:       db 0                ; the next new one's place
+wm_pal:         dw 0                ; VOS_PALETTE's routine, while quiet
+wm_asked:       db 0                ; 1: X sent ^Q (wm_ask)
+wm_redo:        db 0                ; 1: the accessory or switcher over them
+wm_ret_view:    db 0                ; app_return before it
 wm_units:       ds WM_COPIES_N      ; the copies' banks: whose (a slot)
 wm_si:          db 0                ; wm_snap's window
 wm_ci:          db 0                ; wm_covered's
