@@ -1,7 +1,8 @@
 ; =====================================================================
 ; reader.asm - READER, Markdown pages from the disc or the web (SDK)
 ;
-; Mode 1, 48 columns, 22 rows; ^M (PAGE): mode 2 (API 25), black on
+; Mode 1, 48 columns, 22 rows, or in a window (VX_WINDOW, API 36: as
+; many as fit); ^M (PAGE): mode 2 (API 25), full screen, black on
 ; white, 80 columns between the page's edges. A page as MARKDOWN's
 ; preview shows it
 ; (../markdown/page.asm, with PV_LINKS). A page is a place: "A:NAME.MD"
@@ -126,11 +127,61 @@ status:
         call VOS_COLOURS
         ld hl,(xoff)
         ld de,STATUS_Y
+status_at0 equ $ - 2
         ld bc,line
         jp VOS_PRINT
 
-; the mode of pmode, its palette, columns and x
+; the mode of pmode, its palette, columns and x; in mode 1 a window,
+; if there are windows (VX_WINDOW: as many columns and rows as fit,
+; the place under them), the page (mode 2) full screen
 set_mode:
+        ld a,(pmode)
+        cp 2
+        jr z,.page
+        ld a,VX_WINDOW
+        ld hl,wsize
+        call VOS_EXT
+        jr c,.screen
+        ld a,1
+        ld (win),a
+        call pv_new                 ; wrapped again, to its columns
+        ld hl,(wsize)               ; columns: w / 8
+        srl h
+        rr l
+        srl h
+        rr l
+        srl h
+        rr l
+        ld a,l
+        ld (ncols),a
+        ld hl,0
+        ld (xoff),hl
+        ld a,(wsize + 2)            ; rows: (h - 16) / 10, at least 1
+        sub 16
+        jr nc,.rows
+        xor a
+.rows:
+        ld b,0
+.ten:
+        inc b
+        sub 10
+        jr nc,.ten
+        dec b
+        jr nz,.layout
+        inc b
+        jr .layout
+.page:
+        ld a,(win)                  ; out of the windows first
+        or a
+        jr z,.screen
+        xor a
+        ld (win),a
+        ld hl,no_window
+        ld a,VX_WINDOW
+        call VOS_EXT
+.screen:
+        ld b,ROWS
+        call .layout
         ld a,(pmode)
         call VOS_MODE
         ld hl,palette
@@ -147,6 +198,26 @@ set_mode:
         ld (ncols),a
         ld (xoff),de
         jp VOS_PALETTE
+
+; B = rows: the page's, a screen's step, the place under them
+.layout:
+        ld a,b
+        call pv_rows
+        dec a
+        ld (rows1_at0),a
+        ld (rows1_at1),a
+        ld a,b
+        add a,a
+        ld c,a
+        add a,a
+        add a,a
+        add a,c
+        add a,TOP_Y + 4
+        ld l,a
+        ld h,0
+        ld (status_at0),hl
+        ld (status_at1),hl
+        ret
 
 ; the page's edges, left and right of its text
 edges:
@@ -200,6 +271,7 @@ event:
         or a
         ret z
         ld de,ROWS - 1
+rows1_at0 equ $ - 2
         add hl,de
         ld (pv_top),hl
         call pv_render
@@ -227,6 +299,7 @@ event:
         jr .set
 .page_up:
         ld de,ROWS - 1
+rows1_at1 equ $ - 2
         or a
         sbc hl,de
         jr nc,.set
@@ -434,6 +507,7 @@ loading:
         call VOS_COLOURS
         ld hl,(xoff)
         ld de,STATUS_Y
+status_at1 equ $ - 2
         ld bc,place_tmp
         jp VOS_PRINT
 
@@ -951,6 +1025,9 @@ start:          db "A:INDEX.MD", 0
         include "app_texts.asm"     ; texts, from texts.txt
 
 fdrive:         db 0
+win:            db 0                ; 1: in a window
+wsize:          dw 376, 232, 0, 12  ; VX_WINDOW: w, h, x0, y0
+no_window:      dw 0, 0, 0, 0       ; out of the windows (the page)
 pmode:          db 1                ; 1, or 2: the page (^M)
 ncols:          db COLS             ; the page's columns on the screen
 xoff:           dw 0                ; x of the first one

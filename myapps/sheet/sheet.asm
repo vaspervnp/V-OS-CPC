@@ -3,7 +3,8 @@
 ; VOS_EXT, VX_CALC (API 24), the formula engine CALC.SYS.
 ;
 ; Mode 1, 48 columns. A sheet has 16 columns (A-P) and 64 rows; the
-; screen shows 5 columns and 19 rows of it, and the cursor's cell with
+; screen shows 5 columns and 19 rows of it (a window, VX_WINDOW, API
+; 36: as many as fit; the page and the chart full screen), and the cursor's cell with
 ; its text on the first line. ^M (PAGE) switches to the page: mode 2
 ; (API 25), 96 columns, black on white, 10 columns of the sheet with
 ; lines between them. A cell holds up to 40 characters: a
@@ -506,6 +507,7 @@ say_clear:
 say_now:
         ld hl,0
         ld de,SAID_Y
+said_at equ $ - 2
         ld c,COLS
         jp print_label
 
@@ -562,6 +564,7 @@ draw_rows:
         pop af
         inc a
         cp VIS_ROWS
+rows_at equ $ - 1
         jr c,.row
         ret
 
@@ -803,8 +806,59 @@ fit_left:
         ld (hl),a
         ret
 
-; the mode of pmode: its palette, its columns
+; the mode of pmode: its palette, its columns; in mode 1 a window, if
+; there are windows (VX_WINDOW: as many columns and rows of the sheet
+; as fit, what was said under them), the page (mode 2) full screen
 set_mode:
+        ld a,(pmode)
+        cp 2
+        jr z,.page
+        ld a,VX_WINDOW
+        ld hl,wsize
+        call VOS_EXT
+        jr c,.screen
+        ld a,1
+        ld (win),a
+        ld hl,(wsize)               ; characters: w / 8
+        srl h
+        rr l
+        srl h
+        rr l
+        srl h
+        rr l
+        ld a,l
+        ld (ncols),a
+        sub NUM_W                   ; the sheet's columns, at least 1
+        ld b,0
+.col:
+        inc b
+        sub CELL_W
+        jr nc,.col
+        dec b
+        jr nz,.cols
+        inc b
+.cols:
+        ld a,b
+        ld (vcols),a
+        ld a,(wsize + 2)            ; rows: (h - 46) / 10, at least 1
+        sub 46
+        jr nc,.rows
+        xor a
+.rows:
+        ld b,0
+.ten:
+        inc b
+        sub 10
+        jr nc,.ten
+        dec b
+        jr nz,.layout
+        inc b
+        jr .layout
+.page:
+        call no_win                 ; out of the windows first
+.screen:
+        ld b,VIS_ROWS
+        call .layout
         ld a,(pmode)
         call VOS_MODE
         ld hl,palette
@@ -820,6 +874,36 @@ set_mode:
         ld a,c
         ld (vcols),a
         jp VOS_PALETTE
+
+; B = rows of the sheet on the screen; what was said under them
+.layout:
+        ld a,b
+        ld (rows_at),a
+        dec a
+        ld (rows1_at0),a
+        ld (rows1_at1),a
+        ld a,b
+        add a,a
+        ld c,a
+        add a,a
+        add a,a
+        add a,c
+        add a,ROWS_Y + 6
+        ld l,a
+        ld h,0
+        ld (said_at),hl
+        ret
+
+; out of the windows, if in one (the page, the chart: full screen)
+no_win:
+        ld a,(win)
+        or a
+        ret z
+        xor a
+        ld (win),a
+        ld hl,no_window
+        ld a,VX_WINDOW
+        jp VOS_EXT
 
 ; A = row on the screen -> DE = its y
 row_y:
@@ -1033,6 +1117,7 @@ moved:
         jr .shown
 .not_up:
         sub VIS_ROWS - 1
+rows1_at0 equ $ - 1
         jr c,.shown
         cp (hl)
         jr c,.shown
@@ -1104,6 +1189,7 @@ edit_cell:
         ld a,(hl)
         ld hl,top
         sub VIS_ROWS - 1
+rows1_at1 equ $ - 1
         jr c,changed_cell
         cp (hl)
         jr c,changed_cell
@@ -1396,6 +1482,7 @@ chart:
         ld a,1
         ld (ch_on),a
         call chart_scr
+        call no_win
         jp chart_draw
 .wrong:
         ld a,CALC_ERR_REF
@@ -1858,6 +1945,7 @@ chart_event:
         xor a
         ld (ch_on),a
         call recalc                 ; the values: the .SCR was there
+        call set_mode               ; in its window again, if it was
         jp redraw
 
 ; -> Z: nothing changed, or the changes may go
@@ -2600,6 +2688,9 @@ name_buf:       ds 8
 modified:       db 0
 said:           db 0                ; a text for the last line, once
 pmode:          db 1                ; 1, or 2: the page (^M)
+win:            db 0                ; 1: in a window
+wsize:          dw 376, 232, 0, 12  ; VX_WINDOW: w, h, x0, y0
+no_window:      dw 0, 0, 0, 0       ; out of the windows (the page)
 ncols:          db COLS             ; the characters of a line
 vcols:          db VIS_COLS         ; the sheet's columns on the screen
 cur_c:          db 0

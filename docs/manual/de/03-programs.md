@@ -38,7 +38,7 @@ MUSIC ist die Ausnahme: Sein Lied spielt aus dem Interrupt, 50-mal pro Sekunde, 
 
 ## Fenster
 
-Mit einer **Speichererweiterung** öffnen CLOCK, SYSINFO, DIARY, TELNET, WEBGET und DATABASE in einem **Fenster** auf dem Schreibtisch, über den Fenstern der anderen laufenden Programme. Ebenso ein Studio-Programm im Modus 1, das ein eigenes Fenster öffnet (wie CALC): das Fenster zeigt dessen Inneres mit seinen Knöpfen. DIARY, TELNET, WEBGET und DATABASE zeigen im Fenster ihren Bildschirm wie bisher; verkleinert zeigt es den oberen linken Teil davon. Die übrigen Programme öffnen noch im Vollbild.
+Mit einer **Speichererweiterung** öffnen CLOCK, SYSINFO, DIARY, TELNET, WEBGET und DATABASE in einem **Fenster** auf dem Schreibtisch, über den Fenstern der anderen laufenden Programme. Ebenso ein Studio-Programm im Modus 1, das ein eigenes Fenster öffnet (wie CALC): das Fenster zeigt dessen Inneres mit seinen Knöpfen. DIARY, TELNET, WEBGET und DATABASE zeigen im Fenster ihren Bildschirm wie bisher; verkleinert zeigt es den oberen linken Teil davon. Auch NOTEPAD, MARKDOWN, READER und SHEET öffnen in einem Fenster und richten ihren Text darin ein: so viele Spalten und Zeilen, wie hineinpassen, die Statuszeile darunter, und erneut, wann immer man die Größe ändert. Ihre Seite (^M) und das Diagramm von SHEET erscheinen im Vollbild; ^M bringt das Fenster wieder dorthin zurück, wo es war, so groß, wie es war. Die übrigen Programme öffnen noch im Vollbild.
 
 - Die Menüleiste bleibt oben und gehört dem Fenster **vorn**. Ein Klick auf ein anderes Fenster holt es mit seiner Leiste nach vorn.
 - Den **Titel** eines Fensters ziehen verschiebt es, seine **rechte untere Ecke** ändert seine Größe. Das Programm ordnet seinen Inhalt für die neue Größe an.

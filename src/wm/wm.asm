@@ -58,6 +58,29 @@ wm_window:
         ld ix,(wm_cur)
         jp wm_view
 .front:
+        ld hl,(vw_buf)              ; w = 0: no window (a mode 2 page,
+        ld a,h                      ; say): it runs full screen as
+        or l                        ; before
+        jr nz,.ask
+        call wm_find
+        jr c,.none
+        ld l,(ix + R_X)             ; its place kept for its next window
+        ld h,(ix + R_X + 1)
+        ld (wm_back),hl
+        ld l,(ix + R_Y)
+        ld h,(ix + R_SLOT)
+        ld (wm_back + 2),hl
+        call wm_drop
+.none:
+        ld a,1                      ; its next window: all drawn again
+        ld (wm_need),a
+        xor a
+        ld (wm_on),a
+        ld (vw_a),a
+        call vw_set
+        scf
+        ret
+.ask:
         call wm_offsets
         call wm_prune
         call wm_find
@@ -682,7 +705,8 @@ wm_behind:
         jr .rec
 
 ; IX = a window, A = 1 in front: its frame, then its inside by its
-; program (init with A = 2), as the kernel's program
+; program (init with A = 2), as the kernel's program; VOS_OPEN hidden
+; from it (a file for the program starting, not for those behind)
 wm_one:
         call wm_frame
         ld a,(ix + R_SLOT)
@@ -695,10 +719,16 @@ wm_one:
         ld (wm_painting),a
         ld hl,(wm_ret)              ; (its VX_WINDOW sets its own)
         push hl
+        ld hl,VOS_OPEN              ; a file to open is not its: hidden
+        ld a,(hl)
+        push af
+        ld (hl),0
         ld a,2
         push ix
         call prog_call
         pop ix
+        pop af
+        ld (VOS_OPEN),a
         pop hl
         ld (wm_ret),hl
         xor a
@@ -973,6 +1003,18 @@ wm_new:
         add a,20
         ld (ix + R_Y),a
         ld (ix + R_Y + 1),0
+        ld hl,wm_back + 3           ; out of the windows and back (w = 0
+        ld a,(app_slot)             ; before): where it was
+        cp (hl)
+        jr nz,.fit
+        ld (hl),#FF
+        dec hl
+        ld a,(hl)
+        ld (ix + R_Y),a
+        ld hl,(wm_back)
+        ld (ix + R_X),l
+        ld (ix + R_X + 1),h
+.fit:
         call wm_dims                ; on the screen: VOS_FIT
         ld l,(ix + R_X)
         ld h,(ix + R_X + 1)
@@ -1323,6 +1365,8 @@ wm_n:           db 0                ; windows
 wm_painting:    db 0                ; 1: one drawn again from behind
 wm_need:        db 0                ; 1: all to be drawn again
 wm_place:       db 0                ; the next new one's place
+wm_back:        dw 0                ; x, y, slot of one out (w = 0)
+                db 0, #FF
 wm_act:         db 0
 wm_i:           db 0
 wm_wh:          ds 4

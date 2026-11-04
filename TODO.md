@@ -35,5 +35,5 @@ front window's.
 2. **Windows** in `WM.SYS`: frames, moving, the front one and its bar, full screen, `VX_WINDOW` (M74, done: version 0.45).
 3. **Programs in windows**: resizing, their size, drawing behind while uncovered; CLOCK, SYSINFO (M75, done: version 0.46).
 4. **Widgets in windows** and CALC; **DIARY, TELNET, WEBGET, DATABASE** in windows (M76, done: version 0.47).
-5. **NOTEPAD, SHEET, READER, MARKDOWN** in windows, resized (M77).
+5. **NOTEPAD, SHEET, READER, MARKDOWN** in windows, laid out for their size (M77, done: version 0.48).
 6. **Copies in banks**: windows moved without drawing again; the Desktop's files window as a window (M78).

@@ -38,6 +38,7 @@ CALLS = 43
  FILE_PICK, TEXTS, MENU_OPEN) = range(31)
 BANK_GET, BANK_PUT, EXT = 37, 38, 42
 VX_UTF8, VX_DATA, VX_CALC = 9, 7, 10
+VX_WINDOW = 16                          # no windows here: carry
 VE_KEY_DOWN = 1
 VK = dict(UP=0, RIGHT=1, DOWN=2, LEFT=8, RETURN=18, DEL=79, ESC=66)
 VC_APP = 32
@@ -196,6 +197,8 @@ class App:
                 self.vx_calc()
             elif n == EXT and m.a == VX_DATA:
                 m.a = 1
+            elif n == EXT and m.a == VX_WINDOW:
+                m.f |= 1
             elif n == EXT and m.a == VX_UTF8:
                 at, ln = m.hl - 0x4000, m.bc
                 data = bytes(self.bank[at:at + ln])

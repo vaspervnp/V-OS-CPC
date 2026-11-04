@@ -3,7 +3,7 @@
 ; READER's pages (included by both; page_data.asm has its variables)
 ;
 ; pv_render draws the page lines pv_top.. of text..tend on the screen
-; rows 0..ROWS-1 (row_y), until the screen is full. The program gives:
+; rows 0..ROWS-1 (row_y; pv_rows: fewer), until the screen is full. The program gives:
 ; text, tend, at_eol, same, row_y, line (COLS2 + 1 bytes), ROWS, BG,
 ; INK, CUR_PEN, and the page's width: ncols (db, its columns, up to
 ; COLS2) and xoff (dw, the x of its first one): 48 from 0 in mode 1, 80
@@ -69,6 +69,7 @@ pv_render:
         xor a
 .rest:
         cp ROWS
+pv_rows_at0 equ $ - 1
         ret nc
         push af
         xor a
@@ -607,6 +608,15 @@ pv_new:
         ld (ck_n),a
         ret
 
+; A = the rows on the screen (ROWS, or fewer in a window)
+pv_rows:
+        ld (pv_rows_at0),a
+        ld (pv_rows_at1),a
+        IFDEF PV_LINKS
+        ld (pv_rows_at2),a
+        ENDIF
+        ret
+
 ; the last checkpoint at or above pv_top -> HL -> its text line, and
 ; pv_y, pv_fence (and pv_li) as they were there
 ck_find:
@@ -906,6 +916,7 @@ pv_emit:
         jr nz,.full
         ld a,l
         cp ROWS
+pv_rows_at1 equ $ - 1
         jr nc,.full
         IFDEF PV_LINKS
         ld b,a                      ; only one row?
@@ -1106,6 +1117,7 @@ lk_add:
         jr nz,.out
         ld a,l
         cp ROWS
+pv_rows_at2 equ $ - 1
         jr nc,.out
         ld c,a
         pop hl

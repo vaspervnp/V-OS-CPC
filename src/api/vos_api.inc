@@ -351,7 +351,11 @@ VX_WINDOW       equ 16                  ; (34) HL -> dw w, h: the program
                                         ; from x0, y0 (0, 0: as before),
                                         ; so a program made for the whole
                                         ; screen draws as it did, and its
-                                        ; widgets and events go with it
+                                        ; widgets and events go with it.
+                                        ; w = 0: no window any more (its
+                                        ; window goes; carry): full
+                                        ; screen as before, for a mode 2
+                                        ; page, say; ask again after
 VX_COUNT        equ 17
 
 ; Databases (version 22): VOS_EXT with A = VX_DB, C = one of these. One

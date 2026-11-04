@@ -2,7 +2,8 @@
 ; markdown.asm - MARKDOWN, an editor for Markdown (.MD) files on V-OS,
 ; with a preview page (made with the SDK, from NOTEPAD)
 ;
-; The editor is NOTEPAD's: mode 1, 48 columns, 22 lines, up to 6K of
+; The editor is NOTEPAD's: mode 1, 48 columns, 22 lines (in a window,
+; VX_WINDOW, API 36: as many as fit), up to 6K of
 ; text with LF between the lines (CR LF on the disc). ^M (PAGE), as in
 ; NOTEPAD: mode 2 (API 25), black on white, 80 columns between the
 ; page's edges, a line where a page of PAGE_LINES lines ends, the page
@@ -453,6 +454,7 @@ click:
         jr nc,.row
         ld a,b
         cp ROWS
+rows_at0 equ $ - 1
         ret nc
         ld (click_r),a
         ex de,hl                    ; column = (x - xoff) / 8
@@ -1085,8 +1087,10 @@ place:
 .found:
         ld a,b
         cp ROWS
+rows_at1 equ $ - 1
         jr c,.ok
         sub ROWS - 1                ; below it: the screen moves up
+rows1_at0 equ $ - 1
         ld b,a
         ld hl,(top)
 .up:
@@ -1095,6 +1099,7 @@ place:
         ld (top),hl
         call redo_all
         ld a,ROWS - 1
+rows1a_at0 equ $ - 1
 .ok:
         ld (cur_row),a
         ret
@@ -1123,6 +1128,7 @@ draw_all:
         inc b
         ld a,b
         cp ROWS
+rows_at2 equ $ - 1
         jr c,.row
         ; fall through
 
@@ -1259,8 +1265,63 @@ draw_row:
         ld a,l
         ret
 
-; the mode of pmode, its palette, columns and x
+; the mode of pmode, its palette, columns and x; in mode 1 a window,
+; if there are windows (VX_WINDOW: as many columns and rows as fit,
+; the status under them), the page (mode 2) full screen
 set_mode:
+        ld a,(pmode)
+        cp 2
+        jr z,.page
+        ld a,VX_WINDOW
+        ld hl,wsize
+        call VOS_EXT
+        jr c,.screen
+        ld a,1
+        ld (win),a
+        call pv_new                 ; the preview wrapped again
+        ld hl,(wsize)               ; columns: w / 8
+        srl h
+        rr l
+        srl h
+        rr l
+        srl h
+        rr l
+        ld a,l
+        ld (ncols),a
+        ld hl,(wsize)               ; the status's numbers: at its right
+        ld de,-COLS * 8
+        add hl,de
+        call .status_x
+        ld hl,0
+        ld (xoff),hl
+        ld a,(wsize + 2)            ; rows: (h - 16) / 10, at least 1
+        sub 16
+        jr nc,.rows
+        xor a
+.rows:
+        ld b,0
+.ten:
+        inc b
+        sub 10
+        jr nc,.ten
+        dec b
+        jr nz,.layout
+        inc b
+        jr .layout
+.page:
+        ld a,(win)                  ; out of the windows first
+        or a
+        jr z,.screen
+        xor a
+        ld (win),a
+        ld hl,no_window
+        ld a,VX_WINDOW
+        call VOS_EXT
+.screen:
+        ld hl,0
+        call .status_x
+        ld b,ROWS
+        call .layout
         ld a,(pmode)
         call VOS_MODE
         ld hl,palette
@@ -1277,6 +1338,53 @@ set_mode:
         ld (ncols),a
         ld (xoff),de
         jp VOS_PALETTE
+
+; B = rows: the text's, the preview's, a screen's step, the status
+; under them
+.layout:
+        ld a,b
+        call pv_rows
+        ld (rows_at0),a
+        ld (rows_at1),a
+        ld (rows_at2),a
+        ld (rows_at3),a
+        dec a
+        ld (rows1_at0),a
+        ld (rows1a_at0),a
+        ld (rowsw_at0),a
+        ld (rowsw_at1),a
+        ld a,b
+        add a,a
+        ld c,a
+        add a,a
+        add a,a
+        add a,c
+        add a,TOP_Y + 4
+        ld l,a
+        ld h,0
+        ld (status_at0),hl
+        ld (status_at1),hl
+        ld (status_at2),hl
+        ld (status_at3),hl
+        ld (status_at4),hl
+        ld (status_at5),hl
+        ret
+
+; HL = how far right of a full screen's: LINE and COL, their numbers
+.status_x:
+        ld de,184
+        add hl,de
+        ld (line_at),hl
+        ld e,240 - 184
+        add hl,de
+        ld (line_no_at),hl
+        ld e,288 - 240
+        add hl,de
+        ld (col_at),hl
+        ld e,336 - 288
+        add hl,de
+        ld (col_no_at),hl
+        ret
 
 ; the page's edges, left and right of its text
 edges:
@@ -1347,6 +1455,7 @@ breaks:
         inc b
         ld a,b
         cp ROWS
+rows_at3 equ $ - 1
         jr c,.row
         ret
 
@@ -1355,6 +1464,7 @@ page_no:
         ld a,T_PAGE_NO
         ld hl,384
         ld de,STATUS_Y
+status_at0 equ $ - 2
         ld c,6
         call print_label
         ld hl,(cur_line)
@@ -1422,6 +1532,7 @@ status:
         jr z,.text
         ld hl,0
         ld de,STATUS_Y
+status_at1 equ $ - 2
         ld a,(ncols)
         ld c,a
         ld a,T_PV_STATUS
@@ -1468,11 +1579,14 @@ status:
         call VOS_COLOURS
         ld hl,(xoff)
         ld de,STATUS_Y
+status_at2 equ $ - 2
         ld bc,line
         call VOS_PRINT
         ld a,T_LINE
         ld hl,184
+line_at equ $ - 2
         ld de,STATUS_Y
+status_at3 equ $ - 2
         ld c,7
         call print_label
         ld hl,text                  ; the line: LFs before the cursor
@@ -1492,13 +1606,16 @@ status:
         call breaks
         ld hl,(cur_line)
         ld de,240
+line_no_at equ $ - 2
         call number
         ld a,(pmode)                ; the page: PAGE n
         cp 2
         call z,page_no
         ld a,T_COL
         ld hl,288
+col_at equ $ - 2
         ld de,STATUS_Y
+status_at4 equ $ - 2
         ld c,6
         call print_label
         call column
@@ -1506,6 +1623,7 @@ status:
         ld h,b
         ld l,c
         ld de,336
+col_no_at equ $ - 2
         ; fall through
 
 ; HL = number, DE = x (from xoff): 5 digits on the last line
@@ -1540,6 +1658,7 @@ number:
         call colours
         pop hl
         ld de,STATUS_Y
+status_at5 equ $ - 2
         ld bc,line
         jp VOS_PRINT
 .digit:
@@ -1641,6 +1760,7 @@ pv_event:
         or a
         ret z
         ld de,ROWS - 1
+rowsw_at0 equ $ - 2
         add hl,de
         ld (pv_top),hl
         call pv_render
@@ -1668,6 +1788,7 @@ pv_event:
         jr .set
 .page_up:
         ld de,ROWS - 1
+rowsw_at1 equ $ - 2
         or a
         sbc hl,de
         jr nc,.set
@@ -1737,6 +1858,9 @@ row_i0:         db 0
 tend:           dw 0                ; -> after the text
 top:            dw 0                ; -> the first line on the screen
 left:           db 0                ; the first column on the screen
+win:            db 0                ; 1: in a window
+wsize:          dw 376, 232, 0, 12  ; VX_WINDOW: w, h, x0, y0
+no_window:      dw 0, 0, 0, 0       ; out of the windows (the page)
 pmode:          db 1                ; 1, or 2: the page (^M)
 ncols:          db COLS             ; the columns on the screen
 xoff:           dw 0                ; x of the first one

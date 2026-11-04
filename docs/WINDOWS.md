@@ -98,7 +98,7 @@ in [TODO.md](../TODO.md) and, as each is done, in
    the background; its files window becomes one window among the others
    (M78).
 
-## As M76 left it
+## As M77 left it
 
 - `WM.SYS` keeps up to six windows. A click on one that is behind, or F6,
   brings its program to the front: it starts again (init with A = 2)
@@ -117,8 +117,14 @@ in [TODO.md](../TODO.md) and, as each is done, in
   say which part of its screen the window shows, so a program made for
   the whole screen draws as it did. DIARY, TELNET, WEBGET and DATABASE
   ask for their screen under the bar; made smaller, the window shows its
-  top left part (laying them out for the size they get is M77's work,
-  with the editors).
+  top left part.
+- **Laid out for their size** (M77): NOTEPAD, MARKDOWN, READER and SHEET
+  take as many columns and rows as their window has room for (w / 8
+  characters; SHEET as many of its columns of 9), with the status line
+  under the rows, and do so again whenever the window is resized. Their
+  mode 2 page (^M), SHEET's chart too, leaves the windows (`VX_WINDOW`
+  with w = 0) and runs full screen; ^M again brings the window back,
+  where and as large as it was.
 - **Widgets in windows** (M76): they are drawn from the view's corner
   and clicked there. A Studio program in mode 1 with a WINDOW shows that
   window's inside in a V-OS window (CALC).
@@ -135,7 +141,7 @@ in [TODO.md](../TODO.md) and, as each is done, in
 | **M74** ✓ | **Windows**, in `WM.SYS` (576K): a list in depth order, the frame, moving with an outline, the front window, its bar at the top, the full screen box (and F7), closing. `VX_WINDOW` (API 34). | `make test-wm`: WINA and WINB (`apps/wint`) in windows: brought to the front with a click, the bar changes, a click inside from its corner, moved, full screen and back, closed; seven screenshots checked (`tools/wm_check.py`). |
 | **M75** ✓ | **Programs in windows**: resizing with the frame's corner, the size written back by `VX_WINDOW` (API 35), drawing by uncovered windows behind (`wm_bg`); F6 brings a window to the front. **CLOCK, SYSINFO.** | `make test-wm-apps`: CLOCK, SYSINFO and WINA on the desk at once, overlapping; CLOCK ticks behind SYSINFO when nothing covers it; SYSINFO resized (`tools/wm_apps_check.py`). |
 | **M76** ✓ | **Widgets in windows**, so **CALC** (a Studio program, VBRUN) is windowed; **DIARY, TELNET, WEBGET, DATABASE** in windows, each showing the part of its screen it asks for (`VX_WINDOW`'s x0, y0, API 36). | `make test-wm-apps2`: DIARY, TELNET over it, CALC in a window, and its buttons clicked there: 1 + 2 = 3 (`tools/wm_apps2_check.py`). TELNET's receiving is tested as before (`make test-telnet`, off the emulator): Caprice32 has no network. |
-| M77 | **NOTEPAD, SHEET, READER, MARKDOWN** in windows, laid out for the size they are given; their mode 2 pages full screen. | NOTEPAD resized, its lines rewrapped to the window. |
+| **M77** ✓ | **NOTEPAD, SHEET, READER, MARKDOWN** in windows, laid out for the size they are given; their mode 2 pages full screen (`VX_WINDOW` with w = 0 leaves the windows). | `make test-wm-notepad`: NOTEPAD resized, its columns and rows cut to the window, the status under them; its page full screen and the window back (`tools/wm_notepad_check.py`). `make test-wm-pages`: MARKDOWN, its preview, READER (wrapped at the window's width) and SHEET (4 columns, 18 rows); SHEET's page and back (`tools/wm_pages_check.py`). |
 | M78 | **Copies in banks** (576K): a window keeps a copy of itself, so moving it or bringing it to the front only copies; the Desktop's files window becomes a window like the others. | A window moved over three others: no program draws again. |
 
 Each milestone adds 0.01 to the version and updates the manual in its

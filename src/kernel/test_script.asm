@@ -322,6 +322,70 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 56
+; make test-wm-pages (-DTEST_SCRIPT=56, 576K): WM.SYS; MARKDOWN.BIN,
+; READER.BIN, SHEET.BIN, then INDEX.MD last on A: (a heading, a long
+; paragraph). Each in a window of 376 x 232 (API 36), laid out for it.
+; Expected:
+;   frame  300  F3, DOWN held, 1000 RETURN -> MARKDOWN with INDEX.MD:
+;               47 columns, 21 rows, the status under them
+;   frame 2000  CONTROL+P    -> its preview, wrapped at 47 columns
+;   frame 2700  F3, DOWN held, UP x2, 3350 RETURN -> READER over it:
+;               INDEX.MD, wrapped at 47 columns, the place under it
+;   frame 4500  F3, DOWN held, UP, 5100 RETURN -> SHEET over them: 4 of
+;               its columns (A-D), 18 rows
+;   frame 6200  CONTROL+M    -> SHEET's page (mode 2), full screen
+;   frame 7200  CONTROL+M    -> its window again
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db 255, 0, %00000100   ; DOWN, held
+        dw  655 : db 195, 0, %00000100
+        dw 1000 : db   4, 2, %00000100   ; RETURN: INDEX.MD
+        dw 1995 : db  15, 2, %10000000   ; CONTROL
+        dw 2000 : db   4, 3, %00001000   ; P: the preview
+        dw 2700 : db   4, 0, %00100000   ; F3
+        dw 2800 : db 255, 0, %00000100   ; DOWN, held
+        dw 3055 : db 195, 0, %00000100
+        dw 3275 : db   4, 0, %00000001   ; UP
+        dw 3300 : db   4, 0, %00000001   ; UP: READER
+        dw 3350 : db   4, 2, %00000100   ; RETURN
+        dw 4500 : db   4, 0, %00100000   ; F3
+        dw 4600 : db 255, 0, %00000100   ; DOWN, held
+        dw 4855 : db 195, 0, %00000100
+        dw 5050 : db   4, 0, %00000001   ; UP: SHEET
+        dw 5100 : db   4, 2, %00000100   ; RETURN
+        dw 6195 : db  15, 2, %10000000   ; CONTROL
+        dw 6200 : db   4, 4, %01000000   ; M: the page
+        dw 7195 : db  15, 2, %10000000   ; CONTROL
+        dw 7200 : db   4, 4, %01000000   ; M: the window again
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 55
+; make test-wm-notepad (-DTEST_SCRIPT=55, 576K): WM.SYS; NOTEPAD.BIN,
+; then NOTES.TXT last on A: (30 lines of 66 characters). Expected:
+;   frame  300  F3, DOWN held, 950 RETURN -> NOTES.TXT in NOTEPAD, in a
+;               window of 376 x 232 at (0, 13): 47 columns, 21 rows, the
+;               status under them
+;   frame 1820  COPY held on its corner (380, 255), LEFT and UP held ->
+;               a smaller window: fewer columns and rows, the status
+;               under the rows still
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db 255, 0, %00000100   ; DOWN, held
+        dw  655 : db 195, 0, %00000100
+        dw  950 : db   4, 2, %00000100   ; RETURN: NOTES.TXT
+        dw 1790 : db 200, #80, 1         ; COPY is the left button
+        dw 1800 : db   5, #81, 190       ; (380, 255)
+        dw 1800 : db   5, #82, 255
+        dw 1820 : db 120, 1, %00000010   ; COPY held
+        dw 1830 : db  45, 1, %00000001   ; LEFT
+        dw 1830 : db  35, 0, %00000001   ; UP
+        dw 2895 : db  15, 2, %10000000   ; CONTROL
+        dw 2900 : db   4, 4, %01000000   ; M: the page
+        dw 3895 : db  15, 2, %10000000   ; CONTROL
+        dw 3900 : db   4, 4, %01000000   ; M: the window again
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 54
 ; make test-wm-apps2 (-DTEST_SCRIPT=54, 576K): WM.SYS; DIARY.BIN,
 ; TELNET.BIN and CALC.VBN last on A: (API 36: windows that show a part
@@ -729,7 +793,7 @@ test_keys:
         dw 2095 : db  15, 2, %10000000   ; CONTROL
         dw 2100 : db   4, 3, %00001000   ; P
         dw 2900 : db   4, 0, %00000100   ; DOWN: A2
-        dw 2995 : db  15, 2, %10000000   ; CONTROL
+        dw 3895 : db  15, 2, %10000000   ; CONTROL
         dw 3000 : db   4, 6, %00010000   ; G: CHART
         dw 3150 : db   4, 2, %00000100   ; RETURN: A2:A4
         dw #FFFF
@@ -2443,6 +2507,8 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

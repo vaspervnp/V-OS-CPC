@@ -99,7 +99,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-wm test-wm-apps test-wm-apps2 test-view test-diary-cap test-keep test-telnet-m4 test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-wm test-wm-apps test-wm-apps2 test-wm-notepad test-wm-pages test-view test-diary-cap test-keep test-telnet-m4 test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -1358,6 +1358,55 @@ test-wm-apps2: $(WM_APPS2_DSK)
 	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_TIMEOUT=150 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk bash $(abspath tools/cap32_shot.sh) $$d" || true; \
 	done
 	$(PYTHON) tools/wm_apps2_check.py $(foreach d,$(WM_APPS2_SHOTS),$(BUILD)/shots/$(d)/*.png)
+
+# SHEET, READER and MARKDOWN in windows, laid out for their size
+# (TEST_SCRIPT=56, 576K): INDEX.MD in READER and in MARKDOWN, its
+# preview; SHEET's page full screen and back. tools/wm_pages_check.py
+# checks the shots
+WM_PAGES_DSK := $(BUILD)/vos_wm_pages.dsk
+WM_PAGES_SHOTS ?= 550 650 1100 1600 1800 2100
+$(WM_PAGES_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(BUILD)/MARKDOWN.BIN $(BUILD)/READER.BIN $(BUILD)/SHEET.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_wm_pages -DTEST_SCRIPT=56
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(BUILD)/MARKDOWN.BIN $(BUILD)/READER.BIN $(BUILD)/SHEET.BIN)
+	$(PYTHON) -I -c 'import sys; sys.stdout.buffer.write(b"# WINDOWS\r\n\r\nA page of **READER** in a window: its lines wrap at the window\x27s width, and as many of them as fit are shown, the place under them.\r\n\r\n- one\r\n- two\r\n")' > $(BUILD)/INDEX.MD
+	$(IDSK) $@ -i $(BUILD)/INDEX.MD -t 0 > /dev/null
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-wm-pages: $(WM_PAGES_DSK)
+	rm -rf $(BUILD)/shots
+	for d in $(WM_PAGES_SHOTS); do \
+	  cp $(WM_PAGES_DSK) $(BUILD)/vos_run.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_TIMEOUT=150 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk bash $(abspath tools/cap32_shot.sh) $$d" || true; \
+	done
+	$(PYTHON) tools/wm_pages_check.py $(foreach d,$(WM_PAGES_SHOTS),$(BUILD)/shots/$(d)/*.png)
+
+# NOTEPAD in a window, laid out for its size (TEST_SCRIPT=55, 576K):
+# NOTES.TXT opened from the Commander, then the window made smaller by
+# its corner; the page (mode 2) full screen and back. tools/wm_notepad_check.py checks the shots
+WM_NOTES_DSK := $(BUILD)/vos_wm_notes.dsk
+WM_NOTES_SHOTS ?= 450 650 900 1250
+$(WM_NOTES_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(BUILD)/NOTEPAD.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_wm_notes -DTEST_SCRIPT=55
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(BUILD)/NOTEPAD.BIN)
+	$(PYTHON) -I -c 'import sys; sys.stdout.buffer.write(b"".join(b"LINE %02d: THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG AND THE CAT\r\n" % i for i in range(30)))' > $(BUILD)/NOTES.TXT
+	$(IDSK) $@ -i $(BUILD)/NOTES.TXT -t 0 > /dev/null
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-wm-notepad: $(WM_NOTES_DSK)
+	rm -rf $(BUILD)/shots
+	for d in $(WM_NOTES_SHOTS); do \
+	  cp $(WM_NOTES_DSK) $(BUILD)/vos_run.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_TIMEOUT=150 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk bash $(abspath tools/cap32_shot.sh) $$d" || true; \
+	done
+	$(PYTHON) tools/wm_notepad_check.py $(foreach d,$(WM_NOTES_SHOTS),$(BUILD)/shots/$(d)/*.png)
 
 # SHOW THE TEXT on a .SCR (TEST_SCRIPT=47): the picture in the
 # Commander, then the Commander again
