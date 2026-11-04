@@ -38,7 +38,7 @@ MUSIC è l'eccezione: la sua canzone suona dall'interrupt, 50 volte al secondo, 
 
 ## Finestre
 
-Con un'**espansione di memoria**, CLOCK e SYSINFO si aprono in una **finestra** sulla scrivania, sopra le finestre degli altri programmi in esecuzione. Gli altri programmi di V-OS si aprono ancora a schermo intero.
+Con un'**espansione di memoria**, CLOCK, SYSINFO, DIARY, TELNET, WEBGET e DATABASE si aprono in una **finestra** sulla scrivania, sopra le finestre degli altri programmi in esecuzione. Così anche un programma di Studio in modo 1 che apre una finestra propria (come CALC): la finestra ne mostra l'interno, con i suoi pulsanti. DIARY, TELNET, WEBGET e DATABASE mostrano nella finestra il loro schermo com'era; rimpicciolita, ne mostra la parte in alto a sinistra. Gli altri programmi si aprono ancora a schermo intero.
 
 - La barra dei menu resta in alto ed è quella della finestra **davanti**. Un clic su un'altra finestra la porta davanti, con la sua barra.
 - Trascina il **titolo** di una finestra per spostarla, e il suo **angolo in basso a destra** per cambiarne la dimensione. Il programma dispone ciò che mostra per la nuova dimensione.

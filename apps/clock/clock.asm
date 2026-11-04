@@ -500,7 +500,7 @@ menu:           db T_CLOCK, 1
 
 accessory:      db 0
 win:            db 0                ; 1: in a window (VX_WINDOW)
-wsize:          dw 176, 56          ; its inside (VX_WINDOW writes its
+wsize:          dw 176, 56, 0, 0    ; its inside (VX_WINDOW writes its
                                     ; size now, after a resize too)
 last:           db 0                ; the seconds drawn (low byte)
 wx:             dw 8                ; the accessory's window

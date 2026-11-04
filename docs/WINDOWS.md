@@ -98,7 +98,7 @@ in [TODO.md](../TODO.md) and, as each is done, in
    the background; its files window becomes one window among the others
    (M78).
 
-## As M75 left it
+## As M76 left it
 
 - `WM.SYS` keeps up to six windows. A click on one that is behind, or F6,
   brings its program to the front: it starts again (init with A = 2)
@@ -113,10 +113,19 @@ in [TODO.md](../TODO.md) and, as each is done, in
   windows are drawn after another view.
 - CLOCK and SYSINFO run in windows (with a memory expansion); CLOCK goes
   on in the background and ticks while uncovered.
-- Not yet: `VOS_PALETTE` and widgets in a window (so Studio's programs,
-  CALC among them, run full screen: M76), asking the program before X
-  ends it. The accessory (F5, CLOCK) over windows, and F6 among windows,
-  have not been tried in a test yet.
+- **A part of a program's screen** (M76, API 36): `VX_WINDOW`'s x0, y0
+  say which part of its screen the window shows, so a program made for
+  the whole screen draws as it did. DIARY, TELNET, WEBGET and DATABASE
+  ask for their screen under the bar; made smaller, the window shows its
+  top left part (laying them out for the size they get is M77's work,
+  with the editors).
+- **Widgets in windows** (M76): they are drawn from the view's corner
+  and clicked there. A Studio program in mode 1 with a WINDOW shows that
+  window's inside in a V-OS window (CALC).
+- Not yet: `VOS_PALETTE` in a window, asking the program before X ends
+  it, TELNET receiving while behind (`VOS_EXT` is quiet there). The
+  accessory (F5, CLOCK) over windows, and F6 among windows, have not
+  been tried in a test yet.
 
 ## Milestones
 
@@ -125,7 +134,7 @@ in [TODO.md](../TODO.md) and, as each is done, in
 | **M73** ✓ | **Origin and clip** for programs' drawing: `VX_VIEW` (API 33) sets them; `VOS_CLS`, `PLOT`, `RECT`, `CHAR`, `PRINT` and `BLIT` respect them. The work is in `wm_bank` (576K); the kernel gets entry routines only, with room made by moving `VOS_SPLIT`'s setting to where the loader was in bank 1. | `make test-view`: VIEWT draws through a view, checked pixel by pixel; 128K: carry. Programs without `VX_VIEW` draw as before (the existing tests). |
 | **M74** ✓ | **Windows**, in `WM.SYS` (576K): a list in depth order, the frame, moving with an outline, the front window, its bar at the top, the full screen box (and F7), closing. `VX_WINDOW` (API 34). | `make test-wm`: WINA and WINB (`apps/wint`) in windows: brought to the front with a click, the bar changes, a click inside from its corner, moved, full screen and back, closed; seven screenshots checked (`tools/wm_check.py`). |
 | **M75** ✓ | **Programs in windows**: resizing with the frame's corner, the size written back by `VX_WINDOW` (API 35), drawing by uncovered windows behind (`wm_bg`); F6 brings a window to the front. **CLOCK, SYSINFO.** | `make test-wm-apps`: CLOCK, SYSINFO and WINA on the desk at once, overlapping; CLOCK ticks behind SYSINFO when nothing covers it; SYSINFO resized (`tools/wm_apps_check.py`). |
-| M76 | **Widgets in windows**, so **CALC** (a Studio program, VBRUN) can be windowed; **DIARY, TELNET, WEBGET, DATABASE** in windows. | TELNET receives in a window next to DIARY; CALC's buttons work in a window. |
+| **M76** ✓ | **Widgets in windows**, so **CALC** (a Studio program, VBRUN) is windowed; **DIARY, TELNET, WEBGET, DATABASE** in windows, each showing the part of its screen it asks for (`VX_WINDOW`'s x0, y0, API 36). | `make test-wm-apps2`: DIARY, TELNET over it, CALC in a window, and its buttons clicked there: 1 + 2 = 3 (`tools/wm_apps2_check.py`). TELNET's receiving is tested as before (`make test-telnet`, off the emulator): Caprice32 has no network. |
 | M77 | **NOTEPAD, SHEET, READER, MARKDOWN** in windows, laid out for the size they are given; their mode 2 pages full screen. | NOTEPAD resized, its lines rewrapped to the window. |
 | M78 | **Copies in banks** (576K): a window keeps a copy of itself, so moving it or bringing it to the front only copies; the Desktop's files window becomes a window like the others. | A window moved over three others: no program draws again. |
 

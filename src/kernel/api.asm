@@ -109,6 +109,10 @@ wm_on           equ GAP2 + 735      ; the program in front: 1 in a window,
                                     ; 2 the same full screen (wm/wm.asm)
 wm_was          equ GAP2 + 736      ; wm_on before this view started
 wm_sys          equ GAP2 + 737      ; 1: WM.SYS is in wm_bank (boot_x)
+wm_dw_hook      equ GAP2 + 738      ; ui_draw_widget calls it; and
+WM_CALL_GAP     equ GAP2 + 766      ; wm_call goes there; both copied at
+wm_sp           equ GAP2 + 798      ; boot (boot/gap.asm)
+        assert wm_sp + 2 <= GAP2 + GAP_SIZE
 
 ; Z: no view. Keeps all but the flags
 vw_check:

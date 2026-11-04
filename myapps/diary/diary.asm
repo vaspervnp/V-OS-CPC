@@ -59,6 +59,14 @@ CMD_BACK        equ VC_APP + 9
 
 ; A = 0: a new start, on its own drive; 2: back, as it was
 init:
+        push af                     ; in a window, if there are windows
+        ld a,VX_WINDOW              ; (first, each time): the part of
+        ld hl,wsize                 ; the screen it uses
+        call VOS_EXT
+        sbc a,a                     ; 0: a window, #FF: the screen
+        inc a
+        ld (win),a
+        pop af
         push af
         ld hl,texts
         call VOS_TEXTS
@@ -89,10 +97,14 @@ reload_day:
         ; fall through
 
 redraw:
+        ld a,(win)                  ; in a window: the Desktop's mode
+        or a                        ; and colours
+        jr nz,.colours
         ld a,1
         call VOS_MODE
         ld hl,palette
         call VOS_PALETTE
+.colours:
         ld a,BG
         call VOS_CLS
         call VOS_DRAW_BAR
@@ -1072,6 +1084,9 @@ command:
         include "api/vos_drive.inc"
 
 ; ---- data -----------------------------------------------------------
+win:            db 0                ; 1: in a window (VX_WINDOW)
+wsize:          dw 344, 228, 0, 12 ; its w, h, and from x0, y0
+
 palette:        db 0, 26, 1, 24, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16
                 db 1
 bar:            db 3

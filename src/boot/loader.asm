@@ -42,6 +42,10 @@ loader_start:
         ld bc,#7FFF
         ld (hl),l
         ldir
+        ld hl,EXT2_ADDR + EXT2_SIZE + gap_code - low_start
+        ld de,wm_dw_hook            ; then the end of GAP2 (boot/gap.asm),
+        ld bc,gap_end - gap_code    ; from bank 1, where it was copied
+        ldir                        ; with the second extension
         jp kernel_entry
 
 ; Run once, here: they take no room in the kernel

@@ -322,6 +322,50 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 54
+; make test-wm-apps2 (-DTEST_SCRIPT=54, 576K): WM.SYS; DIARY.BIN,
+; TELNET.BIN and CALC.VBN last on A: (API 36: windows that show a part
+; of the program's screen). Expected:
+;   frame  300  F3, DOWN held, UP x2, 1000 RETURN -> DIARY in a
+;               window
+;   frame 1400  F3, DOWN held, UP x2 (DIARY.VDB is last now), 2050
+;               RETURN -> TELNET over it
+;   frame 2500  F3, DOWN held, UP, 3100 RETURN -> CALC: its window's inside
+;               in a V-OS window at (64, 52), its buttons in it, its bar
+;   frame 4010-4310 clicks on 1, +, 2, = -> CALC shows 3
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db 255, 0, %00000100   ; DOWN, held
+        dw  655 : db 195, 0, %00000100
+        dw  900 : db   4, 0, %00000001   ; UP
+        dw  950 : db   4, 0, %00000001   ; UP: DIARY
+        dw 1000 : db   4, 2, %00000100   ; RETURN
+        dw 1400 : db   4, 0, %00100000   ; F3
+        dw 1500 : db 255, 0, %00000100   ; DOWN, held
+        dw 1755 : db 195, 0, %00000100
+        dw 1975 : db   4, 0, %00000001   ; UP
+        dw 2000 : db   4, 0, %00000001   ; UP: TELNET
+        dw 2050 : db   4, 2, %00000100   ; RETURN
+        dw 2500 : db   4, 0, %00100000   ; F3
+        dw 2600 : db 255, 0, %00000100   ; DOWN, held
+        dw 2855 : db 195, 0, %00000100
+        dw 3050 : db   4, 0, %00000001   ; UP: CALC
+        dw 3100 : db   4, 2, %00000100   ; RETURN
+        dw 3990 : db 255, #80, 1         ; COPY is the left button
+        dw 4000 : db   5, #81, 48        ; CALC's 1 (96, 138)
+        dw 4000 : db   5, #82, 138
+        dw 4010 : db   4, 1, %00000010   ; COPY
+        dw 4100 : db   5, #81, 120       ; + (240, 158)
+        dw 4100 : db   5, #82, 158
+        dw 4110 : db   4, 1, %00000010
+        dw 4200 : db   5, #81, 72        ; 2 (144, 138)
+        dw 4200 : db   5, #82, 138
+        dw 4210 : db   4, 1, %00000010
+        dw 4300 : db   5, #81, 96        ; = (192, 158)
+        dw 4300 : db   5, #82, 158
+        dw 4310 : db   4, 1, %00000010
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 53
 ; make test-wm-apps (-DTEST_SCRIPT=53, 576K): WM.SYS; CLOCK.BIN,
 ; SYSINFO.BIN and WINA.BIN last on A:. Expected:
@@ -2399,6 +2443,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

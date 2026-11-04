@@ -38,7 +38,7 @@ MUSIC fait exception : sa chanson est jouée depuis l'interruption, 50 fois par 
 
 ## Fenêtres
 
-Avec une **extension mémoire**, CLOCK et SYSINFO s'ouvrent dans une **fenêtre** sur le bureau, par-dessus les fenêtres des autres programmes en cours. Les autres programmes de V-OS s'ouvrent encore en plein écran.
+Avec une **extension mémoire**, CLOCK, SYSINFO, DIARY, TELNET, WEBGET et DATABASE s'ouvrent dans une **fenêtre** sur le bureau, par-dessus les fenêtres des autres programmes en cours. De même un programme de Studio en mode 1 qui ouvre sa propre fenêtre (comme CALC) : la fenêtre montre son intérieur, avec ses boutons. DIARY, TELNET, WEBGET et DATABASE montrent dans la fenêtre leur écran tel qu'il était ; réduite, elle en montre la partie en haut à gauche. Les autres programmes s'ouvrent encore en plein écran.
 
 - La barre de menus reste en haut et c'est celle de la fenêtre **de devant**. Un clic sur une autre fenêtre la fait passer devant, avec sa barre.
 - Faites glisser le **titre** d'une fenêtre pour la déplacer, et son **coin inférieur droit** pour changer sa taille. Le programme dispose ce qu'il montre pour la nouvelle taille.

@@ -38,7 +38,7 @@ MUSIC es la excepción: su canción suena desde la interrupción, 50 veces por s
 
 ## Ventanas
 
-Con una **ampliación de memoria**, CLOCK y SYSINFO se abren en una **ventana** sobre el escritorio, encima de las ventanas de los otros programas en marcha. Los demás programas de V-OS se abren aún a pantalla completa.
+Con una **ampliación de memoria**, CLOCK, SYSINFO, DIARY, TELNET, WEBGET y DATABASE se abren en una **ventana** sobre el escritorio, encima de las ventanas de los otros programas en marcha. Lo mismo un programa de Studio en modo 1 que abre una ventana propia (como CALC): la ventana muestra su interior, con sus botones. DIARY, TELNET, WEBGET y DATABASE muestran en la ventana su pantalla como era; si la reduces, muestra la parte de arriba a la izquierda. Los demás programas se abren aún a pantalla completa.
 
 - La barra de menús queda arriba y es la de la ventana **de delante**. Un clic en otra ventana la trae delante, con su barra.
 - Arrastra el **título** de una ventana para moverla, y su **esquina inferior derecha** para cambiar su tamaño. El programa dispone lo que muestra para el nuevo tamaño.

@@ -38,7 +38,7 @@ MUSIC is the exception: its song plays from the interrupt, 50 times a second, so
 
 ## Windows
 
-With a **memory expansion**, CLOCK and SYSINFO open in a **window** on the desk, over the windows of the other programs that are running. V-OS's other programs still open full screen.
+With a **memory expansion**, CLOCK, SYSINFO, DIARY, TELNET, WEBGET and DATABASE open in a **window** on the desk, over the windows of the other programs that are running. So does a Studio program in mode 1 that opens a window of its own (such as CALC): the window shows its inside, with its buttons. DIARY, TELNET, WEBGET and DATABASE show their screen as it was in the window; made smaller, it shows the top left part of it. The other programs still open full screen.
 
 - The menu bar stays at the top and is the bar of the window **in front**. A click on another window brings it to the front, with its bar.
 - Drag a window's **title** to move it, and its **bottom right corner** to change its size. The program lays out what it shows for the new size.

@@ -1262,6 +1262,7 @@ ui_draw_widget:
         inc hl
         ld a,(hl)
         ld (dw_msg),a
+        call wm_dw_hook             ; in a window: from its view
         ld a,(dw_i)
         ld hl,ui_focus
         cp (hl)

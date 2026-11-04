@@ -303,7 +303,7 @@ menu:           db T_MENU, 4
                 db T_BACK, CMD_BACK, "Q", 0
 dlg_about:      db T_MENU, T_ABOUT_TEXT, 1, VM_OK
 tens:           dw 10000, 1000, 100, 10, 1, 0
-wsize:          dw 248, 104         ; its window's inside (VX_WINDOW)
+wsize:          dw 248, 104, 0, 0   ; its window's inside (VX_WINDOW)
 place:          dw 0, 0             ; the labels' x, the values' x,
                 db 0                ; the title's y (0: in a window)
 place_win:      dw 8, 136

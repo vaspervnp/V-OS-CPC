@@ -105,7 +105,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 35              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 36              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -125,7 +125,8 @@ VOS_API_VERSION equ 35              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; list, 30: VX_PRINT, 31: its pages,
                                     ; 32: VX_M4 HL = 0, 33: VX_VIEW,
                                     ; 34: VX_WINDOW, 35: VX_WINDOW
-                                    ; writes the size back
+                                    ; writes the size back, 36:
+                                    ; VX_WINDOW's x0, y0
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -344,7 +345,13 @@ VX_WINDOW       equ 16                  ; (34) HL -> dw w, h: the program
                                         ; Mode 1, the theme's colours: no
                                         ; VOS_PALETTE, no widgets yet.
                                         ; Carry: no RAM expansion or no
-                                        ; WM.SYS on A:
+                                        ; WM.SYS on A:. (36) HL -> dw w,
+                                        ; h, x0, y0: the window shows the
+                                        ; part of the program's screen
+                                        ; from x0, y0 (0, 0: as before),
+                                        ; so a program made for the whole
+                                        ; screen draws as it did, and its
+                                        ; widgets and events go with it
 VX_COUNT        equ 17
 
 ; Databases (version 22): VOS_EXT with A = VX_DB, C = one of these. One

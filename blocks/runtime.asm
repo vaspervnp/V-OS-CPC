@@ -104,11 +104,18 @@ rt_init:
         ENDIF
         ld hl,rt_texts
         call VOS_TEXTS
+        IFDEF RT_UI
+        ld a,(rt_wm)                ; its window in one of V-OS's: asked
+        or a                        ; for again, before it draws; the
+        call nz,rt_win_ask          ; Desktop's mode and colours there
+        jr nz,rt_screen_set
+        ENDIF
         ld a,PROG_MODE
 rt_mode_1 equ $ - 1
         call VOS_MODE
         ld hl,prog_palette
         call VOS_PALETTE
+rt_screen_set:
         call VOS_MENU_VIEW
         ld (rt_bar + 3),hl
         call VOS_MENU_HELP
@@ -1743,6 +1750,8 @@ rt_bg_4 equ $ - 1
         ld (rt_ink),a
         ld a,WIN_PEN
         ld (rt_bg_3),a
+        call rt_win_ask
+        call nz,VOS_DRAW_BAR        ; (after init: its bar again)
         ; fall through
 
 ; the window: shadow, frame and title bar, inside, title
@@ -1886,6 +1895,31 @@ rt_win_drag:
         jr nz,.button
         call rt_redraw
         scf
+        ret
+
+; a program in mode 1, with V-OS's windows (VX_WINDOW, API 36): its
+; window's inside, from rt_ox, rt_oy, shown in one of them (the frame
+; and title are V-OS's), everything drawn where it was -> rt_wm 1 and
+; NZ; else 0 (carry: no windows), as before. (rt_wsize: the request,
+; then rt_ox, rt_oy: x0, y0)
+rt_win_ask:
+        ld a,(rt_mode_1)
+        dec a
+        ret nz
+        ld hl,(rt_ww)
+        ld de,-8
+        add hl,de
+        ld (rt_wsize),hl
+        ld hl,(rt_wh)
+        add hl,de
+        add hl,de
+        ld (rt_wsize + 2),hl
+        ld a,VX_WINDOW
+        ld hl,rt_wsize
+        call VOS_EXT
+        sbc a,a
+        inc a
+        ld (rt_wm),a
         ret
 
 ; -> B, C = the window's width and height
@@ -2055,12 +2089,14 @@ rt_periods:     dw 1911, 1804, 1703, 1607, 1517, 1432   ; C1..B1 (AY at 1 MHz)
                 dw 1351, 1276, 1204, 1136, 1073, 1012
         IFDEF RT_UI
 rt_win:         db 0                ; a window is open
+rt_wm:          db 0                ; 1: shown in V-OS's window
 rt_wx:          dw 0
 rt_wy:          dw 0
 rt_ww:          dw 0
 rt_wh:          dw 0
 rt_wtitle:      db 0
 rt_wtext:       ds 24
+rt_wsize:       dw 0, 0             ; VX_WINDOW: w, h, then x0, y0:
 rt_ox:          dw 0                ; where x, y = 0, 0 is
 rt_oy:          dw 0
 rt_button_n:    dw 0                ; the last button pressed

@@ -33,6 +33,8 @@ R_Y             equ 6
 R_W             equ 8               ; the inside
 R_H             equ 10
 R_NAME          equ 12              ; 12: drive, name (as app_self)
+R_OX            equ 24              ; the part of its screen it shows
+R_OY            equ 26              ; (API 36: VX_WINDOW's x0, y0)
 F_FULL          equ 1
 WM_MIN_W        equ 64              ; the smallest inside
 WM_MIN_H        equ 24
@@ -56,6 +58,7 @@ wm_window:
         ld ix,(wm_cur)
         jp wm_view
 .front:
+        call wm_offsets
         call wm_prune
         call wm_find
         jr nc,.found
@@ -71,6 +74,12 @@ wm_window:
         call wm_raise
 .top:
         call wm_top
+        ld hl,(wm_oxy)              ; the part of its screen it shows
+        ld (ix + R_OX),l
+        ld (ix + R_OX + 1),h
+        ld hl,(wm_oxy + 2)
+        ld (ix + R_OY),l
+        ld (ix + R_OY + 1),h
         bit 0,(ix + R_FLAGS)
         jr z,.window
         ld a,2                      ; full screen: under the bar, no
@@ -145,6 +154,18 @@ wm_view:
         ld a,1
         ld (vw_a),a
         call vw_set
+        ld hl,(vw_ox)               ; its (0, 0) at x0, y0 before it
+        ld e,(ix + R_OX)
+        ld d,(ix + R_OX + 1)
+        or a
+        sbc hl,de
+        ld (vw_ox),hl
+        ld hl,(vw_oy)
+        ld e,(ix + R_OY)
+        ld d,(ix + R_OY + 1)
+        or a
+        sbc hl,de
+        ld (vw_oy),hl
         ld a,(wm_quiet)
         or a
         ret nz
@@ -192,19 +213,16 @@ wm_event:
         or a
         sbc hl,de
         jr c,.no
-        ld a,(wm_on)                ; full screen: y from under the bar
+        ex de,hl                    ; DE = y under the bar
+        call wm_top
+        ld a,(wm_on)                ; full screen: from under the bar
         dec a
         jr z,.window
-        ld (ev_cur + 6),hl
-        ret
+        ld hl,(ev_cur + 4)
+        jp wm_local
 .window:
-        call wm_top                 ; in the window in front: from it
-        call wm_inside
-        jr c,.outside
-        ld (ev_cur + 4),hl
-        ld (ev_cur + 6),de
-        or a
-        ret
+        call wm_inside              ; in the window in front: from it
+        jp nc,wm_local
 .outside:
         ld a,(ev_cur)
         cp EV_PTR_DOWN
@@ -267,6 +285,51 @@ wm_right:
         ld hl,(ev_cur + 4)
         or a
         sbc hl,de
+        ret
+
+; IX = the window in front, HL, DE = x, y from its view's corner:
+; ev_cur's, from x0, y0 of its program's screen -> carry clear
+wm_local:
+        ld c,(ix + R_OX)
+        ld b,(ix + R_OX + 1)
+        add hl,bc
+        ld (ev_cur + 4),hl
+        ex de,hl
+        ld c,(ix + R_OY)
+        ld b,(ix + R_OY + 1)
+        add hl,bc
+        ld (ev_cur + 6),hl
+        or a
+        ret
+
+; -> wm_oxy: x0, y0 the program that called asks to show (API 36 and
+; on: VX_WINDOW's dw w, h, x0, y0; before: 0, 0). Its version is in
+; its header (+11), at vw_page in its bank, vw_cfg
+wm_offsets:
+        ld hl,0
+        ld (wm_oxy),hl
+        ld (wm_oxy + 2),hl
+        ld a,(vw_page)
+        ld h,a
+        ld l,11
+        ld de,bank_buf
+        ld bc,1
+        ld a,(vw_cfg)
+        call bank_get
+        ld a,(bank_buf)
+        cp 36
+        ret c
+        ld hl,(wm_ret)
+        ld de,4
+        add hl,de
+        ld de,bank_buf
+        ld bc,4
+        ld a,(vw_cfg)
+        call bank_get
+        ld hl,(bank_buf)
+        ld (wm_oxy),hl
+        ld hl,(bank_buf + 2)
+        ld (wm_oxy + 2),hl
         ret
 
 ; IX = a record -> HL = ev_cur's y - the bottom of its frame (+1),
@@ -1264,6 +1327,7 @@ wm_act:         db 0
 wm_i:           db 0
 wm_wh:          ds 4
 wm_cur:         dw 0
+wm_oxy:         dw 0, 0             ; wm_offsets
 wm_nw:          dw 0                ; a new size (wm_resize)
 wm_nh:          dw 0
 wm_ret:         dw 0

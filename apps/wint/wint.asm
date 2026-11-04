@@ -138,7 +138,7 @@ command:
         jp z,VOS_EXIT
         jp VOS_COMMAND              ; VIEW and HELP menus
 
-size:           dw W, H
+size:           dw W, H, 0, 0      ; VX_WINDOW: w, h, x0, y0
 full:           db 0
 clicked:        db 0
 where:          dw 0, 0

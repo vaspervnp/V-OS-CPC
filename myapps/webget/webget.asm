@@ -42,13 +42,25 @@ CMD_BACK        equ VC_APP + 4
         include "app_icon.asm"      ; VOS_ICON, from icon.txt
 
 init:
+        push af                     ; in a window, if there are windows
+        ld a,VX_WINDOW              ; (first, each time): the part of
+        ld hl,wsize                 ; the screen it uses
+        call VOS_EXT
+        sbc a,a                     ; 0: a window, #FF: the screen
+        inc a
+        ld (win),a
+        pop af
         push af
         ld hl,texts
         call VOS_TEXTS
+        ld a,(win)                  ; in a window: the Desktop's mode
+        or a                        ; and colours
+        jr nz,.screen_set
         ld a,1
         call VOS_MODE
         ld hl,palette
         call VOS_PALETTE
+.screen_set:
         call VOS_MENU_VIEW
         ld (bar + 3),hl
         call VOS_MENU_HELP
@@ -456,6 +468,9 @@ decimal:
 
 ; ---- data -----------------------------------------------------------
 ; black, white, blue, bright yellow (mode 1: pens 0..3), the border
+win:            db 0                ; 1: in a window (VX_WINDOW)
+wsize:          dw 376, 100, 0, 12 ; its w, h, and from x0, y0
+
 palette:        db 0, 26, 1, 24, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16
                 db 1
 bar:            db 3

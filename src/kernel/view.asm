@@ -342,8 +342,7 @@ view_keys:
 ; HL = a routine of programs' views (gfx/view.asm, in wm_bank of a RAM
 ; expansion), as ext2_call
 wm_call:
-        ld a,(wm_bank)
-        jr bank_call
+        jp WM_CALL_GAP              ; (boot/gap.asm: gap_call)
 ; HL = a routine of the second extension (kernel/ext2.asm, in base RAM
 ; bank 1, free after boot): run it with that bank home -> its A, flags
 ext2_call:
