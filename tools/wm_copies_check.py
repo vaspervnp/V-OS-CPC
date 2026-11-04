@@ -93,7 +93,7 @@ def main():
         check(name, "WINA's count", text(im, *WINA_COUNT, 3), '001')
         check(name, "WINA's inside where WINB was", pixel(im, 150, 100), BLACK)
         check(name, "the Desktop's picture on the desk", pixel(im, 320, 150), WHITE)
-        check(name, 'the desk around it', pixel(im, 370, 60), DESK)
+        check(name, 'the desk around it', pixel(im, 300, 25), DESK)
     check('over', 'WINB over WINA', places['over'][0] < 200 and places['over'][1] < 130, True)
     check('back', 'SYSINFO and WINA as they were',
           area(shots['back'], 16, 20, 272, 138), area(shots['away'], 16, 20, 272, 138))

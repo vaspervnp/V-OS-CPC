@@ -49,7 +49,7 @@ def main():
     check('full', 'the column number', WHITE in area(full, 360, 238, 376, 246), True)
 
     check('resized', "NOTEPAD's title, in front", pixel(resized, 100, 15), BLACK)
-    check('resized', 'the desk at its right', set(area(resized, 262, 25, 376, 35)), {DESK})
+    check('resized', 'the desk at its right', set(area(resized, 262, 25, 320, 35)), {DESK})
     check('resized', 'the desk under it', pixel(resized, 100, 220), DESK)
     check('resized', 'its 13th row', WHITE in area(resized, 8, 146, 200, 154), True)
     check('resized', 'the status under it', SKY in area(resized, 4, 158, 40, 166), True)

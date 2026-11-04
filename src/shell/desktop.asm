@@ -17,6 +17,9 @@
 ;   mouse            click a file to select it, again for info; click
 ;                    a drive to open it, the open one to close it
 ; The file list is FS_CAT itself, read again on every drive change.
+; With the windows (WM.SYS, M79: dt_wm) the programs' windows show on
+; its desk, under its files window; a click on one brings it to the
+; front, and the Desktop's window and drive icons show behind them.
 ; An overlay (kernel/view.asm).
 ; =====================================================================
 
@@ -122,6 +125,8 @@ dt_init:
         ld a,DT_CLOSED
         ld (dt_kd),a
 .not_kept:
+        ld e,0                      ; the windows: it starts
+        call dt_wm
         xor a
         ld (dt_count),a
         call dt_draw_screen
@@ -181,6 +186,8 @@ dt_close:
         xor a
         ld (dt_shown),a
         ld (dt_count),a
+        ld e,3                      ; (the windows: none)
+        call dt_wm
         jp dt_redraw
 
 ; everything (also after a language change)
@@ -214,9 +221,20 @@ dt_draw_screen:
         call dt_draw_drive
         ld a,(dt_m4)
         or a
-        ret z
         ld a,2
-        ; fall through
+        call nz,dt_draw_drive
+        ld e,1                      ; the programs' windows over the desk,
+        call dt_wm                  ; then the bar again (theirs drew
+        jp ui_draw_bar              ; theirs)
+
+; E = what for the windows (WM.SYS: wm_dt), if there are: 0 it starts,
+; 1 the programs' windows, 2 its window drawn (vw_buf = w, h), 3 none
+dt_wm:
+        ld a,(wm_sys)
+        or a
+        ret z
+        ld hl,wm_dt
+        jp wm_call
 
 ; A = drive: its icon, dark when it is the open one
 dt_draw_drive:
@@ -367,6 +385,9 @@ dt_load:
         ; fall through
 
 dt_draw_window:
+        ld a,(dt_wx)                ; at a byte (the windows' copies)
+        and %11111100
+        ld (dt_wx),a
         ld a,UIP_BAR
         call .box
         call ui_rect
@@ -497,7 +518,13 @@ dt_draw_window:
         ld a,(dt_h)
         sub 12
         call dt_text_at
-        jp txt_print
+        call txt_print
+        ld hl,(dt_w)                ; the windows: its size (vw_buf: not
+        ld (vw_buf),hl              ; mapped with WM.SYS)
+        ld a,(dt_h)
+        ld (vw_buf + 2),a
+        ld e,2
+        jp dt_wm
 .box:
         ld (ui_fill_pen),a
         ld hl,(dt_wx)

@@ -95,12 +95,12 @@ in [TODO.md](../TODO.md) and, as each is done, in
    - Full screen gives the program the whole screen as now, and its
      header's box brings the window back.
 7. **The Desktop is underneath.** Its desk, picture and drive icons are
-   the background; its files window becomes one window among the others
-   (M78).
+   the background; its files window is one window among the others
+   (M78, M79).
 
-## As M78 left it
+## As M79 left it
 
-- `WM.SYS` keeps up to six windows. A click on one that is behind, or F6,
+- `WM.SYS` keeps up to eight windows (the Desktop's two among them). A click on one that is behind, or F6,
   brings its program to the front: it starts again (init with A = 2)
   and asks for its window, which then comes to the front, and
   everything is drawn again from the back.
@@ -141,8 +141,13 @@ in [TODO.md](../TODO.md) and, as each is done, in
   screen) is drawn by its program as before.
 - **The desk** under the windows shows the Desktop's picture (Setup's
   BACKGROUND), as the Desktop does.
-- Not yet: the Desktop's files window as a window among the others
-  (M79), `VOS_PALETTE` in a window, asking the program before X ends
+- **The Desktop among the windows** (M79): the Desktop stays a view,
+  but its files window and its drive icons are two records of the list
+  (the icons at the back), drawn from their copies when a program is in
+  front. On the Desktop the programs' windows are drawn on its desk,
+  under its files window. A click on a program's window brings it to the
+  front; a click on the Desktop's window or icons brings the Desktop.
+- Not yet: `VOS_PALETTE` in a window, asking the program before X ends
   it, TELNET receiving while behind (`VOS_EXT` is quiet there). The
   accessory (F5, CLOCK) over windows, and F6 among windows, have not
   been tried in a test yet.
@@ -157,7 +162,7 @@ in [TODO.md](../TODO.md) and, as each is done, in
 | **M76** ✓ | **Widgets in windows**, so **CALC** (a Studio program, VBRUN) is windowed; **DIARY, TELNET, WEBGET, DATABASE** in windows, each showing the part of its screen it asks for (`VX_WINDOW`'s x0, y0, API 36). | `make test-wm-apps2`: DIARY, TELNET over it, CALC in a window, and its buttons clicked there: 1 + 2 = 3 (`tools/wm_apps2_check.py`). TELNET's receiving is tested as before (`make test-telnet`, off the emulator): Caprice32 has no network. |
 | **M77** ✓ | **NOTEPAD, SHEET, READER, MARKDOWN** in windows, laid out for the size they are given; their mode 2 pages full screen (`VX_WINDOW` with w = 0 leaves the windows). | `make test-wm-notepad`: NOTEPAD resized, its columns and rows cut to the window, the status under them; its page full screen and the window back (`tools/wm_notepad_check.py`). `make test-wm-pages`: MARKDOWN, its preview, READER (wrapped at the window's width) and SHEET (4 columns, 18 rows); SHEET's page and back (`tools/wm_pages_check.py`). |
 | **M78** ✓ | **Copies in banks** (576K): a window keeps a copy of itself, so moving it or drawing it again from behind only copies; the desk under the windows shows the Desktop's picture. | `make test-wm-copies`: WINB moved away from SYSINFO and WINA, over them and away again; WINA and WINB, which write how many times they have drawn, still say 001 (`tools/wm_copies_check.py`). |
-| M79 | **The Desktop's files window** as a window among the others, the desk's drive icons under them. The Desktop is a view, not a program, and the kernel has no byte left: it needs the Desktop to run in a bank as programs do. | The Desktop's files window and a program's window side by side, each brought to the front with a click. |
+| **M79** ✓ | **The Desktop's files window** as a window among the others, the desk's drive icons under them. The Desktop stays a view (the kernel has no byte left): WM.SYS keeps its window and icons as records drawn from their copies, and the Desktop asks WM.SYS to draw the programs' windows on its desk. | `make test-wm-desktop`: WINA with the Desktop's window and icons behind it; the Desktop (F1) with WINA's window on its desk; each brought to the front with a click (`tools/wm_desktop_check.py`). |
 
 Each milestone adds 0.01 to the version and updates the manual in its
 six languages, the SDK's documentation and its tests.

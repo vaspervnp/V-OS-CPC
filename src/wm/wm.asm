@@ -24,9 +24,14 @@
 ; moves or is resized; one drawn by its program is copied after it.
 ; Drawn again, a window with a copy (F_COPY) is copied back: its
 ; program does not draw.
+; The Desktop (M79, shell/desktop.asm: dt_wm -> wm_dt) is a view, not a
+; program: its drive icons (at the back) and its files window are two
+; records of the list (F_DESK), drawn from their copies only. While it
+; is in front (wm_on 1) a click on a program's window brings that one
+; to the front; a click on the Desktop's brings the Desktop.
 ; =====================================================================
 
-WM_MAX          equ 6
+WM_MAX          equ 8
 WM_REC          equ 32
 WT              equ 10              ; the title line (VOS_DRAG's 10 rows)
 WB              equ 4               ; the border
@@ -43,6 +48,10 @@ R_OX            equ 24              ; the part of its screen it shows
 R_OY            equ 26              ; (API 36: VX_WINDOW's x0, y0)
 F_FULL          equ 1
 F_COPY          equ 2               ; its inside is in its copy (wm_snap)
+F_DESK          equ 4               ; the Desktop's (M79): no frame, no
+                                    ; program; R_X .. R_H its own place
+DT_ICONS_ID     equ #10             ; its R_SLOT: the drive icons, at the
+DT_WIN_ID       equ #11             ; back; its files window
 WM_MIN_W        equ 64              ; the smallest inside
 WM_MIN_H        equ 24
 
@@ -218,6 +227,9 @@ wm_event:
         pop ix
         ret
 .go:
+        call wm_top                 ; the Desktop in front: only a click
+        bit 2,(ix + R_FLAGS)        ; on a program's window, here
+        jr nz,.desk
         ld a,(ev_cur)
         cp EV_KEY_DOWN
         jr nz,.pointer
@@ -228,6 +240,20 @@ wm_event:
         jp wm_full
 .no:
         or a
+        ret
+.desk:
+        ld a,(ev_cur)
+        cp EV_PTR_DOWN
+        jr nz,.no
+        ld a,(ui_open)
+        cp UI_NONE
+        jr nz,.no
+        call wm_hit
+        jr c,.no
+        bit 2,(ix + R_FLAGS)
+        jr nz,.no
+        call wm_wake
+        scf
         ret
 .pointer:
         ld a,(ev_cur)
@@ -426,35 +452,26 @@ wm_hit:
         dec a
         push af
         call wm_ptr
-        ld hl,(ev_cur + 4)          ; x - frame x < w + 2 WB ?
-        ld e,(ix + R_X)
-        ld d,(ix + R_X + 1)
+        call wm_rect
+        ld hl,(ev_cur + 4)          ; x0 <= x < x1
+        ld de,(wm_r)
         or a
         sbc hl,de
         jr c,.next
-        push hl
-        ld l,(ix + R_W)
-        ld h,(ix + R_W + 1)
-        ld de,2 * WB
-        add hl,de
-        ex de,hl
-        pop hl
+        ld hl,(ev_cur + 4)
+        ld de,(wm_r + 4)
+        or a
         sbc hl,de
         jr nc,.next
-        ld hl,(ev_cur + 6)          ; y - frame y < WT + h + WB ?
-        ld e,(ix + R_Y)
-        ld d,(ix + R_Y + 1)
+        ld hl,(ev_cur + 6)          ; y0 <= y < y1
+        ld de,(wm_r + 2)
         or a
         sbc hl,de
         jr c,.next
-        ld de,WT + WB
-        sbc hl,de
-        jr c,.found
-        ld a,h
+        ld hl,(ev_cur + 6)
+        ld de,(wm_r + 6)
         or a
-        jr nz,.next
-        ld a,l
-        cp (ix + R_H)
+        sbc hl,de
         jr c,.found
 .next:
         pop af
@@ -645,17 +662,28 @@ wm_close:
         call api_end
         call wm_top
         call wm_drop
-        ld a,(wm_n)
+        ld a,(wm_n)                 ; the next program's window, from the
+        ld (wm_i),a                 ; front; none (the Desktop's alone):
+.prog:                              ; the view that started it
+        ld a,(wm_i)
         or a
         ld a,(app_return)
         jp z,view_request
-        call wm_top
+        ld hl,wm_i
+        dec (hl)
+        ld a,(hl)
+        call wm_ptr
+        bit 2,(ix + R_FLAGS)
+        jr nz,.prog
         ; fall through
 ; IX = a window: its program to the front (as F6 does: kernel/view.asm,
 ; app_run), once this event is handled
 wm_wake:
         ld a,1                      ; what it covered: all drawn again
         ld (wm_need),a
+        bit 2,(ix + R_FLAGS)        ; the Desktop's: the Desktop
+        ld a,VIEW_DESKTOP
+        jp nz,view_request
         ld a,(ix + R_SLOT)
         ld (app_wake),a
         ld a,(ix + R_NAME)
@@ -793,6 +821,8 @@ wm_one:
         call wm_paste
         ret nc
 .draw:
+        bit 2,(ix + R_FLAGS)        ; the Desktop's: nothing more
+        ret nz
         ld a,(ix + R_SLOT)
         ld (app_slot),a
         ld l,(ix + R_PAGE)
@@ -822,6 +852,8 @@ wm_one:
 ; IX = a window, A = 1 in front: its frame (the title in the selection's
 ; colours in front)
 wm_frame:
+        bit 2,(ix + R_FLAGS)        ; the Desktop's: its own
+        ret nz
         ld (wm_act),a
         or a
         ld a,UIP_BAR
@@ -929,6 +961,9 @@ wm_frame:
 wm_dims:
         ld c,(ix + R_W)
         ld b,(ix + R_W + 1)
+        ld a,(ix + R_H)
+        bit 2,(ix + R_FLAGS)        ; the Desktop's: no frame
+        ret nz
         ld hl,2 * WB
         add hl,bc
         ld b,h
@@ -1185,6 +1220,8 @@ wm_prune:
         dec a
         ld (wm_i),a
         call wm_ptr
+        bit 2,(ix + R_FLAGS)        ; the Desktop's stay
+        jr nz,.kept
         ld a,(ix + R_SLOT)
         ld (vw_a),a
         push ix
@@ -1199,6 +1236,7 @@ wm_prune:
         ld a,(vw_a)
         or a
         call z,wm_drop_i
+.kept:
         ld a,(wm_i)
         jr .rec
 .done:
@@ -1413,6 +1451,180 @@ wm_covered:
         ret
 
 ; ---------------------------------------------------------------------
+; wm_dt: the Desktop (shell/desktop.asm: dt_wm), E =
+;   0  it starts: the windows of ended programs out, its drive icons a
+;      record at the back (their copy taken when it ends), wm_on 1
+;   1  its desk is drawn: the programs' windows over it, from the back
+;      (it draws its bar again after them)
+;   2  its files window drawn, at dt_wx, dt_wy, vw_buf = w, h: its
+;      record, in front
+;   3  no files window
+; ---------------------------------------------------------------------
+wm_dt:
+        push ix
+        call .go
+        pop ix
+        ret
+.go:
+        ld a,e
+        or a
+        jr z,.start
+        dec a
+        jr z,.windows
+        dec a
+        jr z,.window
+.drop:
+        ld a,DT_WIN_ID
+        call wm_desk_find
+        ret c
+        jp wm_drop
+.start:
+        call wm_prune
+        call .drop
+        ld a,DT_ICONS_ID
+        call wm_desk_find
+        jr nc,.icons
+        ld a,DT_ICONS_ID
+        call wm_add
+        ret c
+        ld hl,DT_DRIVE_X
+        ld (ix + R_X),l
+        ld (ix + R_X + 1),h
+        ld (ix + R_Y),DT_DRIVE_Y
+        ld (ix + R_W),DT_DRIVE_W
+        ld (ix + R_H),2 * DT_DRIVE_STEP + DT_DRIVE_H
+        call wm_lower
+.icons:
+        res 1,(ix + R_FLAGS)        ; (copied again when it ends)
+        ld a,1
+        ld (wm_on),a
+        ret
+.windows:
+        call wm_save
+        xor a
+.rec:
+        ld (wm_i),a
+        ld hl,wm_n
+        cp (hl)
+        jr nc,.done
+        call wm_ptr
+        bit 2,(ix + R_FLAGS)
+        jr nz,.next
+        xor a
+        call wm_one
+.next:
+        ld a,(wm_i)
+        inc a
+        jr .rec
+.done:
+        call wm_restore             ; and no view (the Desktop draws its
+        xor a                       ; bar again itself: it is not mapped
+        ld (vw_a),a                 ; here)
+        jp vw_set
+.window:
+        ld a,DT_WIN_ID
+        call wm_desk_find
+        jr nc,.have
+        ld a,DT_WIN_ID
+        call wm_add
+        ret c
+.have:
+        ld hl,(vw_buf)
+        ld (ix + R_W),l
+        ld (ix + R_W + 1),h
+        ld a,(vw_buf + 2)
+        ld (ix + R_H),a
+        ld hl,(dt_wx)
+        ld (ix + R_X),l
+        ld (ix + R_X + 1),h
+        ld hl,(dt_wy)
+        ld (ix + R_Y),l
+        ld (ix + R_Y + 1),h
+        res 1,(ix + R_FLAGS)        ; (copied when the Desktop ends)
+        jp wm_raise
+
+; A = DT_ICONS_ID or DT_WIN_ID -> IX = that record; carry: none
+wm_desk_find:
+        ld c,a
+        ld a,(wm_n)
+.rec:
+        or a
+        scf
+        ret z
+        dec a
+        call wm_ptr
+        ld b,a
+        ld a,(ix + R_SLOT)
+        cp c
+        ld a,b
+        jr nz,.rec
+        bit 2,(ix + R_FLAGS)
+        jr z,.rec
+        or a
+        ret
+
+; A = an id -> IX = a new record of the Desktop's, empty, in front;
+; carry: no room
+wm_add:
+        ld c,a
+        ld a,(wm_n)
+        cp WM_MAX
+        ccf
+        ret c
+        inc a
+        ld (wm_n),a
+        push bc
+        call wm_top
+        push ix
+        pop hl
+        ld d,h
+        ld e,l
+        inc de
+        ld (hl),0
+        ld bc,WM_REC - 1
+        ldir
+        pop bc
+        ld (ix + R_SLOT),c
+        ld (ix + R_FLAGS),F_DESK
+        or a
+        ret
+
+; IX = a record: to the back (the first) -> IX = it there
+wm_lower:
+        push ix
+        pop hl
+        ld de,wm_tmp
+        ld bc,WM_REC
+        ldir
+        push ix                     ; BC = the bytes before it
+        pop hl
+        ld de,wm_recs
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        ld a,b
+        or c
+        jr z,.place
+        push ix                     ; one record on, from the last byte
+        pop hl
+        dec hl
+        ld de,WM_REC
+        add hl,de
+        ex de,hl                    ; DE = its last byte
+        push ix
+        pop hl
+        dec hl                      ; HL = the byte before it
+        lddr
+.place:
+        ld hl,wm_tmp
+        ld de,wm_recs
+        ld bc,WM_REC
+        ldir
+        ld ix,wm_recs
+        ret
+
+; ---------------------------------------------------------------------
 ; Copies (M78): a window's inside, row by row, in banks of WM_COPIES
 ; (16K each, as many rows in each as fit), the banks it has marked with
 ; its slot in wm_units
@@ -1523,9 +1735,17 @@ wm_free:
 ; bytes, wm_cy its first line, wm_rpb its rows in a bank (up to 255);
 ; carry: its inside does not start at a byte
 wm_geom:
+        ld de,WB * 256 + WT         ; the frame (D, E), none for the
+        bit 2,(ix + R_FLAGS)        ; Desktop's
+        jr z,.frame
+        ld de,0
+.frame:
+        ld a,e
+        ld (wm_cy),a
+        ld e,d
+        ld d,0
         ld l,(ix + R_X)
         ld h,(ix + R_X + 1)
-        ld de,WB
         add hl,de
         ld a,l
         and 3
@@ -1557,9 +1777,11 @@ wm_geom:
 .rpb_end:
         ld a,b
         ld (wm_rpb),a
+        ld a,(wm_cy)
+        ld e,a
+        ld d,0
         ld l,(ix + R_Y)
         ld h,(ix + R_Y + 1)
-        ld de,WT
         add hl,de
         ld (wm_cy),hl
         or a

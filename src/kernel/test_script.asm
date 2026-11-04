@@ -322,6 +322,35 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 58
+; make test-wm-desktop (-DTEST_SCRIPT=58, 576K): WM.SYS and WINA.BIN on
+; A:, SETUP.CFG with the Desktop's window of A: at (100, 130), 2 x 2.
+; Expected:
+;   frame  300  F3, DOWN held, 950 RETURN -> WINA in a window at
+;               (16, 20); behind it, from their copies, the Desktop's
+;               window and drive icons
+;   frame 1500  F1 -> the Desktop: WINA's window on its desk (its copy:
+;               001), the files window in front
+;   frame 2510  a click on WINA's title (60, 24) -> WINA in front (it
+;               draws: 002), the Desktop's window behind it
+;   frame 3510  a click in the Desktop's window (150, 200) -> the Desktop
+;               in front, WINA's window as it was (002)
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db 255, 0, %00000100   ; DOWN, held
+        dw  655 : db 195, 0, %00000100
+        dw  950 : db   4, 2, %00000100   ; RETURN: WINA
+        dw 1500 : db   4, 1, %00100000   ; F1: the Desktop
+        dw 2490 : db   1, #80, 1         ; COPY is the left button
+        dw 2500 : db   5, #81, 30        ; (60, 24)
+        dw 2500 : db   5, #82, 24
+        dw 2510 : db   4, 1, %00000010   ; COPY
+        dw 3490 : db   1, #80, 1
+        dw 3500 : db   5, #81, 75        ; (150, 200)
+        dw 3500 : db   5, #82, 200
+        dw 3510 : db   4, 1, %00000010   ; COPY
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 57
 ; make test-wm-copies (-DTEST_SCRIPT=57, 576K): WM.SYS; SYSINFO.BIN,
 ; WINA.BIN, WINB.BIN last on A:. WINA and WINB write how many times
@@ -875,7 +904,7 @@ test_keys:
         dw 1000 : db   4, 1, %00100000   ; F1
         dw 1100 : db   4, 0, %00000010   ; RIGHT
         dw 1150 : db   4, 2, %00000100   ; RETURN: PAINT
-        dw 1500 : db   4, 1, %01000000   ; F2
+        dw 1500 : db   4, 1, %00100000   ; F1: the Desktop
         dw 1700 : db   4, 0, %00100000   ; F3
         dw 1850 : db   4, 8, %00000100   ; ESC
         dw 1950 : db   4, 8, %00000100   ; ESC
@@ -2395,7 +2424,7 @@ test_keys:
         dw 1200 : db   4, 8, %00001000   ; Q
         dw 1300 : db   4, 0, %00000100   ; DOWN
         dw 1360 : db   4, 2, %00000100   ; RETURN
-        dw 1500 : db   4, 1, %01000000   ; F2
+        dw 1500 : db   4, 1, %00100000   ; F1: the Desktop
         dw 1600 : db   4, 0, %00000001   ; UP
         dw 1640 : db   4, 0, %00000010   ; RIGHT
         dw 1680 : db   4, 0, %00000010   ; RIGHT
@@ -2551,6 +2580,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF
