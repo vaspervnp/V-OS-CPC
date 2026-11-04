@@ -12,12 +12,12 @@ api_jumps:
         jp sys_error                ; 5
         jp ui_set_mode
         jp ga_set_palette
-        jp gfx_cls
-        jp gfx_plot
-        jp gfx_fill_rect            ; 10
+        jp api_cls
+        jp api_plot
+        jp api_rect                 ; 10
         jp txt_set_colours
-        jp txt_print
-        jp txt_char
+        jp api_print
+        jp api_char
         jp lang_msg
         jp ui_set_bar               ; 15
         jp ui_draw_bar
@@ -36,9 +36,9 @@ api_jumps:
         jp api_texts
         jp api_menu_open            ; 30
         jp api_key_held
-        jp gfx_blit
+        jp api_blit
         jp snd_play                 ; 33
-        jp split_set
+        jp api_split
         jp api_run                  ; 35
         jp api_keep
         jp api_bank_get
@@ -82,9 +82,161 @@ api_ext:
 
 xa_table:       dw xa_version, xa_free, xa_clip_put, xa_clip_get, xa_m4
                 dw xa_mem, xa_behind, xa_data, xa_db, xa_utf8, xa_calc
-                dw xa_lang, xa_irq, xa_drive, xa_print
+                dw xa_lang, xa_irq, xa_drive, xa_print, xa_view
+                dw xa_window
         assert $ - xa_table == VX_COUNT * 2
 xa_hl:          dw 0
+
+; ---- a program's view (VX_VIEW): its drawing through gfx/view.asm in
+; the second extension while one is set, straight to gfx as before
+; while not. The program's arguments are copied first: its memory is
+; not mapped there.
+vw_on           equ GAP2 + 700      ; 1: a view is set
+vw_a            equ GAP2 + 701      ; the pen, the character
+vw_x            equ GAP2 + 702
+vw_y            equ GAP2 + 704
+vw_ox           equ GAP2 + 706      ; x: the origin, the clip from, to
+vw_x0           equ GAP2 + 708
+vw_x1           equ GAP2 + 710
+vw_oy           equ GAP2 + 712      ; y: the same (gfx/view.asm: vw_axis)
+vw_y0           equ GAP2 + 714
+vw_y1           equ GAP2 + 716
+vw_tx           equ GAP2 + 718
+vw_ty           equ GAP2 + 720
+vw_h            equ GAP2 + 722
+vw_buf          equ GAP2 + 723      ; 12: a rectangle, an image, a split
+wm_on           equ GAP2 + 735      ; the program in front: 1 in a window,
+                                    ; 2 the same full screen (wm/wm.asm)
+wm_was          equ GAP2 + 736      ; wm_on before this view started
+wm_sys          equ GAP2 + 737      ; 1: WM.SYS is in wm_bank (boot_x)
+
+; Z: no view. Keeps all but the flags
+vw_check:
+        push hl
+        ld hl,vw_on
+        inc (hl)
+        dec (hl)
+        pop hl
+        ret
+
+api_cls:
+        call vw_check
+        jp z,gfx_cls
+        ld (vw_a),a
+        ld hl,vw_cls
+        jp wm_call
+
+api_plot:
+        call vw_check
+        jp z,gfx_plot
+        ld bc,vw_plot
+        jr vw_go
+
+api_char:
+        call vw_check
+        jp z,txt_char
+        ld bc,vw_char
+; A, HL, DE kept for the routine BC of the second extension
+vw_go:
+        ld (vw_a),a
+        ld (vw_x),hl
+        ld (vw_y),de
+        ld h,b
+        ld l,c
+        jp wm_call
+
+; as txt_print: BC -> the zero after the text
+api_print:
+        call vw_check
+        jp z,txt_print
+.char:
+        ld a,(bc)
+        or a
+        ret z
+        push bc
+        push de
+        push hl
+        ld bc,vw_char
+        call vw_go
+        pop hl
+        pop de
+        pop bc
+        inc bc
+        push de
+        ld de,8
+        add hl,de
+        pop de
+        jr .char
+
+api_rect:
+        call vw_check
+        jp z,gfx_fill_rect
+        call vw_copy
+        ld hl,vw_rect
+        jp wm_call
+
+api_blit:
+        call vw_check
+        jp z,gfx_blit
+        call vw_copy
+        ld hl,vw_blit
+        call wm_call
+        ret c
+        push ix
+        ld ix,vw_buf
+        call gfx_blit
+        pop ix
+        ret
+
+; IX -> 9 bytes -> vw_buf
+vw_copy:
+        push ix
+        pop hl
+        ld bc,9
+vw_copy_hl:
+        ld de,vw_buf
+        ldir
+        ret
+
+; VOS_SPLIT: HL -> 12 bytes, or 0 (gfx/split_set.asm)
+api_split:
+        ld a,h
+        or l
+        jp z,split_off
+        ld bc,12
+        call vw_copy_hl
+        ld hl,split_set
+        jp ext2_call
+
+; VX_VIEW: HL -> dw x, y, w, h, or 0 (gfx/view.asm: vw_set). Without a
+; RAM expansion: carry, A = 0
+xa_view:
+        ld a,(wm_bank)
+        or a
+        scf
+        ret z
+        ld a,h
+        or l
+        ld (vw_a),a
+        ld bc,8
+        call nz,vw_copy_hl
+        ld hl,vw_set
+        jp wm_call
+
+wm_bank:        db 0                ; its RAM config (boot/expand.asm)
+
+; VX_WINDOW: HL -> dw w, h: the program in a window (wm/wm.asm). Without
+; WM.SYS (no RAM expansion): carry, A = 0
+xa_window:
+        ld a,(wm_sys)
+        or a
+        scf
+        ret z
+        ld de,vw_buf
+        ld bc,4
+        ldir
+        ld hl,wm_window
+        jp wm_call
 
 ; VX_DB: C = DB_* call, DE, HL (xa_hl): the database engine (kernel/
 ; ext2.asm: db_entry)

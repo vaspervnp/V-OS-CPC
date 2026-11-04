@@ -121,6 +121,8 @@ I test eseguono V-OS in Caprice32 senza finestra e catturano schermate in `build
 | `test-kbds` | TASTIERE: TUTTE SEI in Setup, poi in NOTEPAD i tasti `:` e Z con ogni tastiera: `:z`, `:ζ`, `mw`, `ñz`, `öy`, `òz` |
 | `test-charset`, `test-reader-utf8` | file UTF-8 in greco, francese, spagnolo, tedesco e italiano in NOTEPAD e in READER |
 | `test-utf8` | il codice di `VX_UTF8` in un emulatore Z80, rispetto a `tools/voscs.py` |
+| `test-view` | `VX_VIEW`: VIEWT (`apps/viewt`) disegna attraverso una vista di 160 × 96, controllata pixel per pixel (`tools/view_check.py`): la vista riempita, un rettangolo tagliato, 19 caratteri su 20, l'ultimo pixel, un'immagine dentro e una fuori; con 128K: NO EXPANSION |
+| `test-wm` | `VX_WINDOW` e `WM.SYS` (576K): WINA e WINB (`apps/wint`) in finestre; sette schermate controllate (`tools/wm_check.py`): una davanti all'altra, portata davanti con un clic e la sua barra, un clic dentro dal suo angolo, spostata dal titolo, schermo intero con F7 e ritorno, chiuse con X fino al Commander |
 | `test-styles` | STYLES.VBN (`blocks/examples/styles.vbt`) dal Commander: normale, grassetto, corsivo, sottolineato e tutti e tre, con il blocco STYLE |
 | `test-music-block` | con 576K: TUNE.VBN (`blocks/examples/tune.vbt`) avvia MUSIC (da B:) dietro di sé con AGANAMEM.MUS; F6 mostra "> TUNE" e MUSIC, e RETURN porta MUSIC davanti: A:AGANAMEM, PLAYING. Con `MBLOCK_RAM=128`: "CHIUDI PRIMA UN ALTRO PROGRAMMA" |
 | `test-amsdos`, `test-reboot`, `test-system` | file di V-OS in BASIC, riavvio, dischetto SYSTEM |

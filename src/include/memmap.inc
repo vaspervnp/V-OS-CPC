@@ -70,11 +70,19 @@ EXT_MAX         equ #1000
 CLIP_MAX        equ 1024            ; the clipboard (VX_CLIP_PUT, GET), at
 CLIP_ADDR       equ #7F00 - CLIP_MAX ; the end of the extension, before
                                     ; the slots (SLOT_TABLE)
-EXT_IMAGE       equ #8000           ; where it is in VOS.BIN, as loaded
+EXT_IMAGE       equ #8000           ; where it is in VOS.BIN, as loaded:
+                                    ; its code only (bank_put: not below
+                                    ; #8000), the rest emptied at boot
 BUF_CFG         equ #C4
 bh_save         equ #B800           ; 30 bytes: VX_BEHIND's (see above)
 EXT2_CFG        equ RAM_BASE_CFG    ; the second extension (kernel/ext2.asm):
 EXT2_ADDR       equ #4100           ; base RAM bank 1, after the loader
+LOW_ADDR        equ #4000           ; and where the loader was: VOS_SPLIT's
+                                    ; setting (gfx/split_set.asm)
+WM_ADDR         equ #4000           ; programs' views (gfx/view.asm), in
+                                    ; wm_bank of a RAM expansion
+WM_SYS_ADDR     equ #4200           ; and after them the windows (WM.SYS,
+                                    ; wm/wm.asm), loaded at boot (boot_x)
 CALC_ADDR       equ #4F00           ; the formula engine (CALC.SYS, loaded
                                     ; by ext2.asm: calc_entry) after it
                                     ; (and the test script, in tests)

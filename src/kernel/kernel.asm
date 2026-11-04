@@ -15,7 +15,8 @@ kernel_entry:
         ei
         call fdc_init
         call snd_init
-        call cfg_load               ; SETUP.CFG, if there is one, then
+        ld hl,boot_x                ; (kernel/ext2.asm) SETUP.CFG, if
+        call ext2_call              ; there is one, then
         IFDEF DEMO
         call demo_load
         ENDIF
@@ -37,6 +38,11 @@ kernel_entry:
         call view_poll
         call ev_get
         jr z,.idle
+        ld a,(wm_on)                ; a program in a window: its frame,
+        or a                        ; the others, F7 (wm/wm.asm)
+        ld hl,wm_event
+        call nz,wm_call
+        jr c,.events
         call view_keys
         jr c,.events
         call .event

@@ -5,7 +5,7 @@
 ; (version 4 ends before CFG_WIN_X, version 3 before CFG_THEME, version
 ; 2 before CFG_KBDS too: the rest stays as it is; a version 1 file is
 ; not read: the defaults).
-; cfg_load (boot) reads it, if there is one, and applies it; the Setup
+; at boot (kernel/ext2.asm: boot_x) it is read, if there is one, and applied; the Setup
 ; view (shell/setup.asm) changes cfg_data, calls cfg_apply to see the
 ; change at once, and cfg_save to keep it.
 ; =====================================================================
@@ -31,11 +31,8 @@ CFG_WIN_DRIVE   equ 26
 CFG_COUNT       equ 27
 CFG_SIZE        equ 5 + CFG_COUNT
 
-; cfg_load (boot) and cfg_save are in the second extension
+; reading it (at boot) and cfg_save are in the second extension
 ; (kernel/ext2.asm: cfg_load_x, cfg_save_x)
-cfg_load:
-        ld hl,cfg_load_x
-        jp ext2_call
 cfg_save:
         ld hl,cfg_save_x
         jp ext2_call

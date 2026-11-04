@@ -99,7 +99,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-diary-cap test-keep test-telnet-m4 test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-wm test-view test-diary-cap test-keep test-telnet-m4 test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -1261,6 +1261,58 @@ test-keep: $(KEEP_DSK) $(TEST_DSK_B)
 	cp $(KEEP_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
 	snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/reboot VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk VOS_REBOOT_WAIT=85 bash $(abspath tools/cap32_reboot_check.sh) 400" || true
 	ls $(BUILD)/shots/*/*.png
+
+# A program's view, VX_VIEW (TEST_SCRIPT=51): VIEWT (apps/viewt) draws
+# through it at 576K; at 128K it says NO EXPANSION. build/shots/<RAM>/
+$(BUILD)/VIEWT.BIN: apps/viewt/viewt.asm src/api/vos_api.inc
+	$(RASM) apps/viewt/viewt.asm -I src -I $(BUILD) -o $(BUILD)/viewt
+	mv $(BUILD)/viewt.bin $@
+VIEW_DSK := $(BUILD)/vos_view.dsk
+VIEW_SHOT ?= 330
+$(VIEW_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(BUILD)/VIEWT.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_view -DTEST_SCRIPT=51
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(BUILD)/VIEWT.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-view: $(VIEW_DSK)
+	rm -rf $(BUILD)/shots
+	for r in 576 128; do \
+	  cp $(VIEW_DSK) $(BUILD)/vos_run.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=$$r VOS_SHOTS=$(abspath $(BUILD))/shots/$$r VOS_DSK=$(abspath $(BUILD))/vos_run.dsk bash $(abspath tools/cap32_shot.sh) $(VIEW_SHOT)"; \
+	done
+	$(PYTHON) tools/view_check.py $(BUILD)/shots/576/*.png $(BUILD)/shots/128/*.png
+
+# Programs in windows, WM.SYS (TEST_SCRIPT=52, 576K): WINA and WINB
+# (apps/wint) in windows: in front by a click, moved, full screen and
+# back, closed; tools/wm_check.py checks the seven shots (build/shots/<delay>/)
+$(BUILD)/WINA.BIN: apps/wint/wint.asm src/api/vos_api.inc
+	$(RASM) apps/wint/wint.asm -I src -I $(BUILD) -DSIDE=1 -o $(BUILD)/wina
+	mv $(BUILD)/wina.bin $@
+$(BUILD)/WINB.BIN: apps/wint/wint.asm src/api/vos_api.inc
+	$(RASM) apps/wint/wint.asm -I src -I $(BUILD) -DSIDE=2 -o $(BUILD)/winb
+	mv $(BUILD)/winb.bin $@
+WM_DSK := $(BUILD)/vos_wm.dsk
+WM_SHOTS ?= 640 850 1100 1350 1600 1850 2300
+$(WM_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(BUILD)/WINA.BIN $(BUILD)/WINB.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_wm -DTEST_SCRIPT=52
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(BUILD)/WINA.BIN $(BUILD)/WINB.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-wm: $(WM_DSK)
+	rm -rf $(BUILD)/shots
+	for d in $(WM_SHOTS); do \
+	  cp $(WM_DSK) $(BUILD)/vos_run.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_TIMEOUT=120 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	done
+	$(PYTHON) tools/wm_check.py $(foreach d,$(WM_SHOTS),$(BUILD)/shots/$(d)/*.png)
 
 # SHOW THE TEXT on a .SCR (TEST_SCRIPT=47): the picture in the
 # Commander, then the Commander again

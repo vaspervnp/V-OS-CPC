@@ -30,7 +30,7 @@ loader_start:
         call xb_detect              ; the banks of a RAM expansion
         ld hl,ext2_image            ; the second extension into base RAM
         ld de,EXT2_ADDR             ; bank 1, over the kernel's image
-        ld bc,EXT2_SIZE             ; (kernel/ext2.asm)
+        ld bc,EXT2_SIZE + LOW_SIZE  ; (kernel/ext2.asm; and gfx/split_set.asm)
         ldir
         call gfx_init               ; the screen, black while the disc loads
         ld hl,palette_black

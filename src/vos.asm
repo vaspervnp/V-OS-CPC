@@ -86,13 +86,11 @@ KERNEL_SIZE     equ kernel_end - kernel_start
 ext_start:
         include "kernel/ext.asm"
         include "kernel/files_ext.asm"
-        assert $ <= CLIP_ADDR       ; the clipboard after the code
-        ds SLOT_TABLE - $, 0
-        ds 256, 0                   ; the slots, free
-ext_end:
+        assert $ <= CLIP_ADDR       ; the clipboard after the code, then
+ext_end:                            ; the slots: xb_detect empties them
 
 ; ---- RAM expansion test: in VOS.BIN after the extension, run there --
-        org EXT_IMAGE + EXT_MAX
+        org EXT_IMAGE + ext_end - ext_start
         include "boot/expand.asm"
 xb_end:
 
@@ -107,6 +105,24 @@ ext2_start:
         ENDIF
 ext2_end:
 EXT2_SIZE       equ ext2_end - ext2_start
+
+; ---- VOS_SPLIT's setting: at LOW_ADDR in base RAM bank 1, where the
+; loader was. In VOS.BIN after the second extension; the loader copies
+; it with it, and boot_x (kernel/ext2.asm) moves it down at boot -------
+        org LOW_ADDR, ext2_image + EXT2_SIZE
+low_start:
+        include "gfx/split_set.asm"
+low_end:
+LOW_SIZE        equ low_end - low_start
+
+; ---- programs' views (VX_VIEW): at WM_ADDR in a bank of a RAM
+; expansion (wm_bank), where xb_detect copies it at boot ---------------
+wm_image        equ ext2_image + EXT2_SIZE + LOW_SIZE
+        org WM_ADDR, wm_image
+wm_start:
+        include "gfx/view.asm"
+wm_end:
+WM_SIZE         equ wm_end - wm_start
 
 EXT_SIZE        equ ext_end - ext_start
 
@@ -124,8 +140,9 @@ EXT_SIZE        equ ext_end - ext_start
         assert app_open == VOS_OPEN
         assert kernel_image + KERNEL_SIZE <= EXT_IMAGE
         assert EXT_SIZE <= EXT_MAX
-        assert ext_end == EXT_ADDR + EXT_MAX
-        assert ext2_image + EXT2_SIZE <= #A000  ; below AMSDOS
+        assert wm_image + WM_SIZE <= #A000  ; below AMSDOS
+        assert WM_ADDR + WM_SIZE <= WM_SYS_ADDR
+        assert low_end <= EXT2_ADDR
         assert loader_end <= EXT2_ADDR
         IFDEF TEST_SCRIPT                     ; CALC.SYS on SHEET's test discs
         IF TEST_SCRIPT == 32 || TEST_SCRIPT == 42 ; only: the others have
@@ -138,9 +155,9 @@ EXT_SIZE        equ ext_end - ext_start
         ENDIF
 
         IFDEF TEST_SCRIPT
-        save "VOS.BIN", loader_start, ext2_image + EXT2_SIZE - loader_start, DSK, "build/vos_test.dsk"
+        save "VOS.BIN", loader_start, wm_image + WM_SIZE - loader_start, DSK, "build/vos_test.dsk"
         ELSE
-        save "VOS.BIN", loader_start, ext2_image + EXT2_SIZE - loader_start, DSK, "build/vos.dsk"
+        save "VOS.BIN", loader_start, wm_image + WM_SIZE - loader_start, DSK, "build/vos.dsk"
         ENDIF
 
 ; ---- views: overlays at VIEW_ADDR -------------------------------------
@@ -186,6 +203,21 @@ setup_end:
         save "SETUP.OVL", VIEW_ADDR, setup_end - VIEW_ADDR, DSK, "build/vos_test.dsk"
         ELSE
         save "SETUP.OVL", VIEW_ADDR, setup_end - VIEW_ADDR, DSK, "build/vos.dsk"
+        ENDIF
+
+; ---- the windows: WM.SYS, loaded at boot into wm_bank of a RAM
+; expansion, after the views' code (kernel/ext2.asm: boot_x) -----------
+        BANK
+        org WM_SYS_ADDR
+        include "wm/wm.asm"
+wm_sys_end:
+        assert wm_sys_end <= #8000
+        IFDEF TEST_SCRIPT                     ; on the windows' test disc only:
+        IF TEST_SCRIPT == 52                  ; the others have no room
+        save "WM.SYS", WM_SYS_ADDR, wm_sys_end - WM_SYS_ADDR, DSK, "build/vos_test.dsk"
+        ENDIF
+        ELSE
+        save "WM.SYS", WM_SYS_ADDR, wm_sys_end - WM_SYS_ADDR, DSK, "build/vos.dsk"
         ENDIF
 
 ; ---- the formula engine: CALC.SYS, loaded into base RAM bank 1 -------

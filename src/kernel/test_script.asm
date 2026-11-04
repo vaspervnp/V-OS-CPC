@@ -322,6 +322,74 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 52
+; make test-wm (-DTEST_SCRIPT=52, 576K): WM.SYS, and WINA.BIN, WINB.BIN
+; (apps/wint) last on A:. COPY is the left button again after each
+; program starts (view_start makes the cursor keys its own). Expected:
+;   frame  300  F3, DOWN held, 900 UP, 950 RETURN -> WINA in a window
+;               (16, 20) on the desk, its bar
+;   frame 1300  F3, DOWN held, 1950 RETURN -> the Commander, then WINB
+;               in front at (40, 36), WINA drawn again behind it
+;   frame 2410  a click at (24, 60), on WINA -> WINA in front, its bar
+;   frame 2710  a click at (100, 70), in WINA -> its mark, "080,040"
+;   frame 3610  COPY held on WINA's title (60, 24), RIGHT and DOWN held
+;               -> WINA moved to (72, 83), WINB drawn again behind it
+;   frame 4600  F7 -> WINA full screen; 5600 F7 -> a window again
+;   frame 6610  a click on WINA's X (234, 87) -> WINA ends, WINB in
+;               front, alone, its bar
+;   frame 7610  a click on WINB's X (178, 40) -> WINB ends: the
+;               Commander
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db 255, 0, %00000100   ; DOWN, held
+        dw  655 : db 195, 0, %00000100
+        dw  900 : db   4, 0, %00000001   ; UP: WINA
+        dw  950 : db   4, 2, %00000100   ; RETURN
+        dw 1300 : db   4, 0, %00100000   ; F3
+        dw 1400 : db 255, 0, %00000100   ; DOWN, held
+        dw 1655 : db 195, 0, %00000100
+        dw 1950 : db   4, 2, %00000100   ; RETURN: WINB
+        dw 2390 : db   1, #80, 1         ; COPY is the left button
+        dw 2400 : db   5, #81, 12        ; the pointer to (24, 60)
+        dw 2400 : db   5, #82, 60
+        dw 2410 : db   4, 1, %00000010   ; COPY
+        dw 2690 : db   1, #80, 1
+        dw 2700 : db   5, #81, 50        ; (100, 70)
+        dw 2700 : db   5, #82, 70
+        dw 2710 : db   4, 1, %00000010   ; COPY
+        dw 3590 : db   1, #80, 1
+        dw 3600 : db   5, #81, 30        ; (60, 24)
+        dw 3600 : db   5, #82, 24
+        dw 3610 : db  80, 1, %00000010   ; COPY held
+        dw 3620 : db  30, 0, %00000010   ; RIGHT
+        dw 3620 : db  30, 0, %00000100   ; DOWN
+        dw 4600 : db   4, 1, %00000100   ; F7
+        dw 5600 : db   4, 1, %00000100   ; F7
+        dw 6590 : db   1, #80, 1
+        dw 6600 : db   5, #81, 117       ; (234, 87): WINA's X
+        dw 6600 : db   5, #82, 87
+        dw 6610 : db   4, 1, %00000010   ; COPY
+        dw 7590 : db   1, #80, 1
+        dw 7600 : db   5, #81, 89        ; (178, 40): WINB's X
+        dw 7600 : db   5, #82, 40
+        dw 7610 : db   4, 1, %00000010   ; COPY
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 51
+; make test-view (-DTEST_SCRIPT=51; 576K, and 128K): A: has VIEWT.BIN
+; (apps/viewt) last. Expected:
+;   frame  300  F3, 400-850 DOWN held, 900 RETURN -> VIEWT: through a
+;               view of 160 x 96 at (40, 40), its rectangle filled, a
+;               rectangle cut at its right and bottom, "0123456789ABCDEFGHI"
+;               (J cut), the view's last pixel, an image at its left;
+;               "VIEW: OK" below. 128K: "NO EXPANSION", nothing else
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db 255, 0, %00000100   ; DOWN, held
+        dw  655 : db 195, 0, %00000100
+        dw  900 : db   4, 2, %00000100   ; RETURN: VIEWT
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 50
 ; make test-diary-cap (-DTEST_SCRIPT=50): A: has DIARY.BIN after the
 ; system's files, no M4 board. Expected:
@@ -2279,6 +2347,8 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

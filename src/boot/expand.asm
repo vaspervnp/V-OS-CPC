@@ -11,6 +11,11 @@
 ; =====================================================================
 
 xb_detect:
+        ld hl,vw_on                 ; no view, no window, no WM.SYS yet
+        ld de,vw_on + 1             ; (in the screen's RAM: whatever was
+        ld bc,wm_sys - vw_on        ; there before)
+        ld (hl),0
+        ldir
         ld c,7
 .write:
         ld a,c
@@ -64,8 +69,28 @@ xb_detect:
         ld (xb_wall),a
 .no_wall:
         ld (hl),0
+        ld de,xb_found              ; the one before it for programs'
+        or a                        ; views (wm_bank, gfx/view.asm), with
+        sbc hl,de                   ; that code copied into it
+        add hl,de
+        jr z,.no_wm
+        dec hl
+        ld a,(hl)
+        ld (hl),0
+        ld (wm_bank),a
+        call ram_select
+        ld hl,wm_image
+        ld de,WM_ADDR
+        ld bc,WM_SIZE
+        ldir
+.no_wm:
         ld a,LANG_BANK_CFG
         call ram_select
+        ld hl,EXT_ADDR + EXT_SIZE   ; the kernel extension's clipboard and
+        ld de,EXT_ADDR + EXT_SIZE + 1 ; program slots, after its code:
+        ld bc,EXT_MAX - EXT_SIZE - 1 ; empty (not in VOS.BIN)
+        ld (hl),0
+        ldir
         ld hl,xb_found
         ld de,bk_list + 1
         ld bc,XB_MAX + 2            ; (and xb_wall: wall_bank)

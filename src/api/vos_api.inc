@@ -105,7 +105,7 @@
 ; Do not map another bank at #4000: the program would be unmapped.
 ; =====================================================================
 
-VOS_API_VERSION equ 32              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
+VOS_API_VERSION equ 34              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 5: RUN, KEEP, 6: the data bank,
                                     ; 7: accessories, relocation,
                                     ; 8: several programs (init A = 2),
@@ -123,7 +123,8 @@ VOS_API_VERSION equ 32              ; 2: KEY_HELD, 3: BLIT, SOUND, 4: SPLIT,
                                     ; 28: drive 2, the M4's SD card,
                                     ; 29: VX_DRIVE, folders in the file
                                     ; list, 30: VX_PRINT, 31: its pages,
-                                    ; 32: VX_M4 HL = 0
+                                    ; 32: VX_M4 HL = 0, 33: VX_VIEW,
+                                    ; 34: VX_WINDOW
         IFDEF VOS_RELOC_PASS
 VOS_APP_ADDR    equ #4100           ; the second build for mkreloc.py
         ELSE
@@ -300,7 +301,43 @@ VX_PRINT        equ 14                  ; (30) HL -> text, BC = bytes, E =
                                         ; heading on every page from now
                                         ; ("NOTES.TXT  PAGE 2"); HL = 0:
                                         ; none
-VX_COUNT        equ 15
+VX_VIEW         equ 15                  ; (33) HL -> dw x, y, w, h: from
+                                        ; now on the program draws with
+                                        ; (0, 0) at (x, y) and nothing
+                                        ; outside that rectangle (cut to
+                                        ; the screen): VOS_CLS fills it,
+                                        ; VOS_RECT is cut to it, a point,
+                                        ; a character (each of VOS_PRINT)
+                                        ; or a VOS_BLIT image only if all
+                                        ; of it is inside. Menus, dialogs
+                                        ; and the bar are not affected. HL
+                                        ; = 0: none, the whole screen as
+                                        ; before. In pixels of the mode:
+                                        ; again after VOS_MODE. Ends when
+                                        ; the program ends or another
+                                        ; comes to the front (docs/
+                                        ; WINDOWS.md)
+VX_WINDOW       equ 16                  ; (34) HL -> dw w, h: the program
+                                        ; in a window on the desk, its
+                                        ; inside w x h (w a multiple of
+                                        ; 8), over the other windows; its
+                                        ; view set to that inside (as
+                                        ; VX_VIEW), its events there with
+                                        ; x, y from it. Call it first in
+                                        ; init, each time (A = 0 and 2:
+                                        ; the windows behind are drawn
+                                        ; again through their init with
+                                        ; A = 2, the one in front last).
+                                        ; Its title moves it, X closes it
+                                        ; (the program ends), + or F7 make
+                                        ; it full screen and back; a click
+                                        ; on another brings that one to the
+                                        ; front, and the menu bar is the
+                                        ; front one's. Mode 1, the theme's
+                                        ; colours: no VOS_PALETTE, no
+                                        ; widgets yet. Carry: no RAM
+                                        ; expansion or no WM.SYS on A:
+VX_COUNT        equ 17
 
 ; Databases (version 22): VOS_EXT with A = VX_DB, C = one of these. One
 ; database is open at a time, for the program that opened it (another

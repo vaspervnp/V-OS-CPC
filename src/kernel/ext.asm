@@ -222,6 +222,31 @@ slot_own:
         ldir
         ret
 
+; vw_a = a slot, vw_buf = drive, name (the windows: wm/wm.asm) -> vw_a
+; = 0 when that slot is free or another program's
+slot_alive:
+        ld a,(vw_a)
+        call slot_ptr
+        ld a,(hl)
+        or a
+        jr z,.gone
+        inc l
+        inc l
+        ld de,vw_buf
+        ld b,12
+.char:
+        ld a,(de)
+        cp (hl)
+        jr nz,.gone
+        inc hl
+        inc de
+        djnz .char
+        ret
+.gone:
+        xor a
+        ld (vw_a),a
+        ret
+
 ; the program ends: its slot is free, its data bank and its VX_IRQ
 slot_free:
         ld hl,app_slot

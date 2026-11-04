@@ -1436,7 +1436,32 @@ ui_dark:
         ret
 
 ; ---------------------------------------------------------------------
-; SETUP.CFG (kernel/setup.asm: cfg_load, cfg_save come here)
+; At boot (kernel/kernel.asm): VOS_SPLIT's setting down to LOW_ADDR, from
+; after this extension where the loader put it (CALC.SYS's place, empty
+; still: src/vos.asm), then SETUP.CFG
+; ---------------------------------------------------------------------
+boot_x:
+        ld hl,ext2_end
+        ld de,LOW_ADDR
+        ld bc,LOW_SIZE
+        ldir
+        ld a,(wm_bank)              ; with a RAM expansion the windows,
+        or a                        ; WM.SYS from A:, after the views'
+        jr z,cfg_load_x             ; code in wm_bank (wm/wm.asm)
+        xor a
+        call fdc_select
+        ld hl,wm_file
+        ld de,WM_SYS_ADDR
+        ld a,(wm_bank)
+        ld c,a
+        call fs_load
+        jr c,cfg_load_x
+        ld a,1
+        ld (wm_sys),a
+        jr cfg_load_x
+wm_file:        db "WM      SYS"
+; ---------------------------------------------------------------------
+; SETUP.CFG (at boot, and kernel/setup.asm: cfg_save comes here)
 ; ---------------------------------------------------------------------
 cfg_load_x:
         xor a

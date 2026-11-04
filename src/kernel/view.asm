@@ -209,17 +209,25 @@ app_fail:
         jp sys_error
 
 ; VX_BEHIND (kernel/ext2.asm: behind_run): the program in vw_cfg,
-; vw_page gets init with A = 3, as the kernel's program; then the second
-; extension's bank is home again
+; vw_page gets init with A = 3, as the kernel's program
 bh_init:
+        ld a,3
+; A = init's A: the program in vw_cfg, vw_page gets it (cur_base its
+; own), then the home bank is the caller's again (the second extension,
+; the windows' bank: wm/wm.asm)
+prog_call:
+        ld b,a
+        ld a,(ram_home_cfg)
+        push af
+        push bc
         call view_base
         ld a,(vw_cfg)
         ld (ram_home_cfg),a
         call ram_select
-        ld a,3
+        pop af                      ; (B)
         ld de,0
         call cur_call
-        ld a,EXT2_CFG
+        pop af
         ld (ram_home_cfg),a
         jp ram_select
 
@@ -264,7 +272,13 @@ view_start:
         ld (view_cur),a
         xor a                       ; no frame events, no program texts,
         ld (view_ticks),a           ; no buttons of the last program,
-        ld (ptr_keys_on),a          ; the cursor keys its own
+        ld (ptr_keys_on),a          ; the cursor keys its own, no view
+        ld (vw_on),a
+        ld hl,wm_on                 ; no window: wm_was what there was
+        ld c,(hl)                   ; (wm/wm.asm)
+        ld (hl),a
+        inc hl
+        ld (hl),c
         ld hl,api_no_texts
         ld (app_texts),hl
         ld hl,ui_no_widgets
@@ -325,12 +339,21 @@ view_keys:
         or a
         ret
 
+; HL = a routine of programs' views (gfx/view.asm, in wm_bank of a RAM
+; expansion), as ext2_call
+wm_call:
+        ld a,(wm_bank)
+        jr bank_call
 ; HL = a routine of the second extension (kernel/ext2.asm, in base RAM
 ; bank 1, free after boot): run it with that bank home -> its A, flags
 ext2_call:
+        ld a,EXT2_CFG
+; A = the bank's RAM config
+bank_call:
+        ex af,af'
         ld a,(ram_home_cfg)         ; the home bank kept on the stack: a
         push af                     ; program's init there (bh_init) may
-        ld a,EXT2_CFG               ; move a window (drag_run)
+        ex af,af'                   ; move a window (drag_run)
         ld (ram_home_cfg),a
         call ram_select
         call .go
@@ -483,14 +506,14 @@ acc_reset:
         ld (acc_open),a
         ld hl,acc_fresh
         ld de,acc_ctx
-        ld bc,7
+        ld bc,8
         ldir
         ret
 
 acc_swap:
         ld hl,acc_vars
         ld de,acc_ctx
-        ld b,7
+        ld b,8
 .byte:
         push bc
         ld c,(hl)
@@ -509,9 +532,10 @@ acc_swap:
         ret
 
 acc_vars:       dw view_ticks, app_texts, app_texts + 1, ui_widgets
-                dw ui_widgets + 1, ui_bar, ui_bar + 1
+                dw ui_widgets + 1, ui_bar, ui_bar + 1, vw_on
 acc_fresh:      db 0
                 dw api_no_texts, ui_no_widgets, ui_no_widgets  ; (no menus)
+                db 0                ; no view
 
 menu_view:
         db MSG_MENU_VIEW, 7
@@ -553,7 +577,7 @@ cur_base:       dw VIEW_ADDR        ; whose entries cur_call uses
 acc_loaded:     db 0
 acc_open:       db 0
 acc_req:        db 0                ; open or close it in the main loop
-acc_ctx         equ #8818           ; 7: the other side's acc_vars
+acc_ctx         equ #8818           ; 8: the other side's acc_vars
 app_open        equ #B000           ; 13: db 1, drive, name: the file
                                     ; the next program opens (file_open)
 vw_page:        db VIEW_ADDR >> 8   ; where view_install puts it,

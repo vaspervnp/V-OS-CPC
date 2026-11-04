@@ -121,6 +121,8 @@ The tests run V-OS in Caprice32 without a window and take screenshots in `build/
 | `test-kbds` | KEYBOARDS: ALL SIX in Setup, then in NOTEPAD the `:` and Z keys with each keyboard: `:z`, `:ζ`, `mw`, `ñz`, `öy`, `òz` |
 | `test-charset`, `test-reader-utf8` | UTF-8 files in Greek, French, Spanish, German and Italian in NOTEPAD and in READER |
 | `test-utf8` | the code of `VX_UTF8` in a Z80 emulator, against `tools/voscs.py` |
+| `test-view` | `VX_VIEW`: VIEWT (`apps/viewt`) draws through a view of 160 × 96, checked pixel by pixel (`tools/view_check.py`): the view filled, a rectangle cut, 19 of 20 characters, the last pixel, an image in and one out; with 128K: NO EXPANSION |
+| `test-wm` | `VX_WINDOW` and `WM.SYS` (576K): WINA and WINB (`apps/wint`) in windows; seven screenshots checked (`tools/wm_check.py`): one in front of the other, brought to the front by a click with its bar, a click inside from its corner, moved by its title, full screen with F7 and back, closed with X down to the Commander |
 | `test-styles` | STYLES.VBN (`blocks/examples/styles.vbt`) from the Commander: plain, bold, italic, underlined and all three, with the STYLE block |
 | `test-music-block` | with 576K: TUNE.VBN (`blocks/examples/tune.vbt`) starts MUSIC (from B:) behind it with AGANAMEM.MUS; F6 shows "> TUNE" and MUSIC, and RETURN brings MUSIC to the front: A:AGANAMEM, PLAYING. With `MBLOCK_RAM=128`: "CLOSE ANOTHER PROGRAM FIRST" |
 | `test-amsdos`, `test-reboot`, `test-system` | V-OS files in BASIC, reboot, SYSTEM disk |
