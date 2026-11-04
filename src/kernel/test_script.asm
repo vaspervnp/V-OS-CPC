@@ -322,6 +322,50 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 57
+; make test-wm-copies (-DTEST_SCRIPT=57, 576K): WM.SYS; SYSINFO.BIN,
+; WINA.BIN, WINB.BIN last on A:. WINA and WINB write how many times
+; they have drawn (apps/wint). Expected:
+;   frame  300  F3, DOWN held, UP x2, 950 RETURN -> SYSINFO in a window
+;   frame 1300  F3, DOWN held, UP, 1950 RETURN -> WINA over it, 001
+;   frame 2300  F3, DOWN held, 2950 RETURN -> WINB over them, 001
+;   frame 3610  COPY held on WINB's title (100, 56), RIGHT and DOWN held
+;               -> WINB away from them: WINA's 001 (copied back, not
+;               drawn again)
+;   frame 4610  WINB's title dragged LEFT and UP -> over WINA and SYSINFO
+;   frame 5610  and away again -> WINA as it was, 001; WINB 001
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db 255, 0, %00000100   ; DOWN, held
+        dw  655 : db 195, 0, %00000100
+        dw  875 : db   4, 0, %00000001   ; UP
+        dw  900 : db   4, 0, %00000001   ; UP: SYSINFO
+        dw  950 : db   4, 2, %00000100   ; RETURN
+        dw 1300 : db   4, 0, %00100000   ; F3
+        dw 1400 : db 255, 0, %00000100   ; DOWN, held
+        dw 1655 : db 195, 0, %00000100
+        dw 1900 : db   4, 0, %00000001   ; UP: WINA
+        dw 1950 : db   4, 2, %00000100   ; RETURN
+        dw 2300 : db   4, 0, %00100000   ; F3
+        dw 2400 : db 255, 0, %00000100   ; DOWN, held
+        dw 2655 : db 195, 0, %00000100
+        dw 2950 : db   4, 2, %00000100   ; RETURN: WINB
+        dw 3590 : db 120, #80, 1         ; COPY is the left button
+        dw 3600 : db   5, #81, 50        ; (100, 56)
+        dw 3600 : db   5, #82, 56
+        dw 3610 : db  90, 1, %00000010   ; COPY held
+        dw 3620 : db  60, 0, %00000010   ; RIGHT
+        dw 3620 : db  45, 0, %00000100   ; DOWN
+        dw 4590 : db 120, #80, 1
+        dw 4610 : db  90, 1, %00000010   ; COPY held where it is
+        dw 4620 : db  50, 1, %00000001   ; LEFT
+        dw 4620 : db  35, 0, %00000001   ; UP
+        dw 5590 : db 120, #80, 1
+        dw 5610 : db  90, 1, %00000010
+        dw 5620 : db  50, 0, %00000010   ; RIGHT
+        dw 5620 : db  35, 0, %00000100   ; DOWN
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 56
 ; make test-wm-pages (-DTEST_SCRIPT=56, 576K): WM.SYS; MARKDOWN.BIN,
 ; READER.BIN, SHEET.BIN, then INDEX.MD last on A: (a heading, a long
@@ -2507,6 +2551,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

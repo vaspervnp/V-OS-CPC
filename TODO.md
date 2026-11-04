@@ -36,4 +36,5 @@ front window's.
 3. **Programs in windows**: resizing, their size, drawing behind while uncovered; CLOCK, SYSINFO (M75, done: version 0.46).
 4. **Widgets in windows** and CALC; **DIARY, TELNET, WEBGET, DATABASE** in windows (M76, done: version 0.47).
 5. **NOTEPAD, SHEET, READER, MARKDOWN** in windows, laid out for their size (M77, done: version 0.48).
-6. **Copies in banks**: windows moved without drawing again; the Desktop's files window as a window (M78).
+6. **Copies in banks**: windows moved without drawing again; the Desktop's picture under them (M78, done: version 0.49).
+7. **The Desktop's files window** as a window among the others (M79).

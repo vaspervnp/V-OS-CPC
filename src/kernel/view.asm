@@ -265,6 +265,10 @@ view_install:
 ; A = for init: start the view vw_n at cur_base
 view_start:
         push af
+        ld a,(wm_on)                ; windows on the screen: those whole
+        dec a                       ; on it copied (wm/wm.asm: wm_snap)
+        ld hl,wm_snap
+        call z,wm_call
         call snd_off                ; the last one's sound and mixed
         call split_off              ; screen stop (one going on sets them)
         call acc_reset              ; an accessory that was open is closed

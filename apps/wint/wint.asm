@@ -4,6 +4,8 @@
 ; -DSIDE=2 (WINB: 136 x 64, pen 3). Each asks for its window first in
 ; init (each time: A = 2 too), fills it with its pen and writes its name;
 ; a click in it marks the place and writes it, from the window's corner.
+; Under its name, how many times it has drawn its inside (make
+; test-wm-copies: windows copied back are not drawn again).
 ; Its menu bar: WINA (or WINB) > BACK ^Q, VIEW, HELP. Without windows
 ; (128K) it says NO WINDOWS, full screen.
 ;   rasm apps/wint/wint.asm -I src -I build -DSIDE=1 -o build/wina
@@ -63,6 +65,17 @@ redraw:
         jr z,.name
         ld bc,no_windows
 .name:
+        call VOS_PRINT
+        ld hl,(draws)               ; drawn once more: how many times
+        inc hl
+        ld (draws),hl
+        ld de,text
+        call digits
+        xor a
+        ld (de),a
+        ld hl,8
+        ld de,40
+        ld bc,text
         call VOS_PRINT
         ld a,(clicked)
         or a
@@ -141,6 +154,7 @@ command:
 size:           dw W, H, 0, 0      ; VX_WINDOW: w, h, x0, y0
 full:           db 0
 clicked:        db 0
+draws:          dw 0
 where:          dw 0, 0
 dot:            dw 0, 0, 4, 4
                 db 1

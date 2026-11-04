@@ -45,7 +45,7 @@ in [TODO.md](../TODO.md) and, as each is done, in
 - **Speed.** A Z80 at 4 MHz takes about half a second to two seconds to
   draw three or four windows again. Windows move as an outline (as the
   accessory does) and are drawn once, where they land. Later, each
-  window can keep a copy of itself in a bank (§5).
+  window keeps a copy of itself in a bank (M78).
 - **A program's memory is at #4000-#7FFF, as is every extension.** While
   the view's code runs, the program's bank is not mapped. So the
   kernel's entry routines copy what a call points to (a rectangle, an
@@ -79,7 +79,7 @@ in [TODO.md](../TODO.md) and, as each is done, in
 4. **What is uncovered is drawn again.** When a window moves, closes or
    comes to the front, the windows under the place it left are drawn
    from the back to the front. Each one is clipped to that place.
-   (Later, with copies in banks, it is only copied back: §5.)
+   With copies in banks (M78), one that has a copy is only copied back.
 5. **Only windows that nothing covers draw by themselves.** A window in
    front, or one that no window in front of it overlaps, can draw at any
    time (TELNET receiving, CLOCK ticking): a program that goes on in the
@@ -98,7 +98,7 @@ in [TODO.md](../TODO.md) and, as each is done, in
    the background; its files window becomes one window among the others
    (M78).
 
-## As M77 left it
+## As M78 left it
 
 - `WM.SYS` keeps up to six windows. A click on one that is behind, or F6,
   brings its program to the front: it starts again (init with A = 2)
@@ -128,7 +128,21 @@ in [TODO.md](../TODO.md) and, as each is done, in
 - **Widgets in windows** (M76): they are drawn from the view's corner
   and clicked there. A Studio program in mode 1 with a WINDOW shows that
   window's inside in a V-OS window (CALC).
-- Not yet: `VOS_PALETTE` in a window, asking the program before X ends
+- **Copies in banks** (M78): eight banks of the memory expansion (128K)
+  are taken at boot for copies of the windows' insides. A window that
+  nothing covers is copied when another view starts (the kernel's
+  `view_start` calls `wm_snap`), before one is moved or resized, and
+  after its program has drawn it from behind. Drawn again, a window with
+  a copy is copied back, and its program is not called: a window moved
+  over the others draws none of them again. A window that drew behind
+  while uncovered (CLOCK) is copied again the next time. Windows start
+  at an x that is a multiple of 4, so a copy is whole bytes. A window
+  with no copy (no bank free for it, or after it was resized or full
+  screen) is drawn by its program as before.
+- **The desk** under the windows shows the Desktop's picture (Setup's
+  BACKGROUND), as the Desktop does.
+- Not yet: the Desktop's files window as a window among the others
+  (M79), `VOS_PALETTE` in a window, asking the program before X ends
   it, TELNET receiving while behind (`VOS_EXT` is quiet there). The
   accessory (F5, CLOCK) over windows, and F6 among windows, have not
   been tried in a test yet.
@@ -142,7 +156,8 @@ in [TODO.md](../TODO.md) and, as each is done, in
 | **M75** ✓ | **Programs in windows**: resizing with the frame's corner, the size written back by `VX_WINDOW` (API 35), drawing by uncovered windows behind (`wm_bg`); F6 brings a window to the front. **CLOCK, SYSINFO.** | `make test-wm-apps`: CLOCK, SYSINFO and WINA on the desk at once, overlapping; CLOCK ticks behind SYSINFO when nothing covers it; SYSINFO resized (`tools/wm_apps_check.py`). |
 | **M76** ✓ | **Widgets in windows**, so **CALC** (a Studio program, VBRUN) is windowed; **DIARY, TELNET, WEBGET, DATABASE** in windows, each showing the part of its screen it asks for (`VX_WINDOW`'s x0, y0, API 36). | `make test-wm-apps2`: DIARY, TELNET over it, CALC in a window, and its buttons clicked there: 1 + 2 = 3 (`tools/wm_apps2_check.py`). TELNET's receiving is tested as before (`make test-telnet`, off the emulator): Caprice32 has no network. |
 | **M77** ✓ | **NOTEPAD, SHEET, READER, MARKDOWN** in windows, laid out for the size they are given; their mode 2 pages full screen (`VX_WINDOW` with w = 0 leaves the windows). | `make test-wm-notepad`: NOTEPAD resized, its columns and rows cut to the window, the status under them; its page full screen and the window back (`tools/wm_notepad_check.py`). `make test-wm-pages`: MARKDOWN, its preview, READER (wrapped at the window's width) and SHEET (4 columns, 18 rows); SHEET's page and back (`tools/wm_pages_check.py`). |
-| M78 | **Copies in banks** (576K): a window keeps a copy of itself, so moving it or bringing it to the front only copies; the Desktop's files window becomes a window like the others. | A window moved over three others: no program draws again. |
+| **M78** ✓ | **Copies in banks** (576K): a window keeps a copy of itself, so moving it or drawing it again from behind only copies; the desk under the windows shows the Desktop's picture. | `make test-wm-copies`: WINB moved away from SYSINFO and WINA, over them and away again; WINA and WINB, which write how many times they have drawn, still say 001 (`tools/wm_copies_check.py`). |
+| M79 | **The Desktop's files window** as a window among the others, the desk's drive icons under them. The Desktop is a view, not a program, and the kernel has no byte left: it needs the Desktop to run in a bank as programs do. | The Desktop's files window and a program's window side by side, each brought to the front with a click. |
 
 Each milestone adds 0.01 to the version and updates the manual in its
 six languages, the SDK's documentation and its tests.

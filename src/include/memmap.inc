@@ -83,6 +83,9 @@ WM_ADDR         equ #4000           ; programs' views (gfx/view.asm), in
                                     ; wm_bank of a RAM expansion
 WM_SYS_ADDR     equ #4200           ; and after them the windows (WM.SYS,
                                     ; wm/wm.asm), loaded at boot (boot_x)
+WM_COPIES       equ #41F0           ; before it: db n, then the RAM configs
+WM_COPIES_N     equ 8               ; of n banks for the windows' copies
+                                    ; (boot/expand.asm takes them)
 CALC_ADDR       equ #4F00           ; the formula engine (CALC.SYS, loaded
                                     ; by ext2.asm: calc_entry) after it
                                     ; (and the test script, in tests)

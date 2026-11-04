@@ -127,6 +127,7 @@ The tests run V-OS in Caprice32 without a window and take screenshots in `build/
 | `test-wm-apps2` | DIARY, TELNET and CALC in windows (576K, API 36: the window shows a part of the program's screen); four screenshots checked (`tools/wm_apps2_check.py`): DIARY, TELNET over it, CALC with its buttons in its window, and 1 + 2 = 3 clicked there |
 | `test-wm-notepad` | NOTEPAD in a window with a NOTES.TXT (576K): made smaller by its corner, its columns and rows cut to the window, the status line under them; the page (^M) full screen and the window back where it was (`tools/wm_notepad_check.py`) |
 | `test-wm-pages` | MARKDOWN with INDEX.MD and its preview, READER (wrapped at the window's width) and SHEET (4 columns, 18 rows) in windows (576K); SHEET's page and back (`tools/wm_pages_check.py`) |
+| `test-wm-copies` | windows' copies (576K): WINB moved away from SYSINFO and WINA, over them and away again; WINA and WINB write how many times they have drawn and still say 001, and the Desktop's picture shows under them (`tools/wm_copies_check.py`) |
 | `test-styles` | STYLES.VBN (`blocks/examples/styles.vbt`) from the Commander: plain, bold, italic, underlined and all three, with the STYLE block |
 | `test-music-block` | with 576K: TUNE.VBN (`blocks/examples/tune.vbt`) starts MUSIC (from B:) behind it with AGANAMEM.MUS; F6 shows "> TUNE" and MUSIC, and RETURN brings MUSIC to the front: A:AGANAMEM, PLAYING. With `MBLOCK_RAM=128`: "CLOSE ANOTHER PROGRAM FIRST" |
 | `test-amsdos`, `test-reboot`, `test-system` | V-OS files in BASIC, reboot, SYSTEM disk |

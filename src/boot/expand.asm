@@ -79,6 +79,24 @@ xb_detect:
         ld (hl),0
         ld (wm_bank),a
         call ram_select
+        ld de,xb_found + 2 * WM_COPIES_N ; the ones before it for the
+        or a                        ; windows' copies (wm/wm.asm: wm_snap),
+        sbc hl,de                   ; if as many stay for programs
+        add hl,de
+        ld a,0
+        jr c,.copies
+        ld de,WM_COPIES + 1
+        ld b,WM_COPIES_N
+.copy:
+        dec hl
+        ld a,(hl)
+        ld (hl),0
+        ld (de),a
+        inc de
+        djnz .copy
+        ld a,WM_COPIES_N
+.copies:
+        ld (WM_COPIES),a
         ld hl,wm_image
         ld de,WM_ADDR
         ld bc,WM_SIZE

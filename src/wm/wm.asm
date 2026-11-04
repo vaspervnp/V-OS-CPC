@@ -17,7 +17,13 @@
 ; state kept and put back (wm_save, wm_restore).
 ; Frames: a title line WT high (the program's name, + full screen, X
 ; close), a border WB wide at the sides and below; the inside starts at
-; x + WB, y + WT.
+; x + WB, y + WT, x a multiple of 4 (a byte of mode 1).
+; Copies (M78): a window that nothing covers is copied from the screen
+; into banks of the memory expansion (WM_COPIES, taken at boot) when
+; another view starts (wm_snap, from kernel/view.asm) and before one
+; moves or is resized; one drawn by its program is copied after it.
+; Drawn again, a window with a copy (F_COPY) is copied back: its
+; program does not draw.
 ; =====================================================================
 
 WM_MAX          equ 6
@@ -36,6 +42,7 @@ R_NAME          equ 12              ; 12: drive, name (as app_self)
 R_OX            equ 24              ; the part of its screen it shows
 R_OY            equ 26              ; (API 36: VX_WINDOW's x0, y0)
 F_FULL          equ 1
+F_COPY          equ 2               ; its inside is in its copy (wm_snap)
 WM_MIN_W        equ 64              ; the smallest inside
 WM_MIN_H        equ 24
 
@@ -464,6 +471,7 @@ wm_hit:
 ; IX = the window in front: its title dragged (VOS_DRAG's outline) ->
 ; where it lands, all drawn again
 wm_drag:
+        call wm_snap                ; (no program draws again)
         call wm_dims                ; BC = w, A = h of the frame
         ld l,(ix + R_X)
         ld h,(ix + R_X + 1)
@@ -471,10 +479,7 @@ wm_drag:
         ld d,(ix + R_Y + 1)
         call ui_drag
         ret nc
-        ld (ix + R_X),l
-        ld (ix + R_X + 1),h
-        ld (ix + R_Y),e
-        ld (ix + R_Y + 1),d
+        call wm_at
         jp wm_redraw_all
 
 ; IX = the window in front: its corner dragged (an outline, as
@@ -482,6 +487,8 @@ wm_drag:
 ; from VX_WINDOW (init with A = 2). The inside: w a multiple of 8, at
 ; least WM_MIN_W x WM_MIN_H, on the screen
 wm_resize:
+        call wm_snap                ; the others' copies (not its own:
+        res 1,(ix + R_FLAGS)        ; another size)
         ld l,(ix + R_X)
         ld h,(ix + R_X + 1)
         ld (dr_nx),hl
@@ -627,6 +634,7 @@ wm_view_quiet:
 ; goes on so (VX_WINDOW sees F_FULL)
 wm_full:
         ld a,(ix + R_FLAGS)
+        and #FF - F_COPY            ; (its program draws it: no copy)
         xor F_FULL
         ld (ix + R_FLAGS),a
         jr wm_wake
@@ -677,7 +685,8 @@ wm_mode:
         ld (ptr_pen_out),a
         jp ptr_clamp
 
-; the desk under the menu bar
+; the desk under the menu bar, with the Desktop's picture if it has
+; one there (Setup's BACKGROUND, in wall_bank: shell/wall.asm)
 wm_desk:
         ld a,UIP_DESK
         ld (ui_fill_pen),a
@@ -685,7 +694,77 @@ wm_desk:
         ld de,UI_BAR_H
         ld bc,(gfx_width)
         ld a,GFX_H - UI_BAR_H
-        jp ui_rect
+        call ui_rect
+        ld a,(cfg_data + CFG_WALL)
+        inc a
+        ret z
+        ld a,(wall_state)           ; loaded by the Desktop
+        dec a
+        ret nz
+        ld a,LANG_BANK_CFG
+        ld hl,wall_bank
+        ld de,bank_buf
+        ld bc,1
+        call bank_get
+        ld a,(bank_buf)
+        or a
+        ret z
+        ld (wm_cfg),a
+        ld a,(ptr_visible)
+        ld (wm_pv),a
+        call ptr_hide
+        xor a
+.line:
+        ld (wm_y),a                 ; from #4000 + (y & 7) * #800 +
+        rrca                        ; (y / 8) * 80, as wall_draw does
+        rrca
+        rrca
+        and #1F
+        ld l,a
+        ld h,0
+        add hl,hl
+        add hl,hl
+        ld d,h
+        ld e,l
+        add hl,hl
+        add hl,hl
+        add hl,de
+        add hl,hl
+        add hl,hl
+        ld a,(wm_y)
+        and 7
+        add a,a
+        add a,a
+        add a,a
+        add a,#40
+        add a,h
+        ld h,a
+        push hl
+        ld a,(wm_y)                 ; to its line, WALL_X bytes in
+        add a,WALL_Y
+        ld l,a
+        ld h,0
+        add hl,hl
+        ld de,gfx_lines_all
+        add hl,de
+        ld e,(hl)
+        inc hl
+        ld d,(hl)
+        ld hl,WALL_X
+        add hl,de
+        ex de,hl
+        pop hl
+        ld bc,80
+        ld a,(wm_cfg)
+        call bank_get
+        ld a,(wm_y)
+        inc a
+        cp 200
+        jr c,.line
+        ld a,(wm_pv)
+        or a
+        ret z
+        jp ptr_show
 
 ; the windows behind the one in front, from the back
 wm_behind:
@@ -709,6 +788,11 @@ wm_behind:
 ; from it (a file for the program starting, not for those behind)
 wm_one:
         call wm_frame
+        bit 1,(ix + R_FLAGS)        ; F_COPY: its copy back, no more
+        jr z,.draw
+        call wm_paste
+        ret nc
+.draw:
         ld a,(ix + R_SLOT)
         ld (app_slot),a
         ld l,(ix + R_PAGE)
@@ -733,7 +817,7 @@ wm_one:
         ld (wm_ret),hl
         xor a
         ld (wm_painting),a
-        ret
+        jp wm_snap_one              ; whole on the screen now: copied
 
 ; IX = a window, A = 1 in front: its frame (the title in the selection's
 ; colours in front)
@@ -1021,11 +1105,18 @@ wm_new:
         ld e,(ix + R_Y)
         ld d,(ix + R_Y + 1)
         call ui_fit
-        ld (ix + R_X),l
+        call wm_at
+        or a
+        ret
+
+; IX = a window, HL = x, DE = y: its place, x down to a multiple of 4
+wm_at:
+        ld a,l
+        and %11111100
+        ld (ix + R_X),a
         ld (ix + R_X + 1),h
         ld (ix + R_Y),e
         ld (ix + R_Y + 1),d
-        or a
         ret
 
 ; HL = the smaller of HL and DE
@@ -1073,6 +1164,7 @@ wm_raise:
 
 ; IX = a record: out of the list
 wm_drop:
+        call wm_free                ; its copy's banks free
         call wm_raise               ; to the end, then one fewer
         ld hl,wm_n
         dec (hl)
@@ -1226,28 +1318,10 @@ wm_bg:
         ret z
         jr .rec
 .found:
-        call wm_rect                ; covered by one in front of it?
-        ld hl,wm_r
-        ld de,wm_r2
-        ld bc,8
-        ldir
-        ld a,(wm_i)
-.over:
-        inc a
-        ld hl,wm_n
-        cp (hl)
-        jr nc,.open
-        push af
-        call wm_ptr
-        call wm_rect
-        call wm_overlap
-        pop bc
+        ld a,(wm_i)                 ; covered by one in front of it?
+        call wm_covered
         ret c
-        ld a,b
-        jr .over
-.open:
-        ld a,(wm_i)                 ; open: its view, its calls
-        call wm_ptr
+        res 1,(ix + R_FLAGS)        ; open: it draws (its copy gets old);
         ld hl,vw_on                 ; the front one's view and colours
         ld de,wm_bg_view
         ld bc,WM_BG_VW
@@ -1308,6 +1382,264 @@ wm_hushed:
         sbc hl,de
         ret
 
+; A = index -> IX = its record; carry: a window in front of it overlaps
+; its frame
+wm_covered:
+        ld (wm_ci),a
+        call wm_ptr
+        call wm_rect
+        ld hl,wm_r
+        ld de,wm_r2
+        ld bc,8
+        ldir
+        ld a,(wm_ci)
+.over:
+        inc a
+        ld hl,wm_n
+        cp (hl)
+        jr nc,.open
+        push af
+        call wm_ptr
+        call wm_rect
+        call wm_overlap
+        pop bc
+        ld a,b
+        jr nc,.over
+.open:
+        push af                     ; (carry)
+        ld a,(wm_ci)
+        call wm_ptr
+        pop af
+        ret
+
+; ---------------------------------------------------------------------
+; Copies (M78): a window's inside, row by row, in banks of WM_COPIES
+; (16K each, as many rows in each as fit), the banks it has marked with
+; its slot in wm_units
+; ---------------------------------------------------------------------
+
+; every window that nothing covers (and not full screen) into its copy:
+; from kernel/view.asm (another view starts), and before one moves
+wm_snap:
+        ld a,(acc_open)             ; the accessory or a menu over them:
+        or a                        ; not as they are
+        ret nz
+        ld a,(ui_open)
+        cp UI_NONE
+        ret nz
+        push ix
+        ld a,(wm_n)
+.rec:
+        or a
+        jr z,.end
+        dec a
+        ld (wm_si),a
+        call wm_covered
+        call nc,wm_snap_one
+        ld a,(wm_si)
+        jr .rec
+.end:
+        pop ix
+        ret
+
+; IX = a window, whole on the screen: its inside into its copy (none if
+; it is full screen, or too few banks are free for it)
+wm_snap_one:
+        call wm_free
+        res 1,(ix + R_FLAGS)
+        bit 0,(ix + R_FLAGS)
+        ret nz
+        call wm_geom
+        ret c
+        ld a,(ix + R_H)             ; C = banks: h / wm_rpb, up
+        ld c,0
+.need:
+        inc c
+        ld hl,wm_rpb
+        sub (hl)
+        jr z,.count
+        jr nc,.need
+.count:
+        ld a,(WM_COPIES)            ; that many free?
+        or a
+        ret z
+        ld b,a
+        ld hl,wm_units
+        ld e,0
+.free:
+        ld a,(hl)
+        or a
+        jr nz,.taken
+        inc e
+.taken:
+        inc hl
+        djnz .free
+        ld a,e
+        cp c
+        ret c
+        ld hl,wm_units              ; taken
+.take:
+        ld a,(hl)
+        or a
+        jr nz,.next
+        ld a,(ix + R_SLOT)
+        ld (hl),a
+        dec c
+        jr z,.rows
+.next:
+        inc hl
+        jr .take
+.rows:
+        xor a                       ; the screen into them
+        call wm_rows
+        set 1,(ix + R_FLAGS)
+        ret
+
+; IX = a window with a copy: it back on the screen; carry: it cannot be
+; (its inside not at a byte)
+wm_paste:
+        call wm_geom
+        ret c
+        ld a,1
+        call wm_rows
+        or a
+        ret
+
+; IX = a window: the banks of its copy free
+wm_free:
+        ld hl,wm_units
+        ld b,WM_COPIES_N
+.unit:
+        ld a,(hl)
+        cp (ix + R_SLOT)
+        jr nz,.next
+        ld (hl),0
+.next:
+        inc hl
+        djnz .unit
+        ret
+
+; IX = a window -> wm_cx = its inside's first byte in a line, wm_cw its
+; bytes, wm_cy its first line, wm_rpb its rows in a bank (up to 255);
+; carry: its inside does not start at a byte
+wm_geom:
+        ld l,(ix + R_X)
+        ld h,(ix + R_X + 1)
+        ld de,WB
+        add hl,de
+        ld a,l
+        and 3
+        scf
+        ret nz
+        srl h
+        rr l
+        srl h
+        rr l
+        ld (wm_cx),hl
+        ld l,(ix + R_W)
+        ld h,(ix + R_W + 1)
+        srl h
+        rr l
+        srl h
+        rr l
+        ld (wm_cw),hl
+        ex de,hl                    ; rows in 16K: 16384 / bytes
+        ld hl,#4000
+        ld b,0
+.rpb:
+        or a
+        sbc hl,de
+        jr c,.rpb_end
+        inc b
+        ld a,b
+        inc a
+        jr nz,.rpb
+.rpb_end:
+        ld a,b
+        ld (wm_rpb),a
+        ld l,(ix + R_Y)
+        ld h,(ix + R_Y + 1)
+        ld de,WT
+        add hl,de
+        ld (wm_cy),hl
+        or a
+        ret
+
+; IX = a window (wm_geom done), A = 0: its rows from the screen into its
+; banks; 1: back. The pointer hidden meanwhile
+wm_rows:
+        ld (wm_dir),a
+        ld a,(ptr_visible)
+        ld (wm_pv),a
+        call ptr_hide
+        ld a,(ix + R_SLOT)
+        ld (wm_own),a
+        ld hl,wm_units - 1
+        ld (wm_up),hl
+        ld hl,(wm_cy)
+        ld (wm_y),hl
+        ld b,0                      ; rows left in this bank
+        ld c,(ix + R_H)
+.row:
+        ld a,b
+        or a
+        call z,.unit
+        push bc
+        ld hl,(wm_y)                ; the screen: its line, from wm_cx
+        add hl,hl
+        ld de,gfx_lines
+        add hl,de
+        ld e,(hl)
+        inc hl
+        ld d,(hl)
+        ld hl,(wm_cx)
+        add hl,de
+        ld de,(wm_dst)
+        ld a,(wm_dir)
+        or a
+        jr z,.put
+        ex de,hl
+.put:
+        ld bc,(wm_cw)
+        ld a,(wm_cfg)
+        call bank_put               ; (bank_get is the same)
+        ld hl,(wm_dst)
+        ld de,(wm_cw)
+        add hl,de
+        ld (wm_dst),hl
+        ld hl,(wm_y)
+        inc hl
+        ld (wm_y),hl
+        pop bc
+        dec b
+        dec c
+        jr nz,.row
+        ld a,(wm_pv)
+        or a
+        call nz,ptr_show
+        ret
+; the next bank of its copy -> wm_cfg, wm_dst at its start, B = rows
+.unit:
+        ld hl,(wm_up)
+        ld a,(wm_own)
+.find:
+        inc hl
+        cp (hl)
+        jr nz,.find
+        ld (wm_up),hl
+        ld de,wm_units
+        or a
+        sbc hl,de
+        ld de,WM_COPIES + 1
+        add hl,de
+        ld a,(hl)
+        ld (wm_cfg),a
+        ld hl,#4000
+        ld (wm_dst),hl
+        ld a,(wm_rpb)
+        ld b,a
+        ret
+
 ; IX = a record -> wm_r: its frame's x0, y0, x1, y1 (x1, y1 past it)
 wm_rect:
         ld l,(ix + R_X)
@@ -1365,6 +1697,20 @@ wm_n:           db 0                ; windows
 wm_painting:    db 0                ; 1: one drawn again from behind
 wm_need:        db 0                ; 1: all to be drawn again
 wm_place:       db 0                ; the next new one's place
+wm_units:       ds WM_COPIES_N      ; the copies' banks: whose (a slot)
+wm_si:          db 0                ; wm_snap's window
+wm_ci:          db 0                ; wm_covered's
+wm_dir:         db 0                ; wm_rows: 0 into the copy, 1 back
+wm_pv:          db 0                ; the pointer was visible
+wm_own:         db 0                ; the slot whose copy
+wm_rpb:         db 0                ; rows in a bank
+wm_cfg:         db 0                ; the bank
+wm_up:          dw 0                ; -> its entry in wm_units
+wm_dst:         dw 0                ; the row's place in the bank
+wm_y:           dw 0                ; the row's line on the screen
+wm_cx:          dw 0                ; wm_geom
+wm_cw:          dw 0
+wm_cy:          dw 0
 wm_back:        dw 0                ; x, y, slot of one out (w = 0)
                 db 0, #FF
 wm_act:         db 0
