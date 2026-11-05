@@ -1,0 +1,12 @@
+@page
+@model VosNet.Web.Pages.Admin.GuestbookModel
+@{ ViewData["Title"] = "V-OS NET - GUEST BOOK"; }
+<h1>GUEST BOOK</h1>
+<table>
+    <tr><th>WHO</th><th>WHEN</th><th>LINE</th><th></th></tr>
+    @foreach (var g in Model.Lines)
+    {
+        <tr><td>@g.Author</td><td>@Model.Date(g.Created)</td><td>@g.Text</td>
+            <td><form class="inline" method="post" asp-page-handler="Delete"><input type="hidden" name="id" value="@g.Id"><button class="bad">DELETE</button></form></td></tr>
+    }
+</table>

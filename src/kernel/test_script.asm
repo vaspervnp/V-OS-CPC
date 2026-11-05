@@ -322,6 +322,47 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 62
+; make test-vosnet (-DTEST_SCRIPT=62, in the 1984 emulator with an M4
+; board whose SD card holds TELNET.BIN alone, and V-OS NET, server/, on
+; port 2323 of this PC). Expected:
+;   frame  300-400 TAB x3    -> the Desktop on DISK, TELNET.BIN chosen
+;   frame  900  RETURN       -> TELNET
+;   frame 1300  CONTROL+O    -> HOST:PORT asked
+;   frame 1500-2020          -> "127.0.0.1:2323" typed, 2100 RETURN:
+;                               CONNECTED, V-OS NET's welcome, 1 ENGLISH
+;                               2 ΕΛΛΗΝΙΚΑ (V-OS's answers come late:
+;                               then the welcome again, in Greek)
+;   frame 3000  2, RETURN    -> ΕΛΛΗΝΙΚΑ: 1 ΣΥΝΔΕΣΗ 2 ΕΓΓΡΑΦΗ 3 ΕΠΙΣΚΕΠΤΗΣ
+;   frame 3600  3, RETURN    -> a guest: the main menu
+test_keys:
+        dw  300 : db   4, 8, %00010000   ; TAB
+        dw  350 : db   4, 8, %00010000   ; TAB
+        dw  400 : db   4, 8, %00010000   ; TAB
+        dw  900 : db   4, 2, %00000100   ; RETURN
+        dw 1295 : db  15, 2, %10000000   ; CONTROL
+        dw 1300 : db   4, 4, %00000100   ; O
+        dw 1500 : db   4, 8, %00000001   ; 1
+        dw 1540 : db   4, 8, %00000010   ; 2
+        dw 1580 : db   4, 5, %00000010   ; 7
+        dw 1620 : db   4, 3, %10000000   ; .
+        dw 1660 : db   4, 4, %00000001   ; 0
+        dw 1700 : db   4, 3, %10000000   ; .
+        dw 1740 : db   4, 4, %00000001   ; 0
+        dw 1780 : db   4, 3, %10000000   ; .
+        dw 1820 : db   4, 8, %00000001   ; 1
+        dw 1860 : db   4, 3, %00100000   ; :
+        dw 1900 : db   4, 8, %00000010   ; 2
+        dw 1940 : db   4, 7, %00000010   ; 3
+        dw 1980 : db   4, 8, %00000010   ; 2
+        dw 2020 : db   4, 7, %00000010   ; 3
+        dw 2100 : db   4, 2, %00000100   ; RETURN
+        dw 3000 : db   4, 8, %00000010   ; 2: ΕΛΛΗΝΙΚΑ
+        dw 3050 : db   4, 2, %00000100   ; RETURN
+        dw 3600 : db   4, 7, %00000010   ; 3: GUEST
+        dw 3650 : db   4, 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 61
 ; make test-ftp-m4 (-DTEST_SCRIPT=61, in the 1984 emulator with an M4
 ; board whose SD card holds FTP.BIN alone, and tools/ftp_server.py on
@@ -2717,6 +2758,7 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

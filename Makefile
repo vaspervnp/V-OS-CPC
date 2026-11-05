@@ -103,7 +103,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-ftp test-ftp-m4 test-mail test-mail-m4 test-wm test-wm-apps test-wm-apps2 test-wm-notepad test-wm-pages test-wm-copies test-wm-desktop test-wm-keys test-view test-diary-cap test-keep test-telnet-m4 test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-ftp test-ftp-m4 test-mail test-mail-m4 test-wm test-wm-apps test-wm-apps2 test-wm-notepad test-wm-pages test-wm-copies test-wm-desktop test-wm-keys test-view test-diary-cap test-keep test-telnet-m4 test-vosnet test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -1730,11 +1730,13 @@ M4M_DSK := $(BUILD)/vos_m4m.dsk
 M4M_SHOTS = 2600 3600 7000
 M4F_DSK := $(BUILD)/vos_m4f.dsk
 M4F_SHOTS = 3400 4800 7000
+M4T_DSK := $(BUILD)/vos_m4t.dsk
+M4T_SHOTS = 2900 3500 4300
 $(BUILD)/vos_m4%.dsk: $(SOURCES) $(LANG_KERNEL) $(PACKS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(basename $@) \
-	  -DTEST_SCRIPT=$(if $(findstring m4v,$@),35,$(if $(findstring m4o,$@),36,$(if $(findstring m4d,$@),37,$(if $(findstring m4i,$@),46,$(if $(findstring m4n,$@),48,$(if $(findstring m4m,$@),60,$(if $(findstring m4f,$@),61,34))))))) -s
+	  -DTEST_SCRIPT=$(if $(findstring m4v,$@),35,$(if $(findstring m4o,$@),36,$(if $(findstring m4d,$@),37,$(if $(findstring m4i,$@),46,$(if $(findstring m4n,$@),48,$(if $(findstring m4m,$@),60,$(if $(findstring m4f,$@),61,$(if $(findstring m4t,$@),62,34)))))))) -s
 	mv $(TEST_DSK) $@
 	$(call add_test_packs,$@)
 	$(PYTHON) -I tools/dsk_ext.py $@
@@ -1751,6 +1753,25 @@ test-telnet-m4: $(M4N_DSK) $(BUILD)/TELNET.BIN
 	done; kill $$(cat $(BUILD)/tcp_server.pid)
 	grep -aq "hi" $(BUILD)/tcp_server.log
 	grep -aq "$$(printf '\377\374\030')" $(BUILD)/tcp_server.log
+
+# V-OS NET (server/, .NET 10) and TELNET in the 1984 emulator
+# (TEST_SCRIPT=62): the server built and run on this PC's port 2323, a
+# fresh database in build/vosnet; the M4 board's TELNET connects to it:
+# the welcome, ΕΛΛΗΝΙΚΑ, a guest, the menu (build/shots/t-*.png). The
+# server's log (build/vosnet/server.log) says the profile was V-OS and
+# the menu was reached. Not with test-telnet-m4 at the same time: the
+# same port.
+VOSNET_DLL := server/src/VosNet.Server/bin/Release/net10.0/VosNet.Server.dll
+test-vosnet: $(M4T_DSK) $(BUILD)/TELNET.BIN
+	dotnet build server/src/VosNet.Server -c Release -v q -nologo
+	rm -rf $(BUILD)/shots $(BUILD)/vosnet; mkdir -p $(BUILD)/vosnet
+	VOSNET__TelnetPorts=2323 VOSNET__Web=http://127.0.0.1:5089 VOSNET__Database=$(BUILD)/vosnet/vosnet.db \
+	  VOSNET__FetchReleases=false dotnet $(VOSNET_DLL) > $(BUILD)/vosnet/server.log 2>&1 & echo $$! > $(BUILD)/vosnet/server.pid; \
+	sleep 3; for d in $(M4T_SHOTS); do \
+	  cp $(M4T_DSK) $(BUILD)/vos_run.dsk; \
+	  M4_CARD=net M4_SYM=$(BUILD)/vos_m4t.sym M4_SHOT=t-$$d bash tools/m4_shot.sh $$d; \
+	done; kill $$(cat $(BUILD)/vosnet/server.pid)
+	grep -q "Closed 127.0.0.1: GUEST, V-OS, the menu True" $(BUILD)/vosnet/server.log
 
 # MAIL in the 1984 emulator (TEST_SCRIPT=60): the M4 board connects to
 # tools/mail_server.py on this PC's ports 2110 (POP3) and 2525 (SMTP);

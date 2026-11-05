@@ -1,0 +1,22 @@
+@page
+@model VosNet.Web.Pages.Admin.NewsModel
+@{ ViewData["Title"] = "V-OS NET - NEWS"; }
+<h1>NEWS</h1>
+<form method="post" asp-page-handler="Add">
+    <p><input name="title" placeholder="TITLE" maxlength="40" size="45" required></p>
+    <p><textarea name="body" rows="8" cols="60" placeholder="THE TEXT (WRAPPED AT 48 COLUMNS ON V-OS)" required></textarea></p>
+    <p><button>ANNOUNCE</button></p>
+</form>
+<h2>ANNOUNCEMENTS</h2>
+@foreach (var n in Model.News)
+{
+    <p><b>@n.Title</b> <span class="dim">@n.Author, @Model.Date(n.Created)</span>
+    <form class="inline" method="post" asp-page-handler="Delete"><input type="hidden" name="id" value="@n.Id"><button class="bad">REMOVE</button></form></p>
+    <pre>@n.Body</pre>
+}
+<h2>V-OS RELEASES ON GITHUB <span class="dim">(@(Model.Ctx.Releases.Fetched?.ToString("yyyy-MM-dd HH:mm") ?? "NOT FETCHED"))</span></h2>
+<form method="post" asp-page-handler="Refresh"><button>FETCH AGAIN</button></form>
+@foreach (var r in Model.Ctx.Releases.Releases)
+{
+    <p><b>@r.Tag</b> @r.Name <span class="dim">@r.Published.ToString("yyyy-MM-dd")</span></p>
+}

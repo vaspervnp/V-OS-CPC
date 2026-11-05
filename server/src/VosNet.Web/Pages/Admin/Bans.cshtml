@@ -1,0 +1,21 @@
+@page
+@model VosNet.Web.Pages.Admin.BansModel
+@{ ViewData["Title"] = "V-OS NET - BANS"; var now = Model.Ctx.Time.GetUtcNow().ToUnixTimeSeconds(); }
+<h1>BANS</h1>
+@if (Model.Message != null) { <p class="msg">@Model.Message</p> }
+<form method="post" asp-page-handler="Add">
+    <input name="ip" placeholder="IP OR CIDR (10.0.0.0/8)" required>
+    <input name="hours" type="number" min="1" placeholder="HOURS (EMPTY: FOR EVER)">
+    <input name="reason" placeholder="WHY" maxlength="80" required>
+    <button>BAN</button>
+</form>
+<table>
+    <tr><th>IP / CIDR</th><th>UNTIL</th><th>WHY</th><th>BY</th><th>SINCE</th><th></th></tr>
+    @foreach (var b in Model.Bans)
+    {
+        <tr class="@(b.Until != null && b.Until <= now ? "dim" : "")">
+            <td>@b.IpOrCidr</td><td>@(b.Until == null ? "FOR EVER" : Model.Date(b.Until))</td><td>@b.Reason</td><td>@b.By</td><td>@Model.Date(b.Created)</td>
+            <td><form class="inline" method="post" asp-page-handler="Delete"><input type="hidden" name="id" value="@b.Id"><button>LIFT</button></form></td>
+        </tr>
+    }
+</table>

@@ -1,0 +1,8 @@
+@page
+@model VosNet.Web.Pages.Admin.AuditModel
+@{ ViewData["Title"] = "V-OS NET - LOG"; }
+<h1>LOG OF THE ADMINISTRATION</h1>
+<table>
+    <tr><th>WHEN</th><th>WHO</th><th>WHAT</th><th>TO WHOM</th><th></th></tr>
+    @foreach (var a in Model.Log) { <tr><td>@Model.Date(a.At)</td><td>@a.Actor</td><td>@a.Action</td><td>@a.Target</td><td class="dim">@a.Detail</td></tr> }
+</table>

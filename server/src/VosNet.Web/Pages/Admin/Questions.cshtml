@@ -1,0 +1,18 @@
+@page
+@model VosNet.Web.Pages.Admin.QuestionsModel
+@{ ViewData["Title"] = "V-OS NET - QUESTIONS"; }
+<h1>REGISTRATION QUESTIONS</h1>
+<p class="dim">One is asked at each registration, against robots. The answers accepted are separated by |.</p>
+<table>
+    <tr><th>ENGLISH</th><th>GREEK</th><th>ANSWERS</th><th></th></tr>
+    @foreach (var q in Model.Questions)
+    {
+        <tr><td>@q.TextEn</td><td>@q.TextEl</td><td>@q.Answer</td>
+            <td><form class="inline" method="post" asp-page-handler="Delete"><input type="hidden" name="id" value="@q.Id"><button class="bad">DELETE</button></form></td></tr>
+    }
+</table>
+<form method="post" asp-page-handler="Add">
+    <p><input name="en" placeholder="IN ENGLISH (UP TO 48)" maxlength="96" size="50" required></p>
+    <p><input name="el" placeholder="ΣΤΑ ΕΛΛΗΝΙΚΑ" maxlength="96" size="50" required></p>
+    <p><input name="answer" placeholder="128|128K" maxlength="80" required> <button>ADD</button></p>
+</form>

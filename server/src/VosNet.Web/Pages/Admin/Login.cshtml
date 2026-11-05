@@ -1,0 +1,11 @@
+@page
+@model VosNet.Web.Pages.Admin.LoginModel
+@{ ViewData["Title"] = "V-OS NET - LOG IN"; }
+<h1>V-OS NET ADMINISTRATION</h1>
+<p class="dim">With your telnet account. Only ADMIN and OWNER.</p>
+@if (Model.Error != null) { <p class="bad">@Model.Error</p> }
+<form method="post">
+    <p><label>NAME<br><input name="Name" value="@Model.Name" maxlength="12" autocomplete="username" autofocus></label></p>
+    <p><label>PASSWORD<br><input name="Password" type="password" maxlength="40" autocomplete="current-password"></label></p>
+    <p><button>LOG IN</button></p>
+</form>

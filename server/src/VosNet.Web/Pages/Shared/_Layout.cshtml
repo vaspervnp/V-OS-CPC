@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@(ViewData["Title"] ?? "V-OS NET")</title>
+    <style>
+        :root { --bg: #0b1020; --fg: #e6e6e6; --dim: #8a93a8; --accent: #6fd3ff; --bad: #ff7b7b; --line: #273149; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 ui-monospace, "DejaVu Sans Mono", Consolas, monospace; }
+        header { border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+        header b { color: var(--accent); margin-right: 8px; }
+        header a { color: var(--fg); text-decoration: none; }
+        header a:hover { color: var(--accent); }
+        main { padding: 16px; max-width: 1100px; }
+        h1 { font-size: 20px; color: var(--accent); }
+        h2 { font-size: 16px; color: var(--accent); margin-top: 28px; }
+        table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+        th, td { border-bottom: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
+        th { color: var(--dim); font-weight: normal; }
+        input, select, textarea, button { font: inherit; background: #141b30; color: var(--fg); border: 1px solid var(--line); padding: 3px 6px; }
+        button { cursor: pointer; } button:hover { border-color: var(--accent); }
+        form.inline { display: inline; }
+        .msg { border: 1px solid var(--accent); padding: 6px 10px; margin: 8px 0; }
+        .bad { color: var(--bad); }
+        .dim { color: var(--dim); }
+        pre { white-space: pre-wrap; }
+        .wrap { overflow-x: auto; }
+    </style>
+</head>
+<body>
+@if (User.Identity?.IsAuthenticated == true && ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/Admin") == true)
+{
+    <header>
+        <b>V-OS NET</b>
+        <a href="/admin">OVERVIEW</a>
+        <a href="/admin/users">USERS</a>
+        <a href="/admin/boards">BOARDS</a>
+        <a href="/admin/news">NEWS</a>
+        <a href="/admin/guestbook">GUEST BOOK</a>
+        <a href="/admin/bans">BANS</a>
+        <a href="/admin/questions">QUESTIONS</a>
+        <a href="/admin/audit">LOG</a>
+        <form class="inline" method="post" action="/admin/logout" asp-antiforgery="true"><button>LOG OUT @User.Identity?.Name</button></form>
+    </header>
+}
+<main>
+    @RenderBody()
+</main>
+</body>
+</html>

@@ -1,0 +1,55 @@
+@page
+@model VosNet.Web.Pages.Admin.BoardsModel
+@{ ViewData["Title"] = "V-OS NET - BOARDS"; }
+<h1>BOARDS</h1>
+@if (Model.Message != null) { <p class="msg">@Model.Message</p> }
+<table>
+    <tr><th>ENGLISH</th><th>GREEK</th><th>THREADS</th><th></th></tr>
+    @foreach (var b in Model.Boards)
+    {
+        <tr>
+            <td colspan="2">
+                <form class="inline" method="post" asp-page-handler="Rename">
+                    <input type="hidden" name="id" value="@b.Id">
+                    <input name="en" value="@b.NameEn" maxlength="30"> <input name="el" value="@b.NameEl" maxlength="30"> <button>RENAME</button>
+                </form>
+            </td>
+            <td><a href="?board=@b.Id">@b.Threads</a></td>
+            <td>
+                <form class="inline" method="post" asp-page-handler="Move"><input type="hidden" name="id" value="@b.Id"><input type="hidden" name="by" value="-1"><button>UP</button></form>
+                <form class="inline" method="post" asp-page-handler="Move"><input type="hidden" name="id" value="@b.Id"><input type="hidden" name="by" value="1"><button>DOWN</button></form>
+                <form class="inline" method="post" asp-page-handler="DeleteBoard" onsubmit="return confirm('DELETE THE TOPIC AND ALL ITS THREADS?')"><input type="hidden" name="id" value="@b.Id"><button class="bad">DELETE</button></form>
+            </td>
+        </tr>
+    }
+</table>
+<form method="post" asp-page-handler="Add"><input name="en" placeholder="ENGLISH" maxlength="30" required> <input name="el" placeholder="ΕΛΛΗΝΙΚΑ" maxlength="30" required> <button>ADD A TOPIC</button></form>
+
+@if (Model.Board != null)
+{
+    <h2>@Model.Board.NameEn: THREADS</h2>
+    <table>
+        <tr><th>TITLE</th><th>BY</th><th>POSTS</th><th>LAST</th><th></th></tr>
+        @foreach (var t in Model.Threads)
+        {
+            <tr>
+                <td><a href="?board=@Model.Board.Id&thread=@t.Id">@t.Title</a>@(t.Locked != 0 ? " (LOCKED)" : "")</td>
+                <td>@t.Author</td><td>@t.Posts</td><td>@Model.Date(t.LastPost)</td>
+                <td>
+                    <form class="inline" method="post" asp-page-handler="LockThread"><input type="hidden" name="board" value="@Model.Board.Id"><input type="hidden" name="id" value="@t.Id"><input type="hidden" name="locked" value="@(t.Locked == 0 ? "true" : "false")"><button>@(t.Locked == 0 ? "LOCK" : "UNLOCK")</button></form>
+                    <form class="inline" method="post" asp-page-handler="DeleteThread" onsubmit="return confirm('DELETE THE THREAD?')"><input type="hidden" name="board" value="@Model.Board.Id"><input type="hidden" name="id" value="@t.Id"><button class="bad">DELETE</button></form>
+                </td>
+            </tr>
+        }
+    </table>
+}
+@if (Model.Thread != null)
+{
+    <h2>@Model.Thread.Title</h2>
+    @foreach (var p in Model.Posts)
+    {
+        <p><b>@p.Author</b> <span class="dim">@Model.Date(p.Created)</span>
+        <form class="inline" method="post" asp-page-handler="DeletePost"><input type="hidden" name="board" value="@Model.Board?.Id"><input type="hidden" name="thread" value="@Model.Thread.Id"><input type="hidden" name="id" value="@p.Id"><button class="bad">DELETE</button></form></p>
+        <pre>@p.Body</pre>
+    }
+}

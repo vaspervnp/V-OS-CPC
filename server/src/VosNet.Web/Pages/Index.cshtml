@@ -1,0 +1,23 @@
+@page
+@model VosNet.Web.Pages.IndexModel
+@{ ViewData["Title"] = "V-OS NET"; var host = Model.Ctx.Options.HostName; }
+<pre style="color: var(--accent)">@string.Join("\n", VosNet.Core.Screens.WelcomeScreen.Logo)</pre>
+<p>A small BBS for <a href="https://github.com/@Model.Ctx.Options.GitHubRepo" style="color: var(--accent)">V-OS</a>,
+the graphical system of the Amstrad CPC 6128, and for any telnet client: news, message boards, a live chat and a guest book.</p>
+<p><b>@Model.Ctx.Sessions.Count</b> connected now.</p>
+<h2>HOW TO CONNECT</h2>
+<ul>
+    <li><b>V-OS</b> with an M4 board: TELNET, CONNECT (^O), <code>@host</code> (or <code>@host:2323</code>, if your provider blocks port 23).</li>
+    <li><b>PuTTY</b>: connection type Telnet, host <code>@host</code>, port 23 or 2323.</li>
+    <li><b>A terminal</b>: <code>telnet @host</code></li>
+</ul>
+<h2>NEWS</h2>
+@if (Model.Ctx.Releases.Latest is { } r)
+{
+    <p><b>V-OS @r.Tag</b> <span class="dim">@r.Published.ToString("yyyy-MM-dd")</span> — <a href="@r.Url" style="color: var(--accent)">the release on GitHub</a></p>
+}
+@foreach (var n in Model.News)
+{
+    <p><b>@n.Title</b> <span class="dim">@VosNet.Core.Services.Clock.FromUnix(n.Created).ToString("yyyy-MM-dd")</span></p>
+    <pre>@n.Body</pre>
+}

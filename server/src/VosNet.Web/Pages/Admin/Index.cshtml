@@ -1,0 +1,24 @@
+@page
+@model VosNet.Web.Pages.Admin.IndexModel
+@{ ViewData["Title"] = "V-OS NET - OVERVIEW"; var now = Model.Ctx.Time.GetUtcNow(); }
+<h1>OVERVIEW</h1>
+@if (Model.Message != null) { <p class="msg">@Model.Message</p> }
+<h2>CONNECTED NOW: @Model.Ctx.Sessions.Count</h2>
+<div class="wrap"><table>
+    <tr><th>USER</th><th>ROLE</th><th>IP</th><th>PORT</th><th>PROFILE</th><th>SCREEN</th><th>SINCE</th><th></th></tr>
+    @foreach (var s in Model.Ctx.Sessions.All)
+    {
+        <tr>
+            <td>@s.Name</td><td>@(s.User?.Role ?? (s.Guest ? "GUEST" : "-"))</td><td>@s.Ip</td><td>@s.Port</td>
+            <td>@s.Profile.Name @s.Profile.Width×@s.Profile.Height @s.Conn.TerminalType</td>
+            <td>@Model.Ctx.Texts.Get("en", s.Where)</td>
+            <td>@((int)(now - s.Since).TotalMinutes) min</td>
+            <td><form class="inline" method="post" asp-page-handler="Kick"><input type="hidden" name="id" value="@s.Id"><button>DISCONNECT</button></form></td>
+        </tr>
+    }
+</table></div>
+<h2>A DAY</h2>
+<table>
+    <tr><th>DAY</th><th>REGISTRATIONS</th><th>LOGINS</th></tr>
+    @foreach (var d in Model.Days) { <tr><td>@d.Day</td><td>@d.Registrations</td><td>@d.Logins</td></tr> }
+</table>

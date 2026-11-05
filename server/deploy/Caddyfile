@@ -1,0 +1,7 @@
+# V-OS NET (server/DESIGN.md §8): /etc/caddy/Caddyfile. Caddy gets the
+# Let's Encrypt certificate itself; the web of VosNet listens only on
+# 127.0.0.1:5080 and takes the visitor's IP from X-Forwarded-For.
+vos.revive8bit.com {
+    encode gzip
+    reverse_proxy 127.0.0.1:5080
+}

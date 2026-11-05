@@ -1,0 +1,50 @@
+@page
+@model VosNet.Web.Pages.Admin.UsersModel
+@{ ViewData["Title"] = "V-OS NET - USERS"; var now = Model.Ctx.Time.Unix(); }
+<h1>USERS</h1>
+@if (Model.Message != null) { <p class="msg">@Model.Message</p> }
+@if (Model.TempPassword != null)
+{
+    <p class="msg">THE TEMPORARY PASSWORD OF @Model.TempFor: <b>@Model.TempPassword</b> (SHOWN ONCE; TO BE CHANGED AT THE NEXT LOGIN)</p>
+}
+<form method="get"><input name="q" value="@Model.Q" placeholder="NAME OR EMAIL"> <button>SEARCH</button></form>
+<div class="wrap"><table>
+    <tr><th>NAME</th><th>EMAIL</th><th>ROLE</th><th>REGISTERED</th><th>LAST SEEN</th><th>STATE</th><th></th></tr>
+    @foreach (var u in Model.Users)
+    {
+        var mine = AccountService.MayManage(Model.Me.RoleValue, u.RoleValue) && u.Id != Model.Me.Id;
+        <tr>
+            <td>@u.Name</td><td>@u.Email</td>
+            <td>
+                @if (mine || (u.Id != Model.Me.Id && AccountService.MaySetRole(Model.Me.RoleValue, u.RoleValue, Role.User)))
+                {
+                    <form class="inline" method="post" asp-page-handler="Role">
+                        <input type="hidden" name="id" value="@u.Id"><input type="hidden" name="q" value="@Model.Q">
+                        <select name="role">
+                            @foreach (var r in new[] { Role.User, Role.Moderator, Role.Admin })
+                            {
+                                if (AccountService.MaySetRole(Model.Me.RoleValue, u.RoleValue, r))
+                                {
+                                    <option value="@r" selected="@(u.RoleValue == r)">@Roles.Name(r)</option>
+                                }
+                            }
+                        </select>
+                        <button>SET</button>
+                    </form>
+                }
+                else { @u.Role }
+            </td>
+            <td>@Model.Date(u.Created)<br><span class="dim">@u.CreatedIp</span></td>
+            <td>@Model.Date(u.LastSeen)</td>
+            <td>@(u.LockedUntil > now ? "LOCKED" : "")@(u.MustChangePw != 0 ? " NEW PASSWORD" : "")</td>
+            <td>
+                @if (mine)
+                {
+                    <form class="inline" method="post" asp-page-handler="Lock"><input type="hidden" name="id" value="@u.Id"><input type="hidden" name="q" value="@Model.Q"><input type="hidden" name="locked" value="@(u.LockedUntil > now ? "false" : "true")"><button>@(u.LockedUntil > now ? "UNLOCK" : "LOCK")</button></form>
+                    <form class="inline" method="post" asp-page-handler="Temp"><input type="hidden" name="id" value="@u.Id"><input type="hidden" name="q" value="@Model.Q"><button>TEMPORARY PASSWORD</button></form>
+                    <form class="inline" method="post" asp-page-handler="Delete" onsubmit="return confirm('DELETE @u.Name?')"><input type="hidden" name="id" value="@u.Id"><input type="hidden" name="q" value="@Model.Q"><button class="bad">DELETE</button></form>
+                }
+            </td>
+        </tr>
+    }
+</table></div>
