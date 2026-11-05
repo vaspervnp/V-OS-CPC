@@ -9,9 +9,12 @@ does them (its screen of text, VOS_INPUT and VOS_DIALOG from a script),
 and an M4 board in Python: C_NETHOSTIP, C_NETSOCKET, C_NETCONNECT,
 C_NETSEND, C_NETRECV, C_NETCLOSE, and the ROM's sock_info (VX_M4 with
 HL = 0), a few frames late as the board is. A server there greets,
-asks a telnet option (it must be refused), sends ANSI colours (left
+asks telnet options (TTYPE: WILL, and IS "V-OS" to SB TTYPE SEND; the
+others refused; each answered once), sends ANSI colours (left
 out), Greek in ISO 8859-7, 30 lines (the window scrolls) and answers
-each line sent in capitals; "BYE" closes it from its end. The address
+each line sent in capitals; "BYE" closes it from its end, "PASSWORD"
+offers ECHO (DO: the line typed shown as *) and takes it back after
+the next line. The address
 by number and by name, a port, an address that answers nothing, and no
 board. Exits 1 on the first difference.
 """
@@ -25,6 +28,11 @@ VE_FRAME = 8
 CMD = dict(CONNECT=1, CLOSE=2, CLEAR=3)
 TOP_Y, TEXT_Y, ROWS, IN_Y = 14, 28, 20, 232
 IP = bytes([1, 0, 0, 127])                   # 127.0.0.1, the last first
+IAC, WILL, WONT, DO, DONT, SB, SE = 255, 251, 252, 253, 254, 250, 240
+ASKED = (bytes([IAC, DO, 24, IAC, SB, 24, 1, IAC, SE, IAC, DO, 24, IAC, DO, 31,
+                IAC, WILL, 3]))
+ANSWERED = (bytes([IAC, WILL, 24, IAC, SB, 24, 0]) + b'V-OS' + bytes([IAC, SE,
+            IAC, WONT, 31, IAC, DONT, 3]))
 
 
 class Server:
@@ -35,7 +43,7 @@ class Server:
 
     def connect(self):
         self.status, self.wait = 1, 3        # connecting, for 3 frames
-        self.inbox = (b'Welcome\r\n' + bytes([255, 253, 24]) +
+        self.inbox = (b'Welcome\r\n' + ASKED +
                       b'\x1b[1;33mYELLOW\x1b[0m done\r\n' +
                       'Καλημέρα\r\n'.encode('iso-8859-7') +
                       b''.join(b'line %d\r\n' % i for i in range(30)))
@@ -43,6 +51,14 @@ class Server:
     def got(self, data):
         self.sent += data
         for line in data.split(b'\r\n')[:-1]:
+            if line == b'PASSWORD':
+                self.inbox += bytes([IAC, WILL, 1]) + b'Password:\r\n'
+                self.echo = True
+                continue
+            if getattr(self, 'echo', False):
+                self.inbox += bytes([IAC, WONT, 1, IAC, WONT, 1]) + b'ok\r\n'
+                self.echo = False
+                continue
             if line == b'BYE':
                 self.inbox += b'Bye!\r\n'
                 self.closing = True
@@ -184,7 +200,7 @@ def main():
     rows = app.window()
     check('scrolled: line 11 at the top', rows[0], 'line 11')
     sock = app.socks[1]
-    check('DO 24 refused: WONT 24', sock.sent, bytes([255, 252, 24]))
+    check('TTYPE: WILL, IS V-OS; NAWS and SGA refused; once each', sock.sent, ANSWERED)
     app2 = Telnet(prog, sym)                 # the start, before it scrolls
     app2.call('INIT', a=0)
     app2.inputs = ['127.0.0.1:2323']
@@ -196,7 +212,7 @@ def main():
           ['Welcome', 'YELLOW done', 'Καλημέρα', ''])
     # a line sent, its answer
     typed(app, 'hello there')
-    check('sent with CR LF', sock.sent[3:], b'hello there\r\n')
+    check('sent with CR LF', sock.sent[len(ANSWERED):], b'hello there\r\n')
     check('the line typed empty again', app.line(IN_Y), '> _')
     app.frames(2)
     check('the answer', app.window()[-2:], ['> HELLO THERE', ''])
@@ -209,6 +225,23 @@ def main():
     app.quiet = False
     app.frames(2)
     check('uncovered again', app.window()[-3:], want)
+    # a password: the other end echoes, * for each character typed
+    typed(app, 'PASSWORD')
+    app.frames(2)
+    check('WILL ECHO: DO ECHO', sock.sent[-3:], bytes([IAC, DO, 1]))
+    for ch in b'abc12345':
+        app.key(63, ch)
+    check('the password as *', app.line(IN_Y), '> ********_')
+    app.key('RETURN')
+    check('the password sent as it is', sock.sent[-10:], b'abc12345\r\n')
+    app.frames(2)
+    check('WONT ECHO (twice): DONT ECHO once', sock.sent[-13:], b'abc12345\r\n' + bytes([IAC, DONT, 1]))
+    for ch in b'xy':
+        app.key(63, ch)
+    check('the line typed shown again', app.line(IN_Y), '> xy_')
+    app.key('RETURN')
+    app.frames(2)
+    check('after the password', app.window()[-4:], ['Password:', 'ok', '> XY', ''])
     # BYE: closed by the other end, after its last words
     typed(app, 'BYE')
     app.frames(4)
@@ -240,7 +273,8 @@ def main():
     check('no M4 board', app3.line(TOP_Y)[:11], 'NO M4 BOARD')
     if app.errors or app2.errors or app3.errors:
         sys.exit('telnet_check: errors %r' % (app.errors + app2.errors + app3.errors))
-    print('telnet_check: by number and by name, the greeting, a telnet option refused, '
+    print('telnet_check: by number and by name, the greeting, TTYPE V-OS and options refused once, '
+          'a password as *, '
           'ANSI left out, Greek, 30 lines scrolled, a line sent and answered, closed by '
           'the other end, CLOSE, no answer, no board: all right')
 

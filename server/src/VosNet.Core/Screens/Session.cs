@@ -135,7 +135,9 @@ public sealed class Session
             using var timeout = new CancellationTokenSource(Ctx.Options.IdleClose, Ctx.Time);
             using var both = CancellationTokenSource.CreateLinkedTokenSource(Token, timeout.Token);
             var line = await Conn.ReadLineAsync(both.Token);
-            if (line != null && Profile.Kind == TerminalKind.Vos) await Conn.WriteAsync("\r\n");
+            // the stars' CR LF already came if V-OS took ECHO (0.54 on)
+            if (line != null && Profile.Kind == TerminalKind.Vos && !Conn.Options.IsUs(Telnet.Telnet.ECHO))
+                await Conn.WriteAsync("\r\n");
             return line;
         }
         catch (OperationCanceledException) { return null; }

@@ -9,8 +9,12 @@
 ; 32). What comes is written in the window, scrolling up at its end:
 ; CR LF, TAB and backspace as on a terminal, ANSI escape sequences left
 ; out, the letters over 160 as the V-OS set has them (ISO 8859-7 for
-; Greek); the telnet options asked for are refused (DO: WONT, WILL:
-; DONT). The line typed at the bottom goes with RETURN, with CR LF.
+; Greek). Of the telnet options, TTYPE is done (DO: WILL, and SB TTYPE
+; SEND: IS "V-OS", so a server knows V-OS), ECHO is let to the other end
+; (WILL: DO; while it is on, the line typed shows * for each character:
+; a password), the others are refused (DO: WONT, WILL: DONT); each
+; answered once, so the two ends do not go round. The line typed at the
+; bottom goes with RETURN, with CR LF.
 ; CLOSE ^D ends it, as the other end may.
 ;   TELNET menu: CONNECT ^O, CLOSE ^D, CLEAR THE SCREEN, ABOUT, BACK ^Q
 ;   make app NAME=telnet      build/TELNET.BIN, on build/apps.dsk
@@ -55,6 +59,12 @@ WILL            equ 251
 WONT            equ 252
 DO              equ 253
 DONT            equ 254
+SB              equ 250
+SE              equ 240
+ECHO            equ 1               ; the options
+TTYPE           equ 24
+TT_SEND         equ 1               ; SB TTYPE SEND, IS
+TT_IS           equ 0
 
 CMD_CONNECT     equ VC_APP + 1      ; menu items: commands
 CMD_CLOSE       equ VC_APP + 2
@@ -235,22 +245,35 @@ row_at:
         add hl,de
         ret
 
-; "> " and the line typed, a cursor after it
+; "> " and the line typed (* for each character while the other end
+; echoes: a password), a cursor after it
 draw_input:
         ld a,HEAD
         ld c,BG
         call VOS_COLOURS
-        ld hl,in_line - 2
-        ld (hl),">"
-        inc hl
-        ld (hl)," "
-        ld a,(in_n)
-        ld e,a
-        ld d,0
         ld hl,in_line
-        add hl,de
+        ld de,in_shown + 2
+        ld a,(in_n)
+        or a
+        jr z,.cursor
+        ld b,a
+.char:
+        ld a,(t_echo)
+        or a
+        ld a,"*"
+        jr nz,.star
+        ld a,(hl)
+.star:
+        ld (de),a
+        inc hl
+        inc de
+        djnz .char
+.cursor:
+        ex de,hl
         ld (hl),"_"
         inc hl
+        ld a,(in_n)
+        ld e,a
         ld a,IN_MAX                 ; spaces over what was there
         sub e
         jr z,.end
@@ -263,7 +286,7 @@ draw_input:
         ld (hl),0
         ld hl,0
         ld de,IN_Y
-        ld bc,in_line - 2
+        ld bc,in_shown
         jp VOS_PRINT
 
 ; ---------------------------------------------------------------------
@@ -275,38 +298,84 @@ take:
         ld c,a
         ld a,(t_state)
         or a
-        jr z,.text
+        jp z,.text
         dec a
         jr nz,.not_iac
         ld a,c                      ; after IAC: its verb
         cp IAC
-        jr z,.text_iac              ; IAC IAC: a byte 255
+        jp z,.text_iac              ; IAC IAC: a byte 255
         ld (t_verb),a
+        cp SB
+        jr z,.sb
         cp WILL
         jr c,.done                  ; a command without an option
         ld a,2
         ld (t_state),a
         ret
+.sb:
+        ld a,4                      ; SB: its option next
+        ld (t_state),a
+        ret
 .not_iac:
         dec a
-        jr nz,.ansi
-        xor a                       ; the option: refused
+        jr nz,.not_option
+        xor a                       ; the option
         ld (t_state),a
-        ld a,(t_verb)
-        ld b,WONT
-        cp DO
-        jr z,.refuse
-        ld b,DONT
-        cp WILL
+        jp option
+.not_option:
+        dec a
+        jr z,.ansi
+        dec a
+        jr nz,.not_sb_option
+        ld a,c                      ; SB's option, then its data, of
+        ld (t_sb),a                 ; which the first byte is kept
+        ld a,#FF
+        ld (t_sb_first),a
+        ld a,5
+        ld (t_state),a
+        ret
+.not_sb_option:
+        dec a
+        jr nz,.sb_iac
+        ld a,c                      ; SB's data
+        cp IAC
+        jr nz,.sb_byte
+        ld a,6
+        ld (t_state),a
+        ret
+.sb_byte:
+        ld hl,t_sb_first
+        ld a,(hl)
+        inc a
         ret nz
-.refuse:
-        ld hl,send_data
-        ld (hl),IAC
-        inc hl
-        ld (hl),b
-        inc hl
         ld (hl),c
-        ld bc,3
+        ret
+.sb_iac:
+        ld a,5                      ; IAC in SB: IAC IAC a 255 of it,
+        ld (t_state),a              ; SE its end
+        ld a,c
+        cp IAC
+        jr z,.sb_byte
+        xor a
+        ld (t_state),a
+        ld a,c
+        cp SE
+        ret nz
+        ld a,(t_sb)                 ; SB TTYPE SEND: IS "V-OS"
+        cp TTYPE
+        ret nz
+        ld a,(t_sb_first)
+        cp TT_SEND
+        ret nz
+        ld a,(t_ttype)
+        or a
+        ret z
+        ld hl,ttype_is
+        ld de,send_data
+        ld bc,TTYPE_IS_N
+        push bc
+        ldir
+        pop bc
         jp send
 .ansi:                              ; ESC [ ...: up to a letter
         ld a,c
@@ -337,7 +406,7 @@ take:
         ret
 .not_esc:
         cp 10
-        jr z,new_line
+        jp z,new_line
         cp 13
         jr z,.cr
         cp 8
@@ -347,7 +416,7 @@ take:
         cp " "
         ret c
         cp 127
-        jr c,put
+        jp c,put
         cp 160
         ret c
         jr put
@@ -369,6 +438,75 @@ take:
         and 7
         jr nz,.tab
         ret
+
+; C = an option after t_verb: TTYPE ours (DO: WILL), ECHO the other
+; end's (WILL: DO, the line typed shown again), the rest refused (DO:
+; WONT, WILL: DONT). TTYPE and ECHO answered only when they change.
+option:
+        ld a,(t_verb)
+        ld e,a
+        ld a,c
+        cp TTYPE
+        jr nz,.not_ttype
+        ld hl,t_ttype
+        ld a,e
+        ld b,WILL
+        cp DO
+        jr z,turn_on
+        ld b,WONT
+        cp DONT
+        jr z,turn_off
+        ret
+.not_ttype:
+        cp ECHO
+        jr nz,.refuse
+        ld hl,t_echo
+        ld a,e
+        ld b,DO
+        cp WILL
+        jr z,.echo_on
+        ld b,DONT
+        cp WONT
+        ret nz
+        call turn_off
+        jp draw_input
+.echo_on:
+        call turn_on
+        jp draw_input
+.refuse:
+        ld a,e
+        ld b,WONT
+        cp DO
+        jr z,reply
+        ld b,DONT
+        cp WILL
+        ret nz
+        jr reply
+
+; HL = an option's flag, B = the answer's verb, C = the option: the
+; flag on (off) and the answer sent, unless it was already
+turn_on:
+        ld a,(hl)
+        or a
+        ret nz
+        inc (hl)
+        jr reply
+turn_off:
+        ld a,(hl)
+        or a
+        ret z
+        ld (hl),0
+        ; fall through
+; IAC B C sent
+reply:
+        ld hl,send_data
+        ld (hl),IAC
+        inc hl
+        ld (hl),b
+        inc hl
+        ld (hl),c
+        ld bc,3
+        jp send
 
 ; A = a character at the last row's col, the col on (a new line at the
 ; end of the row)
@@ -570,6 +708,9 @@ close:
 .closed:
         ld a,ST_CLOSED
         ld (state),a
+        xor a                       ; the options as at the start
+        ld (t_ttype),a
+        ld (t_echo),a
         ret
 
 ; addr -> ip (4 bytes, the last first) and port (23 if none); carry:
@@ -945,6 +1086,12 @@ sock:           db 0
 t_query:        db 0                ; 1: the state of socket 0 (a name)
 t_state:        db 0                ; 1 IAC, 2 its option, 3 ESC [ ...
 t_verb:         db 0
+t_sb:           db 0                ; SB: its option, its first byte
+t_sb_first:     db 0
+t_ttype:        db 0                ; 1: TTYPE on (we said WILL)
+t_echo:         db 0                ; 1: the other end echoes (we said DO)
+ttype_is:       db IAC, SB, TTYPE, TT_IS, "V-OS", IAC, SE
+TTYPE_IS_N      equ $ - ttype_is
 wait:           dw 0
 col:            db 0                ; on the last row
 dirty:          db 0                ; 1: the last row, 2: all
@@ -952,8 +1099,9 @@ num:            db 0
 ip:             ds 4                ; for C_NETCONNECT: the ip, the port
 port:           dw 23
 in_n:           db 0
-                ds 2                ; "> "
-in_line:        ds IN_MAX + 2
+in_line:        ds IN_MAX
+in_shown:       db "> "             ; "> ", the line or *, the cursor
+                ds IN_MAX + 2
 addr:           ds ADDR_MAX + 2
 cmd:            ds 3 + 3 + PIECE
 resp:           ds 6 + PIECE

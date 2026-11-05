@@ -1752,14 +1752,14 @@ test-telnet-m4: $(M4N_DSK) $(BUILD)/TELNET.BIN
 	  M4_CARD=net M4_SYM=$(BUILD)/vos_m4n.sym M4_SHOT=n-$$d bash tools/m4_shot.sh $$d; \
 	done; kill $$(cat $(BUILD)/tcp_server.pid)
 	grep -aq "hi" $(BUILD)/tcp_server.log
-	grep -aq "$$(printf '\377\374\030')" $(BUILD)/tcp_server.log
+	grep -aq "$$(printf '\377\373\030')" $(BUILD)/tcp_server.log
 
 # V-OS NET (server/, .NET 10) and TELNET in the 1984 emulator
 # (TEST_SCRIPT=62): the server built and run on this PC's port 2323, a
 # fresh database in build/vosnet; the M4 board's TELNET connects to it:
 # the welcome, ΕΛΛΗΝΙΚΑ, a guest, the menu (build/shots/t-*.png). The
-# server's log (build/vosnet/server.log) says the profile was V-OS and
-# the menu was reached. Not with test-telnet-m4 at the same time: the
+# server's log (build/vosnet/server.log) says TELNET answered TTYPE with
+# "V-OS", the profile was V-OS and the menu was reached. Not with test-telnet-m4 at the same time: the
 # same port.
 VOSNET_DLL := server/src/VosNet.Server/bin/Release/net10.0/VosNet.Server.dll
 test-vosnet: $(M4T_DSK) $(BUILD)/TELNET.BIN
@@ -1771,6 +1771,7 @@ test-vosnet: $(M4T_DSK) $(BUILD)/TELNET.BIN
 	  cp $(M4T_DSK) $(BUILD)/vos_run.dsk; \
 	  M4_CARD=net M4_SYM=$(BUILD)/vos_m4t.sym M4_SHOT=t-$$d bash tools/m4_shot.sh $$d; \
 	done; kill $$(cat $(BUILD)/vosnet/server.pid)
+	grep -q "Connection from 127.0.0.1:2323: V-OS V-OS" $(BUILD)/vosnet/server.log
 	grep -q "Closed 127.0.0.1: GUEST, V-OS, the menu True" $(BUILD)/vosnet/server.log
 
 # MAIL in the 1984 emulator (TEST_SCRIPT=60): the M4 board connects to

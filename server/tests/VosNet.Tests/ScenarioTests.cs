@@ -6,7 +6,7 @@ using VosNet.Core.Storage;
 namespace VosNet.Tests;
 
 /// <summary>The fake V-OS (and other clients) against the whole server.</summary>
-public class ScenarioTests : IAsyncLifetime
+public partial class ScenarioTests : IAsyncLifetime
 {
     protected VosNetFactory F = new();
     protected int Port;
@@ -438,5 +438,33 @@ public class LateAnswerTests
             await f.DisposeAsync();
             f.DeleteDir();
         }
+    }
+}
+
+/// <summary>V-OS's TELNET from 0.54 answers TTYPE with "V-OS" and takes
+/// the server's ECHO: the profile is V-OS at once, the password is *.</summary>
+public partial class ScenarioTests
+{
+    [Fact]
+    public async Task TtypeVosAndThePasswordAsStars()
+    {
+        F.AddUser("NIKOS", "nikos-password");
+        await using var c = await TestClient.ConnectAsync(Port, vos: true, ttype: true);
+        await c.WaitAsync("2 ΕΛΛΗΝΙΚΑ");
+        await c.SendAsync("2");
+        await c.WaitAsync("3 ΕΠΙΣΚΕΠΤΗΣ");
+        await c.SendAsync("1");
+        await c.WaitAsync("ΟΝΟΜΑ: ");
+        await c.SendAsync("NIKOS");
+        await c.WaitAsync("ΚΩΔΙΚΟΣ: ");
+        Assert.True(c.ServerEcho);
+        await c.SendAsync("nikos-password");
+        var after = await c.WaitAsync("Q QUIT");
+        Assert.StartsWith("**************\r\n\r\nV-OS NET", after);       // one CR LF of the stars, then the menu's
+        Assert.False(c.ServerEcho);
+        await c.SendAsync("5");
+        Assert.Contains("NIKOS        V-OS", await c.WaitAsync("RETURN: ΠΙΣΩ"));
+        c.AssertVosScreen();
+        Assert.DoesNotContain("nikos-password", c.Text);
     }
 }

@@ -130,6 +130,11 @@ public sealed class TelnetConnection : IAsyncDisposable
                     break;
                 case TelnetEventKind.Subnegotiation:
                     Subnegotiation(e.Option, e.Data);
+                    if (_detected && !ProfileFixed && IsVos && Profile.Kind != TerminalKind.Vos)
+                    {
+                        Profile = TerminalProfile.Vos;
+                        late = true;
+                    }
                     _negotiated.Release();
                     break;
                 case TelnetEventKind.Command when e.Verb == Telnet.AYT:
@@ -140,6 +145,9 @@ public sealed class TelnetConnection : IAsyncDisposable
         await FlushAsync(output);
         if (late) ProfileChanged?.Invoke();
     }
+
+    /// <summary>The terminal said it is V-OS (TELNET from 0.54 answers TTYPE).</summary>
+    public bool IsVos => TerminalType is { } t && t.Equals("V-OS", StringComparison.OrdinalIgnoreCase);
 
     bool EchoStars => Password && _options.IsUs(Telnet.ECHO);
 
@@ -173,8 +181,9 @@ public sealed class TelnetConnection : IAsyncDisposable
     }
 
     /// <summary>§5: DO TTYPE, DO NAWS, and up to <paramref name="wait"/>
-    /// for the answers. WILL → a common client, WONT (V-OS refuses all) →
-    /// V-OS, nothing → plain.</summary>
+    /// for the answers. TTYPE "V-OS" → V-OS (its TELNET from 0.54), WILL →
+    /// a common client, WONT (V-OS before 0.54 refuses all) → V-OS,
+    /// nothing → plain.</summary>
     public async Task<TerminalProfile> DetectAsync(TimeSpan wait, CancellationToken ct)
     {
         var output = new List<byte>();
@@ -191,12 +200,13 @@ public sealed class TelnetConnection : IAsyncDisposable
         bool will = _options.IsHim(Telnet.TTYPE) || _options.IsHim(Telnet.NAWS);
         if (will)
         {
-            // the size and the name come right after WILL
-            var more = _time.GetUtcNow() + TimeSpan.FromMilliseconds(500);
+            // the size and the name come right after WILL (the name from
+            // V-OS through the M4 board a while later)
+            var more = _time.GetUtcNow() + TimeSpan.FromSeconds(_options.IsHim(Telnet.TTYPE) ? 2 : 0.5);
             while ((_options.IsHim(Telnet.NAWS) && NawsWidth == 0 || _options.IsHim(Telnet.TTYPE) && TerminalType == null)
                    && _time.GetUtcNow() < more && !IsClosed)
                 await WaitNegotiationAsync(more - _time.GetUtcNow(), ct);
-            Profile = TerminalProfile.Utf8(NawsWidth, NawsHeight);
+            Profile = IsVos ? TerminalProfile.Vos : TerminalProfile.Utf8(NawsWidth, NawsHeight);
         }
         else if (_options.HimAnswered(Telnet.TTYPE) || _options.HimAnswered(Telnet.NAWS))
             Profile = TerminalProfile.Vos;

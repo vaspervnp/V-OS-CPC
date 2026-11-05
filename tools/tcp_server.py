@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """tcp_server.py [port] - a small server for TELNET's test in the 1984
 emulator (make test-telnet-m4): it greets each connection, asks a
-telnet option (TELNET must refuse it), and answers each line in
+telnet option (TTYPE: TELNET answers WILL), and answers each line in
 capitals; "BYE" ends the connection. What comes is logged to
 build/tcp_server.log."""
 import socket

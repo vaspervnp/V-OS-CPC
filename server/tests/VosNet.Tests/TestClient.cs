@@ -37,9 +37,13 @@ public sealed class TestClient : IAsyncDisposable
     /// seconds late).</summary>
     public int AnswerDelayMs { get; init; }
 
-    public static async Task<TestClient> ConnectAsync(int port, bool vos = true, int answerDelayMs = 0)
+    /// <summary>V-OS's TELNET from 0.54: WILL TTYPE, IS "V-OS", and the
+    /// server's ECHO taken (DO), the other options still refused.</summary>
+    public bool Ttype { get; init; }
+
+    public static async Task<TestClient> ConnectAsync(int port, bool vos = true, int answerDelayMs = 0, bool ttype = false)
     {
-        var c = new TestClient(vos) { AnswerDelayMs = answerDelayMs };
+        var c = new TestClient(vos) { AnswerDelayMs = answerDelayMs, Ttype = ttype };
         await c._tcp.ConnectAsync("127.0.0.1", port);
         c._s = c._tcp.GetStream();
         c._reader = Task.Run(c.ReadLoop);
@@ -83,6 +87,7 @@ public sealed class TestClient : IAsyncDisposable
                         case 4:
                             state = b == T.SE ? 0 : 3;
                             if (b == T.SE && !Vos) await SendRaw([T.IAC, T.SB, T.TTYPE, T.IS, .. "XTERM"u8, T.IAC, T.SE]);
+                            if (b == T.SE && Ttype) await SendRaw([T.IAC, T.SB, T.TTYPE, T.IS, .. "V-OS"u8, T.IAC, T.SE]);
                             break;
                     }
                 }
@@ -107,6 +112,15 @@ public sealed class TestClient : IAsyncDisposable
     async Task NegotiateAsync(byte verb, byte opt)
     {
         lock (_lock) Negotiations.Add((verb, opt));
+        if (Vos && Ttype)
+        {
+            if (verb == T.DO && opt == T.TTYPE) await SendRaw([T.IAC, T.WILL, opt]);
+            else if (verb == T.WILL && opt == T.ECHO) { ServerEcho = true; await SendRaw([T.IAC, T.DO, opt]); }
+            else if (verb == T.WONT && opt == T.ECHO) { if (ServerEcho) await SendRaw([T.IAC, T.DONT, opt]); ServerEcho = false; }
+            else if (verb == T.DO) await SendRaw([T.IAC, T.WONT, opt]);
+            else if (verb == T.WILL) await SendRaw([T.IAC, T.DONT, opt]);
+            return;
+        }
         if (Vos)
         {
             byte[] answer = verb == T.DO ? [T.IAC, T.WONT, opt] : verb == T.WILL ? [T.IAC, T.DONT, opt] : [];
