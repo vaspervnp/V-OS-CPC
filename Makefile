@@ -638,8 +638,8 @@ $(BRICKS_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_bricks -DTEST_SCRIPT=14
 	mv $(TEST_DSK) $@
-	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS))
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(TEST_APPS))
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-bricks: $(BRICKS_DSK) $(TEST_DSK_B)
@@ -860,8 +860,8 @@ $(SYSINFO_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_sysinfo -DTEST_SCRIPT=23
 	mv $(TEST_DSK) $@
-	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS))
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(TEST_APPS))
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-sysinfo: $(SYSINFO_DSK) $(BUILD)/markdown.dsk $(BUILD)/SYSINFO.BIN
@@ -965,8 +965,8 @@ $(DATA_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS)
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_data -DTEST_SCRIPT=28
 	mv $(TEST_DSK) $@
-	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS))
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(TEST_APPS))
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-data: $(DATA_DSK) $(BUILD)/markdown.dsk $(BUILD)/NOTEPAD.BIN
@@ -1042,7 +1042,8 @@ test-database: $(DATABASE_DSK) $(TEST_DSK_B)
 	ls $(BUILD)/shots/*/*.png
 
 # SHEET (TEST_SCRIPT=32): numbers and a formula typed, worked out by
-# CALC.SYS from A:, the sheet saved as B:T.VSH
+# CALC.SYS from A:, the sheet saved as B:T.VSH (after a write Caprice32
+# does not quit: the run ends by its timeout, 124, after the shot)
 SHEET_DSK := $(BUILD)/vos_sheet.dsk
 SHEET_SHOTS := 1600 4500 5600
 $(SHEET_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/SHEET.BIN
@@ -1058,7 +1059,7 @@ test-sheet: $(SHEET_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(SHEET_SHOTS); do \
 	  cp $(SHEET_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
-	  snap run --shell caprice32.launcher -c "VOS_TIMEOUT=60 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	  snap run --shell caprice32.launcher -c "VOS_TIMEOUT=60 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d" || [ $$? -eq 124 ]; \
 	done
 	ls $(BUILD)/shots/*/*.png
 
@@ -1809,7 +1810,9 @@ test-notepad: $(NOTEPAD_DSK) $(TEST_DSK_B)
 	ls $(BUILD)/shots/*/*.png
 
 # Studio's 128 variables (TEST_SCRIPT=13): VARS.VBS, on the test disc
-# only, opened in Studio and run
+# only (with TEST_APPS and two packs: all of them put it past block 179),
+# opened in Studio and run; VARS.VBN saved, so the run ends by its
+# timeout (124) after the shot
 $(BUILD)/VARS.VBN $(BUILD)/VARS.VBS &: blocks/examples/vars.vbt tools/mkvbs.py apps/studio/blocks.txt $(BUILD)/VBRUN.SYS
 	$(PYTHON) -I tools/mkvbs.py $< $(BUILD)/VARS.VBS $(BUILD)/VBRUN.SYS $(BUILD)/VARS.VBN
 VARS_DSK := $(BUILD)/vos_vars.dsk
@@ -1819,15 +1822,15 @@ $(VARS_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/VARS.VBS
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(BUILD)/vos_vars -DTEST_SCRIPT=13
 	mv $(TEST_DSK) $@
-	$(call add_packs,$@)
-	$(call add_apps,$@,$(APPS) $(BUILD)/VARS.VBS)
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(TEST_APPS) $(BUILD)/VARS.VBS)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
 test-vars: $(VARS_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(VARS_SHOTS); do \
 	  cp $(VARS_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
-	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	  snap run --shell caprice32.launcher -c "VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d" || [ $$? -eq 124 ]; \
 	done
 	ls $(BUILD)/shots/*/*.png
 

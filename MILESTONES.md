@@ -4,6 +4,11 @@
 
 What each milestone added, the bugs found on the way, and what was tested and what was not, newest first. The design and the implementation details are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
+**Test fixes (after M80; the same version, 0.51):**
+- **`test-bricks`, `test-vars`, `test-sysinfo`, `test-data`:** their discs had every pack and every program, so BRICKS.VBN, VARS.VBS, and the SYSINFO.BIN and NOTEPAD.BIN added after them, lay past block 179, which V-OS cannot read (the black screen of BRICKS, NOT A V-OS PROGRAM for VARS, Drive A: read fail for SYSINFO). They now use English and Greek only and `TEST_APPS`, as the other tests of one program do. BRICKS plays, VARS shows 0 5 7 12 10 then 0 9 7 12 10, SYSINFO shows V-OS 0.51, API 36 and the free K, NOTEPAD keeps BIG.TXT's lines in its data bank (checked on their screenshots).
+- **`test-sheet` and `test-vars`:** they write to a disc (B:T.VSH, VARS.VBN), after which Caprice32 does not quit: the run ends by its timeout (124) after the screenshot, as `tools/cap32_shot.sh` says. Their rules accept 124 (only it).
+- Other test discs still have BRICKS.VBN past block 179 (and the SYSTEM disc of `test-system` MINES too), but their tests do not use them.
+
 **M80 (the windows' rest: the palette, X, TELNET behind, F5 and F6; version 0.51):**
 - **`VOS_PALETTE` in a window** does nothing (`api_quiet` in its place while a program is in front in a window): the windows keep the Desktop's colours. Full screen it works as before; it is put back whenever another view starts.
 - **X asks the program:** it gets CONTROL+Q, BACK in every V-OS program, so NOTEPAD asks about unsaved changes before it ends. If it ends, the next program's window comes to the front (`app_return` and `app_wake` set for that time and put back after).
