@@ -222,7 +222,9 @@ class App:
                 continue
             n = (m.pc - API) // 3
             m.f &= ~1
-            if n == PRINT:
+            if hasattr(self, 'api_hook') and self.api_hook(n, m):
+                pass                             # (tools/mail_check.py)
+            elif n == PRINT:
                 s, a = b'', m.bc
                 while m.memory[a]:
                     s += bytes([m.memory[a]])

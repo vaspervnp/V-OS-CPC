@@ -1,0 +1,39 @@
+# FTP's texts: NAME | English | Greek (tools/mktexts.py). "|" with
+# no spaces around it starts a new line in a dialog.
+MENU        | FTP                   | FTP
+CONNECT     | CONNECT...            | ΣΥΝΔΕΣΗ...
+CLOSE       | CLOSE                 | ΑΠΟΣΥΝΔΕΣΗ
+GET         | GET THE FILE...       | ΛΗΨΗ ΑΡΧΕΙΟΥ...
+PUT         | PUT A FILE...         | ΑΠΟΣΤΟΛΗ ΑΡΧΕΙΟΥ...
+DELETE      | DELETE THE FILE       | ΔΙΑΓΡΑΦΗ ΑΡΧΕΙΟΥ
+UP          | UP A FOLDER           | ΕΠΑΝΩ ΦΑΚΕΛΟΣ
+DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+ABOUT_TEXT  | FTP|FILES TO AND FROM A SERVER|WITH THE M4 BOARD (16K AT MOST)|FOR V-OS, FROM THE SDK | FTP|ΑΡΧΕΙΑ ΑΠΟ ΚΑΙ ΠΡΟΣ ΔΙΑΚΟΜΙΣΤΗ|ΜΕ ΤΗΝ ΚΑΡΤΑ M4 (ΩΣ 16K)|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
+ADDR_T      | HOST:PORT             | ΔΙΕΥΘΥΝΣΗ:ΘΥΡΑ
+USER_T      | USER (EMPTY: ANONYMOUS) | ΧΡΗΣΤΗΣ (ΚΕΝΟ: ANONYMOUS)
+PASS_T      | PASSWORD              | ΚΩΔΙΚΟΣ
+NAME_T      | SAVE AS               | ΑΠΟΘΗΚΕΥΣΗ ΩΣ
+PICK_T      | THE FILE TO PUT       | ΤΟ ΑΡΧΕΙΟ ΠΟΥ ΣΤΕΛΝΕΤΕ
+NO_FILES    | NO FILES ON THIS DRIVE | ΚΑΝΕΝΑ ΑΡΧΕΙΟ ΣΕ ΑΥΤΗ ΤΗ ΜΟΝΑΔΑ
+DEL_Q       | DELETE THIS FILE|ON THE SERVER? | ΔΙΑΓΡΑΦΗ ΤΟΥ ΑΡΧΕΙΟΥ|ΑΠΟ ΤΟΝ ΔΙΑΚΟΜΙΣΤΗ;
+CLOSED      | NOT CONNECTED         | ΧΩΡΙΣ ΣΥΝΔΕΣΗ
+CONNECTING  | CONNECTING            | ΣΥΝΔΕΣΗ
+LOGIN       | LOGGING IN            | ΕΙΣΟΔΟΣ
+LISTING     | GETTING THE LIST      | ΛΗΨΗ ΤΗΣ ΛΙΣΤΑΣ
+GETTING     | GETTING THE FILE      | ΛΗΨΗ ΑΡΧΕΙΟΥ
+PUTTING     | PUTTING THE FILE      | ΑΠΟΣΤΟΛΗ ΑΡΧΕΙΟΥ
+CONNECTED   | CONNECTED             | ΣΥΝΔΕΘΗΚΕ
+SAVED       | SAVED, BYTES          | ΑΠΟΘΗΚΕΥΤΗΚΕ, BYTES
+SENT        | SENT, BYTES           | ΣΤΑΛΘΗΚΕ, BYTES
+TOO_BIG     | OVER 16K: NOT SAVED   | ΠΑΝΩ ΑΠΟ 16K: ΟΧΙ
+REFUSED     | LOGIN REFUSED         | ΑΡΝΗΣΗ ΕΙΣΟΔΟΥ
+SERVER      | THE SERVER SAYS       | Ο ΔΙΑΚΟΜΙΣΤΗΣ ΛΕΕΙ
+FAILED      | NO CONNECTION         | ΑΠΟΤΥΧΙΑ ΣΥΝΔΕΣΗΣ
+NO_M4       | NO M4 BOARD           | ΧΩΡΙΣ ΚΑΡΤΑ M4
+CLOSED_BY   | CLOSED BY THE SERVER  | ΤΕΛΟΣ ΑΠΟ ΔΙΑΚΟΜΙΣΤΗ
+NO_ANSWER   | NO ANSWER             | ΚΑΜΙΑ ΑΠΑΝΤΗΣΗ
+DRIVE_IS    | FILES ON              | ΑΡΧΕΙΑ ΣΤΗ
+DIR         | <DIR>                 | <ΦΑΚ>
+HINT        | ^O CONNECT  RETURN OPEN  ^G GET  ^P PUT  ^Q BACK | ^O ΣΥΝΔΕΣΗ  RETURN ΑΝΟΙΓΜΑ  ^G ΛΗΨΗ  ^P ΑΠΟΣΤΟΛΗ

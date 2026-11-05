@@ -322,6 +322,87 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 61
+; make test-ftp-m4 (-DTEST_SCRIPT=61, in the 1984 emulator with an M4
+; board whose SD card holds FTP.BIN alone, and tools/ftp_server.py on
+; this PC's ports 2121 and 2122). Expected:
+;   frame  300-400 TAB x3    -> the Desktop on DISK, FTP.BIN chosen
+;   frame  900  RETURN       -> FTP
+;   frame 1300  CONTROL+O    -> "127.0.0.1:2121" typed, 2300 RETURN; no
+;                               user (2500 RETURN): anonymous, the list
+;                               (pub, data.bin, hello.txt)
+;   frame 3400  DOWN x2, 3700 RETURN, 4000 RETURN -> HELLO.TXT on the card
+;   frame 5000  CONTROL+P, 5400 RETURN -> the card's first file STORed
+;                               (HELLO.TXT: 1984 lists the card in the
+;                               host folder's order)
+test_keys:
+        dw  300 : db   4, 8, %00010000   ; TAB
+        dw  350 : db   4, 8, %00010000   ; TAB
+        dw  400 : db   4, 8, %00010000   ; TAB
+        dw  900 : db   4, 2, %00000100   ; RETURN
+        dw 1295 : db  15, 2, %10000000   ; CONTROL
+        dw 1300 : db   4, 4, %00000100   ; O
+        dw 1500 : db   4, 8, %00000001   ; 1
+        dw 1550 : db   4, 8, %00000010   ; 2
+        dw 1600 : db   4, 5, %00000010   ; 7
+        dw 1650 : db   4, 3, %10000000   ; .
+        dw 1700 : db   4, 4, %00000001   ; 0
+        dw 1750 : db   4, 3, %10000000   ; .
+        dw 1800 : db   4, 4, %00000001   ; 0
+        dw 1850 : db   4, 3, %10000000   ; .
+        dw 1900 : db   4, 8, %00000001   ; 1
+        dw 1950 : db   4, 3, %00100000   ; :
+        dw 2000 : db   4, 8, %00000010   ; 2
+        dw 2050 : db   4, 8, %00000001   ; 1
+        dw 2100 : db   4, 8, %00000010   ; 2
+        dw 2150 : db   4, 8, %00000001   ; 1
+        dw 2300 : db   4, 2, %00000100   ; RETURN
+        dw 2500 : db   4, 2, %00000100   ; RETURN
+        dw 3400 : db   4, 0, %00000100   ; DOWN
+        dw 3500 : db   4, 0, %00000100   ; DOWN
+        dw 3700 : db   4, 2, %00000100   ; RETURN
+        dw 4000 : db   4, 2, %00000100   ; RETURN
+        dw 4995 : db  15, 2, %10000000   ; CONTROL
+        dw 5000 : db   4, 3, %00001000   ; P
+        dw 5400 : db   4, 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 60
+; make test-mail-m4 (-DTEST_SCRIPT=60, in the 1984 emulator with an M4
+; board whose SD card holds MAIL.BIN, MAIL.CFG (the servers
+; 127.0.0.1:2110 and 127.0.0.1:2525) and NOTE.TXT, and
+; tools/mail_server.py on this PC). The frames counted here go slower
+; while the M4 works, so the keys are far apart. Expected:
+;   frame  300-400 TAB x3    -> the Desktop on DISK, MAIL.BIN chosen
+;   frame  900  RETURN       -> MAIL
+;   frame 1300  CONTROL+G    -> GET MAIL: the newest 20 of 22 listed
+;   frame 1900  RETURN       -> the newest read (in parts, Greek)
+;   frame 3000  RETURN       -> the list
+;   frame 3300  CONTROL+W    -> TO: "bob@t" typed, RETURN; SUBJECT: "hi",
+;                               RETURN; 4400 RETURN: NOTE.TXT -> SENT
+test_keys:
+        dw  300 : db   4, 8, %00010000   ; TAB
+        dw  350 : db   4, 8, %00010000   ; TAB
+        dw  400 : db   4, 8, %00010000   ; TAB
+        dw  900 : db   4, 2, %00000100   ; RETURN
+        dw 1295 : db  15, 2, %10000000   ; CONTROL
+        dw 1300 : db   4, 6, %00010000   ; G
+        dw 1900 : db   4, 2, %00000100   ; RETURN
+        dw 3000 : db   4, 2, %00000100   ; RETURN
+        dw 3295 : db  15, 2, %10000000   ; CONTROL
+        dw 3300 : db   4, 7, %00001000   ; W
+        dw 3600 : db   4, 6, %01000000   ; B
+        dw 3650 : db   4, 4, %00000100   ; O
+        dw 3700 : db   4, 6, %01000000   ; B
+        dw 3750 : db   4, 3, %00000100   ; @
+        dw 3800 : db   4, 6, %00001000   ; T
+        dw 3900 : db   4, 2, %00000100   ; RETURN
+        dw 4100 : db   4, 5, %00010000   ; H
+        dw 4150 : db   4, 4, %00001000   ; I
+        dw 4250 : db   4, 2, %00000100   ; RETURN
+        dw 4450 : db   4, 2, %00000100   ; RETURN
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 59
 ; make test-wm-keys (-DTEST_SCRIPT=59, 576K): WM.SYS; WINA.BIN,
 ; WINB.BIN, CLOCK.BIN last on A:. Expected:
@@ -2636,6 +2717,8 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

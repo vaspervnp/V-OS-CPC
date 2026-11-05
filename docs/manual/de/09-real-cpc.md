@@ -68,6 +68,8 @@ Jede Zeile: was du tun sollst, und was du sehen solltest.
 - [ ] Die Menüleiste zeigt die Uhrzeit der M4; DATEI-INFO einer Datei auf DISK nennt ihr Datum.
 - [ ] WEBGET lädt eine Datei herunter; READER öffnet eine Seite aus dem Web.
 - [ ] TELNET verbindet sich mit einem Server (einer BBS) und zeigt, was er schickt.
+- [ ] MAIL holt Nachrichten von einem POP3-Server und sendet eine über SMTP.
+- [ ] FTP listet den Ordner eines Servers, holt eine Datei und sendet eine.
 
 **Geschwindigkeit** (wie lange, mit einer Uhr)
 - [ ] Von `RUN"VOS` bis zum Schreibtisch.

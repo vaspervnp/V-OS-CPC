@@ -1,0 +1,49 @@
+# MAIL's texts: NAME | English | Greek (tools/mktexts.py). "|" with
+# no spaces around it starts a new line in a dialog.
+MENU        | MAIL                  | MAIL
+GET         | GET MAIL              | ΛΗΨΗ ΜΗΝΥΜΑΤΩΝ
+READ        | READ                  | ΑΝΑΓΝΩΣΗ
+WRITE       | WRITE...              | ΝΕΟ ΜΗΝΥΜΑ...
+REPLY       | REPLY...              | ΑΠΑΝΤΗΣΗ...
+DELETE      | DELETE                | ΔΙΑΓΡΑΦΗ
+SAVE        | SAVE AS TEXT...       | ΑΠΟΘΗΚΕΥΣΗ ΩΣ ΚΕΙΜΕΝΟ...
+ACCOUNT     | ACCOUNT...            | ΛΟΓΑΡΙΑΣΜΟΣ...
+DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
+ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
+BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
+ABOUT_TEXT  | MAIL|E-MAIL WITH THE M4 BOARD:|POP3 IN, SMTP OUT|FOR V-OS, FROM THE SDK | MAIL|ΗΛΕΚΤΡΟΝΙΚΟ ΤΑΧΥΔΡΟΜΕΙΟ|ΜΕ ΤΗΝ ΚΑΡΤΑ M4: POP3, SMTP|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
+POP_T       | POP3 SERVER (HOST:PORT) | ΔΙΑΚΟΜΙΣΤΗΣ POP3
+SMTP_T      | SMTP SERVER (HOST:PORT) | ΔΙΑΚΟΜΙΣΤΗΣ SMTP
+USER_T      | USER NAME             | ΟΝΟΜΑ ΧΡΗΣΤΗ
+PASS_T      | PASSWORD              | ΚΩΔΙΚΟΣ
+ADDR_T      | YOUR E-MAIL ADDRESS   | Η ΔΙΕΥΘΥΝΣΗ ΣΑΣ
+TO_T        | TO                    | ΠΡΟΣ
+SUBJ_T      | SUBJECT               | ΘΕΜΑ
+PICK_T      | THE TEXT TO SEND      | ΤΟ ΚΕΙΜΕΝΟ ΠΟΥ ΣΤΕΛΝΕΤΕ
+NAME_T      | SAVE AS               | ΑΠΟΘΗΚΕΥΣΗ ΩΣ
+NO_TXT      | NO .TXT FILE ON THIS DRIVE:|WRITE THE TEXT IN NOTEPAD | ΚΑΝΕΝΑ .TXT ΣΕ ΑΥΤΗ ΤΗ ΜΟΝΑΔΑ:|ΓΡΑΨΤΕ ΤΟ ΚΕΙΜΕΝΟ ΣΤΟ NOTEPAD
+DEL_Q       | DELETE THIS MESSAGE|ON THE SERVER? | ΔΙΑΓΡΑΦΗ ΤΟΥ ΜΗΝΥΜΑΤΟΣ|ΑΠΟ ΤΟΝ ΔΙΑΚΟΜΙΣΤΗ;
+FROM_L      | FROM:                 | ΑΠΟ:
+DATE_L      | DATE:                 | ΗΜΕΡΟΜΗΝΙΑ:
+SUBJ_L      | SUBJECT:              | ΘΕΜΑ:
+CLOSED      | NOT CONNECTED         | ΧΩΡΙΣ ΣΥΝΔΕΣΗ
+CONNECTING  | CONNECTING            | ΣΥΝΔΕΣΗ
+LOGIN       | LOGGING IN            | ΕΙΣΟΔΟΣ
+LISTING     | GETTING THE LIST      | ΛΗΨΗ ΤΗΣ ΛΙΣΤΑΣ
+GETTING     | GETTING THE MESSAGE   | ΛΗΨΗ ΜΗΝΥΜΑΤΟΣ
+CONNECTED   | CONNECTED             | ΣΥΝΔΕΘΗΚΕ
+NO_MAIL     | NO MESSAGES           | ΚΑΝΕΝΑ ΜΗΝΥΜΑ
+MESSAGES    | MESSAGES              | ΜΗΝΥΜΑΤΑ
+REFUSED     | LOGIN REFUSED         | ΑΡΝΗΣΗ ΕΙΣΟΔΟΥ
+SERVER      | THE SERVER SAYS       | Ο ΔΙΑΚΟΜΙΣΤΗΣ ΛΕΕΙ
+SENDING     | SENDING               | ΑΠΟΣΤΟΛΗ
+SENT        | SENT                  | ΣΤΑΛΘΗΚΕ
+NOT_SENT    | NOT SENT              | ΔΕΝ ΣΤΑΛΘΗΚΕ
+SAVED       | SAVED                 | ΑΠΟΘΗΚΕΥΤΗΚΕ
+FAILED      | NO CONNECTION         | ΑΠΟΤΥΧΙΑ ΣΥΝΔΕΣΗΣ
+NO_M4       | NO M4 BOARD           | ΧΩΡΙΣ ΚΑΡΤΑ M4
+CLOSED_BY   | CLOSED BY THE SERVER  | ΤΕΛΟΣ ΑΠΟ ΔΙΑΚΟΜΙΣΤΗ
+NO_ANSWER   | NO ANSWER             | ΚΑΜΙΑ ΑΠΑΝΤΗΣΗ
+DRIVE_IS    | FILES ON              | ΑΡΧΕΙΑ ΣΤΗ
+HINT        | ^G GET  RETURN READ  ^W WRITE  ^Q BACK | ^G ΛΗΨΗ  RETURN ΑΝΑΓΝΩΣΗ  ^W ΝΕΟ  ^Q ΠΙΣΩ
+HINT_R      | RETURN THE LIST  ^R REPLY  ^S SAVE  ^D DELETE | RETURN ΛΙΣΤΑ  ^R ΑΠΑΝΤΗΣΗ  ^S ΣΩΣΕ  ^D ΔΙΑΓΡΑΦΗ

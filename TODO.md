@@ -39,3 +39,10 @@ front window's.
 6. **Copies in banks**: windows moved without drawing again; the Desktop's picture under them (M78, done: version 0.49).
 7. **The Desktop's files window** as a window among the others (M79, done: version 0.50).
 8. **Windows, the rest**: `VOS_PALETTE` in a window, X asking the program, TELNET receiving behind, F5 and F6 among windows (M80, done: version 0.51).
+
+Asked 2026-11-05: **e-mail and files over the network**, with the M4.
+
+1. **MAIL**: POP3 in, SMTP out, MIME decoded; `src/api/vos_net.inc` for the SDK (M81, done: version 0.52).
+2. **FTP**: a server's folders, GET, PUT, DELETE through PASV (M82, done: version 0.53).
+
+Still open for them: SSL/TLS (the M4 has none: a server of your own, or one that allows plain connections), messages and files over 16K, attachments in MAIL.

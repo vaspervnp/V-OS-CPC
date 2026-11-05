@@ -480,18 +480,19 @@ api_quiet:
 
 ; The data bank (data_get) at #4000-#7FFF, through fs_buf, 512 bytes
 ; a time; the program's own bank is vw_cfg. HL = source, DE =
-; destination, BC = bytes.
+; destination, BC = bytes. data_get first: the first time it gives a
+; program its own bank it copies bank 4 there with ab_from and ab_to
 api_bank_get:                       ; from the data bank
-        ld a,(vw_cfg)
-        ld (ab_to),a
         call data_get
         ld (ab_from),a
+        ld a,(vw_cfg)
+        ld (ab_to),a
         jr bank_copy
 api_bank_put:                       ; to the data bank
-        ld a,(vw_cfg)
-        ld (ab_from),a
         call data_get
         ld (ab_to),a
+        ld a,(vw_cfg)
+        ld (ab_from),a
 ; from bank ab_from to bank ab_to, both at #4000-#7FFF
 bank_copy:
 .piece:

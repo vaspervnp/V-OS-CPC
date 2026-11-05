@@ -130,6 +130,9 @@ The tests run V-OS in Caprice32 without a window and take screenshots in `build/
 | `test-wm-copies` | windows' copies (576K): WINB moved away from SYSINFO and WINA, over them and away again; WINA and WINB write how many times they have drawn and still say 001, and the Desktop's picture shows under them (`tools/wm_copies_check.py`) |
 | `test-wm-desktop` | the Desktop among the windows (576K, SETUP.CFG with A:'s window): WINA with the Desktop's window and icons behind it; the Desktop (F1) with WINA on its desk; each brought to the front with a click (`tools/wm_desktop_check.py`) |
 | `test-wm-keys` | F5, F6, X and the palette among windows (576K): CLOCK as the accessory, WINA and WINB; the list of programs (F6) and the accessory over the windows, the windows again when they close; WINA's reds (P) leave the colours as they are; WINA's X: ^Q, WINB in front (`tools/wm_keys_check.py`) |
+| `test-mail` | MAIL on a Z80 in Python (`tools/mail_check.py`), with the M4 board of `tools/m4net.py` and POP3 and SMTP servers in Python: the account in `MAIL.CFG`, the newest 20 of 22 messages with their subjects decoded, a plain one, one in quoted-printable UTF-8 and one in parts (base64, not its HTML), scrolling, SAVE AS TEXT, DELETE at QUIT, WRITE and REPLY through SMTP (AUTH LOGIN, "." doubled, the Greek subject in Q), a refusal, a wrong password, no answer, no board |
+| `test-ftp` | FTP on a Z80 in Python (`tools/ftp_check.py`), with an FTP server in Python: anonymous, PASV to the control connection's address, LIST in Unix's and DOS's lines, RETR under an 8.3 name, CWD and CDUP, STOR in pieces, DELE, over 16K not saved, a wrong password, no board |
+| `test-mail-m4`, `test-ftp-m4` | MAIL and FTP in the 1984 emulator with an M4 board (scripts 60 and 61), with the servers `tools/mail_server.py` and `tools/ftp_server.py` on this PC: the list, a message, a `.TXT` sent; FTP's list, a file onto the card and one from it |
 | `test-styles` | STYLES.VBN (`blocks/examples/styles.vbt`) from the Commander: plain, bold, italic, underlined and all three, with the STYLE block |
 | `test-music-block` | with 576K: TUNE.VBN (`blocks/examples/tune.vbt`) starts MUSIC (from B:) behind it with AGANAMEM.MUS; F6 shows "> TUNE" and MUSIC, and RETURN brings MUSIC to the front: A:AGANAMEM, PLAYING. With `MBLOCK_RAM=128`: "CLOSE ANOTHER PROGRAM FIRST" |
 | `test-amsdos`, `test-reboot`, `test-system` | V-OS files in BASIC, reboot, SYSTEM disk |
@@ -141,7 +144,7 @@ The tests run V-OS in Caprice32 without a window and take screenshots in `build/
 
 Each key is written as `dw from, to : db row, bit` of the keyboard. The key number is row·8 + bit, e.g. RETURN = 18 = row 2, bit 2.
 
-**Without an emulator:** a program's code also runs on a Z80 inside Python (the `z80` package). You load the `.BIN` at `#4000` and make the API calls return immediately (or do whatever is needed, e.g. files in a dictionary). Then you call init and event and read the memory. It is much faster than screenshots for errors in numbers, files and jumps. The label addresses come from `rasm … -s -sl` (a `.sym` file).
+**Without an emulator:** a program's code also runs on a Z80 inside Python (the `z80` package). You load the `.BIN` at `#4000` and make the API calls return immediately (or do whatever is needed, e.g. files in a dictionary). Then you call init and event and read the memory. It is much faster than screenshots for errors in numbers, files and jumps. The label addresses come from `rasm … -s -sl` (a `.sym` file). The network programs' `VX_M4` calls are answered by `tools/m4net.py`, an M4 board in Python with servers in Python at the other end.
 
 ## Every milestone
 

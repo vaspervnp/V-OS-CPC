@@ -5,7 +5,8 @@
 # AMSDOS starts on, and |A does not change that in 1984), B: a fresh
 # copy of build/apps.dsk, the SD card a fresh copy of build/m4sd
 # (HELLO.TXT, APPS/NOTEPAD.BIN; with M4_CARD=db STREETS.BIN alone, with
-# M4_CARD=net TELNET.BIN alone: made here each time). A snapshot at
+# M4_CARD=net TELNET.BIN alone, with M4_CARD=mail MAIL.BIN, MAIL.CFG
+# and NOTE.TXT, with M4_CARD=ftp FTP.BIN alone: made here each time). A snapshot at
 # emulator frame FRAME (50 a second, from power on), its screen drawn
 # from memory with V-OS's palette (tools/sna_screen.py with M4_SYM, by
 # default build/vos_m4.sym: 1984 may have spoilt the inks) -> build/
@@ -23,6 +24,14 @@ if [ "$M4_CARD" = db ]; then                # STREETS.BIN alone
 elif [ "$M4_CARD" = net ]; then             # TELNET.BIN alone
     mkdir -p build/m4sd
     cp build/TELNET.BIN build/m4sd/
+elif [ "$M4_CARD" = ftp ]; then             # FTP.BIN alone
+    mkdir -p build/m4sd
+    cp build/FTP.BIN build/m4sd/
+elif [ "$M4_CARD" = mail ]; then            # MAIL.BIN, its account, a text
+    mkdir -p build/m4sd
+    cp build/MAIL.BIN build/m4sd/
+    python3 -c "import sys; sys.stdout.buffer.write(b''.join(f.ljust(42, b'\0') for f in [b'127.0.0.1:2110', b'127.0.0.1:2525', b'vasilis', b'secret', b'vasilis@test']))" > build/m4sd/MAIL.CFG
+    printf 'Hello Bob,\r\nfrom a CPC.\r\n' > build/m4sd/NOTE.TXT
 else
     mkdir -p build/m4sd/APPS
     printf 'Hello from the SD card.\r\n' > build/m4sd/HELLO.TXT

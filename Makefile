@@ -74,6 +74,10 @@
 #   make test-diary  DIARY in a Z80 emulator: the month, its notes
 #   make test-telnet TELNET in a Z80 emulator, an M4 board's sockets in
 #                 Python: a server greets, answers, closes
+#   make test-mail  MAIL in a Z80 emulator, POP3 and SMTP servers in
+#                 Python: the list, reading, DELETE, WRITE and REPLY
+#   make test-ftp  FTP in a Z80 emulator, an FTP server in Python: LIST,
+#                 folders, GET, PUT, DELETE
 #   make test-show / test-clock / test-paint-undo  SHOW, CLOCK's M4 time,
 #                 PAINT's UNDO (Z80 emulator)
 #   make release   build/V-OS-<version>.zip: the discs, the manual's PDFs,
@@ -99,7 +103,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-wm test-wm-apps test-wm-apps2 test-wm-notepad test-wm-pages test-wm-copies test-wm-desktop test-wm-keys test-view test-diary-cap test-keep test-telnet-m4 test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-ftp test-ftp-m4 test-mail test-mail-m4 test-wm test-wm-apps test-wm-apps2 test-wm-notepad test-wm-pages test-wm-copies test-wm-desktop test-wm-keys test-view test-diary-cap test-keep test-telnet-m4 test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -1021,7 +1025,8 @@ test-sheet-z80: $(BUILD)/SHEET.BIN
 	$(PYTHON) tools/sheet_check.py $(BUILD)/myapp_sheet/check.bin $(BUILD)/myapp_sheet/check.sym $(BUILD)/calc_test/calc.bin $(BUILD)/calc_test/calc.sym
 
 # DATABASE (TEST_SCRIPT=31): a database made on B:, a table, records
-# added in the form, the list in key order, FIND, a change saved
+# added in the form, the list in key order, FIND, a change saved (after
+# the disc writes Caprice32 does not quit: its timeout, 124, is all right)
 DATABASE_DSK := $(BUILD)/vos_database.dsk
 DATABASE_SHOTS := 1250 3450 3800 4400
 $(DATABASE_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(APPS) $(BUILD)/DATABASE.BIN
@@ -1037,7 +1042,7 @@ test-database: $(DATABASE_DSK) $(TEST_DSK_B)
 	rm -rf $(BUILD)/shots
 	for d in $(DATABASE_SHOTS); do \
 	  cp $(DATABASE_DSK) $(BUILD)/vos_run.dsk; cp $(TEST_DSK_B) $(BUILD)/vos_run_b.dsk; \
-	  snap run --shell caprice32.launcher -c "VOS_TIMEOUT=60 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d"; \
+	  snap run --shell caprice32.launcher -c "VOS_TIMEOUT=60 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk VOS_DSK_B=$(abspath $(BUILD))/vos_run_b.dsk bash $(abspath tools/cap32_shot.sh) $$d" || [ $$? -eq 124 ]; \
 	done
 	ls $(BUILD)/shots/*/*.png
 
@@ -1599,6 +1604,20 @@ test-telnet: $(BUILD)/TELNET.BIN
 	$(RASM) myapps/telnet/telnet.asm -I src -I $(BUILD)/myapp_telnet -I myapps/telnet -o $(SCR_TEST)/telnet -s > $(SCR_TEST)/rasm_telnet.log
 	$(PYTHON) tools/telnet_check.py $(SCR_TEST)/telnet.bin $(SCR_TEST)/telnet.sym
 
+# MAIL in a Z80 emulator (tools/mail_check.py): the M4 board of
+# tools/m4net.py, with a POP3 and an SMTP server in Python
+test-mail: $(BUILD)/MAIL.BIN
+	@mkdir -p $(SCR_TEST)
+	$(RASM) myapps/mail/mail.asm -I src -I $(BUILD)/myapp_mail -I myapps/mail -o $(SCR_TEST)/mail -s > $(SCR_TEST)/rasm_mail.log
+	$(PYTHON) tools/mail_check.py $(SCR_TEST)/mail.bin $(SCR_TEST)/mail.sym
+
+# FTP in a Z80 emulator (tools/ftp_check.py): the M4 board of
+# tools/m4net.py, with an FTP server in Python (PASV, LIST, RETR, STOR)
+test-ftp: $(BUILD)/FTP.BIN
+	@mkdir -p $(SCR_TEST)
+	$(RASM) myapps/ftp/ftp.asm -I src -I $(BUILD)/myapp_ftp -I myapps/ftp -o $(SCR_TEST)/ftp -s > $(SCR_TEST)/rasm_ftp.log
+	$(PYTHON) tools/ftp_check.py $(SCR_TEST)/ftp.bin $(SCR_TEST)/ftp.sym
+
 test-show: $(BUILD)/SHOW.BIN
 	@mkdir -p $(SCR_TEST)
 	$(RASM) myapps/show/show.asm -I src -I $(BUILD)/myapp_show -I myapps/show -o $(SCR_TEST)/show -s > $(SCR_TEST)/rasm_show.log
@@ -1707,11 +1726,15 @@ M4I_DSK := $(BUILD)/vos_m4i.dsk
 M4I_SHOTS = 900 1700
 M4N_DSK := $(BUILD)/vos_m4n.dsk
 M4N_SHOTS = 1200 2600 3200
+M4M_DSK := $(BUILD)/vos_m4m.dsk
+M4M_SHOTS = 2600 3600 7000
+M4F_DSK := $(BUILD)/vos_m4f.dsk
+M4F_SHOTS = 3400 4800 7000
 $(BUILD)/vos_m4%.dsk: $(SOURCES) $(LANG_KERNEL) $(PACKS)
 	@mkdir -p $(BUILD)
 	@rm -f $@ $(TEST_DSK)
 	$(RASM) src/vos.asm -o $(basename $@) \
-	  -DTEST_SCRIPT=$(if $(findstring m4v,$@),35,$(if $(findstring m4o,$@),36,$(if $(findstring m4d,$@),37,$(if $(findstring m4i,$@),46,$(if $(findstring m4n,$@),48,34))))) -s
+	  -DTEST_SCRIPT=$(if $(findstring m4v,$@),35,$(if $(findstring m4o,$@),36,$(if $(findstring m4d,$@),37,$(if $(findstring m4i,$@),46,$(if $(findstring m4n,$@),48,$(if $(findstring m4m,$@),60,$(if $(findstring m4f,$@),61,34))))))) -s
 	mv $(TEST_DSK) $@
 	$(call add_test_packs,$@)
 	$(PYTHON) -I tools/dsk_ext.py $@
@@ -1728,6 +1751,35 @@ test-telnet-m4: $(M4N_DSK) $(BUILD)/TELNET.BIN
 	done; kill $$(cat $(BUILD)/tcp_server.pid)
 	grep -aq "hi" $(BUILD)/tcp_server.log
 	grep -aq "$$(printf '\377\374\030')" $(BUILD)/tcp_server.log
+
+# MAIL in the 1984 emulator (TEST_SCRIPT=60): the M4 board connects to
+# tools/mail_server.py on this PC's ports 2110 (POP3) and 2525 (SMTP);
+# the list, a message read, NOTE.TXT sent (build/mail_sent.txt)
+test-mail-m4: $(M4M_DSK) $(BUILD)/MAIL.BIN
+	rm -rf $(BUILD)/shots $(BUILD)/mail_server.log $(BUILD)/mail_sent.txt
+	$(PYTHON) tools/mail_server.py 2110 2525 & echo $$! > $(BUILD)/mail_server.pid; \
+	for d in $(M4M_SHOTS); do \
+	  cp $(M4M_DSK) $(BUILD)/vos_run.dsk; \
+	  M4_CARD=mail M4_SYM=$(BUILD)/vos_m4m.sym M4_SHOT=m-$$d bash tools/m4_shot.sh $$d; \
+	done; kill $$(cat $(BUILD)/mail_server.pid)
+	grep -aq "TOP 3 0" $(BUILD)/mail_server.log
+	grep -aq "RETR 22" $(BUILD)/mail_server.log
+	grep -aq "^<bob@t>" $(BUILD)/mail_sent.txt
+	grep -aq "^Subject: hi" $(BUILD)/mail_sent.txt
+
+# FTP in the 1984 emulator (TEST_SCRIPT=61): the M4 board connects to
+# tools/ftp_server.py on this PC's ports 2121 and 2122 (PASV's); the
+# list, HELLO.TXT got onto the card (after its AMSDOS header) and put back
+test-ftp-m4: $(M4F_DSK) $(BUILD)/FTP.BIN
+	rm -rf $(BUILD)/shots $(BUILD)/ftp_server.log $(BUILD)/ftp_stored
+	$(PYTHON) tools/ftp_server.py 2121 2122 & echo $$! > $(BUILD)/ftp_server.pid; \
+	for d in $(M4F_SHOTS); do \
+	  cp $(M4F_DSK) $(BUILD)/vos_run.dsk; \
+	  M4_CARD=ftp M4_SYM=$(BUILD)/vos_m4f.sym M4_SHOT=f-$$d bash tools/m4_shot.sh $$d; \
+	done; kill $$(cat $(BUILD)/ftp_server.pid)
+	grep -aq "RETR hello.txt" $(BUILD)/ftp_server.log
+	$(PYTHON) -c "import sys; sys.exit(open('$(BUILD)/m4run/HELLO.TXT', 'rb').read()[128:] != 'Γεια σου από το PC.\r\n'.encode('iso-8859-7'))"
+	$(PYTHON) -c "import sys; sys.exit(open('$(BUILD)/ftp_stored/HELLO.TXT', 'rb').read() != 'Γεια σου από το PC.\r\n'.encode('iso-8859-7'))"
 
 test-m4: $(M4_DSK) $(M4V_DSK) $(M4O_DSK) $(M4D_DSK) $(M4I_DSK) $(BUILD)/NOTEPAD.BIN $(BUILD)/STREETS.BIN
 	rm -rf $(BUILD)/shots

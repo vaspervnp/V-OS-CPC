@@ -156,6 +156,10 @@ in [TODO.md](../TODO.md) and, as each is done, in
   background in a window) receives there; covered, it waits. The
   accessory (F5) and the switcher (F6) open over the windows, which are
   copied first and drawn again when they close.
+- After the plan: MAIL (M81) and FTP (M82) open in a window as TELNET
+  does (`dw 376, 232, 0, 12`) and go on receiving behind, uncovered;
+  their network code (`src/api/vos_net.inc`) marks `net_socks` with #FF
+  before each `VOS_EXT`, as TELNET marks `socks`.
 - Not yet: windows in mode 0 or 2, a program's own palette in a window.
 
 ## Milestones

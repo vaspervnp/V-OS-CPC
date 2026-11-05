@@ -68,6 +68,8 @@ Chaque ligne : ce qu'il faut faire, et ce que vous devez voir.
 - [ ] La barre de menus montre l'heure de la M4 ; INFOS DU FICHIER d'un fichier sur DISK donne sa date.
 - [ ] WEBGET télécharge un fichier ; READER ouvre une page du web.
 - [ ] TELNET se connecte à un serveur (un BBS) et montre ce qu'il envoie.
+- [ ] MAIL récupère des messages d'un serveur POP3 et en envoie un par SMTP.
+- [ ] FTP liste le dossier d'un serveur, récupère un fichier et en envoie un.
 
 **La vitesse** (combien de temps, montre en main)
 - [ ] De `RUN"VOS` jusqu'au Bureau.
