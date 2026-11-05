@@ -86,8 +86,14 @@ SM_QUIT          equ 12
 MD_HDR           equ 0               ; a message's lines: its headers,
 MD_PRE           equ 1               ; before a part (or a part left
 MD_PHDR          equ 2               ; out), a part's headers, the text,
-MD_TEXT          equ 3               ; the rest
+MD_TEXT          equ 3               ; the rest, the attachment saved
 MD_SKIP          equ 4
+MD_ATT           equ 5
+BND_LEVELS       equ 3               ; parts in parts in parts
+MAX_ATT          equ 6               ; attachments listed
+ATT_NAME_MAX         equ 36
+ATT_SIZE         equ 1 + ATT_NAME_MAX + 1 ; db its part, its name
+TEXT_ROOM         equ MSG_MAX - 400   ; the text; then the rest, the list
 
 CMD_GET         equ VC_APP + 1      ; menu items: commands
 CMD_READ        equ VC_APP + 2
@@ -99,6 +105,7 @@ CMD_ACCOUNT     equ VC_APP + 7
 CMD_DRIVE       equ VC_APP + 8
 CMD_ABOUT       equ VC_APP + 9
 CMD_BACK        equ VC_APP + 10
+CMD_ATTACH      equ VC_APP + 11
 
         org VOS_APP_ADDR
         jp init
@@ -1018,17 +1025,10 @@ read:
         or a
         ret z
         call chosen
-        call hdr_clear
-        ld hl,0
-        ld (b_len),hl
-        ld (b_body),hl
         xor a
-        ld (mode),a
-        ld (mp),a
-        ld (taken),a
-        ld (dec_mode),a
-        ld (u8),a
-        ld (was_long),a
+        ld (att_pass),a
+        ld (n_att),a                ; (kept while one is saved)
+        call retr_reset
         ld de,out_buf
         ld hl,s_retr
         call copy_z
@@ -1041,6 +1041,28 @@ read:
         ld (p_state),a
         ld a,T_GETTING
         jp say_top
+
+; before a RETR: its lines from the start
+retr_reset:
+        call hdr_clear
+        ld hl,0
+        ld (b_len),hl
+        ld (b_body),hl
+        ld (att_len),hl
+        ld hl,TEXT_ROOM
+        ld (txt_room),hl
+        xor a
+        ld (mode),a
+        ld (depth),a
+        ld (part_no),a
+        ld (taken),a
+        ld (trunc),a
+        ld (dec_mode),a
+        ld (u8),a
+        ld (was_long),a
+        ld (att_hi),a
+        ld (att_err),a
+        ret
 
 ; the message chosen: its number in cur
 chosen:
@@ -1091,16 +1113,19 @@ pop_retr:
         ld hl,mode_jumps
         jp jump
 
-mode_jumps:     dw m_hdr, m_pre, m_phdr, m_text, pop_none
+mode_jumps:     dw m_hdr, m_pre, m_phdr, m_text, pop_none, m_text
 
 m_hdr:
         ld hl,(cur_line)
         ld a,(hl)
         or a
         jp nz,hdr_line
-        ; the headers' end: FROM, DATE, SUBJECT into the bank, then
-        ; how the text comes
+        ; the headers' end: FROM, DATE, SUBJECT into the bank (not while
+        ; an attachment is saved), then how the text comes
         call hdr_decode
+        ld a,(att_pass)
+        or a
+        jr nz,.how
         ld a,T_FROM_L
         ld hl,h_from
         call put_field
@@ -1114,93 +1139,151 @@ m_hdr:
         ld hl,(b_len)
         ld (b_body),hl
         call keep_reply
-        ld hl,h_type
-        ld de,k_multi
-        call find_ci
-        jr c,.single
+.how:
         call boundary
-        jr c,.single
-        ld a,1
-        ld (mp),a
         ld a,MD_PRE
-        ld (mode),a
-        ret
-.single:
+        jr nc,.set
         call set_dec
         ld a,MD_TEXT
-        ld (mode),a
-        ret
-
-; before a part: its boundary starts it (if none was taken yet)
-m_pre:
-        call bnd_line
-        ret c
-        ld a,(taken)
-        or a
-        ld a,MD_SKIP
-        jr nz,.set
-        xor a
-        ld (h_type),a
-        ld (h_cte),a
-        ld a,MD_PHDR
 .set:
         ld (mode),a
         ret
 
-; a part's headers: then a part in parts, a text or one left out
+; before a part: its boundary starts it
+m_pre:
+        jp bnd_line
+
+; a part's headers, then: parts in it, an attachment, the text, or one
+; left out
 m_phdr:
         ld hl,(cur_line)
         ld a,(hl)
         or a
         jp nz,hdr_line
-        ld hl,h_type
-        ld de,k_multi
-        call find_ci
-        jr c,.not_multi
-        call boundary
-        jr c,.not_multi
+        ld hl,part_no
+        inc (hl)
+        call boundary               ; parts in it: their boundary
         ld a,MD_PRE
-        ld (mode),a
-        ret
-.not_multi:
+        jr nc,.set
+        call att_name               ; an attachment?
+        jr c,.not_att
+        ld a,(att_pass)
+        or a
+        jr z,.list
+        ld a,(att_want)             ; saving one: this one?
+        ld hl,part_no
+        cp (hl)
+        ld a,MD_PRE
+        jr nz,.set
+        call set_dec
+        ld a,MD_ATT
+        jr .set
+.list:
+        ld a,(n_att)                ; listed: its part, its name
+        cp MAX_ATT
+        jr nc,.pre
+        inc a
+        ld (n_att),a
+        dec a
+        call att_at
+        ld a,(part_no)
+        ld (hl),a
+        inc hl
+        ex de,hl
+        ld hl,enc_buf
+        ld b,ATT_NAME_MAX
+        call copy_n
+.pre:
+        ld a,MD_PRE
+        jr .set
+.not_att:
+        ld a,(taken)                ; the first text/... is the text
+        or a
+        jr nz,.pre
         ld a,(h_type)
         or a
         jr z,.text
         ld hl,h_type
         ld de,k_text
         call find_ci
-        jr c,.skip
+        jr c,.pre
 .text:
         call set_dec
         ld a,1
         ld (taken),a
         ld a,MD_TEXT
-        ld (mode),a
-        ret
-.skip:
-        ld a,MD_PRE
+.set:
         ld (mode),a
         ret
 
-; a line of the text: decoded into the bank (in parts: until the next
-; boundary)
-m_text:
-        ld a,(mp)
+; A = an attachment of the list -> HL -> it
+att_at:
+        ld hl,atts
+        ld de,ATT_SIZE
         or a
-        jr z,.text
-        call bnd_line
-        jr c,.text
-        ld a,MD_SKIP
-        ld (mode),a
+        ret z
+.add:
+        add hl,de
+        dec a
+        jr nz,.add
         ret
-.text:
+
+; the part's name (Content-Disposition's filename=, Content-Type's
+; name=) -> enc_buf, its =?..?= words decoded; carry: not an
+; attachment (no name, nor "attachment")
+att_name:
+        ld de,enc_buf
+        xor a
+        ld (de),a
+        ld hl,h_disp
+        ld de,k_fname
+        call find_ci
+        jr nc,.copy
+        ld hl,h_type
+        ld de,k_name
+        call find_ci
+        jr nc,.copy
+        ld hl,h_disp                ; "attachment" without a name: PART n
+        ld de,k_attach
+        call find_ci
+        ret c
+        ld hl,s_part
+        ld de,enc_buf
+        call copy_z
+        ld hl,(part_no)
+        ld h,0
+        call decimal
+        xor a
+        ld (de),a
+        ret
+.copy:
+        ld de,enc_buf
+        ld b,ATT_NAME_MAX
+        call param_copy
+        ld hl,enc_buf
+        call dec_word
+        or a
+        ret
+
+; a line of the text, or of the attachment saved: decoded, to the bank
+; or the attachment's file (emit); a boundary ends it
+m_text:
+        call bnd_line
+        ret nc
+        ld a,(mode)                 ; the text, while an attachment is
+        cp MD_ATT                   ; saved: left out
+        jr z,.line
+        ld a,(att_pass)
+        or a
+        ret nz
+.line:
         ld hl,(cur_line)
         ld a,(dec_mode)
         cp 2
         jr z,.b64
         cp 1
         jr z,.qp
-        call put_z
+        call emit_z
         jr .crlf
 .qp:
         ld d,h
@@ -1211,7 +1294,7 @@ m_text:
         call qp_dec
         pop hl
         push af                     ; carry: "=" at its end, no CR LF
-        call put_to_de
+        call emit_to_de
         pop af
         ret c
         jr .crlf
@@ -1221,18 +1304,101 @@ m_text:
         push hl
         call b64_dec
         pop hl
-        jp put_to_de
+        jp emit_to_de
 .crlf:
         ld a,(net_long)
         or a
         ret nz
-        jp put_crlf
+        ld hl,s_crlf
+        ; fall through
+; HL -> text, 0: emitted
+emit_z:
+        ld d,h
+        ld e,l
+.end:
+        ld a,(de)
+        or a
+        jr z,emit_to_de
+        inc de
+        jr .end
 
-; ".": the message all here
+; HL -> bytes up to DE: to the bank's text, or the attachment's file
+emit_to_de:
+        ex de,hl
+        or a
+        sbc hl,de
+        ld b,h
+        ld c,l
+        ex de,hl
+        ld a,(mode)
+        cp MD_ATT
+        jp nz,put_n
+        ; fall through
+; HL -> bytes, BC = how many: the attachment's
+att_put:
+        ld a,b
+        or c
+        ret z
+        ld a,(att_err)
+        or a
+        ret nz
+        push bc
+        ld a,(att_card)
+        or a
+        jr z,.bank
+        push bc                     ; (a line: 160 bytes at most, under
+        call m4f_write              ; M4F_PIECE)
+        pop bc
+        jr nc,.count
+        ld a,2                      ; the card refused it
+        ld (att_err),a
+        pop bc
+        ret
+.bank:
+        push hl                     ; into the bank, 16K at most
+        ld hl,(att_len)
+        add hl,bc
+        jr c,.big
+        ld de,#4000 + 1
+        push hl
+        or a
+        sbc hl,de
+        pop hl
+        jr nc,.big
+        ld de,(att_len)
+        ld hl,DATA
+        add hl,de
+        ex de,hl
+        pop hl
+        call VOS_BANK_PUT
+        pop bc
+        push bc
+.count:
+        ld hl,(att_len)
+        pop bc
+        add hl,bc
+        ld (att_len),hl
+        ret nc
+        ld hl,att_hi
+        inc (hl)
+        ret
+.big:
+        pop hl
+        pop bc
+        ld a,1
+        ld (att_err),a
+        ret
+
+; ".": the message all here (or the attachment saved)
 retr_end:
+        ld a,P_IDLE
+        ld (p_state),a
+        ld a,(att_pass)
+        or a
+        jp nz,att_done
         ld a,(u8)                   ; UTF-8: its text into the V-OS set
         or a
-        jr z,.lines
+        jr z,.utf
         ld hl,(b_len)
         ld de,(b_body)
         or a
@@ -1241,7 +1407,7 @@ retr_end:
         ld c,l
         ld a,b
         or c
-        jr z,.lines
+        jr z,.utf
         ld hl,DATA
         add hl,de
         ld e,VOS_DATA
@@ -1250,10 +1416,57 @@ retr_end:
         ld hl,(b_body)
         add hl,bc
         ld (b_len),hl
+.utf:
+        ld hl,MSG_MAX               ; the rest of the room: the end
+        ld (txt_room),hl
+        ld a,(trunc)                ; cut: said so
+        or a
+        jr z,.list
+        call put_crlf
+        ld a,T_MORE
+        call VOS_MSG
+        call put_z
+        call put_crlf
+.list:
+        ld a,(n_att)                ; the attachments: [1] NAME ...
+        or a
+        jr z,.lines
+        call put_crlf
+        ld a,T_ATTS
+        call VOS_MSG
+        call put_z
+        call put_crlf
+        ld b,0
+.att:
+        push bc
+        ld hl,num_in
+        ld (hl),"["
+        inc hl
+        ld a,b
+        add a,"1"
+        ld (hl),a
+        inc hl
+        ld (hl),"]"
+        inc hl
+        ld (hl)," "
+        inc hl
+        ld (hl),0
+        ld hl,num_in
+        call put_z
+        pop bc
+        push bc
+        ld a,b
+        call att_at
+        inc hl
+        call put_z
+        call put_crlf
+        pop bc
+        inc b
+        ld a,(n_att)
+        cp b
+        jr nz,.att
 .lines:
         call make_lines
-        ld a,P_IDLE
-        ld (p_state),a
         ld a,V_READ
         ld (view),a
         ld hl,0
@@ -1287,14 +1500,53 @@ set_dec:
         ld (u8),a
         ret
 
-; h_type's boundary= into bnd; carry: none
+; h_type multipart/..., with a boundary=: it on the boundaries' stack;
+; carry: not
 boundary:
+        ld hl,h_type
+        ld de,k_multi
+        call find_ci
+        ret c
         ld hl,h_type
         ld de,k_bnd
         call find_ci
         ret c
-        ld de,bnd
+        ld a,(depth)
+        cp BND_LEVELS
+        ccf
+        ret c
+        push hl
+        call bnd_at
+        ex de,hl
+        pop hl
+        push de
         ld b,BND_MAX
+        call param_copy
+        pop hl
+        ld a,(hl)
+        or a
+        scf
+        ret z
+        ld hl,depth
+        inc (hl)
+        or a
+        ret
+
+; A = a level -> HL -> its boundary
+bnd_at:
+        ld hl,bstack
+        ld de,BND_MAX + 1
+        or a
+        ret z
+.add:
+        add hl,de
+        dec a
+        jr nz,.add
+        ret
+
+; HL -> a parameter's value (after "="), DE -> where, B = most: it
+; there (in quotes: up to the quote; else up to ";" or a space), 0
+param_copy:
         ld c,0                      ; the quote it is in, or 0
         ld a,(hl)
         cp #22
@@ -1326,19 +1578,21 @@ boundary:
 .end:
         xor a
         ld (de),a
-        ld a,(bnd)
-        or a
-        scf
-        ret z
-        or a
         ret
 
-; -> NC: cur_line is "--" and the boundary
+; cur_line "--" and a boundary of the stack (the innermost first)? NC:
+; that part ends; its level the last now, MD_PHDR for the next part, or
+; after "--boundary--" the level gone, MD_PRE (MD_SKIP when none is
+; left). Carry: not one
 bnd_line:
         ld a,(cont)                 ; (not a piece after the first)
         or a
         scf
         ret nz
+        ld a,(depth)
+        or a
+        scf
+        ret z
         ld hl,(cur_line)
         ld a,(hl)
         cp "-"
@@ -1350,17 +1604,49 @@ bnd_line:
         scf
         ret nz
         inc hl
-        ld de,bnd
+        ld (bl_at),hl
+        ld a,(depth)
+.level:
+        dec a
+        ld (bl_lv),a
+        call bnd_at
+        ex de,hl
+        ld hl,(bl_at)
 .cmp:
         ld a,(de)
         or a
-        ret z
+        jr z,.match
         cp (hl)
-        scf
-        ret nz
+        jr nz,.next
         inc hl
         inc de
         jr .cmp
+.next:
+        ld a,(bl_lv)
+        or a
+        jr nz,.level
+        scf
+        ret
+.match:
+        ld a,(bl_lv)                ; the parts in it gone
+        inc a
+        ld (depth),a
+        ld a,(hl)
+        cp "-"
+        ld a,MD_PHDR
+        jr nz,.part
+        ld hl,depth                 ; its end: the level gone too
+        dec (hl)
+        ld a,MD_PRE
+        jr nz,.part
+        ld a,MD_SKIP
+.part:
+        ld (mode),a
+        xor a
+        ld (h_type),a
+        ld (h_cte),a
+        ld (h_disp),a
+        ret
 
 ; DELETE: DELE, after asking
 delete:
@@ -1413,6 +1699,7 @@ hdr_clear:
         ld (h_date),a
         ld (h_type),a
         ld (h_cte),a
+        ld (h_disp),a
         ld hl,0
         ld (hdr_cur),hl
         ret
@@ -1555,9 +1842,11 @@ upper:
 ; From and Subject: their =?..?= words decoded, UTF-8 the V-OS set
 hdr_decode:
         ld hl,h_from
-        call .one
+        call dec_word
         ld hl,h_subj
-.one:
+; HL -> a header's text: its =?..?= words decoded there, UTF-8 the
+; V-OS set (HDR bytes at most)
+dec_word:
         push hl
         ld de,ew_out
         call ew_dec
@@ -1589,7 +1878,7 @@ ew_dec:
         ld a,(hl)
         or a
         jp z,.end
-        cp "="
+        cp #3D                     ; "="
         jr nz,.copy
         inc hl
         ld a,(hl)
@@ -1625,7 +1914,7 @@ ew_dec:
         inc hl
         ld a,(hl)
         dec hl
-        cp "="
+        cp #3D                     ; "="
         jr z,.dend
         ld a,"?"
 .char:
@@ -1664,7 +1953,7 @@ ew_dec:
         inc hl
         jr .sp
 .spe:
-        cp "="
+        cp #3D                     ; "="
         jr nz,.keep
         inc hl
         ld a,(hl)
@@ -1681,7 +1970,7 @@ ew_dec:
 .fail:
         pop hl
 .copy_eq:
-        ld a,"="
+        ld a,#3D                   ; "="
 .copy:
         ld (de),a
         inc de
@@ -1870,17 +2159,20 @@ put_n:
         or c
         ret z
         push hl
-        ld hl,MSG_MAX
+        ld hl,(txt_room)
         ld de,(b_len)
         or a
         sbc hl,de                   ; room left
         jr z,.full
+        jr c,.full
         push hl
         sbc hl,bc
         pop hl
         jr nc,.fits
         ld b,h
         ld c,l
+        ld a,1                      ; (cut)
+        ld (trunc),a
 .fits:
         ld hl,DATA
         add hl,de
@@ -1891,6 +2183,8 @@ put_n:
         pop hl
         jp VOS_BANK_PUT
 .full:
+        ld a,1
+        ld (trunc),a
         pop hl
         ret
 
@@ -1905,7 +2199,7 @@ qp_dec:
         or a
         ret z
         inc hl
-        cp "="
+        cp #3D                     ; "="
         jr z,.esc
         cp "_"
         jr nz,.put
@@ -1940,7 +2234,7 @@ qp_dec:
 .raw_back:
         dec hl
 .raw:
-        ld a,"="
+        ld a,#3D                   ; "="
         jr .put
 
 ; A = a character -> A = its value as a hex digit; carry: not one
@@ -1965,7 +2259,7 @@ b64_dec:
         or a
         jr z,.end
         inc hl
-        cp "="
+        cp #3D                     ; "="
         jr z,.end
         call b64_val
         jr c,.loop
@@ -2151,11 +2445,11 @@ b64_enc:
         pop hl
         jr b64_enc
 .pad2:
-        ld a,"="
+        ld a,#3D                   ; "="
         ld (de),a
         inc de
 .pad1:
-        ld a,"="
+        ld a,#3D                   ; "="
         ld (de),a
         inc de
         pop hl
@@ -2545,7 +2839,7 @@ subj_enc:
         call alnum
         jr nc,.put
         ld c,a                      ; =XX
-        ld a,"="
+        ld a,#3D                   ; "="
         ld (de),a
         inc de
         ld a,c
@@ -2721,8 +3015,10 @@ command:
         jp z,reply
         cp CMD_DELETE
         jp z,delete
+        cp CMD_ATTACH
+        jp z,attach
         cp CMD_SAVE
-        jr z,save_text
+        jp z,save_text
         cp CMD_ACCOUNT
         jr nz,.not_account
         call account
@@ -2750,6 +3046,249 @@ command:
         call pop_quit
         call smtp_close
         jp VOS_EXIT
+
+; SAVE ATTACHMENT: one of the message read (which, if it has more),
+; its name here; then RETR again, that part decoded into its file: on
+; DISK written as it comes (src/api/vos_m4file.inc), on A: or B: into
+; the bank (16K at most), then saved
+attach:
+        ld a,(view)
+        or a
+        ret z
+        ld a,(p_state)
+        cp P_IDLE
+        ret nz
+        ld a,(s_state)
+        or a
+        ret nz
+        ld a,(n_att)
+        or a
+        ret z
+        ld b,1
+        dec a
+        jr z,.one
+        ld hl,num_in                ; which: 1 .. n_att
+        ld (hl),"1"
+        inc hl
+        ld (hl),0
+        ld a,T_WHICH_T
+        ld hl,num_in
+        ld c,2
+        call VOS_INPUT
+        jp c,redraw
+        ld hl,num_in
+        call net_number
+        jp c,redraw
+        ld a,d
+        or a
+        jp nz,redraw
+        ld a,e
+        or a
+        jp z,redraw
+        ld hl,n_att
+        cp (hl)
+        jr z,.n
+        jp nc,redraw
+.n:
+        ld b,a
+.one:
+        ld a,b
+        dec a
+        call att_at
+        ld a,(hl)
+        ld (att_want),a
+        inc hl
+        call short_name             ; its name here: 8.3
+        ld a,T_NAME_T
+        ld hl,name_in
+        ld c,12
+        call VOS_INPUT
+        jp c,redraw
+        call make_name
+        jp c,redraw
+        xor a
+        ld (att_card),a
+        ld a,(m_drive)
+        cp 2
+        jr nz,.retr
+        ld hl,fname
+        ld de,card_name
+        call fcb_text
+        ld hl,card_name
+        call m4f_create
+        jr nc,.created
+        ld a,T_CARD_ERR
+        ld (said),a
+        jp redraw
+.created:
+        ld a,1
+        ld (att_card),a
+.retr:
+        call retr_reset
+        xor a
+        ld (info),a
+        inc a
+        ld (att_pass),a
+        ld de,out_buf
+        ld hl,s_retr
+        call copy_z
+        ld hl,(cur)
+        call decimal
+        ld ix,c_pop
+        ld hl,out_buf
+        call net_say
+        ld a,P_RETR_OK
+        ld (p_state),a
+        ld a,T_GETTING
+        ld (said),a
+        jp redraw
+
+; the attachment's RETR ended: closed or saved, said how
+att_done:
+        xor a
+        ld (att_pass),a
+        ld a,(att_card)
+        or a
+        jr z,.bank
+        call m4f_close              ; on the card: written already
+        ld a,(att_err)
+        or a
+        ld a,T_CARD_ERR
+        jr nz,.said
+        jr .saved
+.bank:
+        xor a                       ; the bank was the message's: the
+        ld (view),a                 ; list again
+        ld a,(att_err)
+        or a
+        ld a,T_TOO_BIG
+        jr nz,.said
+        ld a,(m_drive)
+        or VOS_DATA
+        ld hl,fname
+        ld de,DATA
+        ld bc,(att_len)
+        call VOS_SAVE
+        jr nc,.saved
+        call VOS_ERROR
+        jp redraw
+.saved:
+        ld hl,(att_len)
+        ld a,(att_hi)
+        ld c,a
+        ld de,info
+        call count_text
+        ld a,T_SAVED
+.said:
+        ld (said),a
+        jp redraw
+
+; C:HL -> DE: in decimal, or in K over 65535; 0 after it
+count_text:
+        ld a,c
+        or a
+        jr z,.bytes
+        ld b,h                      ; C:H:L >> 10 = C * 64 + H / 4
+        ld l,c
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld a,b
+        rrca
+        rrca
+        and #3F
+        add a,l
+        ld l,a
+        call decimal
+        ld a,"K"
+        ld (de),a
+        inc de
+        jr .end
+.bytes:
+        call decimal
+.end:
+        xor a
+        ld (de),a
+        ret
+
+; HL -> an 11-byte name -> DE: "NAME.EXT", 0
+fcb_text:
+        ld b,8
+        call .part
+        ld a,(hl)
+        cp " "
+        jr z,.named
+        ld a,"."
+        ld (de),a
+        inc de
+        ld b,3
+        call .part
+.named:
+        xor a
+        ld (de),a
+        ret
+.part:                              ; B characters, without the spaces
+        ld a,(hl)
+        inc hl
+        cp " "
+        jr z,.next
+        ld (de),a
+        inc de
+.next:
+        djnz .part
+        ret
+
+; HL -> a name -> name_in: 8.3 (the part before the first ".", 8 at
+; most; the part after the last, 3 at most)
+short_name:
+        ld de,name_in
+        ld b,8
+.base:
+        ld a,(hl)
+        or a
+        jr z,.end
+        cp "."
+        jr z,.ext
+        ld (de),a
+        inc de
+        inc hl
+        djnz .base
+.ext:
+        ld bc,0                     ; the last "."
+.find:
+        ld a,(hl)
+        or a
+        jr z,.found
+        cp "."
+        jr nz,.on
+        ld b,h
+        ld c,l
+.on:
+        inc hl
+        jr .find
+.found:
+        ld a,b
+        or c
+        jr z,.end
+        ld h,b
+        ld l,c
+        ld b,4
+.copy:
+        ld a,(hl)
+        or a
+        jr z,.end
+        ld (de),a
+        inc de
+        inc hl
+        djnz .copy
+.end:
+        xor a
+        ld (de),a
+        ret
 
 ; SAVE AS TEXT: the message read, a .TXT on m_drive
 save_text:
@@ -2898,6 +3437,7 @@ decimal:
         ret
 
         include "api/vos_net.inc"
+        include "api/vos_m4file.inc"
         include "api/vos_drive.inc"
 
 ; ---- data -----------------------------------------------------------
@@ -2908,13 +3448,14 @@ palette:        db 0, 26, 1, 24, 11, 20, 18, 9, 24, 15, 6, 3, 8, 5, 13, 16
                 db 1
 bar:            db 3
                 dw menu, 0, 0
-menu:           db T_MENU, 11
+menu:           db T_MENU, 12
                 db T_GET, CMD_GET, "G", 0
                 db T_READ, CMD_READ, 0, 0
                 db T_WRITE, CMD_WRITE, "W", 0
                 db T_REPLY, CMD_REPLY, "R", 0
                 db T_DELETE, CMD_DELETE, "D", 0
                 db T_SAVE, CMD_SAVE, "S", 0
+                db T_ATTACH, CMD_ATTACH, "A", 0
                 db T_ACCOUNT, CMD_ACCOUNT, 0, 0
                 db T_DRIVE, CMD_DRIVE, 0, 0
                 db T_ABOUT, CMD_ABOUT, 0, 0
@@ -2941,10 +3482,17 @@ hdr_names:      db "FROM:", 0
                 db "CONTENT-TRANSFER-ENCODING:", 0
                 dw h_cte
                 db 39
+                db "CONTENT-DISPOSITION:", 0
+                dw h_disp
+                db HDR - 1
                 db 0
 k_multi:        db "MULTIPART/", 0
 k_text:         db "TEXT/", 0
 k_bnd:          db "BOUNDARY=", 0
+k_fname:        db "FILENAME=", 0
+k_name:         db "NAME=", 0
+k_attach:       db "ATTACHMENT", 0
+s_part:         db "PART ", 0
 k_qp:           db "QUOTED-PRINTABLE", 0
 k_b64:          db "BASE64", 0
 k_utf8:         db "UTF-8", 0
@@ -3011,7 +3559,22 @@ n_lines:        dw 0
 b_len:          dw 0
 b_body:         dw 0
 mode:           db 0
-mp:             db 0
+depth:          db 0                ; boundaries on bstack
+part_no:        db 0                ; parts so far
+n_att:          db 0
+trunc:          db 0                ; 1: the text cut (TEXT_ROOM)
+txt_room:       dw TEXT_ROOM
+bl_at:          dw 0
+bl_lv:          db 0
+att_pass:       db 0                ; 1: RETR to save an attachment
+att_want:       db 0                ; its part
+att_card:       db 0                ; 1: to the card, as it comes
+att_err:        db 0                ; 1: over 16K, 2: the card refused
+att_len:        dw 0
+att_hi:         db 0
+num_in:         ds 8
+card_name:      ds 13
+atts:           ds MAX_ATT * ATT_SIZE
 taken:          db 0
 dec_mode:       db 0                ; 1 quoted-printable, 2 base64
 u8:             db 0
@@ -3045,7 +3608,8 @@ h_subj:         ds HDR
 h_date:         ds 48
 h_type:         ds HDR
 h_cte:          ds 40
-bnd:            ds BND_MAX + 1
+bstack:         ds BND_LEVELS * (BND_MAX + 1)
+h_disp:         ds HDR
 ew_buf:                             ; (a header decoded, then its name
 name_buf:       ds HDR              ; or address)
 ew_out:

@@ -38,7 +38,9 @@
 ; 8K of a picture or of layers in the data bank; of the whole screen,
 ; the window's 128 x 128 here, in canvas, which it does not use), and
 ; UNDO swaps it with the picture, so UNDO again does it again. FILL on
-; the whole screen may go past the window: no UNDO for it. The data
+; the whole screen may go past the window: it keeps a bit for each
+; pixel it changes instead (4000 bytes, in canvas) and the colour they
+; had; UNDO paints them with that colour, UNDO again with the other. The data
 ; bank may have been another program's meanwhile (a 6128 shares it):
 ; nothing to undo after PAINT is back.
 ;   make app NAME=paint       build/PAINT.BIN, and build/vos.dsk
@@ -95,6 +97,7 @@ CMD_ABOUT       equ VC_APP + 8
 CMD_BACK        equ VC_APP + 9
 CMD_EXPORT      equ VC_APP + 10
 CMD_UNDO        equ VC_APP + 11
+U_MASK          equ 2               ; u_ok: FILL's pixels kept as bits
 SCR_DATA        equ #4000           ; the screen, in the data bank (EXPORT,
                                     ; or the picture itself)
 SCR_SIZE        equ #4000
@@ -1100,8 +1103,7 @@ u_keep:
         call rc_flush
         ld a,1
         ld (u_ok),a
-        ld a,(big)
-        or a
+        call u_screen
         jr nz,.screen
         ld hl,canvas                ; the 8K into the data bank
         ld de,SCR_DATA
@@ -1123,6 +1125,19 @@ u_keep:
         pop bc
         call u_next
         jr nz,.row
+        ret
+
+; NZ: a picture on the whole screen (layers are in canvas, kept in the
+; data bank as a small picture is)
+u_screen:
+        ld a,(lmode)
+        or a
+        jr z,.pic
+        xor a
+        ret
+.pic:
+        ld a,(big)
+        or a
         ret
 
 ; B = a row of the window kept -> HL = its bytes in the data bank, at
@@ -1162,8 +1177,10 @@ undo:
         ret z
         call rc_flush
         call rc_none
-        ld a,(big)
-        or a
+        ld a,(u_ok)
+        cp U_MASK
+        jp z,.mask
+        call u_screen
         jr nz,.screen
         ld hl,canvas                ; 8K, 128 bytes at a time
         ld (u_at),hl
@@ -1222,6 +1239,118 @@ undo:
 .done:
         call changed
         jp draw_canvas
+.mask:
+        ld a,(col_byte)             ; FILL's pixels: in u_from
+        push af
+        ld a,(u_from)
+        ld e,a
+        srl a
+        or e
+        ld (col_byte),a
+        ld hl,canvas
+        ld b,0
+.mrow:
+        ld c,0
+.mbyte:
+        ld a,(hl)
+        or a
+        jr nz,.bits
+        ld a,c                      ; none of these 8
+        add a,8
+        ld c,a
+        jr .mnext
+.bits:
+        ld e,a                      ; the lowest bit: the pixel at C
+        ld d,8
+.mbit:
+        srl e
+        jr nc,.mno
+        push hl
+        push de
+        call set_px
+        pop de
+        pop hl
+.mno:
+        inc c
+        dec d
+        jr nz,.mbit
+.mnext:
+        inc hl
+        ld a,c
+        cp 160
+        jr nz,.mbyte
+        inc b
+        ld a,b
+        cp 200
+        jr nz,.mrow
+        pop af
+        ld (col_byte),a
+        call rc_flush
+        ld hl,(u_from)              ; the other colour next time
+        ld a,h
+        ld h,l
+        ld l,a
+        ld (u_from),hl
+        jr .done
+
+; before FILL: on the whole screen, its mask emptied and the colours
+; (U_MASK); else the picture kept as before any tool
+f_keep:
+        call u_screen
+        jp z,u_keep
+        call rc_flush
+        ld hl,canvas
+        ld de,canvas + 1
+        ld bc,200 * 20 - 1
+        ld (hl),0
+        ldir
+        ld a,(target)
+        ld (u_from),a
+        call cur_code
+        ld (u_to),a
+        ld a,U_MASK
+        ld (u_ok),a
+        ret
+
+; C = x, B = y: FILL's pixel, and its bit in the mask (BC kept)
+f_set:
+        call set_px
+        ld a,(u_ok)
+        cp U_MASK
+        ret nz
+        push bc
+        ld l,b                      ; canvas + 20 y + x / 8
+        ld h,0
+        add hl,hl
+        add hl,hl
+        ld d,h
+        ld e,l
+        add hl,hl
+        add hl,hl
+        add hl,de
+        ld a,c
+        rrca
+        rrca
+        rrca
+        and 31
+        ld e,a
+        ld d,0
+        add hl,de
+        ld de,canvas
+        add hl,de
+        ld a,c
+        and 7
+        inc a
+        ld b,a
+        xor a
+        scf
+.bit:
+        rla
+        djnz .bit
+        or (hl)
+        ld (hl),a
+        pop bc
+        ret
 
 discard_ok:
         ld a,(modified)
@@ -1898,14 +2027,8 @@ fill:
         cp e
         ret z
         push bc
-        call u_keep                 ; the whole screen: no UNDO
+        call f_keep
         pop bc
-        ld a,(big)
-        or a
-        jr z,.kept
-        xor a
-        ld (u_ok),a
-.kept:
         call changed
         ld hl,fstack
         ld (fsp),hl
@@ -1941,7 +2064,7 @@ fill:
         ld a,(fxl)
         ld c,a
 .paint:
-        call set_px
+        call f_set
         ld a,(fxr)
         cp c
         jr z,.painted
@@ -2761,7 +2884,10 @@ dot_pairs:      db #FF, 0, #FF, 0
         include "app_texts.asm"     ; texts, from texts.txt
 
 lmode:          db 0                ; 0 a picture, 1 layers
-u_ok:           db 0                ; UNDO: 1 when a picture is kept
+u_ok:           db 0                ; UNDO: 1 when a picture is kept,
+                                    ; U_MASK after FILL on the screen
+u_from:         db 0                ; then: the colour the pixels had,
+u_to:           db 0                ; the one they have
 u_vx:           db 0                ; the window's place then (vx, vy)
 u_vy:           db 0
 u_at:           dw 0

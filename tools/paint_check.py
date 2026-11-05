@@ -11,8 +11,9 @@ BOX, LINE and PENCIL draw with the pointer, CIRCLE a ring of pixels
 round its centre (none far from it or at it); then UNDO must give the
 picture as it was before the last tool, UNDO again as it was after it,
 and on the whole screen in a window scrolled away too. FILL must be
-taken back on a small picture; on the whole screen it leaves nothing
-to undo. Exits 1 on the first difference.
+taken back too, on the whole screen past the window (its pixels kept
+as bits), and given again. Layers too, with a data bank of PAINT's
+own or not. Exits 1 on the first difference.
 """
 import os
 import sys
@@ -23,7 +24,7 @@ BANK_GET, BANK_PUT, EXT = 37, 38, 42
 VX_DATA = 7
 VE_KEY_DOWN, VE_PTR_DOWN, VE_PTR_UP = 1, 5, 6
 VK_TAB = 68
-CMD_UNDO = 32 + 11
+CMD_NEW_L, CMD_UNDO = 32 + 2, 32 + 11
 CY = 16                         # the window on the screen (paint.asm)
 
 
@@ -165,13 +166,58 @@ def run(prog, sym, big):
     p.event(VE_PTR_DOWN, x=120, y=CY + 120)
     filled = p.picture()
     check('FILL filled nothing', filled != dot, True)
+    if big:                                      # past the window: rows
+        rows = {(at % 0x800) // 80 * 8 + at // 0x800 for at in range(len(filled))
+                if filled[at] != dot[at]}
+        check('FILL past the window (%d rows)' % len(rows), max(rows) >= 128, True)
     p.call('COMMAND', a=CMD_UNDO)
-    if big:
-        check('FILL on the whole screen: nothing to undo', p.picture(), filled)
-    else:
-        check('UNDO: the FILL taken back', p.picture(), dot)
+    check('UNDO: the FILL taken back', p.picture(), dot)
+    p.call('COMMAND', a=CMD_UNDO)
+    check('UNDO again: the FILL again', p.picture(), filled)
+    if big:                                      # scrolled away, then UNDO
+        p.m.set_memory_block(sym['VX'], bytes([32, 72]))
+        p.call('COMMAND', a=CMD_UNDO)
+        check('UNDO, scrolled: the FILL taken back', p.picture(), dot)
+        p.m.set_memory_block(sym['VX'], bytes([0, 0]))
+        p.tool('x')                              # a tool after it: the
+        p.drag(2, 2, 6, 6)                       # usual UNDO again
+        box2 = p.picture()
+        p.call('COMMAND', a=CMD_UNDO)
+        check('UNDO after FILL: the BOX taken back', p.picture(), dot)
+        p.call('COMMAND', a=CMD_UNDO)
+        check('the BOX again', p.picture(), box2)
     print('paint_check: %s: BOX, LINE, PENCIL%s, CIRCLE and FILL, UNDO and UNDO again: all right'
           % ('the whole screen' if big else 'a picture', ' (scrolled away)' if big else ''))
+
+
+def layers(prog, sym, big):
+    """NEW LAYERS: a BOX on a layer, UNDO, UNDO again (the layers are
+    in PAINT's memory, kept in the data bank, with a data bank of its
+    own too)"""
+    p = Paint(prog, sym, big)
+    p.call('INIT', a=0)
+    p.call('COMMAND', a=CMD_NEW_L)
+    mem, at = p.m.memory, sym['CANVAS']
+    lyr = lambda: bytes(mem[at:at + 7686])
+    white = lyr()
+    p.event(VE_KEY_DOWN, VK_TAB)
+    p.event(VE_KEY_DOWN, VK_TAB)
+    p.tool('x')
+    p.drag(10, 10, 40, 30)
+    box = lyr()
+    check('layers: BOX drew nothing', box != white, True)
+    p.call('COMMAND', a=CMD_UNDO)
+    check('layers%s: UNDO: the BOX taken back' % (' (a data bank)' if big else ''), lyr(), white)
+    p.call('COMMAND', a=CMD_UNDO)
+    check('layers: the BOX again', lyr(), box)
+    p.tool('f')                                  # FILL inside the box
+    p.event(VE_PTR_DOWN, x=40, y=CY + 40)
+    filled = lyr()
+    check('layers: FILL filled nothing', filled != box, True)
+    p.call('COMMAND', a=CMD_UNDO)
+    check('layers: UNDO: the FILL taken back', lyr(), box)
+    print('paint_check: layers%s: BOX and FILL, UNDO and UNDO again: all right'
+          % (', a data bank of its own' if big else ''))
 
 
 def main():
@@ -185,6 +231,8 @@ def main():
             sym[p[0].upper()] = int(p[1][1:], 16)
     run(prog, sym, 0)
     run(prog, sym, 1)
+    layers(prog, sym, 0)
+    layers(prog, sym, 1)
 
 
 if __name__ == '__main__':

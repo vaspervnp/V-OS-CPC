@@ -47,3 +47,9 @@ NO_ANSWER   | NO ANSWER             | ΚΑΜΙΑ ΑΠΑΝΤΗΣΗ
 DRIVE_IS    | FILES ON              | ΑΡΧΕΙΑ ΣΤΗ
 HINT        | ^G GET  RETURN READ  ^W WRITE  ^Q BACK | ^G ΛΗΨΗ  RETURN ΑΝΑΓΝΩΣΗ  ^W ΝΕΟ  ^Q ΠΙΣΩ
 HINT_R      | RETURN THE LIST  ^R REPLY  ^S SAVE  ^D DELETE | RETURN ΛΙΣΤΑ  ^R ΑΠΑΝΤΗΣΗ  ^S ΣΩΣΕ  ^D ΔΙΑΓΡΑΦΗ
+ATTACH      | SAVE ATTACHMENT...    | ΑΠΟΘΗΚΕΥΣΗ ΣΥΝΗΜΜΕΝΟΥ...
+ATTS        | ATTACHMENTS (^A SAVES ONE): | ΣΥΝΗΜΜΕΝΑ (ΤΑ ΣΩΖΕΙ ΤΟ ^A):
+MORE        | [THE REST IS NOT SHOWN: TOO BIG] | [ΤΟ ΥΠΟΛΟΙΠΟ ΔΕΝ ΦΑΙΝΕΤΑΙ: ΠΟΛΥ ΜΕΓΑΛΟ]
+WHICH_T     | WHICH ATTACHMENT (NUMBER) | ΠΟΙΟ ΣΥΝΗΜΜΕΝΟ (ΑΡΙΘΜΟΣ)
+TOO_BIG     | OVER 16K: ON DISK ONLY | ΠΑΝΩ ΑΠΟ 16K: ΣΤΟ DISK
+CARD_ERR    | THE CARD REFUSED IT   | ΑΡΝΗΣΗ ΤΗΣ ΚΑΡΤΑΣ

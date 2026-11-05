@@ -322,6 +322,49 @@ test_keys:
         dw 3700 : db   4, 6, %00001000   ; T
         dw #FFFF
         ELSE
+        IF TEST_SCRIPT == 64
+; make test-wm-launch (-DTEST_SCRIPT=64, 576K): WM.SYS; NOTEPAD.BIN
+; last on A:. Expected:
+;   frame  300  F2           -> the Launcher (mode 0)
+;   frame  600  RETURN       -> NOTEPAD in a window of 376 x 232, as
+;               from the Commander (it was cut to mode 0's 192 pixels:
+;               its status garbled, then V-OS hung on a key)
+;   frame 1200  H I RETURN H -> typed in it
+test_keys:
+        dw  300 : db   4, 1, %01000000   ; F2: the Launcher
+        dw  600 : db   4, 2, %00000100   ; RETURN: NOTEPAD
+        dw 1200 : db   4, 5, %00010000   ; H
+        dw 1250 : db   4, 4, %00001000   ; I
+        dw 1300 : db   4, 2, %00000100   ; RETURN
+        dw 1350 : db   4, 5, %00010000   ; H
+        dw #FFFF
+        ELSE
+        IF TEST_SCRIPT == 63
+; make test-wm-net (-DTEST_SCRIPT=63, 576K): WM.SYS; FTP.BIN, MAIL.BIN
+; last on A:. Expected:
+;   frame  300  F3, DOWN held, 1000 RETURN -> MAIL in a window
+;   frame 1400  F3, DOWN held, UP, 2050 RETURN -> FTP in a window over it
+;   frame 2600  a click on FTP's X (378, 16) -> it ends (^Q): MAIL in
+;               front
+;   frame 3300  a click on MAIL's X -> it ends too: the Commander
+test_keys:
+        dw  300 : db   4, 0, %00100000   ; F3
+        dw  400 : db 255, 0, %00000100   ; DOWN, held
+        dw  655 : db 195, 0, %00000100
+        dw 1000 : db   4, 2, %00000100   ; RETURN: MAIL
+        dw 1400 : db   4, 0, %00100000   ; F3
+        dw 1500 : db 255, 0, %00000100   ; DOWN, held
+        dw 1755 : db 195, 0, %00000100
+        dw 2000 : db   4, 0, %00000001   ; UP: FTP
+        dw 2050 : db   4, 2, %00000100   ; RETURN
+        dw 2590 : db 255, #80, 1         ; COPY is the left button
+        dw 2600 : db   5, #81, 189       ; (378, 16): FTP's X
+        dw 2600 : db   5, #82, 16
+        dw 2610 : db   4, 1, %00000010   ; COPY: FTP ends, MAIL in front
+        dw 3290 : db 255, #80, 1
+        dw 3310 : db   4, 1, %00000010   ; COPY: MAIL's X, the same place
+        dw #FFFF
+        ELSE
         IF TEST_SCRIPT == 62
 ; make test-vosnet (-DTEST_SCRIPT=62, in the 1984 emulator with an M4
 ; board whose SD card holds TELNET.BIN alone, and V-OS NET, server/, on
@@ -418,9 +461,11 @@ test_keys:
 ;   frame  900  RETURN       -> MAIL
 ;   frame 1300  CONTROL+G    -> GET MAIL: the newest 20 of 22 listed
 ;   frame 1900  RETURN       -> the newest read (in parts, Greek)
-;   frame 3000  RETURN       -> the list
-;   frame 3300  CONTROL+W    -> TO: "bob@t" typed, RETURN; SUBJECT: "hi",
-;                               RETURN; 4400 RETURN: NOTE.TXT -> SENT
+;   frame 2800  CONTROL+A    -> SAVE ATTACHMENT: 3100 RETURN (the first),
+;                               3400 RETURN (REPORT.BIN): on the card
+;   frame 4000  RETURN       -> the list
+;   frame 4300  CONTROL+W    -> TO: "bob@t" typed, RETURN; SUBJECT: "hi",
+;                               RETURN; 5450 RETURN: NOTE.TXT -> SENT
 test_keys:
         dw  300 : db   4, 8, %00010000   ; TAB
         dw  350 : db   4, 8, %00010000   ; TAB
@@ -429,19 +474,23 @@ test_keys:
         dw 1295 : db  15, 2, %10000000   ; CONTROL
         dw 1300 : db   4, 6, %00010000   ; G
         dw 1900 : db   4, 2, %00000100   ; RETURN
-        dw 3000 : db   4, 2, %00000100   ; RETURN
-        dw 3295 : db  15, 2, %10000000   ; CONTROL
-        dw 3300 : db   4, 7, %00001000   ; W
-        dw 3600 : db   4, 6, %01000000   ; B
-        dw 3650 : db   4, 4, %00000100   ; O
-        dw 3700 : db   4, 6, %01000000   ; B
-        dw 3750 : db   4, 3, %00000100   ; @
-        dw 3800 : db   4, 6, %00001000   ; T
-        dw 3900 : db   4, 2, %00000100   ; RETURN
-        dw 4100 : db   4, 5, %00010000   ; H
-        dw 4150 : db   4, 4, %00001000   ; I
-        dw 4250 : db   4, 2, %00000100   ; RETURN
-        dw 4450 : db   4, 2, %00000100   ; RETURN
+        dw 2795 : db  15, 2, %10000000   ; CONTROL
+        dw 2800 : db   4, 8, %00100000   ; A
+        dw 3100 : db   4, 2, %00000100   ; RETURN (1)
+        dw 3400 : db   4, 2, %00000100   ; RETURN (REPORT.BIN)
+        dw 4000 : db   4, 2, %00000100   ; RETURN
+        dw 4295 : db  15, 2, %10000000   ; CONTROL
+        dw 4300 : db   4, 7, %00001000   ; W
+        dw 4600 : db   4, 6, %01000000   ; B
+        dw 4650 : db   4, 4, %00000100   ; O
+        dw 4700 : db   4, 6, %01000000   ; B
+        dw 4750 : db   4, 3, %00000100   ; @
+        dw 4800 : db   4, 6, %00001000   ; T
+        dw 4900 : db   4, 2, %00000100   ; RETURN
+        dw 5100 : db   4, 5, %00010000   ; H
+        dw 5150 : db   4, 4, %00001000   ; I
+        dw 5250 : db   4, 2, %00000100   ; RETURN
+        dw 5450 : db   4, 2, %00000100   ; RETURN
         dw #FFFF
         ELSE
         IF TEST_SCRIPT == 59
@@ -2758,6 +2807,8 @@ test_keys:
         dw 3395 : db  15, 2, %10000000   ; CONTROL
         dw 3400 : db   4, 8, %00001000   ; Q
         dw #FFFF
+        ENDIF
+        ENDIF
         ENDIF
         ENDIF
         ENDIF

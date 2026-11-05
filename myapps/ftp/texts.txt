@@ -10,7 +10,7 @@ UP          | UP A FOLDER           | ΕΠΑΝΩ ΦΑΚΕΛΟΣ
 DRIVE       | OTHER DRIVE           | ΑΛΛΗ ΜΟΝΑΔΑ
 ABOUT       | ABOUT                 | ΠΛΗΡΟΦΟΡΙΕΣ
 BACK        | BACK                  | ΕΠΙΣΤΡΟΦΗ
-ABOUT_TEXT  | FTP|FILES TO AND FROM A SERVER|WITH THE M4 BOARD (16K AT MOST)|FOR V-OS, FROM THE SDK | FTP|ΑΡΧΕΙΑ ΑΠΟ ΚΑΙ ΠΡΟΣ ΔΙΑΚΟΜΙΣΤΗ|ΜΕ ΤΗΝ ΚΑΡΤΑ M4 (ΩΣ 16K)|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
+ABOUT_TEXT  | FTP|FILES TO AND FROM A SERVER|WITH THE M4 BOARD|FOR V-OS, FROM THE SDK | FTP|ΑΡΧΕΙΑ ΑΠΟ ΚΑΙ ΠΡΟΣ ΔΙΑΚΟΜΙΣΤΗ|ΜΕ ΤΗΝ ΚΑΡΤΑ M4|ΓΙΑ ΤΟ V-OS, ΑΠΟ ΤΟ SDK
 ADDR_T      | HOST:PORT             | ΔΙΕΥΘΥΝΣΗ:ΘΥΡΑ
 USER_T      | USER (EMPTY: ANONYMOUS) | ΧΡΗΣΤΗΣ (ΚΕΝΟ: ANONYMOUS)
 PASS_T      | PASSWORD              | ΚΩΔΙΚΟΣ
@@ -27,7 +27,8 @@ PUTTING     | PUTTING THE FILE      | ΑΠΟΣΤΟΛΗ ΑΡΧΕΙΟΥ
 CONNECTED   | CONNECTED             | ΣΥΝΔΕΘΗΚΕ
 SAVED       | SAVED, BYTES          | ΑΠΟΘΗΚΕΥΤΗΚΕ, BYTES
 SENT        | SENT, BYTES           | ΣΤΑΛΘΗΚΕ, BYTES
-TOO_BIG     | OVER 16K: NOT SAVED   | ΠΑΝΩ ΑΠΟ 16K: ΟΧΙ
+TOO_BIG     | OVER 16K: ON DISK ONLY | ΠΑΝΩ ΑΠΟ 16K: ΣΤΟ DISK
+CARD_ERR    | THE CARD REFUSED IT   | ΑΡΝΗΣΗ ΤΗΣ ΚΑΡΤΑΣ
 REFUSED     | LOGIN REFUSED         | ΑΡΝΗΣΗ ΕΙΣΟΔΟΥ
 SERVER      | THE SERVER SAYS       | Ο ΔΙΑΚΟΜΙΣΤΗΣ ΛΕΕΙ
 FAILED      | NO CONNECTION         | ΑΠΟΤΥΧΙΑ ΣΥΝΔΕΣΗΣ

@@ -103,7 +103,7 @@ LANG_KERNEL := src/lang/msg_ids.inc src/lang/lang_en.asm
 PACKS   := $(BUILD)/ENGLISH.MSG $(BUILD)/GREEK.LNG $(BUILD)/FRENCH.LNG \
            $(BUILD)/SPANISH.LNG $(BUILD)/GERMAN.LNG $(BUILD)/ITALIAN.LNG
 
-.PHONY: test-ftp test-ftp-m4 test-mail test-mail-m4 test-wm test-wm-apps test-wm-apps2 test-wm-notepad test-wm-pages test-wm-copies test-wm-desktop test-wm-keys test-view test-diary-cap test-keep test-telnet-m4 test-vosnet test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
+.PHONY: test-wm-launch test-wm-net test-ftp test-ftp-m4 test-mail test-mail-m4 test-wm test-wm-apps test-wm-apps2 test-wm-notepad test-wm-pages test-wm-copies test-wm-desktop test-wm-keys test-view test-diary-cap test-keep test-telnet-m4 test-vosnet test-telnet test-diary test-pic test-saver test-dcopy test-show test-clock test-paint-undo test-find test-print release promo test-window test-theme test-wall demo-sys test-apps test-calc-sys test-sheet-z80 test-sheet test-database-z80 test-database test-utf8 test-reader-utf8 test-kbds test-charset test-music-block test-styles test-reader test-webget test-clip test-sysinfo test-open test-markdown linux test-music songs FORCE test-about test-paint test-paint-big test-m4 test-scr test-notepad test-notepad-big test-data test-db test-db-disc test-streets windows docs new-app app test-sdk test-vrouves all run shot test-input test-calc test-lang test-costume test-acc test-multi test-switch test-expand test-behind test-drag test-langs test-mines test-vars test-bricks test-amsdos test-reboot test-system clean
 
 all: $(DSK)
 
@@ -1357,6 +1357,49 @@ $(WM_APPS2_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(BUILD)/DIARY.BIN $(BUILD)/
 	$(call add_apps,$@,$(BUILD)/DIARY.BIN $(BUILD)/TELNET.BIN $(BUILD)/CALC.VBN)
 	$(PYTHON) -I tools/dsk_ext.py $@
 
+# NOTEPAD from the Launcher (mode 0) in a window (TEST_SCRIPT=64, 576K):
+# its window as large as from the Commander, typed into.
+# tools/wm_launch_check.py checks the shots
+WM_LAUNCH_DSK := $(BUILD)/vos_wm_launch.dsk
+WM_LAUNCH_SHOTS ?= 250 550
+$(WM_LAUNCH_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(BUILD)/NOTEPAD.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_wm_launch -DTEST_SCRIPT=64
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(BUILD)/NOTEPAD.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-wm-launch: $(WM_LAUNCH_DSK)
+	rm -rf $(BUILD)/shots
+	for d in $(WM_LAUNCH_SHOTS); do \
+	  cp $(WM_LAUNCH_DSK) $(BUILD)/vos_run.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_TIMEOUT=150 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk bash $(abspath tools/cap32_shot.sh) $$d" || true; \
+	done
+	$(PYTHON) tools/wm_launch_check.py $(foreach d,$(WM_LAUNCH_SHOTS),$(BUILD)/shots/$(d)/*.png)
+
+# MAIL and FTP in windows (TEST_SCRIPT=63, 576K): FTP over MAIL, a
+# click on FTP's X: it ends (^Q), MAIL in front; on MAIL's X: the Commander. tools/wm_net_check.py checks the shots
+WM_NET_DSK := $(BUILD)/vos_wm_net.dsk
+WM_NET_SHOTS ?= 400 700 850 1250
+$(WM_NET_DSK): $(SOURCES) $(LANG_KERNEL) $(PACKS) $(BUILD)/FTP.BIN $(BUILD)/MAIL.BIN
+	@mkdir -p $(BUILD)
+	@rm -f $@ $(TEST_DSK)
+	$(RASM) src/vos.asm -o $(BUILD)/vos_wm_net -DTEST_SCRIPT=63
+	mv $(TEST_DSK) $@
+	$(call add_test_packs,$@)
+	$(call add_apps,$@,$(BUILD)/FTP.BIN $(BUILD)/MAIL.BIN)
+	$(PYTHON) -I tools/dsk_ext.py $@
+
+test-wm-net: $(WM_NET_DSK)
+	rm -rf $(BUILD)/shots
+	for d in $(WM_NET_SHOTS); do \
+	  cp $(WM_NET_DSK) $(BUILD)/vos_run.dsk; \
+	  snap run --shell caprice32.launcher -c "VOS_RAM=576 VOS_TIMEOUT=150 VOS_SHOTS=$(abspath $(BUILD))/shots/$$d VOS_DSK=$(abspath $(BUILD))/vos_run.dsk bash $(abspath tools/cap32_shot.sh) $$d" || true; \
+	done
+	$(PYTHON) tools/wm_net_check.py $(foreach d,$(WM_NET_SHOTS),$(BUILD)/shots/$(d)/*.png)
+
 test-wm-apps2: $(WM_APPS2_DSK)
 	rm -rf $(BUILD)/shots
 	for d in $(WM_APPS2_SHOTS); do \
@@ -1727,7 +1770,7 @@ M4I_SHOTS = 900 1700
 M4N_DSK := $(BUILD)/vos_m4n.dsk
 M4N_SHOTS = 1200 2600 3200
 M4M_DSK := $(BUILD)/vos_m4m.dsk
-M4M_SHOTS = 2600 3600 7000
+M4M_SHOTS = 2600 4600 8000
 M4F_DSK := $(BUILD)/vos_m4f.dsk
 M4F_SHOTS = 3400 4800 7000
 M4T_DSK := $(BUILD)/vos_m4t.dsk
@@ -1776,7 +1819,8 @@ test-vosnet: $(M4T_DSK) $(BUILD)/TELNET.BIN
 
 # MAIL in the 1984 emulator (TEST_SCRIPT=60): the M4 board connects to
 # tools/mail_server.py on this PC's ports 2110 (POP3) and 2525 (SMTP);
-# the list, a message read, NOTE.TXT sent (build/mail_sent.txt)
+# the list, a message read, its first attachment saved on the card,
+# NOTE.TXT sent (build/mail_sent.txt)
 test-mail-m4: $(M4M_DSK) $(BUILD)/MAIL.BIN
 	rm -rf $(BUILD)/shots $(BUILD)/mail_server.log $(BUILD)/mail_sent.txt
 	$(PYTHON) tools/mail_server.py 2110 2525 & echo $$! > $(BUILD)/mail_server.pid; \
@@ -1788,10 +1832,11 @@ test-mail-m4: $(M4M_DSK) $(BUILD)/MAIL.BIN
 	grep -aq "RETR 22" $(BUILD)/mail_server.log
 	grep -aq "^<bob@t>" $(BUILD)/mail_sent.txt
 	grep -aq "^Subject: hi" $(BUILD)/mail_sent.txt
+	$(PYTHON) -c "import sys; sys.path.insert(0, 'tools'); import mail_check; sys.exit(open('$(BUILD)/m4run/REPORT.BIN', 'rb').read() != mail_check.REPORT)"
 
 # FTP in the 1984 emulator (TEST_SCRIPT=61): the M4 board connects to
 # tools/ftp_server.py on this PC's ports 2121 and 2122 (PASV's); the
-# list, HELLO.TXT got onto the card (after its AMSDOS header) and put back
+# list, HELLO.TXT got onto the card (as it is) and put back
 test-ftp-m4: $(M4F_DSK) $(BUILD)/FTP.BIN
 	rm -rf $(BUILD)/shots $(BUILD)/ftp_server.log $(BUILD)/ftp_stored
 	$(PYTHON) tools/ftp_server.py 2121 2122 & echo $$! > $(BUILD)/ftp_server.pid; \
@@ -1800,7 +1845,7 @@ test-ftp-m4: $(M4F_DSK) $(BUILD)/FTP.BIN
 	  M4_CARD=ftp M4_SYM=$(BUILD)/vos_m4f.sym M4_SHOT=f-$$d bash tools/m4_shot.sh $$d; \
 	done; kill $$(cat $(BUILD)/ftp_server.pid)
 	grep -aq "RETR hello.txt" $(BUILD)/ftp_server.log
-	$(PYTHON) -c "import sys; sys.exit(open('$(BUILD)/m4run/HELLO.TXT', 'rb').read()[128:] != 'Γεια σου από το PC.\r\n'.encode('iso-8859-7'))"
+	$(PYTHON) -c "import sys; sys.exit(open('$(BUILD)/m4run/HELLO.TXT', 'rb').read() != 'Γεια σου από το PC.\r\n'.encode('iso-8859-7'))"
 	$(PYTHON) -c "import sys; sys.exit(open('$(BUILD)/ftp_stored/HELLO.TXT', 'rb').read() != 'Γεια σου από το PC.\r\n'.encode('iso-8859-7'))"
 
 test-m4: $(M4_DSK) $(M4V_DSK) $(M4O_DSK) $(M4D_DSK) $(M4I_DSK) $(BUILD)/NOTEPAD.BIN $(BUILD)/STREETS.BIN

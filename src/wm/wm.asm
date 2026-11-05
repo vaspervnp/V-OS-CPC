@@ -1089,6 +1089,9 @@ wm_new:
         ld hl,app_self
         ld bc,12
         ldir
+        ld a,(gfx_mode)             ; mode 1 first (from the Launcher
+        dec a                       ; still mode 0: the window was cut to
+        call nz,wm_mode             ; its width, and placed for it)
         ld hl,(vw_buf)              ; w: a multiple of 8, on the screen
         ld a,l
         and %11111000

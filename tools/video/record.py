@@ -65,14 +65,18 @@ def used_blocks(dsk):
 
 
 def discs(lang, part):
-    """DEMO_A.DSK in CPCEMU's DISC: the system, the language, DEMO.KEY,
-    the programs in APPS' order, DISC.BAS, with (part 2) HOLE K free below block
-    180 (a file put there, then taken out); the rest goes past it, which
-    only an emulator reads. STREETS.VDB (made by STREETS) goes after
-    STREETS, for DATABASE: the demo does not run STREETS (demo.py)."""
+    """DEMO_A.DSK in CPCEMU's DISC: the system (part 1 without DB.SYS),
+    the language, DEMO.KEY, the programs in APPS' order, DISC.BAS. Part 1
+    all below block 180: past it V-OS reads other blocks (VROUVES' stage
+    came out as stripes). Part 2 with HOLE K free below block 180 (a
+    file put there, then taken out); the rest goes past it, which only an
+    emulator reads. STREETS.VDB (made by STREETS) goes after STREETS, for
+    DATABASE: the demo does not run STREETS (demo.py)."""
     os.makedirs(WORK, exist_ok=True)
     a = os.path.join(EMU, "DISC", "DEMO_A.DSK")
     shutil.copy(os.path.join(BUILD, "demo_sys.dsk"), a)
+    if part == 1:                       # its programs need no DB.SYS, and
+        idsk(a, "-r", "DB.SYS")         # VROUV1.DAT must stay below 180
     use, pack = LANG_CFG[lang]
     cfg = os.path.join(WORK, "SETUP.CFG")
     with open(cfg, "wb") as f:     # "VCFG", version 3, setup.asm's bytes
@@ -106,6 +110,7 @@ def discs(lang, part):
         idsk(a, "-r", "HOLE.BIN")
     total = used_blocks(a)
     assert total + HOLE <= 256, total
+    assert part == 2 or total <= 180, total    # part 1: all on a real disc
     subprocess.run([sys.executable, "-I", os.path.join(ROOT, "tools", "dsk_ext.py"), a],
                    check=True, stderr=subprocess.DEVNULL)
     conf = open(os.path.join(EMU, "vos.cfg"), newline="").read()

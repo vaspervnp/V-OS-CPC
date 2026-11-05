@@ -13,7 +13,7 @@ Done in M58–M64 (see MILESTONES.md):
 Still open:
 
 - **A real CPC:** everything above was tested in emulators only; chapter 9 of the manual is the list to try.
-- **PAINT's UNDO for FILL on the whole screen** (it may go past the window kept).
+- ~~PAINT's UNDO for FILL on the whole screen~~ (M85, done: version 0.56). MAIL and FTP in windows tested together (`make test-wm-net`, M84).
 
 Done in M65–M72 (asked 2026-11-04, see MILESTONES.md):
 
@@ -44,5 +44,6 @@ Asked 2026-11-05: **e-mail and files over the network**, with the M4.
 
 1. **MAIL**: POP3 in, SMTP out, MIME decoded; `src/api/vos_net.inc` for the SDK (M81, done: version 0.52).
 2. **FTP**: a server's folders, GET, PUT, DELETE through PASV (M82, done: version 0.53).
+3. **Bigger files and attachments**: FTP to and from DISK at any size, MAIL's attachments, a message over the bank cut and said so; `src/api/vos_m4file.inc` for the SDK (M84, done: version 0.55).
 
-Still open for them: SSL/TLS (the M4 has none: a server of your own, or one that allows plain connections), messages and files over 16K, attachments in MAIL.
+Still open for them: SSL/TLS (the M4 has none: a server of your own, or one that allows plain connections); files over 16K on A: and B: (V-OS's calls take a file whole).

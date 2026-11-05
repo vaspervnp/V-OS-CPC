@@ -14,8 +14,11 @@ first, who from and the subject (=?UTF-8?B?..?= and
 =?ISO-8859-7?Q?..?= decoded); READ must show a plain one (a line
 starting with "." and one of 200 characters, wrapped), one in
 quoted-printable UTF-8 (its soft breaks joined) and one in parts
-(its base64 UTF-8 text, not its HTML), scroll, and SAVE AS TEXT write
-what it shows. DELETE must be DELE, done at the QUIT of the next GET
+(its base64 UTF-8 text, not its HTML, in parts in parts), scroll, and
+SAVE AS TEXT write what it shows; one over the bank must say it is cut.
+Its three attachments must be listed, and SAVE ATTACHMENT save them: on
+B: through the bank (one over 16K refused), on DISK to the card as they
+come (the M4's files of tools/m4net.py), base64 and quoted-printable. DELETE must be DELE, done at the QUIT of the next GET
 MAIL. WRITE must send a NOTEPAD .TXT through the SMTP server (EHLO,
 AUTH LOGIN in base64, a "." line doubled, the Greek subject in
 =?ISO-8859-7?Q?..?=), REPLY to the sender with "Re: ", and a recipient
@@ -33,11 +36,18 @@ import database_check as dc  # noqa: E402
 import m4net                 # noqa: E402
 
 CMD = dict(GET=1, READ=2, WRITE=3, REPLY=4, DELETE=5, SAVE=6, ACCOUNT=7,
-           DRIVE=8, ABOUT=9, BACK=10)
+           DRIVE=8, ABOUT=9, BACK=10, ATTACH=11)
 TOP_Y, TEXT_Y, ROWS, INFO = 14, 28, 20, 26
 CATALOG, LOAD, SAVE, INPUT, BANK_PUT, EXT, VX_UTF8 = 24, 25, 26, 19, 38, 42, 9
 POP_IP, SMTP_IP = m4net.ip('10.0.0.1'), m4net.ip('10.0.0.2')
 LONG = ' '.join('word%02d' % i for i in range(30))       # 209 characters
+REPORT = bytes(range(256)) + bytes(44)                   # the attachments
+NOTES = 'Σημειώσεις\r\nline two\r\n'.encode('iso-8859-7')
+BIGATT = bytes((i * 7 + (i >> 9)) & 255 for i in range(20000))
+
+
+def b64(data):
+    return base64.encodebytes(data).replace(b'\n', b'\r\n')
 
 
 def msg(head, body):
@@ -46,9 +56,11 @@ def msg(head, body):
 
 def messages():
     out = []
-    for i in range(1, 20):
+    for i in range(1, 19):
         out.append(msg(['From: User %d <user%d@test>' % (i, i), 'Subject: Note %d' % i],
                        b'Text %d\r\n' % i))
+    out.append(msg(['From: User 19 <user19@test>', 'Subject: Note 19'],    # too big
+                   b''.join(b'Line %05d of a long message\r\n' % i for i in range(700))))
     out.append(msg(['Return-Path: <alice@test>', 'From: "Alice Smith" <alice@test>',
                     'Date: Wed, 4 Nov 2026 10:00:00 +0200', 'Subject: Hello there'],
                    b'Hi,\r\n.hidden dot\r\n' + LONG.encode() + b'\r\nBye\r\n' +
@@ -65,13 +77,26 @@ def messages():
                    for b in 'Νέα έκδοση'.encode('iso-8859-7'))
     out.append(msg(['From: Nikos P <nikos@test>', 'Subject: =?ISO-8859-7?Q?%s?=' % subj,
                     'MIME-Version: 1.0',
-                    'Content-Type: multipart/alternative; boundary="b1=_x"'],
-                   b'This is a message in parts.\r\n\r\n--b1=_x\r\n'
+                    'Content-Type: multipart/mixed; boundary="mix"'],
+                   b'This is a message in parts.\r\n\r\n--mix\r\n'
+                   b'Content-Type: multipart/alternative; boundary="b1=_x"\r\n\r\n'
+                   b'--b1=_x\r\n'
                    b'Content-Type: text/plain; charset="utf-8"\r\n'
                    b'Content-Transfer-Encoding: base64\r\n\r\n' +
                    text.replace(b'\n', b'\r\n') +
                    b'\r\n--b1=_x\r\nContent-Type: text/html\r\n\r\n<p>HTML</p>\r\n'
-                   b'--b1=_x--\r\n'))
+                   b'--b1=_x--\r\n\r\n--mix\r\n'
+                   b'Content-Type: application/octet-stream; name="report.bin"\r\n'
+                   b'Content-Disposition: attachment;\r\n filename="report.bin"\r\n'
+                   b'Content-Transfer-Encoding: base64\r\n\r\n' + b64(REPORT) +
+                   b'--mix\r\nContent-Type: text/plain; charset=iso-8859-7\r\n'
+                   b'Content-Disposition: attachment; filename=notes.txt\r\n'
+                   b'Content-Transfer-Encoding: quoted-printable\r\n\r\n' +
+                   quopri.encodestring(NOTES.replace(b'\r\n', b'\n')).replace(b'\n', b'\r\n') +
+                   b'--mix\r\nContent-Type: application/octet-stream\r\n'
+                   b'Content-Disposition: attachment; filename="big.dat"\r\n'
+                   b'Content-Transfer-Encoding: base64\r\n\r\n' + b64(BIGATT) +
+                   b'--mix--\r\n'))
     return out
 
 
@@ -327,6 +352,17 @@ def main():
                                  row('Alice Smith', 'Hello there')])
     check('the oldest shown', rows[19], row('User 3', 'Note 3'))
     check('the first chosen', app.sel(), [0])
+    # a message over the bank: cut, and said so
+    for _ in range(3):
+        key(app, 'DOWN')
+    read(app)
+    for _ in range(40):
+        key(app, 'RIGHT')
+    rows = app.rows()
+    check('cut', '[THE REST IS NOT SHOWN: TOO BIG]' in rows, True)
+    key(app, 'RETURN')
+    for _ in range(3):
+        key(app, 'UP')
     # READ: a plain one
     key(app, 'DOWN')
     key(app, 'DOWN')
@@ -365,6 +401,41 @@ def main():
     check('saved', text.decode('vos').split('\r\n')[2:5],
           ['SUBJECT: Νέα έκδοση', '', 'Γεια σας από το V-OS.'])
     check('SAVED', app.top()[:5], 'SAVED')
+    rows = app.rows()
+    check('the attachments listed', rows[7:11], ['ATTACHMENTS (^A SAVES ONE):', '[1] report.bin',
+                                                 '[2] notes.txt', '[3] big.dat'])
+    # SAVE ATTACHMENT: into the bank on B:, then the list
+    app.inputs = ['1', Ellipsis]
+    command(app, 'ATTACH')
+    check('its name, 8.3', app.asked[-1], 'report.bin')
+    for _ in range(300):
+        app.frame()
+        if app.top().startswith('SAVED'):
+            break
+    check('report.bin saved', app.files.get((1, b'REPORT  BIN')) == REPORT, True)
+    check('SAVED, its bytes', app.top(), 'SAVED' + ' ' * 21 + '300')
+    check('the list again', app.rows()[0], row('Nikos P', 'Νέα έκδοση'))
+    read(app)
+    app.inputs = ['3', Ellipsis]                 # over 16K on B:
+    command(app, 'ATTACH')
+    for _ in range(300):
+        app.frame()
+        if app.top().startswith('OVER'):
+            break
+    check('big.dat not on B:', ((1, b'BIG     DAT') in app.files, app.top()), (False, 'OVER 16K: ON DISK ONLY'))
+    read(app)
+    app.m.memory[app.sym['M_DRIVE']] = 2         # DISK: to the card as it comes
+    for which, name, data in (('3', 'BIG.DAT', BIGATT), ('2', 'NOTES.TXT', NOTES)):
+        app.inputs = [which, Ellipsis]
+        command(app, 'ATTACH')
+        want = 'SAVED' + ' ' * 21 + str(len(data))
+        for _ in range(300):
+            app.frame()
+            if app.top() == want:
+                break
+        check(name + ' on the card', (app.top(), app.card.get(name) == data), (want, True))
+        check('still read', app.rows()[0][:5], 'FROM:')
+    app.m.memory[app.sym['M_DRIVE']] = 1
     # DELETE: at the QUIT of the next GET MAIL
     app.buttons = [0]
     command(app, 'DELETE')
@@ -442,7 +513,8 @@ def main():
         if a.errors:
             sys.exit('mail_check: errors %r' % a.errors)
     print('mail_check: the account, the list (the newest 20, headers decoded), a plain '
-          'message, quoted-printable UTF-8, one in parts, scrolling, SAVE AS TEXT, DELETE '
+          'message, quoted-printable UTF-8, one in parts, scrolling, one cut, SAVE AS TEXT, '
+          'attachments on B: and on DISK, DELETE '
           'at QUIT, WRITE and REPLY through SMTP (AUTH LOGIN, "." doubled, the subject '
           'in Q), refused, a wrong password, no answer, no board: all right')
 

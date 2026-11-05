@@ -52,7 +52,8 @@ NC_SIZE         equ NC_LINE + NET_LINE_MAX + 2
 NET_PIECE       equ 128             ; C_NETRECV: at most this at a time
 NET_LINE_MAX    equ 160
 NET_SEND_MAX    equ 240
-NET_WAIT_FRAMES equ 500             ; 10 seconds for a name, a connection
+NET_WAIT_FRAMES equ 500
+NET_TRIES       equ 4               ; pieces in one net_poll at most             ; 10 seconds for a name, a connection
 
 NS_CLOSED       equ 0               ; NC_STATE
 NS_LOOKUP       equ 1
@@ -227,6 +228,9 @@ net_close:
 
 ; ---------------------------------------------------------------------
 net_poll:
+        ld a,NET_TRIES              ; (a line over several pieces: up to
+        ld (net_left),a            ; NET_TRIES of them in one call)
+net_poll_more:
         ld a,(ix + NC_STATE)
         or a
         ret z
@@ -266,6 +270,10 @@ net_poll:
         ld a,NE_NO_M4
         ret
 .get:
+        ld hl,net_left
+        dec (hl)
+        ld a,NE_NONE
+        ret z
         ld hl,NET_C_RECV
         call net_cmd_at
         ld a,(ix + NC_SOCK)
@@ -385,9 +393,9 @@ net_lines:
         ld d,0
         add hl,de
 .byte:
-        ld a,(ix + NC_RXN)
-        or a
-        ret z
+        ld a,(ix + NC_RXN)          ; all taken, the line not ended: the
+        or a                        ; next piece
+        jp z,net_poll_more
         ld a,(ix + NC_LN)           ; a long line: this piece first
         cp NET_LINE_MAX
         jr nc,.long
@@ -627,6 +635,7 @@ net_reply:
 
 net_owner:      dw 0                ; the connection looking up a name
 net_long:       db 0
+net_left:       db 0
 net_cmd:        ds 6 + NET_SEND_MAX
 net_resp:       ds 6 + NET_PIECE
 net_out:        ds NET_SEND_MAX + 2

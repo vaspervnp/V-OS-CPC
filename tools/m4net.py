@@ -9,10 +9,13 @@ the board is, and frame() moves the board on a frame and gives the
 program its VE_FRAME. The servers are Python objects found by the
 address connected to (self.servers: (ip, port) -> a Server, or a
 function that makes one); a name looked up is in self.names. The ip is
-as C_NETCONNECT has it, the last part first.
+as C_NETCONNECT has it, the last part first. The SD card's files (C_OPEN, C_READ, C_WRITE,
+C_CLOSE, C_FSIZE, as src/api/vos_m4file.inc uses them) are in
+self.card: name -> bytes.
 """
 
 VE_FRAME = 8
+C_FOPEN, C_FREAD, C_FWRITE, C_FCLOSE, C_FSIZE = 0x4301, 0x4302, 0x4303, 0x4304, 0x4311
 C_SOCKET, C_CONNECT, C_CLOSE, C_SEND, C_RECV, C_HOSTIP = (
     0x4331, 0x4332, 0x4333, 0x4334, 0x4335, 0x4336)
 
@@ -74,6 +77,7 @@ class Net:
         self.servers = {}
         self.log = []
         self.quiet = False                  # behind, covered: VOS_EXT quiet
+        self.card, self.fds = {}, {}
 
     def info(self):
         out = bytearray(5 * 16)
@@ -105,7 +109,33 @@ class Net:
         cmd = mem[m.hl + 1] | mem[m.hl + 2] << 8
         data = bytes(mem[m.hl + 3:m.hl + 1 + size])
         out = b''
-        if cmd == C_HOSTIP:
+        if cmd == C_FOPEN:
+            mode, name = data[0], data[1:].split(b'\0')[0].decode().upper()
+            if mode & 2:                    # write: a new file
+                self.card[name] = b''
+            if name in self.card:
+                fd = len(self.fds) + 1
+                self.fds[fd] = [name, 0, bool(mode & 2)]
+                out = bytes([fd, 0])
+            else:
+                out = bytes([0, 4])
+        elif cmd == C_FWRITE:
+            f = self.fds[data[0]]
+            assert f[2], 'C_WRITE to a file open for reading'
+            self.card[f[0]] += data[1:]
+            out = b'\0'
+        elif cmd == C_FREAD:
+            f = self.fds[data[0]]
+            n = data[1] | data[2] << 8
+            got = self.card[f[0]][f[1]:f[1] + n]
+            f[1] += len(got)
+            out = b'\0' + got
+        elif cmd == C_FSIZE:
+            out = len(self.card[self.fds[data[0]][0]]).to_bytes(4, 'little')
+        elif cmd == C_FCLOSE:
+            self.fds.pop(data[0], None)
+            out = b'\0'
+        elif cmd == C_HOSTIP:
             name = data.rstrip(b'\0')
             self.log.append(('lookup', name))
             if name in self.names:

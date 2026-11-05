@@ -13,7 +13,10 @@ folders as <DIR> and the files with their sizes. RETURN on a file must
 RETR it and save it under its 8.3 name; on a folder CWD, whose LIST is
 in DOS's lines; DEL CDUP. PUT must STOR a file of 600 bytes in pieces,
 the list read again; DELETE must DELE it. A file over 16K must not be
-saved; a wrong password must say LOGIN REFUSED, CLOSE QUIT; no board.
+saved on B:; on DISK it must be written to the card as it comes (the
+M4's files of tools/m4net.py), and PUT from DISK read as it goes (70000
+bytes; one with an AMSDOS header sent without it). A wrong password
+must say LOGIN REFUSED, CLOSE QUIT; no board.
 Exits 1 on the first difference.
 """
 import os
@@ -269,6 +272,34 @@ def main():
     command(app, 'GET')
     wait(app, lambda: app.top().startswith('OVER 16K'))
     check('not saved', (1, b'BIG     DAT') in app.files, False)
+    # DISK: big.dat written to the card as it comes; PUT from the card,
+    # with and without an AMSDOS header
+    app.m.memory[app.sym['F_DRIVE']] = 2
+    app.inputs = [Ellipsis]
+    command(app, 'GET')
+    wait(app, lambda: app.top().startswith('SAVED'), 400)
+    check('20000 bytes to the card', app.card.get('BIG.DAT') == BIG, True)
+    check('SAVED, BYTES 20000', app.top(), 'SAVED, BYTES' + ' ' * 14 + '20000')
+    check('the card closed', app.fds, {})
+    big = bytes((i * 13 + (i >> 8)) & 255 for i in range(70000))
+    app.card['HUGE.BIN'] = big
+    hdr = bytearray(128)
+    hdr[1:12] = b'NOTE    TXT'
+    hdr[0x12], hdr[0x40], hdr[0x41] = 2, 300 & 255, 300 >> 8
+    hdr[0x18:0x1A] = (300).to_bytes(2, 'little')
+    hdr[0x43:0x45] = sum(hdr[:67]).to_bytes(2, 'little')
+    app.card['NOTE.TXT'] = bytes(hdr) + bytes(range(256)) + bytes(44)
+    app.files[(2, b'HUGE    BIN')] = b''
+    app.files[(2, b'NOTE    TXT')] = b''
+    for name, size in ((b'HUGE    BIN', '68K'), (b'NOTE    TXT', '300')):
+        names = sorted(k[1] for k in app.files if k[0] == 2)
+        app.picks = [names.index(name)]
+        command(app, 'PUT')
+        want = 'SENT, BYTES' + ' ' * 15 + size
+        wait(app, lambda: app.top() == want, 800)
+    check('70000 bytes from the card', ftp.stored.get('HUGE.BIN') == big, True)
+    check('without its AMSDOS header', ftp.stored.get('NOTE.TXT') == bytes(range(256)) + bytes(44), True)
+    check('the card closed again', app.fds, {})
     # CLOSE: QUIT
     command(app, 'CLOSE')
     check('QUIT', ftp.lines[-1], b'QUIT')
@@ -295,7 +326,7 @@ def main():
             sys.exit('ftp_check: errors %r' % a.errors)
     print('ftp_check: anonymous, PASV to the control connection\'s ip, LIST in Unix\'s and '
           'DOS\'s lines, RETR into 8.3 names, CWD and CDUP, STOR in pieces, DELE, over 16K '
-          'not saved, QUIT, a wrong password, a user, no board: all right')
+          'not saved on B:, any size to and from DISK, QUIT, a wrong password, a user, no board: all right')
 
 
 if __name__ == '__main__':

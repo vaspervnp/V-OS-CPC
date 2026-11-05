@@ -3,8 +3,8 @@ V-OS {VERSION}
 
 A graphical operating system for the Amstrad CPC 6128, written in Z80
 assembly: windows, menus, an AMX mouse, six languages, several programs
-at once, and its own programs (NOTEPAD, PAINT, SHEET, DATABASE, MUSIC,
-Studio and games).
+at once, and its own programs (NOTEPAD, PAINT, SHEET, DATABASE, DIARY,
+MAIL, FTP, TELNET, MUSIC, Studio and games).
 
     discs/      vos.dsk (drive A:) and apps.dsk (drive B:), and the
                 programs that come on a disc of their own

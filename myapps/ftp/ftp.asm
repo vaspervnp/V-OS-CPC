@@ -10,10 +10,12 @@
 ; Unix and of DOS servers), MAX_ENT at most. UP and DOWN choose one;
 ; RETURN opens a folder (CWD) or gets a file; DEL, or UP A FOLDER ^U,
 ; goes up (CDUP). GET THE FILE ^G asks the name (8.3, from the
-; server's) and RETR's it into the data bank, then saves it on the
-; drive shown (OTHER DRIVE changes it): 16K at most (more: closed, not
-; saved). PUT A FILE ^P sends a file of that drive (STOR, its name as
-; on the disc), DELETE THE FILE ^D deletes the one chosen (DELE), and
+; server's) and RETR's it onto the drive shown (OTHER DRIVE changes
+; it): on DISK written to the card as it comes, any size, as it is
+; (src/api/vos_m4file.inc); on A: or B: into the data bank, then saved,
+; 16K at most (more: closed, not saved). PUT A FILE ^P sends a file of
+; that drive (STOR, its name as on the disc; from DISK read as it goes,
+; any size, without its AMSDOS header if it has one), DELETE THE FILE ^D deletes the one chosen (DELE), and
 ; the list is read again after them. CLOSE ^K, and BACK, say QUIT.
 ; Plain TCP through the M4 board's sockets (src/api/vos_net.inc), no
 ; TLS.
@@ -218,12 +220,45 @@ set_info:
 
 ; HL = a number: "TEXT  n" said (SAVED, BYTES 1234)
 say_bytes:
+        ld c,0
+; C:HL = a number of 24 bits (over 65535: in K, "SAVED, BYTES 80K")
+say_count:
         ld (said),a
+        call count_text
+        jp draw_top
+
+; C:HL -> info: in decimal, or K over 65535
+count_text:
         ld de,info
+        ld a,c
+        or a
+        jr z,.bytes
+        ld b,h                      ; C:H:L >> 10 = C * 64 + H / 4
+        ld l,c
+        ld h,0
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        add hl,hl
+        ld a,b
+        rrca
+        rrca
+        and #3F
+        add a,l
+        ld l,a
         call decimal
+        ld a,"K"
+        ld (de),a
+        inc de
+        jr .end
+.bytes:
+        call decimal
+.end:
         xor a
         ld (de),a
-        jp draw_top
+        ret
 
 ; ---------------------------------------------------------------------
 ; the list
@@ -555,6 +590,7 @@ net_said:
 
 ; both connections closed (QUIT first, when logged in)
 close_all:
+        call card_close
         ld ix,c_dat
         call net_close
         ld a,(c_state)
@@ -671,6 +707,7 @@ ctl_refused:
 ctl_err:
         ld hl,(line)
         call set_info
+        call card_close
         ld ix,c_dat
         call net_close
         ld a,C_IDLE
@@ -725,10 +762,17 @@ pasv:
         ld (sel),a
         ld (l_top),a
 .not_list:
+        ld a,(job)                  ; (only RETR to the card)
+        cp J_RETR
+        jr z,.card
+        xor a
+        ld (d_disk),a
+.card:
         xor a
         ld (x_ctl),a
         ld (x_dat),a
         ld (x_big),a
+        ld (d_hi),a
         ld hl,0
         ld (d_len),hl
         ld hl,s_pasv
@@ -891,6 +935,29 @@ dat_event:
         ld a,(x_big)                ; over FILE_MAX: left out
         or a
         ret nz
+        ld a,(d_disk)               ; to the card: written now, any
+        or a                        ; size
+        jr z,.bank
+        push bc
+        call m4f_write
+        pop bc
+        jr c,.card_err
+        ld hl,(d_len)
+        add hl,bc
+        ld (d_len),hl
+        jr nc,.count
+        ld hl,d_hi
+        inc (hl)
+.count:
+        ld hl,(d_len)
+        ld a,(d_hi)
+        ld c,a
+        ld a,T_GETTING
+        jp say_count
+.card_err:
+        ld a,2
+        jr .stop
+.bank:
         push hl
         ld hl,(d_len)
         add hl,bc
@@ -916,6 +983,7 @@ dat_event:
         jp say_bytes
 .big:
         ld a,1
+.stop:
         ld (x_big),a
         ld ix,c_dat
         call net_close
@@ -1106,10 +1174,9 @@ x_done:
         xor a
         ld (after),a
         ld hl,(after_n)
-        ld de,info
-        call decimal
-        xor a
-        ld (de),a
+        ld a,(after_hi)
+        ld c,a
+        call count_text
         jp redraw
 .folder:
         ld hl,pwd
@@ -1118,7 +1185,17 @@ x_done:
 .not_list:
         dec a
         jr nz,.stored
-        ld a,(x_big)                ; RETR: saved
+        ld a,(d_disk)               ; RETR: on the card already
+        or a
+        jr z,.bank
+        call card_close
+        ld a,(x_big)
+        or a
+        ld a,T_CARD_ERR
+        jp nz,say_top
+        jr .saved
+.bank:
+        ld a,(x_big)                ; or saved now
         or a
         ld a,T_TOO_BIG
         jp nz,say_top
@@ -1129,21 +1206,32 @@ x_done:
         ld bc,(d_len)
         call VOS_SAVE
         jr c,.error
+.saved:
         ld hl,(d_len)
+        ld a,(d_hi)
+        ld c,a
         ld a,T_SAVED
-        jp say_bytes
+        jp say_count
 .error:
         call VOS_ERROR
         jp redraw
 .stored:
-        ld hl,(s_len)               ; STOR: the list again, then how
-        ld (after_n),hl             ; much was sent
+        call card_close
+        ld a,(x_big)                ; STOR: the card failed?
+        or a
+        ld a,T_CARD_ERR
+        jp nz,say_top
+        ld hl,(s_len)               ; the list again, then how much
+        ld (after_n),hl             ; was sent
+        ld a,(s_hi)
+        ld (after_hi),a
         ld a,T_SENT
         ld (after),a
         ld a,J_LIST
         jp pasv
 
 ; STOR, each frame the M4 is not sending: PIECE bytes, then closed
+; (from the bank, or read from the card now)
 send_piece:
         ld a,(x_dat)
         or a
@@ -1151,6 +1239,55 @@ send_piece:
         ld ix,c_dat
         call net_ready
         ret c
+        ld a,(s_disk)
+        or a
+        jr z,.bank
+        ld hl,(s_rem)               ; from the card: what is left
+        ld a,(s_rhi)
+        or h
+        or l
+        jr z,.end
+        ld a,(s_pend)               ; its first bytes, read already
+        or a
+        jr z,.read
+        ld c,a
+        ld b,0
+        xor a
+        ld (s_pend),a
+        jr .taken
+.read:
+        ld bc,PIECE
+        ld a,(s_rhi)
+        or a
+        jr nz,.whole
+        ld hl,(s_rem)
+        push hl
+        or a
+        sbc hl,bc
+        pop hl
+        jr nc,.whole
+        ld b,h
+        ld c,l
+.whole:
+        ld de,sbuf
+        push bc
+        call m4f_read
+        pop bc
+        jr c,.card_err
+.taken:
+        ld hl,(s_rem)
+        or a
+        sbc hl,bc
+        ld (s_rem),hl
+        jr nc,.send
+        ld hl,s_rhi
+        dec (hl)
+        jr .send
+.card_err:
+        ld a,2
+        ld (x_big),a
+        jr .end
+.bank:
         ld hl,(s_len)
         ld de,(s_pos)
         or a
@@ -1175,6 +1312,7 @@ send_piece:
         ld de,sbuf
         call VOS_BANK_GET
         pop bc
+.send:
         ld hl,sbuf
         ld ix,c_dat
         jp net_send
@@ -1184,6 +1322,15 @@ send_piece:
         ld a,1
         ld (x_dat),a
         jp x_done
+
+; the card's file closed, if one is open
+card_close:
+        ld a,(m4o)
+        or a
+        ret z
+        xor a
+        ld (m4o),a
+        jp m4f_close
 
 ; ---------------------------------------------------------------------
 ; commands
@@ -1294,6 +1441,22 @@ get:
         call make_name
         jp c,redraw
         call redraw
+        xor a                       ; to the card: written as it comes
+        ld (d_disk),a
+        ld a,(f_drive)
+        cp 2
+        jr nz,.get
+        ld hl,fname
+        ld de,card_name
+        call fcb_text
+        ld hl,card_name
+        call m4f_create
+        ld a,T_CARD_ERR
+        jp c,say_top
+        ld a,1
+        ld (d_disk),a
+        ld (m4o),a
+.get:
         ld a,J_RETR
         jp pasv
 
@@ -1326,8 +1489,17 @@ put:
         ld de,fname
         ld bc,11
         ldir
+        ld hl,fname                 ; its name there: "NAME.EXT"
+        ld de,r_name
+        call fcb_text
+        xor a
+        ld (s_hi),a
+        ld (s_pend),a
+        ld (s_disk),a
         ld a,(f_drive)
-        or VOS_DATA
+        cp 2
+        jr z,.card
+        or VOS_DATA                 ; A: or B: into the bank, 16K
         ld hl,fname
         ld de,DATA
         call VOS_LOAD
@@ -1335,11 +1507,68 @@ put:
         ld (s_len),bc
         ld hl,0
         ld (s_pos),hl
-        ld hl,fname                 ; its name there: "NAME.EXT"
-        ld de,r_name
+        jr .go
+.card:
+        ld hl,r_name                ; DISK: read as it goes, any size
+        call m4f_open
+        ld a,T_CARD_ERR
+        jp c,say_top
+        ld a,1
+        ld (s_disk),a
+        ld (m4o),a
+        ld (s_len),hl
+        ld a,e
+        ld (s_hi),a
+        or h                        ; 128 bytes or more: an AMSDOS
+        jr nz,.first                ; header (left out)?
+        ld a,l
+        cp 128
+        jr c,.short
+.first:
+        ld bc,128
+        ld de,sbuf
+        call m4f_read
+        jr c,.card_err
+        ld hl,sbuf
+        call m4f_header
+        jr c,.no_header
+        ld (s_len),bc               ; its length, after it
+        xor a
+        ld (s_hi),a
+        jr .left
+.no_header:
+        ld a,128                    ; data: sent first
+        ld (s_pend),a
+        jr .left
+.short:
+        ld c,l                      ; all of it, now
+        ld b,0
+        ld a,c
+        ld (s_pend),a
+        or a
+        jr z,.left
+        ld de,sbuf
+        call m4f_read
+        jr c,.card_err
+.left:
+        ld hl,(s_len)
+        ld (s_rem),hl
+        ld a,(s_hi)
+        ld (s_rhi),a
+.go:
+        call redraw
+        ld a,J_STOR
+        jp pasv
+.card_err:
+        call card_close
+        ld a,T_CARD_ERR
+        jp say_top
+
+; HL -> an 11-byte name -> DE: "NAME.EXT", 0
+fcb_text:
         ld b,8
         call .part
-        ld a,(fname + 8)
+        ld a,(hl)
         cp " "
         jr z,.named
         ld a,"."
@@ -1350,9 +1579,7 @@ put:
 .named:
         xor a
         ld (de),a
-        call redraw
-        ld a,J_STOR
-        jp pasv
+        ret
 .part:                              ; B characters, without the spaces
         ld a,(hl)
         inc hl
@@ -1537,6 +1764,7 @@ decimal:
         ret
 
         include "api/vos_net.inc"
+        include "api/vos_m4file.inc"
         include "api/vos_drive.inc"
 
 ; ---- data -----------------------------------------------------------
@@ -1591,6 +1819,16 @@ x_dat:          db 0                ; 1: the data connection ended
 x_big:          db 0                ; 1: RETR over FILE_MAX
 after:          db 0                ; said after the next list
 after_n:        dw 0
+after_hi:       db 0
+d_disk:         db 0                ; 1: RETR to the card, as it comes
+d_hi:           db 0                ; d_len's third byte
+s_disk:         db 0                ; 1: STOR from the card
+s_hi:           db 0                ; s_len's third byte
+s_rem:          dw 0                ; from the card: left to send
+s_rhi:          db 0
+s_pend:         db 0                ; read already, to send first
+m4o:            db 0                ; 1: a file of the card open
+card_name:      ds 13
 c_quiet:        dw 0
 handler:        dw 0
 poll_ix:        dw 0
