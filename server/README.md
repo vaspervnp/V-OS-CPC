@@ -107,6 +107,161 @@ VOSNET__Database=/tmp/vosnet.db dotnet server/src/VosNet.Server/bin/Debug/net10.
   `/del <αρ.>`· στον πίνακα `D <αρ.>` σβήνει ένα μήνυμα του νήματος.
 - **Πίνακας `logins`**: για τις «συνδέσεις ανά ημέρα» της επισκόπησης.
 
-## Εγκατάσταση
+## Εγκατάσταση σε server Debian
 
-Όπως το §8 του DESIGN.md, με τα αρχεία του `deploy/`.
+Για Debian 12 (bookworm) ή 13 (trixie), x86-64, με `sudo`. Ο διακομιστής
+τρέχει ως ο χρήστης `vosnet` υπό το systemd, τα προγράμματα στο
+`/opt/vosnet`, η βάση και τα κλειδιά στο `/var/lib/vosnet`, και το Caddy
+μπροστά από το web για το HTTPS (DESIGN.md §8).
+
+### 1. DNS
+
+Μια εγγραφή A (και AAAA, αν ο server έχει IPv6) `vos.revive8bit.com` → η
+IP του server. Στο Cloudflare: **DNS only** (γκρι σύννεφο), γιατί το
+Cloudflare δεν περνά telnet.
+
+### 2. Το runtime του .NET 10
+
+Από το αποθετήριο της Microsoft:
+
+```bash
+wget https://packages.microsoft.com/config/debian/$(. /etc/os-release; echo $VERSION_ID)/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb
+```
+
+```bash
+sudo dpkg -i /tmp/packages-microsoft-prod.deb && sudo apt update && sudo apt install -y aspnetcore-runtime-10.0 sqlite3 rsync
+```
+
+```bash
+dotnet --list-runtimes
+```
+
+Πρέπει να δείχνει `Microsoft.AspNetCore.App 10.0.x`. Χωρίς runtime στον
+server: στο βήμα 3 `--self-contained true`, και στο `vosnet.service`
+`ExecStart=/opt/vosnet/VosNet.Server`.
+
+### 3. Χτίσιμο (στο μηχάνημα ανάπτυξης)
+
+Στη ρίζα του repo:
+
+```bash
+dotnet publish server/src/VosNet.Server -c Release -r linux-x64 --self-contained false -o build/vosnet-pub
+```
+
+Βγαίνουν περίπου 2,6 MB: τα `.dll`, το `appsettings.json`, το `texts/` και
+το `libe_sqlite3.so`. Για server ARM (π.χ. Raspberry Pi): `-r linux-arm64`.
+Αντιγραφή στον server, μαζί με το `deploy/`:
+
+```bash
+rsync -av --delete build/vosnet-pub/ USER@vos.revive8bit.com:vosnet/
+```
+
+```bash
+rsync -av server/deploy/ USER@vos.revive8bit.com:vosnet-deploy/
+```
+
+### 4. Χρήστης, φάκελοι, systemd
+
+Στον server:
+
+```bash
+sudo useradd --system --home /var/lib/vosnet --shell /usr/sbin/nologin vosnet
+```
+
+```bash
+sudo mkdir -p /opt/vosnet && sudo rsync -a --delete ~/vosnet/ /opt/vosnet/ && sudo chown -R root:root /opt/vosnet
+```
+
+```bash
+sudo cp ~/vosnet-deploy/vosnet.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now vosnet
+```
+
+Το `/opt/vosnet` ανήκει στον root και ο `vosnet` μόνο το διαβάζει· το
+systemd φτιάχνει το `/var/lib/vosnet` (`StateDirectory`) και δίνει μόνο
+το δικαίωμα για τη θύρα 23 (`CAP_NET_BIND_SERVICE`), όχι root. Έλεγχος:
+
+```bash
+systemctl status vosnet
+```
+
+```bash
+journalctl -u vosnet -f
+```
+
+```bash
+telnet 127.0.0.1 2323
+```
+
+Άλλες ρυθμίσεις (π.χ. `VOSNET__HostName`, `VOSNET__FetchReleases`) μπαίνουν
+ως `Environment=` στο `vosnet.service`, ή με
+`sudo systemctl edit vosnet`, ώστε να μη χάνονται στην επόμενη ενημέρωση.
+
+### 5. Caddy (HTTPS για τη διαχείριση)
+
+```bash
+sudo apt install -y caddy
+```
+
+```bash
+sudo cp ~/vosnet-deploy/Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
+```
+
+Το Caddy παίρνει μόνο του το πιστοποιητικό Let's Encrypt, όταν το DNS
+δείχνει ήδη στον server και οι 80 και 443 είναι ανοιχτές. Άλλο όνομα:
+αλλαγή στην πρώτη γραμμή του `Caddyfile` και `VOSNET__HostName`.
+
+### 6. Τείχος προστασίας
+
+Το Debian δεν έχει τείχος από μόνο του. Με το `ufw`, **πρώτα το SSH**:
+
+```bash
+sudo apt install -y ufw && sudo ufw allow OpenSSH
+```
+
+```bash
+sudo ufw allow 23/tcp && sudo ufw allow 2323/tcp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw enable
+```
+
+Η 5080 μένει κλειστή: ακούει μόνο στο 127.0.0.1. Η 2323 υπάρχει γιατί
+αρκετοί πάροχοι κόβουν την εξερχόμενη 23· τότε στον TELNET του V-OS
+γράφει κανείς `vos.revive8bit.com:2323`. Αν ο πάροχος του server έχει
+δικό του firewall (Hetzner, AWS κ.λπ.), οι ίδιες θύρες και εκεί.
+
+### 7. Ο πρώτος OWNER
+
+Εγγραφή από το telnet (π.χ. ως `VASILHS`), και μετά στον server:
+
+```bash
+sudo -u vosnet env DOTNET_ENVIRONMENT=Production VOSNET__Database=/var/lib/vosnet/vosnet.db VOSNET__Keys=/var/lib/vosnet/keys dotnet /opt/vosnet/VosNet.Server.dll set-owner VASILHS
+```
+
+Η διαχείριση είναι στο `https://vos.revive8bit.com/admin`, με τον
+λογαριασμό του telnet.
+
+### 8. Αντίγραφα ασφαλείας
+
+Κάθε νύχτα στις 03:30, κρατά 30 ημέρες. Το αρχείο `/etc/cron.d/vosnet`:
+
+```
+30 3 * * * root umask 077; sqlite3 /var/lib/vosnet/vosnet.db ".backup /var/backups/vosnet-$(date +\%F).db" && find /var/backups -name 'vosnet-*.db' -mtime +30 -delete
+```
+
+Το `.backup` είναι ασφαλές με τη βάση ανοιχτή (WAL). Το `umask 077`,
+γιατί η βάση έχει τα hash των κωδικών. Τα κλειδιά (`/var/lib/vosnet/keys`)
+αλλάζουν σπάνια· χωρίς αυτά απλώς ξαναγίνεται είσοδος στο web.
+Επαναφορά: `sudo systemctl stop vosnet`, αντιγραφή του αντιγράφου ως
+`/var/lib/vosnet/vosnet.db` με ιδιοκτήτη `vosnet`, και διαγραφή των
+`vosnet.db-wal` και `vosnet.db-shm`, πριν από το `start`.
+
+### 9. Ενημέρωση
+
+Βήμα 3 στο μηχάνημα ανάπτυξης, και στον server:
+
+```bash
+sudo rsync -a --delete ~/vosnet/ /opt/vosnet/ && sudo chown -R root:root /opt/vosnet && sudo systemctl restart vosnet
+```
+
+Οι συνδεδεμένοι παίρνουν πρώτα το «Ο ΔΙΑΚΟΜΙΣΤΗΣ ΞΑΝΑΞΕΚΙΝΑ». Οι αλλαγές
+της βάσης (`Storage/Migrations/*.sql`) γίνονται μόνες τους με την
+εκκίνηση· καλό είναι ένα `.backup` πριν. Το runtime ενημερώνεται με το
+`sudo apt upgrade` και ένα `restart`.
